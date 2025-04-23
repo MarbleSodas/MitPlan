@@ -14,6 +14,7 @@ import { filterAbilitiesByLevel, getAbilityDescriptionForLevel, getAbilityCooldo
 import JobSelector from './components/JobSelector'
 import ImportExport from './components/ImportExport'
 import ThemeToggle from './components/ThemeToggle'
+import KofiButton from './components/ui/KofiButton'
 
 // Define light and dark themes for styled-components
 const lightTheme = {
@@ -138,6 +139,7 @@ const Header = styled.header`
 
 const HeaderTop = styled.div`
   display: flex;
+  gap: 4px;
   justify-content: flex-end;
   padding: ${props => props.theme.spacing.medium} 0;
 `;
@@ -979,6 +981,7 @@ function App() {
       <AppContainer>
         <Header>
           <HeaderTop>
+            <KofiButton />
             <ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
           </HeaderTop>
           <h1>FFXIV Boss Timeline & Mitigation Planner</h1>
