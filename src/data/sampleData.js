@@ -4,8 +4,22 @@ export const bosses = [
   {
     id: 'ketuduke',
     name: 'Ketuduke',
-    description: 'The Soul of the South Seas, final boss of Another Aloalo Island (Savage).',
+    description: 'The Soul of the South Seas, first boss of Another Aloalo Island (Savage).',
     icon: '🌊',
+    level: 90
+  },
+  {
+    id: 'lala',
+    name: 'Lala',
+    description: 'Math Boss, second boss of Another Aloalo Island (Savage).',
+    icon: '➗',
+    level: 90
+  },
+  {
+    id: 'statice',
+    name: 'Statice',
+    description: 'The final boss of Another Aloalo Island (Savage), wielding a gun and powerful magic.',
+    icon: '🔫',
     level: 90
   },
 ];
@@ -128,6 +142,125 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'critical',
       icon: '💀'
+    },
+  ],
+  lala: [
+    {
+      id: 'inferno_theorem_1',
+      name: 'Inferno Theorem',
+      time: 10,
+      description: 'High party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'targeted_light',
+      name: 'Targetted Light',
+      time: 60,
+      description: 'Turn yourself to the boss and a light raid-wide should still be mititated though.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🔦'
+    },
+    {
+      id: 'strategic_strike_1',
+      name: 'Strategic Strike',
+      time: 70,
+      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
+      damageType: 'physical',
+      importance: 'high',
+      icon: '🗡️'
+    },
+    {
+      id: 'iferno_theorem_2',
+      name: 'Inferno Theorem',
+      time: 110,
+      description: 'High party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'strategic_strike_2',
+      name: 'Strategic Strike',
+      time: 120,
+      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
+      damageType: 'physical',
+      importance: 'high',
+      icon: '🗡️'
+    },
+    {
+      id: 'inferno_theorem_3',
+      name: 'Inferno Theorem',
+      time: 170,
+      description: 'High party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'inferno_theorem_4',
+      name: 'Inferno Theorem',
+      time: 180,
+      description: 'High party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'arcane_point',
+      name: 'Arcane Point',
+      time: 220,
+      description: 'Medium party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🪄'
+    },
+    {
+      id: 'explosive_theorem',
+      name: 'Explosive Theorem',
+      time: 230,
+      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💥'
+    },
+    {
+      id: 'arcane_point_resolve',
+      name: 'Arcane Point',
+      time: 235,
+      description: 'Stack Marker Resolve',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🪄'
+    },
+    {
+      id: 'inferno_theorem_5',
+      name: 'Inferno Theorem',
+      time: 245,
+      description: 'High party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'inferno_theorem_6',
+      name: 'Inferno Theorem',
+      time: 255,
+      description: 'High party-wide magical damage that should be mitigated.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'strategic_strike_3',
+      name: 'Strategic Strike',
+      time: 305,
+      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
+      damageType: 'physical',
+      importance: 'high',
+      icon: '🗡️'
     },
   ]
 };
@@ -896,6 +1029,127 @@ export const mitigationAbilities = [
     mitigationValue: 0, // Utility, not direct mitigation
     damageType: 'both'
   }
+];
+
+// Statice boss actions
+bossActionsMap.statice = [
+  {
+    id: 'aero_iv_1',
+    name: 'Aero IV',
+    time: 10,
+    description: 'High party-wide magical damage that should be mitigated.',
+    damageType: 'magical',
+    importance: 'high',
+    icon: '🌪️'
+  },
+  {
+    id: 'trapshooting_1',
+    name: 'Trapshooting',
+    time: 35,
+    description: 'Statice sequentially loads 8 bullets into her gun. Six will be successfully loaded, while two will miss.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🎯'
+  },
+  {
+    id: 'trapshooting_2',
+    name: 'Trapshooting',
+    time: 70,
+    description: 'Statice sequentially loads 8 bullets into her gun. Six will be successfully loaded, while two will miss.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🎯'
+  },
+  {
+    id: 'trapshooting_3',
+    name: 'Trapshooting',
+    time: 115,
+    description: 'Statice sequentially loads 8 bullets into her gun. Six will be successfully loaded, while two will miss.',
+    damageType: 'magical',
+    importance: 'high',
+    icon: '🎯'
+  },
+  {
+    id: 'aero_iv_2',
+    name: 'Aero IV',
+    time: 165,
+    description: 'High party-wide magical damage that should be mitigated.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🌪️'
+  },
+  {
+    id: 'missiles',
+    name: 'Missiles',
+    time: 200,
+    description: 'Missile mech which resolves with medium party-wide magical damage.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🚀'
+  },
+  {
+    id: 'shocking_abandon',
+    name: 'Shocking Abandon',
+    time: 205,
+    description: 'Tankbuster that deals very high damage. Requires heavy mitigation.',
+    damageType: 'physical',
+    importance: 'high',
+    icon: '🗡️'
+  },
+  {
+    id: 'aero_iv_3',
+    name: 'Aero IV',
+    time: 245,
+    description: 'High party-wide magical damage that should be mitigated.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🌪️'
+  },
+  {
+    id: 'trapshooting_4',
+    name: 'Trapshooting',
+    time: 285,
+    description: 'Statice sequentially loads 8 bullets into her gun. Six will be successfully loaded, while two will miss.',
+    damageType: 'magical',
+    importance: 'high',
+    icon: '🎯'
+  },
+  {
+    id: 'trapshooting_5',
+    name: 'Trapshooting',
+    time: 315,
+    description: 'Statice sequentially loads 8 bullets into her gun. Six will be successfully loaded, while two will miss.',
+    damageType: 'magical',
+    importance: 'high',
+    icon: '🎯'
+  },
+  {
+    id: 'aero_iv_4',
+    name: 'Aero IV',
+    time: 322,
+    description: 'High party-wide magical damage that should be mitigated.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🌪️'
+  },
+  {
+    id: 'aero_iv_4',
+    name: 'Aero IV',
+    time: 330,
+    description: 'High party-wide magical damage that should be mitigated.',
+    damageType: 'magical',
+    importance: 'medium',
+    icon: '🌪️'
+  },
+  {
+    id: 'aero_iv_enrage',
+    name: 'Aero IV (enrage)',
+    time: 340,
+    description: 'High party-wide magical damage that should be mitigated.',
+    damageType: 'magical',
+    importance: 'critical',
+    icon: '💀'
+  },
 ];
 
 // Initial assignments (empty)
