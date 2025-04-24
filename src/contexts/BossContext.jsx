@@ -1,0 +1,95 @@
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import { bossActionsMap, bosses } from '../data';
+import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
+
+// Create the context
+const BossContext = createContext();
+
+// Create a provider component
+export const BossProvider = ({ children }) => {
+  // Initialize boss ID from localStorage or default
+  const [currentBossId, setCurrentBossId] = useState(() => {
+    // Try to load from localStorage
+    const autosavedPlan = loadFromLocalStorage('mitPlanAutosave', null);
+    if (autosavedPlan && autosavedPlan.bossId) {
+      return autosavedPlan.bossId;
+    }
+    return 'ketuduke'; // Default boss ID
+  });
+  
+  // Get boss actions for the current boss
+  const [currentBossActions, setCurrentBossActions] = useState(bossActionsMap[currentBossId]);
+  
+  // Track selected boss action
+  const [selectedBossAction, setSelectedBossAction] = useState(null);
+
+  // Update boss actions when boss changes
+  useEffect(() => {
+    setCurrentBossActions(bossActionsMap[currentBossId]);
+    // Deselect any selected action when changing bosses
+    setSelectedBossAction(null);
+    
+    // Update localStorage
+    const autosavedPlan = loadFromLocalStorage('mitPlanAutosave', {});
+    saveToLocalStorage('mitPlanAutosave', {
+      ...autosavedPlan,
+      bossId: currentBossId
+    });
+  }, [currentBossId]);
+
+  // Sort boss actions by time
+  const sortedBossActions = useMemo(() => {
+    return [...currentBossActions].sort((a, b) => a.time - b.time);
+  }, [currentBossActions]);
+
+  // Get the current boss level
+  const currentBossLevel = useMemo(() => {
+    const currentBoss = bosses.find(boss => boss.id === currentBossId);
+    return currentBoss ? currentBoss.level : 90; // Default to level 90 if boss not found
+  }, [currentBossId]);
+
+  // Toggle selection of a boss action
+  const toggleBossActionSelection = (action) => {
+    if (selectedBossAction && selectedBossAction.id === action.id) {
+      // If clicking the already selected action, deselect it
+      setSelectedBossAction(null);
+    } else {
+      // Otherwise select this action
+      setSelectedBossAction(action);
+    }
+  };
+
+  // Clear selected boss action
+  const clearSelectedBossAction = () => {
+    setSelectedBossAction(null);
+  };
+
+  // Create the context value
+  const contextValue = {
+    currentBossId,
+    setCurrentBossId,
+    currentBossActions,
+    sortedBossActions,
+    selectedBossAction,
+    toggleBossActionSelection,
+    clearSelectedBossAction,
+    currentBossLevel
+  };
+
+  return (
+    <BossContext.Provider value={contextValue}>
+      {children}
+    </BossContext.Provider>
+  );
+};
+
+// Create a custom hook for using the boss context
+export const useBossContext = () => {
+  const context = useContext(BossContext);
+  if (context === undefined) {
+    throw new Error('useBossContext must be used within a BossProvider');
+  }
+  return context;
+};
+
+export default BossContext;

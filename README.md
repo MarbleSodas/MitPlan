@@ -1,6 +1,6 @@
 # MitPlan - FFXIV Mitigation Planner
 
-![MitPlan Logo](public/vite.svg)
+![MitPlan Logo](public/xivmitplan.svg)
 
 ## 🌟 Live Demo
 

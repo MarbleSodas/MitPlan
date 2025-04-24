@@ -1,30 +1,8 @@
-import { StrictMode, useEffect } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import './styles/global.css'
-import App from './App.jsx'
-
-// Function to apply theme based on user preference or system setting
-const applyTheme = () => {
-  const savedTheme = localStorage.getItem('darkMode');
-  if (savedTheme !== null) {
-    document.documentElement.setAttribute('data-theme', savedTheme === 'true' ? 'dark' : 'light');
-  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'light');
-  }
-};
-
-// Apply theme immediately
-applyTheme();
-
-// Listen for theme changes in localStorage
-window.addEventListener('storage', (event) => {
-  if (event.key === 'darkMode') {
-    applyTheme();
-  }
-});
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import './styles/global.css';
+import App from './App.jsx';
+import { AppProvider } from './contexts';
 
 // Create root and render app
 const container = document.getElementById('root')
@@ -37,7 +15,9 @@ window.addEventListener('error', (event) => {
 
 // Render the app
 root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+  <React.StrictMode>
+    <AppProvider>
+      <App />
+    </AppProvider>
+  </React.StrictMode>
 )
