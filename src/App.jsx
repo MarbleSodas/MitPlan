@@ -141,7 +141,7 @@ const BossAction = styled.div`
       default: return props.theme.colors.low;
     }
   }};
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
   color: ${props => props.theme.colors.text};
   border: ${props => props.$isSelected ? `2px solid ${props.theme.colors.primary}` : '1px solid ${props.theme.colors.border}'};
   cursor: pointer;
@@ -154,6 +154,8 @@ const BossAction = styled.div`
 
   &:hover {
     box-shadow: ${props => props.theme.shadows.medium};
+    transform: translateY(-2px);
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 

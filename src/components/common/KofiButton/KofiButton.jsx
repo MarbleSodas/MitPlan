@@ -4,7 +4,8 @@ import styled from 'styled-components';
 const KofiLink = styled.a`
   display: inline-block;
   transition: transform 0.2s ease;
-  border-radius: 6px;
+  border-radius: 16px;
+  height: 36px;
   overflow: hidden; // Ensures the border-radius applies to the image
   box-shadow: ${props => props.theme.shadows.small};
 
@@ -19,7 +20,7 @@ const KofiLink = styled.a`
 
   img {
     display: block;
-    height: 36px;
+    height: 100%;
     width: auto;
     border: 0;
   }

@@ -1,37 +1,78 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Sun, Moon } from 'lucide-react';
 
 const ToggleContainer = styled.div`
   display: inline-block;
-  margin-left: 10px;
+  margin-left: 12px;
 `;
 
 const ToggleButton = styled.button`
-  background-color: ${props => props.theme.colors.secondary};
-  color: ${props => props.theme.colors.text};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 6px;
-  padding: 8px 12px;
+  position: relative;
+  width: 64px;
+  height: 36px;
+  border-radius: 64px;
+  background-color: ${props => props.$isDarkMode ? '#333333' : '#f5f5f5'} !important;
   cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
+  padding: 0;
   transition: all 0.2s ease;
-  box-shadow: ${props => props.theme.shadows.small};
+  box-shadow: ${props => props.theme.shadows.medium};
+  overflow: hidden;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.medium};
+    box-shadow: ${props => props.theme.shadows.large};
+    transform: translateY(-1px);
   }
 
-  &:active {
-    transform: translateY(0);
+  &::before {
+    content: "";
+    position: absolute;
+    height: 26px;
+    width: 26px;
+    left: ${props => props.$isDarkMode ? '32px' : '6px'};
+    bottom: 5px;
+    background-color: ${props => props.$isDarkMode ? '#ffffff' : '#ffffff'};
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: left 0.3s;
+    border-radius: 50%;
   }
 `;
 
-const ToggleImage = styled.span`
+const IconContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  pointer-events: none;
+`;
+
+const SunIcon = styled.div`
+  color: ${props => props.$isDarkMode
+    ? props.theme.colors.text
+    : '#ff9900'};
+  opacity: ${props => props.$isDarkMode ? 0.7 : 1};
+  transition: opacity 0.3s, color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: ${props => props.$isDarkMode ? 'none' : 'drop-shadow(0 0 1px rgba(0, 0, 0, 0.3))'};
+`;
+
+const MoonIcon = styled.div`
+  color: ${props => props.$isDarkMode
+    ? '#000000'
+    : props.theme.colors.text};
+  opacity: ${props => props.$isDarkMode ? 1 : 0.7};
+  transition: opacity 0.3s, color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: ${props => props.$isDarkMode ? 'drop-shadow(0 0 1px rgba(255, 255, 255, 0.5))' : 'none'};
 `;
 
 function ThemeToggle({ isDarkMode, toggleTheme }) {
@@ -42,9 +83,14 @@ function ThemeToggle({ isDarkMode, toggleTheme }) {
         onClick={toggleTheme}
         aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
       >
-        <ToggleImage>
-          {isDarkMode ? '☀️ Light' : '🌙 Dark '}
-        </ToggleImage>
+        <IconContainer>
+          <SunIcon $isDarkMode={isDarkMode}>
+            <Sun size={18} strokeWidth={2.5} />
+          </SunIcon>
+          <MoonIcon $isDarkMode={isDarkMode}>
+            <Moon size={18} strokeWidth={2.5} />
+          </MoonIcon>
+        </IconContainer>
       </ToggleButton>
     </ToggleContainer>
   );
