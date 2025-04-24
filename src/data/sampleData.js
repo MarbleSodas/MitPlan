@@ -30,7 +30,7 @@ export const bossActionsMap = {
       id: 'tidal_roar_1',
       name: 'Tidal Roar',
       time: 10,
-      description: 'High party-wide magical damage that inflicts Dropsy. Requires mitigation and healing.',
+      description: 'High party-wide magical damage that inflicts Dropsy. Unmitigated damage: ~68,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '⭕'
@@ -38,26 +38,26 @@ export const bossActionsMap = {
     {
       id: 'bubble_net_1',
       name: 'Bubble Net',
-      time: 30,
-      description: 'Party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs to players.',
+      time: 29,
+      description: 'Party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs. Unmitigated damage: ~59,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '⭕'
     },
     {
-      id: 'hydrobullet_hydrofall_1',
-      name: 'Hydrobullet/Hydrofall',
-      time: 60,
-      description: 'Crystal line AoEs resolve at the same time as stack/spread debuffs. Avoid both simultaneously.',
+      id: 'hydrofall_1',
+      name: 'Hydrofall',
+      time: 59,
+      description: 'Moderate party-wide magical damage with stack mechanics. Unmitigated damage: ~35,000.',
       damageType: 'magical',
       importance: 'medium',
       icon: '💧'
     },
     {
-      id: 'hydrobullet_hydrofall_2',
-      name: 'Hydrobullet/Hydrofall',
-      time: 80,
-      description: 'Assigns spread or stack debuffs to players that will resolve during Blowing Bubbles.',
+      id: 'hydrobullet_1',
+      name: 'Hydrobullet',
+      time: 91,
+      description: 'Moderate party-wide magical damage with spread mechanics. Unmitigated damage: ~36,000.',
       damageType: 'magical',
       importance: 'medium',
       icon: '💧'
@@ -65,53 +65,8 @@ export const bossActionsMap = {
     {
       id: 'hydrofall_2',
       name: 'Hydrofall',
-      time: 130,
-      description: 'Gives stack debuffs to two players that will resolve during Strewn Bubbles.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💧'
-    },
-    {
-      id: 'bubble_net_2',
-      name: 'Bubble Net',
-      time: 160,
-      description: 'Party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs to players.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '⭕'
-    },
-    {
-      id: 'angry_seas',
-      name: 'Angry Seas',
-      time: 210,
-      description: 'Spawns a lethal line AoE in the middle and horizontal knockbacks on both sides. Long durations benefit here.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌊'
-    },
-    {
-      id: 'bubble_net_3',
-      name: 'Bubble Net',
-      time: 220,
-      description: 'Party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs to players.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '⭕'
-    },
-    {
-      id: 'bubble_net_4',
-      name: 'Bubble Net',
-      time: 250,
-      description: 'Party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs to players.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '⭕'
-    },
-    {
-      id: 'hydrobullet_hydrofall_3',
-      name: 'Hydrobullet/Hydrofall',
-      time: 280,
-      description: 'Assigns spread or stack debuffs to players that will resolve during Blowing Bubbles.',
+      time: 97,
+      description: 'Moderate party-wide magical damage with stack mechanics. Unmitigated damage: ~35,000.',
       damageType: 'magical',
       importance: 'medium',
       icon: '💧'
@@ -119,17 +74,98 @@ export const bossActionsMap = {
     {
       id: 'hydrofall_3',
       name: 'Hydrofall',
-      time: 310,
-      description: 'Gives stack debuffs to two players that will resolve during Strewn Bubbles.',
+      time: 128,
+      description: 'Moderate party-wide magical damage with stack mechanics. Unmitigated damage: ~35,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💧'
+    },
+    {
+      id: 'bubble_net_2',
+      name: 'Bubble Net',
+      time: 160,
+      description: 'Party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs. Unmitigated damage: ~59,000.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '⭕'
+    },
+    {
+      id: 'hydrobullet_2',
+      name: 'Hydrobullet',
+      time: 172,
+      description: 'Moderate party-wide magical damage with spread mechanics. Unmitigated damage: ~36,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💧'
+    },
+    {
+      id: 'hydrofall_4',
+      name: 'Hydrofall',
+      time: 206,
+      description: 'High party-wide magical damage with stack mechanics. Unmitigated damage: ~67,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '💧'
     },
     {
+      id: 'hydrobullet_3',
+      name: 'Hydrobullet',
+      time: 212,
+      description: 'High party-wide magical damage with spread mechanics. Unmitigated damage: ~40,000.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💧'
+    },
+    {
+      id: 'bubble_net_3',
+      name: 'Bubble Net',
+      time: 217,
+      description: 'High party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs. Unmitigated damage: ~67,000.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '⭕'
+    },
+    {
+      id: 'burst',
+      name: 'Burst',
+      time: 234,
+      description: 'Moderate party-wide magical damage. Unmitigated damage: ~21,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💥'
+    },
+    {
+      id: 'bubble_net_4',
+      name: 'Bubble Net',
+      time: 249,
+      description: 'High party-wide magical damage and assigns Bubble Weave or Foamy Fetters debuffs. Unmitigated damage: ~60,000.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '⭕'
+    },
+    {
+      id: 'hydrobullet_4',
+      name: 'Hydrobullet',
+      time: 280,
+      description: 'Moderate party-wide magical damage with spread mechanics. Unmitigated damage: ~35,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💧'
+    },
+    {
+      id: 'hydrofall_5',
+      name: 'Hydrofall',
+      time: 309,
+      description: 'Moderate party-wide magical damage with stack mechanics. Unmitigated damage: ~35,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💧'
+    },
+    {
       id: 'tidal_roar_2',
       name: 'Tidal Roar',
-      time: 320,
-      description: 'High party-wide magical damage that inflicts Dropsy. Requires mitigation and healing.',
+      time: 321,
+      description: 'High party-wide magical damage that inflicts Dropsy. Unmitigated damage: ~68,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '⭕'
@@ -137,7 +173,7 @@ export const bossActionsMap = {
     {
       id: 'tidal_roar_enrage',
       name: 'Tidal Roar (enrage)',
-      time: 330,
+      time: 340,
       description: 'Wipe',
       damageType: 'magical',
       importance: 'critical',
@@ -148,17 +184,17 @@ export const bossActionsMap = {
     {
       id: 'inferno_theorem_1',
       name: 'Inferno Theorem',
-      time: 10,
-      description: 'High party-wide magical damage that should be mitigated.',
+      time: 8,
+      description: 'High party-wide magical damage. Unmitigated damage: ~86,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
     },
     {
-      id: 'targeted_light',
-      name: 'Targetted Light',
-      time: 60,
-      description: 'Turn yourself to the boss and a light raid-wide should still be mititated though.',
+      id: 'targeted_light_1',
+      name: 'Targeted Light',
+      time: 59,
+      description: 'Moderate party-wide magical damage. Unmitigated damage: ~35,000.',
       damageType: 'magical',
       importance: 'medium',
       icon: '🔦'
@@ -166,17 +202,35 @@ export const bossActionsMap = {
     {
       id: 'strategic_strike_1',
       name: 'Strategic Strike',
-      time: 70,
-      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
+      time: 69,
+      description: 'A three-hit physical tankbuster that deals very high damage. Unmitigated damage: ~55,000 per hit.',
       damageType: 'physical',
       importance: 'high',
       icon: '🗡️'
     },
     {
-      id: 'iferno_theorem_2',
+      id: 'arcane_combustion_1',
+      name: 'Arcane Combustion',
+      time: 100,
+      description: 'Moderate party-wide magical damage with 19% base mitigation. Unmitigated damage: ~40,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '✨'
+    },
+    {
+      id: 'symmetric_surge_1',
+      name: 'Symmetric Surge',
+      time: 105,
+      description: 'Moderate party-wide magical damage with 19% base mitigation. Unmitigated damage: ~47,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🔄'
+    },
+    {
+      id: 'inferno_theorem_2',
       name: 'Inferno Theorem',
-      time: 110,
-      description: 'High party-wide magical damage that should be mitigated.',
+      time: 149,
+      description: 'High party-wide magical damage. Unmitigated damage: ~76,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -184,8 +238,44 @@ export const bossActionsMap = {
     {
       id: 'strategic_strike_2',
       name: 'Strategic Strike',
-      time: 120,
-      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
+      time: 160,
+      description: 'A three-hit physical tankbuster that deals very high damage. Unmitigated damage: ~54,000 per hit.',
+      damageType: 'physical',
+      importance: 'high',
+      icon: '🗡️'
+    },
+    {
+      id: 'powerful_light_1',
+      name: 'Powerful Light',
+      time: 199,
+      description: 'Moderate party-wide magical damage. Unmitigated damage: ~48,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💡'
+    },
+    {
+      id: 'explosive_theorem_1',
+      name: 'Explosive Theorem',
+      time: 208,
+      description: 'Party-wide magical damage. Unmitigated damage: ~53,000.',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💥'
+    },
+    {
+      id: 'symmetric_surge_2',
+      name: 'Symmetric Surge',
+      time: 212,
+      description: 'Moderate party-wide magical damage with 19% base mitigation. Unmitigated damage: ~44,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🔄'
+    },
+    {
+      id: 'strategic_strike_3',
+      name: 'Strategic Strike',
+      time: 226,
+      description: 'A three-hit physical tankbuster that deals very high damage. Unmitigated damage: ~55,000 per hit.',
       damageType: 'physical',
       importance: 'high',
       icon: '🗡️'
@@ -193,74 +283,47 @@ export const bossActionsMap = {
     {
       id: 'inferno_theorem_3',
       name: 'Inferno Theorem',
-      time: 170,
-      description: 'High party-wide magical damage that should be mitigated.',
+      time: 234,
+      description: 'High party-wide magical damage. Unmitigated damage: ~81,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
+    },
+    {
+      id: 'targeted_light_2',
+      name: 'Targeted Light',
+      time: 273,
+      description: 'Moderate party-wide magical damage. Unmitigated damage: ~35,000.',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🔦'
+    },
+    {
+      id: 'strategic_strike_4',
+      name: 'Strategic Strike',
+      time: 284,
+      description: 'A three-hit physical tankbuster that deals very high damage. Unmitigated damage: ~54,000 per hit.',
+      damageType: 'physical',
+      importance: 'high',
+      icon: '🗡️'
     },
     {
       id: 'inferno_theorem_4',
       name: 'Inferno Theorem',
-      time: 180,
-      description: 'High party-wide magical damage that should be mitigated.',
+      time: 300,
+      description: 'High party-wide magical damage. Unmitigated damage: ~81,000.',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
     },
     {
-      id: 'arcane_point',
-      name: 'Arcane Point',
-      time: 220,
-      description: 'Medium party-wide magical damage that should be mitigated.',
+      id: 'inferno_theorem_enrage',
+      name: 'Inferno Theorem (enrage)',
+      time: 330,
+      description: 'Wipe',
       damageType: 'magical',
-      importance: 'high',
-      icon: '🪄'
-    },
-    {
-      id: 'explosive_theorem',
-      name: 'Explosive Theorem',
-      time: 230,
-      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '💥'
-    },
-    {
-      id: 'arcane_point_resolve',
-      name: 'Arcane Point',
-      time: 235,
-      description: 'Stack Marker Resolve',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🪄'
-    },
-    {
-      id: 'inferno_theorem_5',
-      name: 'Inferno Theorem',
-      time: 245,
-      description: 'High party-wide magical damage that should be mitigated.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🔥'
-    },
-    {
-      id: 'inferno_theorem_6',
-      name: 'Inferno Theorem',
-      time: 255,
-      description: 'High party-wide magical damage that should be mitigated.',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🔥'
-    },
-    {
-      id: 'strategic_strike_3',
-      name: 'Strategic Strike',
-      time: 305,
-      description: 'A three-hit physical tankbuster that deals very high damage. Requires heavy mitigation.',
-      damageType: 'physical',
-      importance: 'high',
-      icon: '🗡️'
+      importance: 'critical',
+      icon: '💀'
     },
   ]
 };
