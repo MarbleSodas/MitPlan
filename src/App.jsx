@@ -17,6 +17,7 @@ import JobSelector from './features/jobs/JobSelector/JobSelector'
 import ImportExport from './features/plans/ImportExport/ImportExport'
 import ThemeToggle from './components/common/ThemeToggle/ThemeToggle'
 import KofiButton from './components/common/KofiButton/KofiButton'
+import DiscordButton from './components/common/DiscordButton/DiscordButton'
 
 // Import utility functions from centralized utils module
 import {
@@ -63,7 +64,7 @@ const Header = styled.header`
 
 const HeaderTop = styled.div`
   display: flex;
-  gap: 4px;
+  gap: 8px;
   justify-content: flex-end;
   padding: ${props => props.theme.spacing.medium} 0;
 `;
@@ -548,6 +549,7 @@ function App() {
         <Header>
           <HeaderTop>
             <KofiButton />
+            <DiscordButton />
             <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
           </HeaderTop>
           <h1>FFXIV Boss Timeline & Mitigation Planner</h1>

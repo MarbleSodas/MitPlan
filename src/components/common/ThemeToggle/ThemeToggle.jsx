@@ -4,7 +4,6 @@ import { Sun, Moon } from 'lucide-react';
 
 const ToggleContainer = styled.div`
   display: inline-block;
-  margin-left: 12px;
 `;
 
 const ToggleButton = styled.button`
