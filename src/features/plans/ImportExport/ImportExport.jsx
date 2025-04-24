@@ -127,6 +127,10 @@ const ImportButton = styled(Button)`
   background-color: #2196f3;
   color: white;
   border: none;
+  height: 36px; /* Match the height of FileInputLabel */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover:not(:disabled) {
     background-color: #0b7dda;
@@ -134,8 +138,11 @@ const ImportButton = styled(Button)`
 `;
 
 const FileInputLabel = styled.label`
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 16px;
+  height: 36px;
   background-color: ${props => props.theme.colors.secondary};
   color: ${props => props.theme.colors.text};
   border: 1px solid ${props => props.theme.colors.border};
