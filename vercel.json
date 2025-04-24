@@ -16,6 +16,14 @@
       "dest": "/abilities-gamerescape/$1"
     },
     {
+      "src": "/xivmitplan.ico",
+      "dest": "/xivmitplan.ico"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/xivmitplan.ico"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
