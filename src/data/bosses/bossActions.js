@@ -360,7 +360,7 @@ export const bossActionsMap = {
       icon: '🎆'
     },
     {
-      id: 'shocking_abandon_1',
+      id: 'shocking_abandon_2',
       name: 'Shocking Abandon',
       time: 208,
       description: 'Tankbuster that deals very high physical damage. Requires heavy mitigation or invulnerability.',
