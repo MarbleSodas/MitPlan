@@ -23,6 +23,11 @@ const RoleGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 10px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 `;
 
 const RoleSection = styled.div`
@@ -36,6 +41,11 @@ const RoleSection = styled.div`
     }
     return 'rgba(250, 250, 250, 0.8)';
   }};
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-bottom: 15px;
+    padding: 12px;
+  }
 `;
 
 const RoleHeader = styled.div`
@@ -137,6 +147,10 @@ const JobGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   width: 100%;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    gap: 8px;
+  }
 `;
 
 const JobCard = styled.div`
@@ -163,6 +177,16 @@ const JobCard = styled.div`
     border-color: ${props => props.theme.colors.primary};
     transform: translateY(-2px);
     box-shadow: ${props => props.theme.shadows.medium};
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    min-height: 80px;
+    padding: 6px 8px;
+
+    &:active {
+      transform: translateY(-1px);
+      box-shadow: ${props => props.theme.shadows.small};
+    }
   }
 `;
 

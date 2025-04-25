@@ -13,7 +13,8 @@ export {
   findActiveMitigationsAtTime,
   calculateTotalMitigation,
   formatMitigation,
-  generateMitigationBreakdown
+  generateMitigationBreakdown,
+  isMitigationAvailable
 } from './mitigation/mitigationUtils';
 
 export {
@@ -22,3 +23,8 @@ export {
   removeFromLocalStorage,
   clearLocalStorage
 } from './storage/storageUtils';
+
+export {
+  isMobileDevice,
+  isTouchDevice
+} from './device/deviceUtils';

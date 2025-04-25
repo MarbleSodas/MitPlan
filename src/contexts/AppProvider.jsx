@@ -13,16 +13,16 @@ const AppProvider = ({ children }) => {
   return (
     <ThemeProvider>
       <BossProvider>
-        <JobProvider>
-          {/* MitigationProvider needs access to boss actions and level */}
-          <BossContext.Consumer>
-            {({ currentBossActions, currentBossLevel }) => (
-              <MitigationProvider bossActions={currentBossActions} bossLevel={currentBossLevel}>
+        {/* MitigationProvider needs access to boss actions and level */}
+        <BossContext.Consumer>
+          {({ currentBossActions, currentBossLevel }) => (
+            <MitigationProvider bossActions={currentBossActions} bossLevel={currentBossLevel}>
+              <JobProvider>
                 {children}
-              </MitigationProvider>
-            )}
-          </BossContext.Consumer>
-        </JobProvider>
+              </JobProvider>
+            </MitigationProvider>
+          )}
+        </BossContext.Consumer>
       </BossProvider>
     </ThemeProvider>
   );

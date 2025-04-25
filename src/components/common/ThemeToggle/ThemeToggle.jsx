@@ -35,6 +35,18 @@ const ToggleButton = styled.button`
     transition: left 0.3s;
     border-radius: 50%;
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: 52px;
+    height: 30px;
+
+    &::before {
+      height: 22px;
+      width: 22px;
+      left: ${props => props.$isDarkMode ? '26px' : '4px'};
+      bottom: 4px;
+    }
+  }
 `;
 
 const IconContainer = styled.div`
@@ -48,6 +60,10 @@ const IconContainer = styled.div`
   justify-content: space-between;
   padding: 0 10px;
   pointer-events: none;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 0 8px;
+  }
 `;
 
 const SunIcon = styled.div`
@@ -84,10 +100,10 @@ function ThemeToggle({ isDarkMode, toggleTheme }) {
       >
         <IconContainer>
           <SunIcon $isDarkMode={isDarkMode}>
-            <Sun size={18} strokeWidth={2.5} />
+            <Sun size={window.innerWidth <= 768 ? 16 : 18} strokeWidth={2.5} />
           </SunIcon>
           <MoonIcon $isDarkMode={isDarkMode}>
-            <Moon size={18} strokeWidth={2.5} />
+            <Moon size={window.innerWidth <= 768 ? 16 : 18} strokeWidth={2.5} />
           </MoonIcon>
         </IconContainer>
       </ToggleButton>

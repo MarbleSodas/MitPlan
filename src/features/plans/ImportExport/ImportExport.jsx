@@ -10,6 +10,11 @@ const Container = styled.div`
   margin-bottom: 20px;
   box-shadow: ${props => props.theme.shadows.medium};
   transition: background-color 0.3s ease;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
 `;
 
 const TwoColumnLayout = styled.div`
@@ -83,6 +88,12 @@ const TextArea = styled.textarea`
     border-color: ${props => props.theme.colors.primary};
     outline: none;
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    min-height: 120px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 `;
 
 const ButtonGroup = styled.div`
@@ -90,6 +101,11 @@ const ButtonGroup = styled.div`
   gap: 10px;
   margin-bottom: 15px;
   flex-wrap: wrap;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
 `;
 
 const Button = styled.button`
@@ -111,6 +127,11 @@ const Button = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
 `;
 
 const SaveButton = styled(Button)`
@@ -120,6 +141,10 @@ const SaveButton = styled(Button)`
 
   &:hover {
     background-color: #45a049;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    flex: 1; /* Take up available space on mobile */
   }
 `;
 
@@ -134,6 +159,11 @@ const ImportButton = styled(Button)`
 
   &:hover:not(:disabled) {
     background-color: #0b7dda;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    height: 32px;
+    flex: 1; /* Take up available space on mobile */
   }
 `;
 
@@ -155,6 +185,13 @@ const FileInputLabel = styled.label`
     background-color: ${props => props.theme.colors.primary};
     color: white;
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 6px 12px;
+    height: 32px;
+    font-size: 13px;
+    flex: 1; /* Take up available space on mobile */
+  }
 `;
 
 const FileInput = styled.input`
@@ -172,6 +209,11 @@ const SavedPlansList = styled.div`
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   background-color: ${props => props.theme.colors.cardBackground};
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-top: 8px;
+    max-height: 180px;
+  }
 `;
 
 const SavedPlanItem = styled.div`
@@ -188,6 +230,11 @@ const SavedPlanItem = styled.div`
   &:hover {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'};
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
 `;
 
 const PlanName = styled.div`
@@ -199,11 +246,20 @@ const PlanDate = styled.div`
   font-size: 12px;
   color: ${props => props.theme.colors.lightText};
   margin-right: 10px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 11px;
+    margin-right: 8px;
+  }
 `;
 
 const PlanActions = styled.div`
   display: flex;
   gap: 5px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    gap: 3px;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -216,6 +272,11 @@ const ActionButton = styled.button`
 
   &:hover {
     color: ${props => props.theme.colors.primary};
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 14px;
+    padding: 2px 4px;
   }
 `;
 

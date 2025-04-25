@@ -11,7 +11,8 @@ const DraggableItem = styled.div`
     return props.$isDragging ? 0 : 1;
   }};
   transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  touch-action: none; /* Prevents touch scrolling while dragging on mobile */
+  /* Only disable touch actions when actively dragging to allow scrolling otherwise */
+  touch-action: ${props => props.$isDragging ? 'none' : 'auto'};
   position: relative;
   cursor: ${props => props.$isDisabled ? 'not-allowed' : 'grab'};
 
