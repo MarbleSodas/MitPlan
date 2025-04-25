@@ -27,14 +27,15 @@ const BottomSheetContainer = styled.div`
   z-index: 10001; /* Increased z-index to ensure it's above the overlay */
   transform: translateY(${props => props.$isOpen ? '0' : '100%'});
   transition: transform 0.3s ease;
-  max-height: 80vh;
+  max-height: 90vh; /* Increased from 80vh to 90vh to take up more space */
+  height: 90vh; /* Fixed height to ensure consistent sizing */
   display: flex;
   flex-direction: column;
 
   /* Special handling for browser inspect mode */
   @media (min-height: 300px) and (max-height: 500px) {
-    max-height: 90vh; /* Allow more space in browser inspect mode */
-    height: 90vh; /* Fixed height for browser inspect mode */
+    max-height: 95vh; /* Allow even more space in browser inspect mode */
+    height: 95vh; /* Fixed height for browser inspect mode */
   }
 `;
 
@@ -81,9 +82,10 @@ const BottomSheetContent = styled.div`
   overflow-y: auto;
   flex: 1;
   -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
-  max-height: 60vh; /* Limit height for better scrolling in browser inspect mode */
+  max-height: 75vh; /* Increased from 60vh to 75vh to take up more space */
   overscroll-behavior: contain; /* Prevent scroll chaining */
   touch-action: pan-y; /* Allow vertical scrolling */
+  padding-bottom: 24px; /* Add more padding at the bottom for better scrolling experience */
 `;
 
 const SwipeIndicator = styled.div`
