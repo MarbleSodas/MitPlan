@@ -48,12 +48,18 @@ const MitigationItem = styled.div`
   box-shadow: ${props => props.theme.shadows.small};
   transition: all 0.2s ease;
   position: relative;
-  opacity: ${props => props.$isDisabled ? 0.5 : 1};
+  opacity: ${props => props.$isDisabled && !props.$isAssigned ? 0.5 : 1};
 
   &:active {
-    background-color: ${props => props.$isDisabled ? props.theme.colors.cardBackground : props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
-    transform: ${props => props.$isDisabled ? 'none' : 'translateY(-2px)'};
+    background-color: ${props => props.$isDisabled && !props.$isAssigned ? props.theme.colors.cardBackground : props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
+    transform: ${props => props.$isDisabled && !props.$isAssigned ? 'none' : 'translateY(-2px)'};
   }
+
+  /* Special styling for assigned items */
+  ${props => props.$isAssigned && `
+    background-color: ${props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
+    border-left: 4px solid ${props.theme.colors.primary};
+  `}
 `;
 
 const MitigationIcon = styled.div`
@@ -110,6 +116,28 @@ const CooldownOverlay = styled.div`
   color: ${props => props.theme.colors.text};
   text-align: center;
   padding: 0 16px;
+`;
+
+const MitigationActionButton = styled.button`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.2)' : 'rgba(255, 100, 100, 0.1)'};
+  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.3)' : 'rgba(255, 100, 100, 0.2)'};
+  color: ${props => props.theme.colors.text};
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: ${props => props.theme.borderRadius.small};
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10;
+
+  &:hover, &:active {
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.3)' : 'rgba(255, 100, 100, 0.2)'};
+  }
 `;
 
 const AssignedMitigationsList = styled.div`
@@ -216,8 +244,13 @@ const MobileMitigationSelector = ({
               <MitigationItem
                 key={mitigation.id}
                 $isDisabled={isDisabled}
+                $isAssigned={isAssigned}
                 onClick={() => {
-                  if (!isDisabled) {
+                  if (isAssigned) {
+                    // If already assigned, do nothing (let the remove button handle it)
+                    return;
+                  } else if (!isDisabled) {
+                    // If not disabled and not assigned, assign it
                     onAssignMitigation(bossAction.id, mitigation);
                   }
                 }}
@@ -236,9 +269,20 @@ const MobileMitigationSelector = ({
                   </MitigationDescription>
                 </MitigationContent>
 
-                {isDisabled && (
+                {isAssigned ? (
+                  <MitigationActionButton
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent the parent onClick from firing
+                      onRemoveMitigation(bossAction.id, mitigation.id);
+                    }}
+                    aria-label={`Remove ${mitigation.name}`}
+                  >
+                    <Trash2 size={12} style={{ marginRight: '4px' }} />
+                    Remove
+                  </MitigationActionButton>
+                ) : isDisabled && (
                   <CooldownOverlay>
-                    {isAssigned ? 'Already assigned' : cooldownReason}
+                    {cooldownReason}
                   </CooldownOverlay>
                 )}
               </MitigationItem>
