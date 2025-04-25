@@ -224,8 +224,9 @@ const BossAction = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.small};
     padding-top: 35px; /* Slightly smaller padding for time indicator on mobile */
-    padding-right: ${props => props.$hasAssignments ? '120px' : props.theme.spacing.small}; /* Less space for mitigations on mobile */
+    padding-right: ${props => props.$hasAssignments ? '125px' : props.theme.spacing.small}; /* Increased space for mitigations on mobile */
     min-height: 120px; /* Smaller minimum height on mobile */
+    margin-bottom: 10px; /* Increased spacing between boss actions */
 
     &:active {
       transform: translateY(-1px);
@@ -354,6 +355,13 @@ const MitigationIcon = styled.span`
   justify-content: center;
   width: 20px;
   height: 20px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-right: 4px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+  }
 `;
 
 const MitigationName = styled.h4`
@@ -386,14 +394,18 @@ const AssignedMitigations = styled.div`
   -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 120px;
+    width: 120px; /* Increased width to prevent overflow */
     top: 30px; /* Adjust for smaller time indicator */
     padding: 4px;
-    padding-left: 8px;
-    gap: 4px;
+    padding-left: 6px; /* Reduced left padding */
+    gap: 3px; /* Reduced gap between items */
     height: calc(100% - 30px);
     touch-action: pan-y; /* Allow vertical scrolling */
     overscroll-behavior: contain; /* Prevent scroll chaining */
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.7)'}; /* Slight background for better visibility */
+    border-left: 1px solid ${props => props.theme.colors.border};
+    max-height: calc(100% - 30px); /* Ensure it doesn't overflow */
+    overflow-x: hidden; /* Prevent horizontal overflow */
   }
 `;
 
@@ -417,7 +429,15 @@ const AssignedMitigation = styled.div`
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: 2px 4px;
-    font-size: 11px;
+    font-size: 10px; /* Slightly smaller font */
+    margin-bottom: 3px; /* Increased spacing between items */
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.1)'}; /* Slight background for better visibility */
+    border-radius: 3px;
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis for overflow text */
+    max-width: 110px; /* Ensure it doesn't overflow the container */
+    width: 110px; /* Fixed width to prevent overflow */
   }
 `;
 
@@ -458,8 +478,16 @@ const InheritedMitigation = styled.div`
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: 2px 4px;
-    font-size: 10px;
-    margin-bottom: 1px;
+    font-size: 9px; /* Even smaller font for inherited mitigations */
+    margin-bottom: 2px;
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(150, 150, 150, 0.15)' : 'rgba(150, 150, 150, 0.1)'}; /* Slight background for better visibility */
+    border-radius: 3px;
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis for overflow text */
+    opacity: 0.9; /* Slightly more visible on mobile */
+    max-width: 110px; /* Ensure it doesn't overflow the container */
+    width: 110px; /* Fixed width to prevent overflow */
   }
 `;
 
@@ -858,20 +886,29 @@ function App() {
                                 <AssignedMitigation>
                                   <MitigationIcon>
                                     {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
-                                      <img src={mitigation.icon} alt={mitigation.name} style={{ maxHeight: '18px', maxWidth: '18px' }} /> :
+                                      <img src={mitigation.icon} alt={mitigation.name} style={{
+                                        maxHeight: isMobile ? '14px' : '18px',
+                                        maxWidth: isMobile ? '14px' : '18px',
+                                        display: 'block'
+                                      }} /> :
                                       mitigation.icon
                                     }
                                   </MitigationIcon>
-                                  <span style={{ flex: 1 }}>{mitigation.name}</span>
+                                  <span style={{
+                                    flex: 1,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: isMobile ? 'nowrap' : 'normal'
+                                  }}>{mitigation.name}</span>
                                   <button
                                     style={{
                                       cursor: 'pointer',
-                                      fontSize: '12px',
+                                      fontSize: isMobile ? '10px' : '12px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      width: '20px',
-                                      height: '20px',
+                                      width: isMobile ? '16px' : '20px',
+                                      height: isMobile ? '16px' : '20px',
                                       borderRadius: '50%',
                                       border: 'none',
                                       backgroundColor: 'rgba(255, 100, 100, 0.2)',
@@ -909,12 +946,26 @@ function App() {
                                       <InheritedMitigation>
                                         <MitigationIcon>
                                           {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
-                                            <img src={fullMitigation.icon} alt={fullMitigation.name} style={{ maxHeight: '18px', maxWidth: '18px', opacity: 0.7 }} /> :
+                                            <img src={fullMitigation.icon} alt={fullMitigation.name} style={{
+                                              maxHeight: isMobile ? '12px' : '18px',
+                                              maxWidth: isMobile ? '12px' : '18px',
+                                              opacity: isMobile ? 0.8 : 0.7,
+                                              display: 'block'
+                                            }} /> :
                                             fullMitigation.icon
                                           }
                                         </MitigationIcon>
-                                        <span style={{ flex: 1 }}>{fullMitigation.name}</span>
-                                        <small style={{ fontSize: '9px', opacity: 0.8 }}>{mitigation.remainingDuration.toFixed(1)}s</small>
+                                        <span style={{
+                                          flex: 1,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: isMobile ? 'nowrap' : 'normal'
+                                        }}>{fullMitigation.name}</span>
+                                        <small style={{
+                                          fontSize: isMobile ? '8px' : '9px',
+                                          opacity: isMobile ? 0.9 : 0.8,
+                                          flexShrink: 0
+                                        }}>{mitigation.remainingDuration.toFixed(1)}s</small>
                                       </InheritedMitigation>
                                     </Tooltip>
                                   );

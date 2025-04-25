@@ -23,7 +23,11 @@ const getOrCreatePortalContainer = () => {
 const TooltipContainer = styled.div`
   position: relative;
   display: inline-block;
-  width: 220px
+  width: 220px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: auto;
+  }
 `;
 
 const TooltipContent = styled.div`
@@ -63,11 +67,30 @@ const TooltipContent = styled.div`
       border-color: transparent transparent ${props.theme.mode === 'dark' ? '#222' : '#333'} transparent;
     `}
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: 180px;
+    max-width: 180px;
+    font-size: 12px;
+    padding: 8px;
+    line-height: 1.3;
+    ${props => props.$isMobileRight ? `
+      left: auto !important;
+      right: 10px !important;
+      transform: translateY(${props.$placeAbove ? '-100%' : '0'}) !important;
+
+      &::after {
+        left: auto;
+        right: 10px;
+        margin-left: 0;
+      }
+    ` : ''}
+  }
 `;
 
 function Tooltip({ children, content, disabled = false }) {
   const [isVisible, setIsVisible] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0, placeAbove: true });
+  const [position, setPosition] = useState({ top: 0, left: 0, placeAbove: true, isMobileRight: false });
   const containerRef = useRef(null);
   const portalContainer = typeof document !== 'undefined' ? getOrCreatePortalContainer() : null;
 
@@ -75,12 +98,16 @@ function Tooltip({ children, content, disabled = false }) {
   const calculatePosition = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const isMobile = viewportWidth <= 768;
 
       // Check if there's enough space above the element
       const spaceAbove = rect.top;
-      const tooltipHeight = 150; // Approximate height of tooltip
-      const minMargin = 10; // Minimum margin from top of viewport
+      const tooltipHeight = isMobile ? 100 : 150; // Approximate height of tooltip (smaller on mobile)
+      const minMargin = isMobile ? 5 : 10; // Smaller margin on mobile
+
+      // For mobile, check if we're in the right side of the screen
+      const isMobileRight = isMobile && rect.left > viewportWidth / 2;
 
       // Determine if tooltip should be placed above or below the element
       const placeAbove = spaceAbove >= tooltipHeight + minMargin;
@@ -90,6 +117,7 @@ function Tooltip({ children, content, disabled = false }) {
         top: placeAbove ? rect.top - minMargin : rect.bottom + minMargin,
         left: rect.left + rect.width / 2, // Centered horizontally
         placeAbove: placeAbove, // Store placement direction for arrow positioning
+        isMobileRight: isMobileRight // Store if we're on the right side of the screen on mobile
       });
     }
   };
@@ -129,6 +157,7 @@ function Tooltip({ children, content, disabled = false }) {
         <TooltipContent
           $isVisible={isVisible}
           $placeAbove={position.placeAbove}
+          $isMobileRight={position.isMobileRight}
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,
