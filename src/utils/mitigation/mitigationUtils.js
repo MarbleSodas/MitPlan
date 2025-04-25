@@ -197,10 +197,34 @@ export const generateMitigationBreakdown = (mitigations, damageType = 'both', bo
   return breakdown;
 };
 
+/**
+ * Check if a mitigation ability is available with the current selected jobs
+ *
+ * @param {Object} mitigation - The mitigation ability to check
+ * @param {Object} selectedJobs - Object containing selected jobs
+ * @returns {boolean} - Whether the mitigation is available with current job selection
+ */
+export const isMitigationAvailable = (mitigation, selectedJobs) => {
+  if (!mitigation || !selectedJobs) return false;
+
+  // Check if any of the jobs that can use this ability are selected
+  return mitigation.jobs.some(jobId => {
+    // Find which role this job belongs to
+    for (const [, jobs] of Object.entries(selectedJobs)) {
+      const job = jobs.find(j => j.id === jobId);
+      if (job && job.selected) {
+        return true;
+      }
+    }
+    return false;
+  });
+};
+
 // Create an index file for easier imports
 export default {
   findActiveMitigationsAtTime,
   calculateTotalMitigation,
   formatMitigation,
-  generateMitigationBreakdown
+  generateMitigationBreakdown,
+  isMitigationAvailable
 };

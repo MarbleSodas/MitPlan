@@ -18,6 +18,8 @@ import ImportExport from './features/plans/ImportExport/ImportExport'
 import ThemeToggle from './components/common/ThemeToggle/ThemeToggle'
 import KofiButton from './components/common/KofiButton/KofiButton'
 import DiscordButton from './components/common/DiscordButton/DiscordButton'
+import MobileBottomSheet from './components/mobile/MobileBottomSheet/MobileBottomSheet'
+import MobileMitigationSelector from './components/mobile/MobileMitigationSelector/MobileMitigationSelector'
 
 // Import utility functions from centralized utils module
 import {
@@ -28,7 +30,9 @@ import {
   getAbilityDescriptionForLevel,
   getAbilityCooldownForLevel,
   getAbilityMitigationValueForLevel,
-  getAbilityDurationForLevel
+  getAbilityDurationForLevel,
+  isMobileDevice,
+  isTouchDevice
 } from './utils'
 
 // Global styles to apply theme to the entire app
@@ -52,6 +56,10 @@ const AppContainer = styled.div`
   font-family: 'Arial', sans-serif;
   color: ${props => props.theme.colors.text};
   box-sizing: border-box;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.medium};
+  }
 `;
 
 const Header = styled.header`
@@ -60,6 +68,23 @@ const Header = styled.header`
   display: flex;
   flex-direction: column;
   position: relative;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-bottom: ${props => props.theme.spacing.large};
+  }
+
+  h1 {
+    @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+  }
+
+  p {
+    @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+      font-size: 14px;
+    }
+  }
 `;
 
 const HeaderTop = styled.div`
@@ -67,6 +92,11 @@ const HeaderTop = styled.div`
   gap: 8px;
   justify-content: flex-end;
   padding: ${props => props.theme.spacing.medium} 0;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.small} 0;
+    gap: 6px;
+  }
 `;
 
 const MainContent = styled.main`
@@ -91,6 +121,17 @@ const TimelineContainer = styled.div`
   min-height: 500px; /* Minimum height as fallback */
   display: flex;
   flex-direction: column;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.medium};
+    height: calc(100vh - 80px); /* Use viewport height for better scrolling in mobile view */
+    min-height: 400px;
+    margin-bottom: ${props => props.theme.spacing.medium};
+    flex: 1; /* Take up all available space */
+    -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
+    overscroll-behavior: contain; /* Prevent scroll chaining */
+    touch-action: pan-y; /* Allow vertical scrolling */
+  }
 `;
 
 const MitigationContainer = styled.div`
@@ -102,13 +143,25 @@ const MitigationContainer = styled.div`
   overflow-y: auto; /* Allow vertical scrolling */
   height: calc(100vh - 100px); /* Match the height of TimelineContainer */
   min-height: 500px; /* Minimum height as fallback */
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    display: none; /* Hide mitigation list on mobile */
+  }
 `;
 
 const TimelineHeader = styled.h2`
-  position: fixed;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   margin-top: 0;
   border-bottom: 2px solid ${props => props.theme.colors.border};
   padding-bottom: ${props => props.theme.spacing.medium};
+  background-color: ${props => props.theme.colors.secondary};
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 18px;
+    padding-bottom: ${props => props.theme.spacing.small};
+  }
 `;
 
 const BossActionsList = styled.div`
@@ -119,6 +172,15 @@ const BossActionsList = styled.div`
   width: 100%;
   margin: 0;
   flex-grow: 1; /* Allow list to fill available space */
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.small};
+    overflow-y: auto; /* Ensure scrolling works in mobile view */
+    height: 100%; /* Take up full height */
+    -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
+    overscroll-behavior: contain; /* Prevent scroll chaining */
+    touch-action: pan-y; /* Allow vertical scrolling */
+  }
 `;
 
 const BossAction = styled.div`
@@ -158,6 +220,18 @@ const BossAction = styled.div`
     transform: translateY(-2px);
     border-color: ${props => props.theme.colors.primary};
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.small};
+    padding-top: 35px; /* Slightly smaller padding for time indicator on mobile */
+    padding-right: ${props => props.$hasAssignments ? '120px' : props.theme.spacing.small}; /* Less space for mitigations on mobile */
+    min-height: 120px; /* Smaller minimum height on mobile */
+
+    &:active {
+      transform: translateY(-1px);
+      box-shadow: ${props => props.theme.shadows.small};
+    }
+  }
 `;
 
 const ActionTime = styled.div`
@@ -182,6 +256,12 @@ const ActionTime = styled.div`
   &::before {
     content: '⏱️';
     margin-right: 5px;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 14px;
+    padding: 6px;
+    height: 20px;
   }
 `;
 
@@ -240,6 +320,9 @@ const MitigationList = styled.div`
   gap: ${props => props.theme.spacing.medium};
   flex-grow: 1; /* Allow list to fill available space */
   overflow-y: auto; /* Enable scrolling if needed */
+  -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
+  overscroll-behavior: contain; /* Prevent scroll chaining */
+  touch-action: pan-y; /* Allow vertical scrolling */
 `;
 
 const MitigationItem = styled.div`
@@ -300,6 +383,18 @@ const AssignedMitigations = styled.div`
   overflow-y: auto; /* Allow scrolling if many mitigations */
   background-color: transparent;
   border-bottom-right-radius: ${props => props.theme.borderRadius.medium};
+  -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: 120px;
+    top: 30px; /* Adjust for smaller time indicator */
+    padding: 4px;
+    padding-left: 8px;
+    gap: 4px;
+    height: calc(100% - 30px);
+    touch-action: pan-y; /* Allow vertical scrolling */
+    overscroll-behavior: contain; /* Prevent scroll chaining */
+  }
 `;
 
 const AssignedMitigation = styled.div`
@@ -319,6 +414,11 @@ const AssignedMitigation = styled.div`
   &:hover {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.1)' : 'rgba(51, 153, 255, 0.05)'};
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 2px 4px;
+    font-size: 11px;
+  }
 `;
 
 const InheritedMitigations = styled.div`
@@ -328,6 +428,12 @@ const InheritedMitigations = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${props => props.theme.spacing.small};
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-top: 6px;
+    padding-top: 3px;
+    gap: 2px;
+  }
 `;
 
 const InheritedMitigation = styled.div`
@@ -349,6 +455,12 @@ const InheritedMitigation = styled.div`
   &:hover {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.05)' : 'rgba(51, 153, 255, 0.02)'};
   }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 2px 4px;
+    font-size: 10px;
+    margin-bottom: 1px;
+  }
 `;
 
 const StatusMessage = styled.div`
@@ -362,6 +474,12 @@ const StatusMessage = styled.div`
   align-items: center;
   font-size: 14px;
   position: relative;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin: 8px 0;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -372,6 +490,12 @@ const CloseButton = styled.button`
   cursor: pointer;
   padding: 0 0 0 10px;
   margin-left: 10px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 16px;
+    padding: 0 0 0 8px;
+    margin-left: 8px;
+  }
 `;
 
 const DragPreview = styled.div`
@@ -451,6 +575,29 @@ function App() {
   // Local state
   const [statusMessage, setStatusMessage] = useState(''); // Status message for user feedback
   const [activeId, setActiveId] = useState(null); // For drag and drop operations
+  const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false); // For mobile bottom sheet
+  const [selectedActionForMobile, setSelectedActionForMobile] = useState(null); // For mobile mitigation assignment
+
+  // Detect if we're on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile device on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(isMobileDevice());
+    };
+
+    // Check initially
+    checkMobile();
+
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Autosave is always enabled
 
@@ -477,7 +624,7 @@ function App() {
     if (mitigation) {
       setActiveMitigation(mitigation);
     }
-  }, [mitigationAbilities]);
+  }, [mitigationAbilities, setActiveMitigation]);
 
   // Handle drag end - memoized with useCallback
   const handleDragEnd = useCallback((event) => {
@@ -511,18 +658,51 @@ function App() {
         const result = addMitigation(selectedBossAction.id, mitigation);
 
         if (result && result.conflicts && result.conflicts.removedCount > 0) {
-          // Show message about removed future assignments
+          // Show message about removed future assignments only if there are conflicts
           setStatusMessage(`Added ${mitigation.name} to ${selectedBossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
-        } else {
-          // Show success message
-          setStatusMessage(`Added ${mitigation.name} to ${selectedBossAction.name}`);
         }
+        // No longer show a success message for normal assignments
       }
     }
 
     setActiveId(null);
     setActiveMitigation(null);
-  }, [selectedBossAction, mitigationAbilities, checkAbilityCooldown, addMitigation]);
+  }, [selectedBossAction, mitigationAbilities, checkAbilityCooldown, addMitigation, setStatusMessage, setActiveMitigation]);
+
+  // Handle mobile mitigation assignment
+  const handleMobileAssignMitigation = useCallback((bossActionId, mitigation) => {
+    // Check if the ability would be on cooldown
+    const bossAction = sortedBossActions.find(action => action.id === bossActionId);
+    if (!bossAction) return;
+
+    const cooldownResult = checkAbilityCooldown(mitigation.id, bossAction.time);
+
+    if (cooldownResult && cooldownResult.isOnCooldown) {
+      // Ability is on cooldown, show a message
+      setStatusMessage(`Cannot assign ${mitigation.name} to ${bossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
+    } else {
+      // Add the mitigation to the boss action
+      const result = addMitigation(bossActionId, mitigation);
+
+      if (result && result.conflicts && result.conflicts.removedCount > 0) {
+        // Show message about removed future assignments only if there are conflicts
+        setStatusMessage(`Added ${mitigation.name} to ${bossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+      }
+      // No longer show a success message for normal assignments
+    }
+  }, [sortedBossActions, addMitigation, checkAbilityCooldown, setStatusMessage]);
+
+  // Handle boss action click for mobile
+  const handleBossActionClick = useCallback((action) => {
+    if (isMobile) {
+      // On mobile, open the bottom sheet with the selected action
+      setSelectedActionForMobile(action);
+      setIsMobileBottomSheetOpen(true);
+    } else {
+      // On desktop, use the existing toggle selection behavior
+      toggleBossActionSelection(action);
+    }
+  }, [isMobile, toggleBossActionSelection]);
 
   // Add a keyboard handler to deselect boss action when Escape key is pressed
   useEffect(() => {
@@ -602,7 +782,6 @@ function App() {
 
           <MainContent>
             <TimelineContainer>
-              <TimelineHeader>Boss Timeline</TimelineHeader>
               <BossActionsList>
                 {sortedBossActions.map(action => (
                 <Droppable
@@ -615,8 +794,11 @@ function App() {
                     $time={action.time}
                     $importance={action.importance}
                     $isSelected={selectedBossAction && selectedBossAction.id === action.id}
-                    $hasAssignments={assignments[action.id] && assignments[action.id].length > 0}
-                    onClick={() => toggleBossActionSelection(action)}
+                    $hasAssignments={
+                      (assignments[action.id] && assignments[action.id].length > 0) ||
+                      getActiveMitigations(action.id, action.time).length > 0
+                    }
+                    onClick={() => handleBossActionClick(action)}
                   >
 
                     <ActionTime>{action.time} seconds</ActionTime>
@@ -655,84 +837,96 @@ function App() {
                       ) : null;
                     })()}
 
-                    {/* Render directly assigned mitigations */}
-                    {assignments[action.id] && assignments[action.id].length > 0 && (
-                      <AssignedMitigations>
-                        {assignments[action.id].map(mitigation => (
-                          <Tooltip
-                            key={mitigation.id}
-                            content={`${mitigation.name}: ${getAbilityDescriptionForLevel(mitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(mitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(mitigation, currentBossLevel)}s)${mitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(mitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel) * 100}%`}` : ''}`}
-                          >
-                            <AssignedMitigation>
-                              <MitigationIcon>
-                                {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
-                                  <img src={mitigation.icon} alt={mitigation.name} style={{ maxHeight: '18px', maxWidth: '18px' }} /> :
-                                  mitigation.icon
-                                }
-                              </MitigationIcon>
-                              <span style={{ flex: 1 }}>{mitigation.name}</span>
-                              <span
-                                style={{
-                                  opacity: 0.6,
-                                  cursor: 'pointer',
-                                  fontSize: '10px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '16px',
-                                  height: '16px',
-                                  borderRadius: '50%',
-                                  transition: 'opacity 0.2s ease, background-color 0.2s ease'
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeMitigation(action.id, mitigation.id);
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-                                onMouseOut={(e) => e.currentTarget.style.opacity = '0.6'}
+                    {/* Determine if we have any mitigations to display */}
+                    {(() => {
+                      // Get directly assigned mitigations
+                      const directMitigations = assignments[action.id] || [];
+
+                      // Get inherited mitigations from previous actions
+                      const activeMitigations = getActiveMitigations(action.id, action.time);
+
+                      // Only render the container if we have any mitigations to display
+                      if (directMitigations.length > 0 || activeMitigations.length > 0) {
+                        return (
+                          <AssignedMitigations>
+                            {/* Render directly assigned mitigations */}
+                            {directMitigations.map(mitigation => (
+                              <Tooltip
+                                key={mitigation.id}
+                                content={`${mitigation.name}: ${getAbilityDescriptionForLevel(mitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(mitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(mitigation, currentBossLevel)}s)${mitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(mitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel) * 100}%`}` : ''}`}
                               >
-                                ×
-                              </span>
-                            </AssignedMitigation>
-                          </Tooltip>
-                        ))}
-
-                        {/* Render inherited mitigations from previous boss actions */}
-                        {(() => {
-                          // Find active mitigations at this action's time
-                          const activeMitigations = getActiveMitigations(action.id, action.time);
-
-                          // If there are active mitigations, render them
-                          return activeMitigations.length > 0 ? (
-                            <InheritedMitigations>
-                              {activeMitigations.map(mitigation => {
-                                // Find the full mitigation data
-                                const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
-                                if (!fullMitigation) return null;
-
-                                return (
-                                  <Tooltip
-                                    key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
-                                    content={`${fullMitigation.name}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s\n${fullMitigation.mitigationValue ? `Mitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
+                                <AssignedMitigation>
+                                  <MitigationIcon>
+                                    {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
+                                      <img src={mitigation.icon} alt={mitigation.name} style={{ maxHeight: '18px', maxWidth: '18px' }} /> :
+                                      mitigation.icon
+                                    }
+                                  </MitigationIcon>
+                                  <span style={{ flex: 1 }}>{mitigation.name}</span>
+                                  <button
+                                    style={{
+                                      cursor: 'pointer',
+                                      fontSize: '12px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '20px',
+                                      height: '20px',
+                                      borderRadius: '50%',
+                                      border: 'none',
+                                      backgroundColor: 'rgba(255, 100, 100, 0.2)',
+                                      color: 'inherit',
+                                      transition: 'background-color 0.2s ease',
+                                      padding: 0
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeMitigation(action.id, mitigation.id);
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 100, 100, 0.3)'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 100, 100, 0.2)'}
+                                    aria-label={`Remove ${mitigation.name}`}
                                   >
-                                    <InheritedMitigation>
-                                      <MitigationIcon>
-                                        {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
-                                          <img src={fullMitigation.icon} alt={fullMitigation.name} style={{ maxHeight: '18px', maxWidth: '18px', opacity: 0.7 }} /> :
-                                          fullMitigation.icon
-                                        }
-                                      </MitigationIcon>
-                                      <span style={{ flex: 1 }}>{fullMitigation.name}</span>
-                                      <small style={{ fontSize: '9px', opacity: 0.8 }}>{mitigation.remainingDuration.toFixed(1)}s</small>
-                                    </InheritedMitigation>
-                                  </Tooltip>
-                                );
-                              })}
-                            </InheritedMitigations>
-                          ) : null;
-                        })()}
-                      </AssignedMitigations>
-                    )}
+                                    ×
+                                  </button>
+                                </AssignedMitigation>
+                              </Tooltip>
+                            ))}
+
+                            {/* Render inherited mitigations from previous boss actions */}
+                            {activeMitigations.length > 0 && (
+                              <InheritedMitigations>
+                                {activeMitigations.map(mitigation => {
+                                  // Find the full mitigation data
+                                  const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+                                  if (!fullMitigation) return null;
+
+                                  return (
+                                    <Tooltip
+                                      key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
+                                      content={`${fullMitigation.name}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s\n${fullMitigation.mitigationValue ? `Mitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
+                                    >
+                                      <InheritedMitigation>
+                                        <MitigationIcon>
+                                          {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
+                                            <img src={fullMitigation.icon} alt={fullMitigation.name} style={{ maxHeight: '18px', maxWidth: '18px', opacity: 0.7 }} /> :
+                                            fullMitigation.icon
+                                          }
+                                        </MitigationIcon>
+                                        <span style={{ flex: 1 }}>{fullMitigation.name}</span>
+                                        <small style={{ fontSize: '9px', opacity: 0.8 }}>{mitigation.remainingDuration.toFixed(1)}s</small>
+                                      </InheritedMitigation>
+                                    </Tooltip>
+                                  );
+                                })}
+                              </InheritedMitigations>
+                            )}
+                          </AssignedMitigations>
+                        );
+                      }
+
+                      return null;
+                    })()}
                   </BossAction>
                 </Droppable>
               ))}
@@ -740,7 +934,6 @@ function App() {
             </TimelineContainer>
 
             <MitigationContainer>
-              <TimelineHeader>Mitigation Abilities</TimelineHeader>
               <MitigationList>
                 {filterAbilitiesByLevel(mitigationAbilities, selectedJobs, currentBossLevel)
                   .map(mitigation => (
@@ -808,6 +1001,30 @@ function App() {
             )}
           </DragOverlay>
         </DndContext>
+
+        {/* Mobile Bottom Sheet for Mitigation Assignment */}
+        {isMobile && (
+          <MobileBottomSheet
+            isOpen={isMobileBottomSheetOpen}
+            onClose={() => {
+              setIsMobileBottomSheetOpen(false);
+              setSelectedActionForMobile(null);
+            }}
+            title={selectedActionForMobile ? `Assign Mitigations: ${selectedActionForMobile.name}` : 'Assign Mitigations'}
+          >
+            {selectedActionForMobile && (
+              <MobileMitigationSelector
+                mitigations={filterAbilitiesByLevel(mitigationAbilities, selectedJobs, currentBossLevel)}
+                bossAction={selectedActionForMobile}
+                assignments={assignments}
+                onAssignMitigation={handleMobileAssignMitigation}
+                onRemoveMitigation={removeMitigation}
+                checkAbilityCooldown={checkAbilityCooldown}
+                bossLevel={currentBossLevel}
+              />
+            )}
+          </MobileBottomSheet>
+        )}
       </>
   );
 }

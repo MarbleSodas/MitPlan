@@ -23,6 +23,11 @@ const BossList = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    gap: 8px;
+    justify-content: center;
+  }
 `;
 
 const BossCard = styled.div`
@@ -44,6 +49,16 @@ const BossCard = styled.div`
     border-color: ${props => props.theme.colors.primary};
     transform: translateY(-2px);
     box-shadow: ${props => props.theme.shadows.medium};
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: calc(50% - 8px); /* Two cards per row with gap */
+    padding: 8px;
+
+    &:active {
+      transform: translateY(-1px);
+      box-shadow: ${props => props.theme.shadows.small};
+    }
   }
 `;
 

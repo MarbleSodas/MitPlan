@@ -108,7 +108,19 @@ Contributions are welcome! If you'd like to contribute:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📜 License
+## � Community
+
+Join our Discord server to stay updated on new features, report bugs, request features, and connect with other users:
+
+[Join the MitPlan Discord Server](https://discord.gg/YOUR_INVITE_LINK)
+
+- Get announcements about new features and updates
+- Request new features and enhancements
+- Report bugs and issues
+- Share your suggestions and ideas
+- Connect with other FFXIV players using MitPlan
+
+## �📜 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 

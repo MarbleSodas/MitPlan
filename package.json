@@ -14,7 +14,10 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
+    "dotenv": "^16.5.0",
     "lucide-react": "^0.503.0",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^24.7.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "styled-components": "^6.1.17"

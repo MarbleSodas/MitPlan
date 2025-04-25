@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+fflogs-api.js
+fetch-fflogs-data.js
+analyze-boss-actions.js
+BOSS_ACTION_ANALYSIS.md
+MITIGATION_ANALYSIS.md
+FFLOGS_ANALYSIS_GUIDE.md
