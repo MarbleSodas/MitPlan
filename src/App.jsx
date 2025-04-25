@@ -658,12 +658,10 @@ function App() {
         const result = addMitigation(selectedBossAction.id, mitigation);
 
         if (result && result.conflicts && result.conflicts.removedCount > 0) {
-          // Show message about removed future assignments
+          // Show message about removed future assignments only if there are conflicts
           setStatusMessage(`Added ${mitigation.name} to ${selectedBossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
-        } else {
-          // Show success message
-          setStatusMessage(`Added ${mitigation.name} to ${selectedBossAction.name}`);
         }
+        // No longer show a success message for normal assignments
       }
     }
 
@@ -687,12 +685,10 @@ function App() {
       const result = addMitigation(bossActionId, mitigation);
 
       if (result && result.conflicts && result.conflicts.removedCount > 0) {
-        // Show message about removed future assignments
+        // Show message about removed future assignments only if there are conflicts
         setStatusMessage(`Added ${mitigation.name} to ${bossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
-      } else {
-        // Show success message
-        setStatusMessage(`Added ${mitigation.name} to ${bossAction.name}`);
       }
+      // No longer show a success message for normal assignments
     }
   }, [sortedBossActions, addMitigation, checkAbilityCooldown, setStatusMessage]);
 
@@ -867,28 +863,32 @@ function App() {
                                     }
                                   </MitigationIcon>
                                   <span style={{ flex: 1 }}>{mitigation.name}</span>
-                                  <span
+                                  <button
                                     style={{
-                                      opacity: 0.6,
                                       cursor: 'pointer',
-                                      fontSize: '10px',
+                                      fontSize: '12px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      width: '16px',
-                                      height: '16px',
+                                      width: '20px',
+                                      height: '20px',
                                       borderRadius: '50%',
-                                      transition: 'opacity 0.2s ease, background-color 0.2s ease'
+                                      border: 'none',
+                                      backgroundColor: 'rgba(255, 100, 100, 0.2)',
+                                      color: 'inherit',
+                                      transition: 'background-color 0.2s ease',
+                                      padding: 0
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       removeMitigation(action.id, mitigation.id);
                                     }}
-                                    onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-                                    onMouseOut={(e) => e.currentTarget.style.opacity = '0.6'}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 100, 100, 0.3)'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 100, 100, 0.2)'}
+                                    aria-label={`Remove ${mitigation.name}`}
                                   >
                                     ×
-                                  </span>
+                                  </button>
                                 </AssignedMitigation>
                               </Tooltip>
                             ))}
