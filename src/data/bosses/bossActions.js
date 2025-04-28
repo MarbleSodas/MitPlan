@@ -8,7 +8,7 @@ export const bossActionsMap = {
       id: 'tidal_roar_1',
       name: 'Tidal Roar',
       time: 10, // 0 + 10
-      description: 'High party-wide magical damage that inflicts Dropsy. Also applies a DoT effect (initial hit: ~65,463, DoT: ~203,390, total: ~268,853).',
+      description: 'High party-wide magical damage that inflicts Dropsy. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).',
       unmitigatedDamage: '~81,436',
       damageType: 'magical',
       importance: 'high',
@@ -78,20 +78,20 @@ export const bossActionsMap = {
       id: 'angry_seas_1',
       name: 'Angry Seas',
       time: 205, // 195 + 10
-      description: 'High party-wide magical damage with knockback.',
+      description: 'Low party-wide mixed damage with knockback mechanics.',
       unmitigatedDamage: '~27,199',
       damageType: 'both',
-      importance: 'low',
+      importance: 'medium',
       icon: '🌊'
     },
     {
       id: 'hydro_combo_3',
       name: 'Hydrofall || Hydrobullet',
       time: 207, // 197 + 10
-      description: 'Moderate party-wide magical damage with either stack and spread mechanics.',
+      description: 'High party-wide magical damage with either stack and spread mechanics.',
       unmitigatedDamage: '~68,233',
       damageType: 'magical',
-      importance: 'medium',
+      importance: 'high',
       icon: '💧'
     },
     {
@@ -118,7 +118,7 @@ export const bossActionsMap = {
       id: 'burst_1',
       name: 'Burst',
       time: 234, // 224 + 10
-      description: 'Moderate party-wide magical damage.',
+      description: 'Low party-wide magical damage.',
       unmitigatedDamage: '~27,279',
       damageType: 'magical',
       importance: 'medium',
@@ -135,7 +135,7 @@ export const bossActionsMap = {
       icon: '🫧'
     },
     {
-      id: 'hydro_combo_3',
+      id: 'hydro_combo_5',
       name: 'Hydrofall & Hydrobullet',
       time: 280, // 270 + 10
       description: 'Moderate party-wide magical damage with both stack and spread mechanics.',
@@ -158,7 +158,7 @@ export const bossActionsMap = {
       id: 'tidal_roar_2',
       name: 'Tidal Roar',
       time: 320, // 0 + 10
-      description: 'High party-wide magical damage that inflicts Dropsy. Also applies a DoT effect (initial hit: ~65,463, DoT: ~203,390, total: ~268,853).',
+      description: 'High party-wide magical damage that inflicts Dropsy. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).',
       unmitigatedDamage: '~81,436',
       damageType: 'magical',
       importance: 'high',
