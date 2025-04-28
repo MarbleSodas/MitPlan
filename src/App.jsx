@@ -35,7 +35,8 @@ import {
   isTouchDevice,
   checkUrlForPlanData,
   reconstructMitigations,
-  reconstructJobs
+  reconstructJobs,
+  isMitigationAvailable
 } from './utils'
 
 // Global styles to apply theme to the entire app
@@ -887,8 +888,13 @@ function App() {
                     $importance={action.importance}
                     $isSelected={selectedBossAction && selectedBossAction.id === action.id}
                     $hasAssignments={
-                      (assignments[action.id] && assignments[action.id].length > 0) ||
-                      getActiveMitigations(action.id, action.time).length > 0
+                      (assignments[action.id] && assignments[action.id].filter(mitigation =>
+                        isMitigationAvailable(mitigation, selectedJobs)
+                      ).length > 0) ||
+                      getActiveMitigations(action.id, action.time).filter(mitigation => {
+                        const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+                        return fullMitigation && isMitigationAvailable(fullMitigation, selectedJobs);
+                      }).length > 0
                     }
                     onClick={() => handleBossActionClick(action)}
                   >
@@ -901,8 +907,13 @@ function App() {
                       <ActionName>{action.name}</ActionName>
                     </div>
                     <ActionDescription $hasAssignments={
-                      (assignments[action.id] && assignments[action.id].length > 0) ||
-                      getActiveMitigations(action.id, action.time).length > 0
+                      (assignments[action.id] && assignments[action.id].filter(mitigation =>
+                        isMitigationAvailable(mitigation, selectedJobs)
+                      ).length > 0) ||
+                      getActiveMitigations(action.id, action.time).filter(mitigation => {
+                        const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+                        return fullMitigation && isMitigationAvailable(fullMitigation, selectedJobs);
+                      }).length > 0
                     }>
                       {action.description}
                       {action.unmitigatedDamage && (
@@ -917,6 +928,11 @@ function App() {
                       // Get directly assigned mitigations
                       const directMitigations = assignments[action.id] || [];
 
+                      // Filter out mitigations that don't have any corresponding selected jobs
+                      const filteredDirectMitigations = directMitigations.filter(mitigation =>
+                        isMitigationAvailable(mitigation, selectedJobs)
+                      );
+
                       // Get inherited mitigations from previous actions
                       const inheritedMitigations = getActiveMitigations(action.id, action.time)
                         .map(m => {
@@ -924,8 +940,13 @@ function App() {
                           return mitigationAbilities.find(full => full.id === m.id);
                         }).filter(Boolean);
 
+                      // Filter out inherited mitigations that don't have any corresponding selected jobs
+                      const filteredInheritedMitigations = inheritedMitigations.filter(mitigation =>
+                        isMitigationAvailable(mitigation, selectedJobs)
+                      );
+
                       // Combine both types of mitigations
-                      const allMitigations = [...directMitigations, ...inheritedMitigations];
+                      const allMitigations = [...filteredDirectMitigations, ...filteredInheritedMitigations];
 
                       // Only show if there are any mitigations
                       return allMitigations.length > 0 ? (
@@ -944,15 +965,30 @@ function App() {
                       // Get directly assigned mitigations
                       const directMitigations = assignments[action.id] || [];
 
+                      // Filter out mitigations that don't have any corresponding selected jobs
+                      const filteredDirectMitigations = directMitigations.filter(mitigation =>
+                        isMitigationAvailable(mitigation, selectedJobs)
+                      );
+
                       // Get inherited mitigations from previous actions
                       const activeMitigations = getActiveMitigations(action.id, action.time);
 
+                      // Filter out inherited mitigations that don't have any corresponding selected jobs
+                      const filteredActiveMitigations = activeMitigations.filter(mitigation => {
+                        // Find the full mitigation data
+                        const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+                        if (!fullMitigation) return false;
+
+                        // Check if any of the jobs that can use this ability are selected
+                        return isMitigationAvailable(fullMitigation, selectedJobs);
+                      });
+
                       // Only render the container if we have any mitigations to display
-                      if (directMitigations.length > 0 || activeMitigations.length > 0) {
+                      if (filteredDirectMitigations.length > 0 || filteredActiveMitigations.length > 0) {
                         return (
                           <AssignedMitigations>
                             {/* Render directly assigned mitigations */}
-                            {directMitigations.map(mitigation => (
+                            {filteredDirectMitigations.map(mitigation => (
                               <Tooltip
                                 key={mitigation.id}
                                 content={`${mitigation.name}: ${getAbilityDescriptionForLevel(mitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(mitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(mitigation, currentBossLevel)}s)${mitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(mitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel) * 100}%`}` : ''}`}
@@ -1005,9 +1041,9 @@ function App() {
                             ))}
 
                             {/* Render inherited mitigations from previous boss actions */}
-                            {activeMitigations.length > 0 && (
+                            {filteredActiveMitigations.length > 0 && (
                               <InheritedMitigations>
-                                {activeMitigations.map(mitigation => {
+                                {filteredActiveMitigations.map(mitigation => {
                                   // Find the full mitigation data
                                   const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
                                   if (!fullMitigation) return null;
@@ -1146,6 +1182,7 @@ function App() {
                 onRemoveMitigation={removeMitigation}
                 checkAbilityCooldown={checkAbilityCooldown}
                 bossLevel={currentBossLevel}
+                selectedJobs={selectedJobs}
               />
             )}
           </MobileBottomSheet>

@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { X, Trash2 } from 'lucide-react';
+import { isMitigationAvailable } from '../../../utils';
 
 // Container for the entire component
 const Container = styled.div`
@@ -257,10 +258,16 @@ const MobileMitigationSelector = ({
   onAssignMitigation,
   onRemoveMitigation,
   checkAbilityCooldown,
-  bossLevel
+  bossLevel,
+  selectedJobs
 }) => {
   // Get the current assignments for this boss action
   const currentAssignments = assignments[bossAction.id] || [];
+
+  // Filter out mitigations that don't have any corresponding selected jobs
+  const filteredAssignments = currentAssignments.filter(mitigation =>
+    isMitigationAvailable(mitigation, selectedJobs)
+  );
 
   return (
     <Container>
@@ -349,12 +356,12 @@ const MobileMitigationSelector = ({
       <AssignedMitigationsSection>
         <SectionTitle>
           Assigned Mitigations
-          {currentAssignments.length > 0 && ` (${currentAssignments.length})`}
+          {filteredAssignments.length > 0 && ` (${filteredAssignments.length})`}
         </SectionTitle>
 
         <AssignedMitigationsList>
-          {currentAssignments.length > 0 ? (
-            currentAssignments.map(mitigation => (
+          {filteredAssignments.length > 0 ? (
+            filteredAssignments.map(mitigation => (
               <AssignedMitigationItem key={mitigation.id}>
                 <AssignedMitigationName>
                   {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
