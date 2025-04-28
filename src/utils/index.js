@@ -29,6 +29,9 @@ export {
   isTouchDevice
 } from './device/deviceUtils';
 
+// Commented out server-side log processing functions that use Node.js modules
+// These functions are not compatible with browser environments
+/*
 export {
   readCsvFile,
   parseTimeToSeconds,
@@ -41,3 +44,4 @@ export {
   saveBossActionsToJson,
   processAndSaveBossLogs
 } from './logs/processLogFiles';
+*/
