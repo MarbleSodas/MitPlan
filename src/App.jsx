@@ -836,7 +836,14 @@ function App() {
                       </ActionIcon>
                       <ActionName>{action.name}</ActionName>
                     </div>
-                    <ActionDescription>{action.description}</ActionDescription>
+                    <ActionDescription>
+                      {action.description}
+                      {action.unmitigatedDamage && (
+                        <div style={{ marginTop: '5px', fontWeight: 'bold' }}>
+                          Unmitigated Damage: {action.unmitigatedDamage}
+                        </div>
+                      )}
+                    </ActionDescription>
 
                     {/* Calculate and display total mitigation including inherited mitigations */}
                     {(() => {

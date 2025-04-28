@@ -210,6 +210,43 @@ const NoAssignmentsMessage = styled.div`
   border-radius: ${props => props.theme.borderRadius.medium};
 `;
 
+const BossActionDetails = styled.div`
+  background-color: ${props => props.theme.colors.cardBackground};
+  border-radius: ${props => props.theme.borderRadius.medium};
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: ${props => props.theme.shadows.small};
+`;
+
+const BossActionTime = styled.div`
+  font-size: 14px;
+  color: ${props => props.theme.colors.lightText};
+  margin-bottom: 8px;
+`;
+
+const BossActionName = styled.div`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${props => props.theme.colors.text};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+const BossActionDescription = styled.div`
+  font-size: 15px;
+  color: ${props => props.theme.colors.lightText};
+  line-height: 1.4;
+`;
+
+const UnmitigatedDamage = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  color: ${props => props.theme.colors.text};
+  margin-top: 8px;
+`;
+
 const MobileMitigationSelector = ({
   mitigations,
   bossAction,
@@ -224,6 +261,21 @@ const MobileMitigationSelector = ({
 
   return (
     <Container>
+      <BossActionDetails>
+        <BossActionTime>{bossAction.time} seconds</BossActionTime>
+        <BossActionName>
+          {bossAction.icon} {bossAction.name}
+        </BossActionName>
+        <BossActionDescription>
+          {bossAction.description}
+        </BossActionDescription>
+        {bossAction.unmitigatedDamage && (
+          <UnmitigatedDamage>
+            Unmitigated Damage: {bossAction.unmitigatedDamage}
+          </UnmitigatedDamage>
+        )}
+      </BossActionDetails>
+
       <AvailableMitigationsSection>
         <SectionTitle>Available Mitigations</SectionTitle>
         <MitigationList>

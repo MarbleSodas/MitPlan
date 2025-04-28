@@ -1,0 +1,162 @@
+[
+  {
+    "id": "tidal_roar_1",
+    "name": "Tidal Roar",
+    "time": 0,
+    "description": "Tidal Roar - high party-wide magical damage. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).",
+    "unmitigatedDamage": "~81,436",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⭕"
+  },
+  {
+    "id": "bubble_net_1",
+    "name": "Bubble Net",
+    "time": 19,
+    "description": "Bubble Net - high party-wide magical damage with debuff mechanics.",
+    "unmitigatedDamage": "~71,090",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🫧"
+  },
+  {
+    "id": "hydrofall_1",
+    "name": "Hydrofall",
+    "time": 49,
+    "description": "Hydrofall - moderate party-wide magical damage with stack mechanics. This is one possible action at this time - the boss may use Hydrobullet instead (randomized).",
+    "unmitigatedDamage": "~42,098",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "hydrofall_2",
+    "name": "Hydrofall",
+    "time": 81,
+    "description": "Hydrofall - moderate party-wide magical damage with stack mechanics. This is one possible action at this time - the boss may use Hydrobullet instead (randomized).",
+    "unmitigatedDamage": "~43,461",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "hydrobullet_1",
+    "name": "Hydrobullet",
+    "time": 87,
+    "description": "Hydrobullet - moderate party-wide magical damage with spread mechanics. This is one possible action at this time - the boss may use Hydrofall instead (randomized).",
+    "unmitigatedDamage": "~43,341",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "hydrofall_3",
+    "name": "Hydrofall",
+    "time": 118,
+    "description": "Hydrofall - moderate party-wide magical damage with stack mechanics.",
+    "unmitigatedDamage": "~42,239",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "bubble_net_2",
+    "name": "Bubble Net",
+    "time": 150,
+    "description": "Bubble Net - high party-wide magical damage with debuff mechanics.",
+    "unmitigatedDamage": "~70,362",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🫧"
+  },
+  {
+    "id": "hydrobullet_2",
+    "name": "Hydrobullet",
+    "time": 162,
+    "description": "Hydrobullet - moderate party-wide magical damage with spread mechanics.",
+    "unmitigatedDamage": "~42,730",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "angry_seas_1",
+    "name": "Angry Seas",
+    "time": 195,
+    "description": "Angry Seas - low party-wide mixed damage with knockback mechanics.",
+    "unmitigatedDamage": "~27,199",
+    "damageType": "both",
+    "importance": "medium",
+    "icon": "🌊"
+  },
+  {
+    "id": "hydrobullet_3",
+    "name": "Hydrobullet",
+    "time": 197,
+    "description": "Hydrobullet - high party-wide magical damage with spread mechanics. This is one possible action at this time - the boss may use Hydrofall instead (randomized).",
+    "unmitigatedDamage": "~68,233",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💧"
+  },
+  {
+    "id": "hydrofall_4",
+    "name": "Hydrofall",
+    "time": 202,
+    "description": "Hydrofall - moderate party-wide magical damage with stack mechanics. This is one possible action at this time - the boss may use Hydrobullet instead (randomized).",
+    "unmitigatedDamage": "~41,126",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "bubble_net_3",
+    "name": "Bubble Net",
+    "time": 207,
+    "description": "Bubble Net - high party-wide magical damage with debuff mechanics.",
+    "unmitigatedDamage": "~71,767",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🫧"
+  },
+  {
+    "id": "burst_1",
+    "name": "Burst",
+    "time": 224,
+    "description": "Burst - low party-wide magical damage.",
+    "unmitigatedDamage": "~27,279",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💥"
+  },
+  {
+    "id": "bubble_net_4",
+    "name": "Bubble Net",
+    "time": 240,
+    "description": "Bubble Net - high party-wide magical damage with debuff mechanics.",
+    "unmitigatedDamage": "~70,824",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🫧"
+  },
+  {
+    "id": "hydrobullet_4",
+    "name": "Hydrobullet",
+    "time": 270,
+    "description": "Hydrobullet - moderate party-wide magical damage with spread mechanics. This is one possible action at this time - the boss may use Hydrofall instead (randomized).",
+    "unmitigatedDamage": "~43,424",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  },
+  {
+    "id": "hydrofall_5",
+    "name": "Hydrofall",
+    "time": 299,
+    "description": "Hydrofall - moderate party-wide magical damage with stack mechanics.",
+    "unmitigatedDamage": "~40,537",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💧"
+  }
+]

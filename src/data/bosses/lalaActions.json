@@ -1,0 +1,62 @@
+[
+  {
+    "id": "targeted_light_1",
+    "name": "Targeted Light",
+    "time": 0,
+    "description": "Targeted Light - moderate party-wide mixed damage.",
+    "unmitigatedDamage": "~38,987",
+    "damageType": "both",
+    "importance": "medium",
+    "icon": "✨"
+  },
+  {
+    "id": "arcane_combustion_1",
+    "name": "Arcane Combustion",
+    "time": 46,
+    "description": "Arcane Combustion - moderate party-wide mixed damage. This is one possible action at this time - the boss may use Symmetric Surge instead (randomized).",
+    "unmitigatedDamage": "~50,880",
+    "damageType": "both",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "powerful_light_1",
+    "name": "Powerful Light",
+    "time": 161,
+    "description": "Powerful Light - moderate party-wide mixed damage.",
+    "unmitigatedDamage": "~55,836",
+    "damageType": "both",
+    "importance": "medium",
+    "icon": "✨"
+  },
+  {
+    "id": "explosive_theorem_1",
+    "name": "Explosive Theorem",
+    "time": 169,
+    "description": "Explosive Theorem - high party-wide mixed damage.",
+    "unmitigatedDamage": "~73,111",
+    "damageType": "both",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "symmetric_surge_1",
+    "name": "Symmetric Surge",
+    "time": 174,
+    "description": "Symmetric Surge - moderate party-wide mixed damage.",
+    "unmitigatedDamage": "~54,760",
+    "damageType": "both",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "targeted_light_2",
+    "name": "Targeted Light",
+    "time": 235,
+    "description": "Targeted Light - high party-wide mixed damage.",
+    "unmitigatedDamage": "~66,987",
+    "damageType": "both",
+    "importance": "high",
+    "icon": "✨"
+  }
+]
