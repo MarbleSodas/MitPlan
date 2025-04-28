@@ -29,6 +29,16 @@ export {
   isTouchDevice
 } from './device/deviceUtils';
 
+export {
+  compressString,
+  decompressString,
+  generateShareableUrl,
+  parseShareableUrl,
+  checkUrlForPlanData,
+  reconstructMitigations,
+  reconstructJobs
+} from './url/urlUtils';
+
 // Commented out server-side log processing functions that use Node.js modules
 // These functions are not compatible with browser environments
 /*

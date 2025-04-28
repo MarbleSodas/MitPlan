@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { mitigationAbilities, ffxivJobs } from '../../../data';
-import { saveToLocalStorage, loadFromLocalStorage } from '../../../utils';
+import {
+  saveToLocalStorage,
+  loadFromLocalStorage,
+  generateShareableUrl
+} from '../../../utils';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -400,6 +404,56 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     URL.revokeObjectURL(url);
   };
 
+  // Generate a shareable link and copy it to clipboard
+  const handleCopyPlanLink = () => {
+    // Create optimized assignments object with only the necessary data
+    const optimizedAssignments = {};
+
+    Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
+      // Store only the mitigation IDs instead of the full objects
+      optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
+    });
+
+    // Create optimized selectedJobs object with only the selected job IDs
+    const optimizedSelectedJobs = {};
+
+    Object.entries(selectedJobs).forEach(([roleKey, jobs]) => {
+      // Filter to only include selected jobs and store only their IDs
+      const selectedJobIds = jobs
+        .filter(job => job.selected)
+        .map(job => job.id);
+
+      // Only include the role if it has selected jobs
+      if (selectedJobIds.length > 0) {
+        optimizedSelectedJobs[roleKey] = selectedJobIds;
+      }
+    });
+
+    // Create the plan data
+    const planData = {
+      version: '1.2',
+      exportDate: new Date().toISOString(),
+      bossId,
+      assignments: optimizedAssignments,
+      selectedJobs: optimizedSelectedJobs
+    };
+
+    // Generate the shareable URL
+    const url = generateShareableUrl(planData);
+
+    // Copy the URL to clipboard directly
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        alert('Plan link copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy link: ', err);
+        alert('Failed to copy link. Please try again.');
+      });
+  };
+
+
+
   // Handle importing data
   const handleImport = () => {
     if (!importData.trim()) {
@@ -560,6 +614,9 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
               </SaveButton>
               <Button onClick={handleExport}>
                 📤 Export to File
+              </Button>
+              <Button onClick={handleCopyPlanLink}>
+                📋 Copy Plan
               </Button>
             </ButtonGroup>
 

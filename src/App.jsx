@@ -32,7 +32,10 @@ import {
   getAbilityMitigationValueForLevel,
   getAbilityDurationForLevel,
   isMobileDevice,
-  isTouchDevice
+  isTouchDevice,
+  checkUrlForPlanData,
+  reconstructMitigations,
+  reconstructJobs
 } from './utils'
 
 // Global styles to apply theme to the entire app
@@ -506,40 +509,7 @@ const InheritedMitigation = styled.div`
   }
 `;
 
-const StatusMessage = styled.div`
-  background-color: ${props => props.theme.colors.warning};
-  color: ${props => props.theme.colors.text};
-  padding: 10px 15px;
-  margin: 10px 0;
-  border-radius: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  position: relative;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 8px 12px;
-    font-size: 12px;
-    margin: 8px 0;
-  }
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: ${props => props.theme.colors.text};
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0 0 0 10px;
-  margin-left: 10px;
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: 16px;
-    padding: 0 0 0 8px;
-    margin-left: 8px;
-  }
-`;
 
 const DragPreview = styled.div`
   background-color: ${props => props.theme.colors.cardBackground};
@@ -616,7 +586,6 @@ function App() {
   } = useMitigationContext();
 
   // Local state
-  const [statusMessage, setStatusMessage] = useState(''); // Status message for user feedback
   const [activeId, setActiveId] = useState(null); // For drag and drop operations
   const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false); // For mobile bottom sheet
   const [selectedActionForMobile, setSelectedActionForMobile] = useState(null); // For mobile mitigation assignment
@@ -641,6 +610,92 @@ function App() {
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
+
+  // Check for URL parameters on mount and load plan if present
+  // This effect runs once on component mount with an empty dependency array
+  // to ensure it runs before any other effects
+  useEffect(() => {
+    // Check if there's a plan in the URL
+    const planData = checkUrlForPlanData();
+
+    if (planData) {
+      try {
+        console.log('%c[URL LOAD] Loading plan from URL', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', planData);
+
+        // Reconstruct the full mitigation objects from IDs
+        const reconstructedAssignments = reconstructMitigations(planData.assignments);
+        console.log('%c[URL LOAD] Reconstructed assignments', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', reconstructedAssignments);
+
+        // Reconstruct the full job objects if selectedJobs is included
+        let reconstructedJobs = null;
+        if (planData.selectedJobs) {
+          console.log('%c[URL LOAD] Selected jobs from URL', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', planData.selectedJobs);
+          reconstructedJobs = reconstructJobs(planData.selectedJobs);
+          console.log('%c[URL LOAD] Reconstructed jobs', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', reconstructedJobs);
+        }
+
+        // Update assignments using the context
+        if (reconstructedAssignments) {
+          importAssignments(reconstructedAssignments);
+        }
+
+        // Update boss if different
+        if (planData.bossId && planData.bossId !== currentBossId) {
+          setCurrentBossId(planData.bossId);
+        }
+
+        // Update selected jobs if they were included in the import
+        if (reconstructedJobs) {
+          console.log('%c[URL LOAD] Updating selected jobs in context', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+
+          // First update the context
+          setSelectedJobs(reconstructedJobs);
+
+          // Then directly update localStorage to ensure consistency
+          console.log('%c[URL LOAD] Updating localStorage with selected jobs', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+          localStorage.setItem('selectedJobs', JSON.stringify(reconstructedJobs));
+
+          // Also update the autosave data
+          const autosavedPlan = JSON.parse(localStorage.getItem('mitPlanAutosave') || '{}');
+
+          // Create optimized selectedJobs object with only the selected job IDs
+          const optimizedSelectedJobs = {};
+
+          Object.entries(reconstructedJobs).forEach(([roleKey, jobs]) => {
+            // Filter to include only selected jobs and store only their IDs
+            const selectedJobIds = jobs
+              .filter(job => job.selected)
+              .map(job => job.id);
+
+            // Only include the role if it has selected jobs
+            if (selectedJobIds.length > 0) {
+              optimizedSelectedJobs[roleKey] = selectedJobIds;
+            }
+          });
+
+          console.log('%c[URL LOAD] Optimized selected jobs for autosave', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', optimizedSelectedJobs);
+
+          localStorage.setItem('mitPlanAutosave', JSON.stringify({
+            ...autosavedPlan,
+            selectedJobs: optimizedSelectedJobs
+          }));
+
+          // Force a re-render to ensure the UI reflects the changes
+          setTimeout(() => {
+            console.log('%c[URL LOAD] Forcing re-render after job selection update', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+            setSelectedJobs({...reconstructedJobs});
+          }, 100);
+        }
+
+        // Remove the plan parameter from the URL to prevent reloading on refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete('plan');
+        window.history.replaceState({}, document.title, url.toString());
+      } catch (error) {
+        console.error('Error loading plan from URL:', error);
+      }
+    }
+  }, [importAssignments, setCurrentBossId, setSelectedJobs, currentBossId]); // Include dependencies to avoid React warnings
 
   // Autosave is always enabled
 
@@ -694,23 +749,22 @@ function App() {
       const cooldownResult = checkAbilityCooldown(mitigation.id, selectedBossAction.time);
 
       if (cooldownResult && cooldownResult.isOnCooldown) {
-        // Ability is on cooldown, show error message
-        setStatusMessage(`Cannot assign ${mitigation.name} to ${selectedBossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
+        // Ability is on cooldown, but we no longer show error messages
+        console.log(`Cannot assign ${mitigation.name} to ${selectedBossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
       } else {
         // Add the mitigation to the boss action
         const result = addMitigation(selectedBossAction.id, mitigation);
 
         if (result && result.conflicts && result.conflicts.removedCount > 0) {
-          // Show message about removed future assignments only if there are conflicts
-          setStatusMessage(`Added ${mitigation.name} to ${selectedBossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+          // Log about removed future assignments only if there are conflicts
+          console.log(`Added ${mitigation.name} to ${selectedBossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
         }
-        // No longer show a success message for normal assignments
       }
     }
 
     setActiveId(null);
     setActiveMitigation(null);
-  }, [selectedBossAction, mitigationAbilities, checkAbilityCooldown, addMitigation, setStatusMessage, setActiveMitigation]);
+  }, [selectedBossAction, mitigationAbilities, checkAbilityCooldown, addMitigation, setActiveMitigation]);
 
   // Handle mobile mitigation assignment
   const handleMobileAssignMitigation = useCallback((bossActionId, mitigation) => {
@@ -721,19 +775,18 @@ function App() {
     const cooldownResult = checkAbilityCooldown(mitigation.id, bossAction.time);
 
     if (cooldownResult && cooldownResult.isOnCooldown) {
-      // Ability is on cooldown, show a message
-      setStatusMessage(`Cannot assign ${mitigation.name} to ${bossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
+      // Ability is on cooldown, but we no longer show error messages
+      console.log(`Cannot assign ${mitigation.name} to ${bossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
     } else {
       // Add the mitigation to the boss action
       const result = addMitigation(bossActionId, mitigation);
 
       if (result && result.conflicts && result.conflicts.removedCount > 0) {
-        // Show message about removed future assignments only if there are conflicts
-        setStatusMessage(`Added ${mitigation.name} to ${bossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+        // Log about removed future assignments only if there are conflicts
+        console.log(`Added ${mitigation.name} to ${bossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
       }
-      // No longer show a success message for normal assignments
     }
-  }, [sortedBossActions, addMitigation, checkAbilityCooldown, setStatusMessage]);
+  }, [sortedBossActions, addMitigation, checkAbilityCooldown]);
 
   // Handle boss action click for mobile
   const handleBossActionClick = useCallback((action) => {
@@ -777,12 +830,6 @@ function App() {
           </HeaderTop>
           <h1>FFXIV Boss Timeline & Mitigation Planner</h1>
           <p>Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled.</p>
-          {statusMessage && (
-            <StatusMessage>
-              {statusMessage}
-              <CloseButton onClick={() => setStatusMessage('')}>×</CloseButton>
-            </StatusMessage>
-          )}
         </Header>
 
           <BossSelector
@@ -793,7 +840,9 @@ function App() {
           {/* Cooldown tracking is now handled directly in the App component */}
 
           <JobSelector
+            key={`job-selector-${JSON.stringify(selectedJobs)}`}
             onJobsChange={setSelectedJobs}
+            initialJobs={selectedJobs}
           />
 
 

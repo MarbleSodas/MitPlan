@@ -143,7 +143,18 @@ export const JobProvider = ({ children }) => {
 
   // Import jobs from external data
   const importJobs = (importedJobs) => {
+    console.log('%c[JOB CONTEXT] Importing jobs', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', importedJobs);
+
+    // Check if there are any selected jobs in the imported jobs
+    const hasSelectedJobs = Object.values(importedJobs).some(
+      roleJobs => roleJobs.some(job => job.selected)
+    );
+
+    console.log('%c[JOB CONTEXT] Imported jobs have selections:', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', hasSelectedJobs);
+
     setSelectedJobs(prev => {
+      console.log('%c[JOB CONTEXT] Previous jobs state:', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', prev);
+
       // Check if any jobs are being deselected
       let jobsDeselected = false;
 
@@ -163,8 +174,38 @@ export const JobProvider = ({ children }) => {
 
       // If jobs are being deselected, check if any mitigations need to be removed
       if (jobsDeselected) {
+        console.log('%c[JOB CONTEXT] Jobs are being deselected, checking mitigations', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
         checkAndRemoveUnavailableMitigations(importedJobs);
       }
+
+      // Force update localStorage to ensure it has the latest data
+      console.log('%c[JOB CONTEXT] Updating localStorage with imported jobs', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
+      saveToLocalStorage('selectedJobs', importedJobs);
+
+      // Also update the autosave
+      const autosavedPlan = loadFromLocalStorage('mitPlanAutosave', {});
+
+      // Create optimized selectedJobs object with only the selected job IDs
+      const optimizedSelectedJobs = {};
+
+      Object.entries(importedJobs).forEach(([roleKey, jobs]) => {
+        // Filter to include only selected jobs and store only their IDs
+        const selectedJobIds = jobs
+          .filter(job => job.selected)
+          .map(job => job.id);
+
+        // Only include the role if it has selected jobs
+        if (selectedJobIds.length > 0) {
+          optimizedSelectedJobs[roleKey] = selectedJobIds;
+        }
+      });
+
+      console.log('%c[JOB CONTEXT] Updating autosave with optimized job IDs', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', optimizedSelectedJobs);
+
+      saveToLocalStorage('mitPlanAutosave', {
+        ...autosavedPlan,
+        selectedJobs: optimizedSelectedJobs
+      });
 
       return importedJobs;
     });
