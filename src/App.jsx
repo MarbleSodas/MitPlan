@@ -224,9 +224,10 @@ const BossAction = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.small};
     padding-top: 35px; /* Slightly smaller padding for time indicator on mobile */
-    padding-right: ${props => props.$hasAssignments ? '125px' : props.theme.spacing.small}; /* Increased space for mitigations on mobile */
+    padding-right: ${props => props.$hasAssignments ? '110px' : props.theme.spacing.small}; /* Increased space for mitigations on mobile */
     min-height: 120px; /* Smaller minimum height on mobile */
     margin-bottom: 10px; /* Increased spacing between boss actions */
+    position: relative; /* Ensure proper positioning context for absolute elements */
 
     &:active {
       transform: translateY(-1px);
@@ -289,10 +290,22 @@ const ActionDescription = styled.p`
   font-size: ${props => props.theme.fontSizes.medium};
   font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
   min-height: 40px; /* Ensure all descriptions have at least this height */
-  flex-grow: 0; /* Don't allow description to grow too much */
+  flex-grow: 1; /* Allow description to grow and fill available space */
   line-height: 1.4; /* Improve readability */
   padding-left: 2px; /* Slight indent */
   margin-bottom: ${props => props.theme.spacing.medium}; /* Add space before mitigations */
+  width: ${props => props.$hasAssignments ? 'calc(100% - 100px)' : '100%'}; /* Ensure description doesn't flow into assignments */
+  max-width: ${props => props.$hasAssignments ? 'calc(100% - 100px)' : '100%'}; /* Ensure description doesn't flow into assignments */
+  overflow-wrap: break-word; /* Ensure long words don't overflow */
+  word-wrap: break-word; /* For older browsers */
+  hyphens: auto; /* Allow hyphenation for very long words */
+  white-space: normal; /* Ensure text wraps properly */
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: ${props => props.$hasAssignments ? 'calc(100% - 25px)' : '100%'};
+    max-width: ${props => props.$hasAssignments ? 'calc(100% - 25px)' : '100%'};
+    font-size: ${props => props.theme.fontSizes.small}; /* Slightly smaller font on mobile */
+  }
 `;
 
 const MitigationPercentage = styled.div`
@@ -380,24 +393,26 @@ const AssignedMitigations = styled.div`
   position: absolute;
   top: 35px; /* Align with content below the time indicator */
   right: 0;
-  width: 250px;
+  width: 230px; /* Reduced width to allow more space for description */
   display: flex;
   flex-direction: column;
   gap: ${props => props.theme.spacing.small};
   border-left: 1px solid ${props => props.theme.colors.border};
   padding: ${props => props.theme.spacing.small};
-  padding-left: ${props => props.theme.spacing.medium};
+  padding-left: ${props => props.theme.spacing.small}; /* Reduced left padding */
   height: calc(100% - 40px); /* Full height minus time indicator */
   overflow-y: auto; /* Allow scrolling if many mitigations */
-  background-color: transparent;
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.5)'};
   border-bottom-right-radius: ${props => props.theme.borderRadius.medium};
   -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
+  z-index: 1; /* Ensure it's above the description */
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05); /* Subtle shadow to separate from description */
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 120px; /* Increased width to prevent overflow */
+    width: 125px; /* Optimized width for mobile */
     top: 30px; /* Adjust for smaller time indicator */
-    padding: 4px;
-    padding-left: 6px; /* Reduced left padding */
+    padding: 4px; /* Smaller padding on mobile */
+    padding-left: 6px; /* Slightly larger left padding */
     gap: 3px; /* Reduced gap between items */
     height: calc(100% - 30px);
     touch-action: pan-y; /* Allow vertical scrolling */
@@ -412,7 +427,7 @@ const AssignedMitigations = styled.div`
 const AssignedMitigation = styled.div`
   background-color: transparent;
   border-radius: ${props => props.theme.borderRadius.small};
-  padding: 3px 6px;
+  padding: 2px 4px;
   font-size: ${props => props.theme.fontSizes.small};
   display: flex;
   align-items: center;
@@ -429,7 +444,7 @@ const AssignedMitigation = styled.div`
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: 2px 4px;
-    font-size: 10px; /* Slightly smaller font */
+    font-size: 10px; /* Smaller font on mobile */
     margin-bottom: 3px; /* Increased spacing between items */
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.1)'}; /* Slight background for better visibility */
     border-radius: 3px;
@@ -836,7 +851,10 @@ function App() {
                       </ActionIcon>
                       <ActionName>{action.name}</ActionName>
                     </div>
-                    <ActionDescription>
+                    <ActionDescription $hasAssignments={
+                      (assignments[action.id] && assignments[action.id].length > 0) ||
+                      getActiveMitigations(action.id, action.time).length > 0
+                    }>
                       {action.description}
                       {action.unmitigatedDamage && (
                         <div style={{ marginTop: '5px', fontWeight: 'bold' }}>

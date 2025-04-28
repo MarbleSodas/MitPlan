@@ -238,6 +238,9 @@ const BossActionDescription = styled.div`
   font-size: 15px;
   color: ${props => props.theme.colors.lightText};
   line-height: 1.4;
+  margin-bottom: 12px; /* Add space after description */
+  word-wrap: break-word; /* Ensure long words don't overflow */
+  overflow-wrap: break-word;
 `;
 
 const UnmitigatedDamage = styled.div`

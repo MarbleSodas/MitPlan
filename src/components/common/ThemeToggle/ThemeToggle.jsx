@@ -35,18 +35,6 @@ const ToggleButton = styled.button`
     transition: left 0.3s;
     border-radius: 50%;
   }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 52px;
-    height: 30px;
-
-    &::before {
-      height: 22px;
-      width: 22px;
-      left: ${props => props.$isDarkMode ? '26px' : '4px'};
-      bottom: 4px;
-    }
-  }
 `;
 
 const IconContainer = styled.div`
