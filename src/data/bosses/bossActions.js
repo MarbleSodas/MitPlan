@@ -179,7 +179,7 @@ export const bossActionsMap = {
     {
       id: 'inferno_theorem_1',
       name: 'Inferno Theorem',
-      time: 8,
+      time: 10, // 1 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
       unmitigatedDamage: '~86,000',
       damageType: 'magical',
@@ -189,9 +189,9 @@ export const bossActionsMap = {
     {
       id: 'targeted_light_1',
       name: 'Targeted Light',
-      time: 59,
-      description: 'Moderate party-wide magical damage. Part of a mechanic involving player rotation and positioning based on assigned debuffs.',
-      unmitigatedDamage: '~35,000',
+      time: 61, // 52 + 9
+      description: 'Moderate party-wide magical damage with knockback. Players must face their character so their safe side is towards the boss when considering rotation, or they will take heavy damage and be knocked back.',
+      unmitigatedDamage: '~39,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🔦'
@@ -199,39 +199,29 @@ export const bossActionsMap = {
     {
       id: 'strategic_strike_1',
       name: 'Strategic Strike',
-      time: 69,
+      time: 71, // 62 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
       unmitigatedDamage: '~55,000 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🗡️'
+      icon: '🛡️'
     },
     {
       id: 'arcane_combustion_1',
       name: 'Arcane Combustion',
-      time: 100,
-      description: 'Moderate party-wide magical damage. Part of Lala\'s mechanics involving Arcane Mines that must be disarmed by players with specific debuffs.',
-      unmitigatedDamage: '~40,000',
+      time: 107, // 98 + 9
+      description: 'Moderate party-wide magical damage that occurs when players with Subtractive Suppressor Alpha debuffs disarm Arcane Mines. Part of the Arcane Mine mechanic.',
+      unmitigatedDamage: '~51,000',
       damageType: 'magical',
       importance: 'medium',
-      icon: '✨'
-    },
-    {
-      id: 'symmetric_surge_1',
-      name: 'Symmetric Surge',
-      time: 105,
-      description: 'Moderate party-wide magical damage. A two-person stack AoE that inflicts Magic Vulnerability Up. Will deal lethal damage if only one player is in the stack or if two stacks overlap.',
-      unmitigatedDamage: '~47,000',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🔄'
+      icon: '💥'
     },
     {
       id: 'inferno_theorem_2',
       name: 'Inferno Theorem',
-      time: 149,
+      time: 112, // 103 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~76,000',
+      unmitigatedDamage: '~85,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -239,19 +229,39 @@ export const bossActionsMap = {
     {
       id: 'strategic_strike_2',
       name: 'Strategic Strike',
-      time: 160,
+      time: 122, // 113 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
       unmitigatedDamage: '~54,000 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🗡️'
+      icon: '🛡️'
+    },
+    {
+      id: 'inferno_theorem_3',
+      name: 'Inferno Theorem',
+      time: 173, // 164 + 9
+      description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
+      unmitigatedDamage: '~82,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'inferno_theorem_4',
+      name: 'Inferno Theorem',
+      time: 184, // 175 + 9
+      description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
+      unmitigatedDamage: '~85,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
     },
     {
       id: 'powerful_light_1',
       name: 'Powerful Light',
-      time: 199,
-      description: 'Moderate party-wide magical damage. Part of a mechanic involving player rotation and positioning based on assigned debuffs.',
-      unmitigatedDamage: '~48,000',
+      time: 221, // 212 + 9
+      description: 'Moderate to high party-wide magical damage. Part of a mechanic involving player rotation and positioning based on assigned debuffs.',
+      unmitigatedDamage: '~56,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '💡'
@@ -259,19 +269,19 @@ export const bossActionsMap = {
     {
       id: 'explosive_theorem_1',
       name: 'Explosive Theorem',
-      time: 208,
-      description: 'Party-wide magical damage. Follows a complex sequence of mechanics involving Symmetric Surge and other abilities.',
-      unmitigatedDamage: '~53,000',
+      time: 230, // 221 + 9
+      description: 'High party-wide magical damage that follows a complex sequence of mechanics involving Symmetric Surge and other abilities.',
+      unmitigatedDamage: '~73,000',
       damageType: 'magical',
       importance: 'high',
       icon: '💥'
     },
     {
-      id: 'symmetric_surge_2',
+      id: 'symmetric_surge_1',
       name: 'Symmetric Surge',
-      time: 212,
+      time: 234, // 225 + 9
       description: 'Moderate party-wide magical damage. A two-person stack AoE that inflicts Magic Vulnerability Up. Will deal lethal damage if only one player is in the stack or if two stacks overlap.',
-      unmitigatedDamage: '~44,000',
+      unmitigatedDamage: '~55,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🔄'
@@ -279,19 +289,19 @@ export const bossActionsMap = {
     {
       id: 'strategic_strike_3',
       name: 'Strategic Strike',
-      time: 226,
+      time: 248, // 239 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
       unmitigatedDamage: '~55,000 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🗡️'
+      icon: '🛡️'
     },
     {
-      id: 'inferno_theorem_3',
+      id: 'inferno_theorem_5',
       name: 'Inferno Theorem',
-      time: 234,
+      time: 257, // 248 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~81,000',
+      unmitigatedDamage: '~87,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -299,32 +309,22 @@ export const bossActionsMap = {
     {
       id: 'targeted_light_2',
       name: 'Targeted Light',
-      time: 273,
-      description: 'Moderate party-wide magical damage. Part of a mechanic involving player rotation and positioning based on assigned debuffs.',
-      unmitigatedDamage: '~35,000',
+      time: 296, // 287 + 9
+      description: 'High party-wide magical damage with knockback. Players must face their character so their safe side is towards the boss when considering rotation, or they will take heavy damage and be knocked back.',
+      unmitigatedDamage: '~67,000',
       damageType: 'magical',
-      importance: 'medium',
+      importance: 'high',
       icon: '🔦'
     },
     {
       id: 'strategic_strike_4',
       name: 'Strategic Strike',
-      time: 284,
+      time: 307, // 298 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
       unmitigatedDamage: '~54,000 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🗡️'
-    },
-    {
-      id: 'inferno_theorem_4',
-      name: 'Inferno Theorem',
-      time: 300,
-      description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~81,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🔥'
+      icon: '🛡️'
     },
     {
       id: 'inferno_theorem_enrage',

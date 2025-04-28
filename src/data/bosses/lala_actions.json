@@ -1,0 +1,202 @@
+[
+  {
+    "id": "inferno_theorem_1",
+    "name": "Inferno Theorem",
+    "time": 1,
+    "description": "Inferno Theorem - high party-wide damage.",
+    "unmitigatedDamage": "86253",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "radiance_1",
+    "name": "Radiance",
+    "time": 37,
+    "description": "Radiance - high party-wide damage.",
+    "unmitigatedDamage": "69864",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "radiance_2",
+    "name": "Radiance",
+    "time": 46,
+    "description": "Radiance - high party-wide damage.",
+    "unmitigatedDamage": "73029",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "targeted_light_1",
+    "name": "Targeted Light",
+    "time": 52,
+    "description": "Targeted Light - moderate party-wide damage.",
+    "unmitigatedDamage": "38987",
+    "importance": "medium",
+    "icon": "✨",
+    "isTankBuster": false
+  },
+  {
+    "id": "strategic_strike_1",
+    "name": "Strategic Strike",
+    "time": 62,
+    "description": "Strategic Strike - high tank buster damage.",
+    "unmitigatedDamage": "179475",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "arcane_combustion_1",
+    "name": "Arcane Combustion",
+    "time": 98,
+    "description": "Arcane Combustion - moderate party-wide damage.",
+    "unmitigatedDamage": "50880",
+    "importance": "medium",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "inferno_theorem_2",
+    "name": "Inferno Theorem",
+    "time": 103,
+    "description": "Inferno Theorem - high party-wide damage.",
+    "unmitigatedDamage": "84792",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "strategic_strike_2",
+    "name": "Strategic Strike",
+    "time": 113,
+    "description": "Strategic Strike - high tank buster damage.",
+    "unmitigatedDamage": "179475",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "radiance_3",
+    "name": "Radiance",
+    "time": 141,
+    "description": "Radiance - low party-wide damage.",
+    "unmitigatedDamage": "1273",
+    "importance": "low",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "inferno_theorem_3",
+    "name": "Inferno Theorem",
+    "time": 164,
+    "description": "Inferno Theorem - high party-wide damage.",
+    "unmitigatedDamage": "81612",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "inferno_theorem_4",
+    "name": "Inferno Theorem",
+    "time": 175,
+    "description": "Inferno Theorem - high party-wide damage.",
+    "unmitigatedDamage": "85099",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "powerful_light_1",
+    "name": "Powerful Light",
+    "time": 212,
+    "description": "Powerful Light - moderate party-wide damage.",
+    "unmitigatedDamage": "55836",
+    "importance": "medium",
+    "icon": "✨",
+    "isTankBuster": false
+  },
+  {
+    "id": "explosive_theorem_1",
+    "name": "Explosive Theorem",
+    "time": 221,
+    "description": "Explosive Theorem - high party-wide damage.",
+    "unmitigatedDamage": "73111",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "symmetric_surge_1",
+    "name": "Symmetric Surge",
+    "time": 225,
+    "description": "Symmetric Surge - moderate party-wide damage.",
+    "unmitigatedDamage": "54760",
+    "importance": "medium",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "strategic_strike_3",
+    "name": "Strategic Strike",
+    "time": 239,
+    "description": "Strategic Strike - moderate tank buster damage.",
+    "unmitigatedDamage": "179475",
+    "importance": "medium",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "inferno_theorem_5",
+    "name": "Inferno Theorem",
+    "time": 248,
+    "description": "Inferno Theorem - high party-wide damage.",
+    "unmitigatedDamage": "86787",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "radiance_4",
+    "name": "Radiance",
+    "time": 272,
+    "description": "Radiance - high party-wide damage.",
+    "unmitigatedDamage": "75456",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "radiance_5",
+    "name": "Radiance",
+    "time": 282,
+    "description": "Radiance - high party-wide damage.",
+    "unmitigatedDamage": "66379",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "targeted_light_2",
+    "name": "Targeted Light",
+    "time": 287,
+    "description": "Targeted Light - high party-wide damage.",
+    "unmitigatedDamage": "66987",
+    "importance": "high",
+    "icon": "✨",
+    "isTankBuster": false
+  },
+  {
+    "id": "strategic_strike_4",
+    "name": "Strategic Strike",
+    "time": 298,
+    "description": "Strategic Strike - high tank buster damage.",
+    "unmitigatedDamage": "179475",
+    "importance": "medium",
+    "icon": "🛡️",
+    "isTankBuster": true
+  }
+]
