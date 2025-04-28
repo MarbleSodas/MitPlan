@@ -205,11 +205,26 @@ const JobName = styled.div`
   margin-top: 3px;
 `;
 
-function JobSelector({ onJobsChange }) {
+function JobSelector({ onJobsChange, initialJobs }) {
+  // Use initialJobs directly if provided, otherwise fallback to localStorage
   const [jobs, setJobs] = useState(() => {
-    // Try to load from localStorage
-    const savedJobs = localStorage.getItem('selectedJobs');
-    return savedJobs ? JSON.parse(savedJobs) : ffxivJobs;
+    if (initialJobs) {
+      // If initialJobs is provided, use it directly
+      return initialJobs;
+    }
+
+    // Try to load from localStorage as fallback
+    try {
+      const savedJobs = localStorage.getItem('selectedJobs');
+      if (savedJobs) {
+        return JSON.parse(savedJobs);
+      }
+    } catch (error) {
+      console.error('Error loading jobs from localStorage:', error);
+    }
+
+    // Default to ffxivJobs if nothing else is available
+    return JSON.parse(JSON.stringify(ffxivJobs));
   });
 
   // Role icons and names for display
@@ -231,11 +246,18 @@ function JobSelector({ onJobsChange }) {
 
   // Toggle job selection
   const toggleJobSelection = (roleKey, jobId) => {
+    console.log(`%c[JOB SELECTOR] Toggling job ${jobId} in role ${roleKey}`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;');
+
     const updatedJobs = {
       ...jobs,
-      [roleKey]: jobs[roleKey].map(job =>
-        job.id === jobId ? { ...job, selected: !job.selected } : job
-      )
+      [roleKey]: jobs[roleKey].map(job => {
+        if (job.id === jobId) {
+          const newSelected = !job.selected;
+          console.log(`%c[JOB SELECTOR] Job ${jobId} selected state changed to:`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', newSelected);
+          return { ...job, selected: newSelected };
+        }
+        return job;
+      })
     };
     setJobs(updatedJobs);
   };
@@ -246,6 +268,31 @@ function JobSelector({ onJobsChange }) {
     // Save to localStorage
     localStorage.setItem('selectedJobs', JSON.stringify(jobs));
   }, [jobs, onJobsChange]);
+
+  // Update local state when initialJobs changes (e.g., from URL parameters)
+  useEffect(() => {
+    if (initialJobs) {
+      console.log('%c[JOB SELECTOR] Received initialJobs update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', initialJobs);
+
+      // Check if there are any selected jobs in the initialJobs
+      const hasSelectedJobs = Object.values(initialJobs).some(
+        roleJobs => roleJobs.some(job => job.selected)
+      );
+
+      console.log('%c[JOB SELECTOR] Has selected jobs:', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', hasSelectedJobs);
+
+      // Force update the local state with initialJobs
+      setJobs(initialJobs);
+
+      // Also update localStorage directly to ensure consistency
+      try {
+        console.log('%c[JOB SELECTOR] Updating localStorage', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;');
+        localStorage.setItem('selectedJobs', JSON.stringify(initialJobs));
+      } catch (error) {
+        console.error('Error saving jobs to localStorage:', error);
+      }
+    }
+  }, [initialJobs]);
 
   return (
     <Container>
