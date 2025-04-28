@@ -1,0 +1,142 @@
+[
+  {
+    "id": "aero_iv_1",
+    "name": "Aero IV",
+    "time": 1,
+    "description": "Aero IV - high party-wide damage.",
+    "unmitigatedDamage": "73035",
+    "importance": "high",
+    "icon": "🌪️",
+    "isTankBuster": false
+  },
+  {
+    "id": "trapshooting_1",
+    "name": "Trapshooting",
+    "time": 29,
+    "description": "Trapshooting - high party-wide damage.",
+    "unmitigatedDamage": "67362",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "trapshooting_2",
+    "name": "Trapshooting",
+    "time": 61,
+    "description": "Trapshooting - high party-wide damage.",
+    "unmitigatedDamage": "69361",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "trapshooting_3",
+    "name": "Trapshooting",
+    "time": 111,
+    "description": "Trapshooting - high party-wide damage.",
+    "unmitigatedDamage": "68108",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "pop_1",
+    "name": "Pop",
+    "time": 137,
+    "description": "Pop - moderate party-wide damage.",
+    "unmitigatedDamage": "N/A",
+    "importance": "low",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "trapshooting_4",
+    "name": "Trapshooting",
+    "time": 151,
+    "description": "Trapshooting - high party-wide damage.",
+    "unmitigatedDamage": "67193",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "aero_iv_2",
+    "name": "Aero IV",
+    "time": 159,
+    "description": "Aero IV - high party-wide damage.",
+    "unmitigatedDamage": "73556",
+    "importance": "high",
+    "icon": "🌪️",
+    "isTankBuster": false
+  },
+  {
+    "id": "fireworks_1",
+    "name": "Fireworks",
+    "time": 191,
+    "description": "Fireworks - high party-wide damage.",
+    "unmitigatedDamage": "60798",
+    "importance": "medium",
+    "icon": "🔥",
+    "isTankBuster": false
+  },
+  {
+    "id": "shocking_abandon_1",
+    "name": "Shocking Abandon",
+    "time": 199,
+    "description": "Shocking Abandon - high tank buster damage.",
+    "unmitigatedDamage": "267868",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "fireworks_2",
+    "name": "Fireworks",
+    "time": 227,
+    "description": "Fireworks - high party-wide damage.",
+    "unmitigatedDamage": "60226",
+    "importance": "medium",
+    "icon": "🔥",
+    "isTankBuster": false
+  },
+  {
+    "id": "aero_iv_3",
+    "name": "Aero IV",
+    "time": 240,
+    "description": "Aero IV - high party-wide damage.",
+    "unmitigatedDamage": "71716",
+    "importance": "high",
+    "icon": "🌪️",
+    "isTankBuster": false
+  },
+  {
+    "id": "trapshooting_5",
+    "name": "Trapshooting",
+    "time": 279,
+    "description": "Trapshooting - high party-wide damage.",
+    "unmitigatedDamage": "65847",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "trapshooting_6",
+    "name": "Trapshooting",
+    "time": 306,
+    "description": "Trapshooting - high party-wide damage.",
+    "unmitigatedDamage": "232712",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "aero_iv_4",
+    "name": "Aero IV",
+    "time": 322,
+    "description": "Aero IV - high party-wide damage.",
+    "unmitigatedDamage": "73540",
+    "importance": "high",
+    "icon": "🌪️",
+    "isTankBuster": false
+  }
+]
