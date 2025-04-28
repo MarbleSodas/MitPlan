@@ -590,6 +590,31 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     }
   };
 
+  // Generate a shareable link for a saved plan and copy it to clipboard
+  const handleCopyPlanLinkFromSaved = (plan) => {
+    // Create the plan data for sharing
+    const planData = {
+      version: '1.2',
+      exportDate: new Date().toISOString(),
+      bossId: plan.bossId,
+      assignments: plan.assignments,
+      selectedJobs: plan.selectedJobs
+    };
+
+    // Generate the shareable URL
+    const url = generateShareableUrl(planData);
+
+    // Copy the URL to clipboard directly
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        alert(`Link for plan "${plan.name}" copied to clipboard!`);
+      })
+      .catch(err => {
+        console.error('Failed to copy link: ', err);
+        alert('Failed to copy link. Please try again.');
+      });
+  };
+
   return (
     <Container>
       <TwoColumnLayout>
@@ -649,6 +674,9 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
                     <PlanActions>
                       <ActionButton onClick={() => handleLoadPlan(plan)} title="Load Plan">
                         📂
+                      </ActionButton>
+                      <ActionButton onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
+                        📋
                       </ActionButton>
                       <ActionButton onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
                         🗑️
