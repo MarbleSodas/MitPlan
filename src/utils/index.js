@@ -28,3 +28,16 @@ export {
   isMobileDevice,
   isTouchDevice
 } from './device/deviceUtils';
+
+export {
+  readCsvFile,
+  parseTimeToSeconds,
+  extractUnmitigatedDamage,
+  extractDamageType,
+  determineImportance,
+  processBossActions,
+  formatBossActions,
+  processBossLogs,
+  saveBossActionsToJson,
+  processAndSaveBossLogs
+} from './logs/processLogFiles';
