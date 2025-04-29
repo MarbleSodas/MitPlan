@@ -24,6 +24,13 @@ export const bosses = [
     icon: '🔫',
     level: 90
   },
+  {
+    id: 'dancing-green-m5s',
+    name: 'Dancing Green (M5S)',
+    description: 'The shameless playboy of Solution Nine, first boss of AAC Cruiserweight Tier (Savage).',
+    icon: '💃',
+    level: 100
+  },
 ];
 
 export default bosses;

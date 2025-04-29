@@ -478,6 +478,288 @@ export const bossActionsMap = {
       importance: 'critical',
       icon: '💀'
     },
+  ],
+  'dancing-green-m5s': [
+    {
+      id: 'deep_cut_1',
+      name: 'Deep Cut',
+      time: 15,
+      description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
+      unmitigatedDamage: '~310,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🛡️'
+    },
+    {
+      id: 'do_the_hustle_1',
+      name: 'Do the Hustle',
+      time: 30,
+      description: 'One side of the boss will be surrounded by a wall of rainbow tiles, indicating a half-room cleave in that direction. Has no ground telegraph.',
+      unmitigatedDamage: '~150,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🌈'
+    },
+    {
+      id: 'two_snap_twist_1',
+      name: '2-snap Twist',
+      time: 45,
+      description: 'Two successive half-room cleaves in one direction, followed by a cleave on the other side. These cleaves will be synced to the rhythm of the background music.',
+      unmitigatedDamage: '~125,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💃'
+    },
+    {
+      id: 'funky_floor_1',
+      name: 'Funky Floor',
+      time: 60,
+      description: 'Five sets of alternating square AoEs in a checkerboard pattern across the arena tiles.',
+      unmitigatedDamage: '~90,000',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🔲'
+    },
+    {
+      id: 'full_beat_1',
+      name: 'Full Beat',
+      time: 75,
+      description: 'Stack marker on a random player dealing magical damage. Players must stack up on a safe tile to split the damage.',
+      unmitigatedDamage: '~180,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '⚔️'
+    },
+    {
+      id: 'disco_infernal_1',
+      name: 'Disco Infernal',
+      time: 89,
+      description: 'Party-wide magical damage and assigns everyone Burn Baby Burn debuffs. Four spotlights will spawn and move in fixed patterns. Players must be in a spotlight when debuffs expire.',
+      unmitigatedDamage: '~100,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'celebrate_good_times_1',
+      name: 'Celebrate Good Times',
+      time: 114,
+      description: 'High party-wide magical damage that should be heavily mitigated.',
+      unmitigatedDamage: '~175,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🎉'
+    },
+    {
+      id: 'ride_the_waves_1',
+      name: 'Ride the Waves',
+      time: 135,
+      description: 'Arrow telegraphs appear at the north row of tiles, leaving one tile empty. These denote moving, three-tile-long AoEs that travel south.',
+      unmitigatedDamage: '~120,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🌊'
+    },
+    {
+      id: 'four_snap_twist_1',
+      name: '4-snap Twist',
+      time: 150,
+      description: 'Four half-room cleaves in one direction before a final cleave in the other direction. Similar to 2-snap Twist but with more cleaves.',
+      unmitigatedDamage: '~140,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💃'
+    },
+    {
+      id: 'ensemble_assemble_1',
+      name: 'Ensemble Assemble',
+      time: 175,
+      description: 'Summons eight untargetable Frogtourage backup dancer adds, one on each pedestal at the north of the arena.',
+      unmitigatedDamage: 'N/A',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🐸'
+    },
+    {
+      id: 'arcady_night_fever_1',
+      name: 'Arcady Night Fever',
+      time: 190,
+      description: 'The adds will each sequentially pose with either their right or left hand raised. A Grooviness duty gauge will also appear.',
+      unmitigatedDamage: 'N/A',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🕺'
+    },
+    {
+      id: 'lets_dance_1',
+      name: 'Let\'s Dance!',
+      time: 205,
+      description: 'Boss will tether the adds in order they posed. Boss uses eight half-room cleaves based on which hand the current add has raised.',
+      unmitigatedDamage: '~95,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💃'
+    },
+    {
+      id: 'lets_pose_1',
+      name: 'Let\'s Pose!',
+      time: 230,
+      description: 'Party-wide magical damage that scales based on the Grooviness meter. Perfect dodges receive Perfect Groove buff, increasing damage dealt.',
+      unmitigatedDamage: '~160,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '✨'
+    },
+    {
+      id: 'frogtourage_1',
+      name: 'Frogtourage',
+      time: 250,
+      description: 'Summons two Frogtourage adds that moonwalk around sections of the arena, marking AoEs (Moonburn).',
+      unmitigatedDamage: 'N/A',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🐸'
+    },
+    {
+      id: 'eighth_beats_1',
+      name: 'Eighth Beats',
+      time: 264,
+      description: 'All players receive a stack marker dealing magical damage. Players must group together to split the damage.',
+      unmitigatedDamage: '~115,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🎶'
+    },
+    {
+      id: 'funky_floor_2',
+      name: 'Funky Floor',
+      time: 284,
+      description: 'Five sets of alternating square AoEs in a checkerboard pattern combined with 2-snap Twist. Players must dodge to the other half of the room between sets of tile AoEs.',
+      unmitigatedDamage: '~95,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔲'
+    },
+    {
+      id: 'disco_infernal_2',
+      name: 'Disco Infernal',
+      time: 310,
+      description: 'Party-wide magical damage, summons three moving spotlights and assigns everyone Burn Baby Burn debuffs. Players must be in a spotlight when debuffs expire.',
+      unmitigatedDamage: '~110,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'deep_cut_2',
+      name: 'Deep Cut',
+      time: 335,
+      description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
+      unmitigatedDamage: '~320,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🛡️'
+    },
+    {
+      id: 'two_snap_twist_2',
+      name: '2-snap Twist',
+      time: 360,
+      description: 'Two successive half-room cleaves in one direction, followed by a cleave on the other side. These cleaves will be synced to the rhythm of the background music.',
+      unmitigatedDamage: '~130,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💃'
+    },
+    {
+      id: 'four_snap_twist_2',
+      name: '4-snap Twist',
+      time: 390,
+      description: 'Four half-room cleaves in one direction before a final cleave in the other direction. Similar to 2-snap Twist but with more cleaves.',
+      unmitigatedDamage: '~145,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💃'
+    },
+    {
+      id: 'celebrate_good_times_2',
+      name: 'Celebrate Good Times',
+      time: 414,
+      description: 'High party-wide magical damage that should be heavily mitigated.',
+      unmitigatedDamage: '~180,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🎉'
+    },
+    {
+      id: 'ensemble_assemble_2',
+      name: 'Ensemble Assemble',
+      time: 440,
+      description: 'Summons eight untargetable Frogtourage backup dancer adds, one on each pedestal at the north of the arena.',
+      unmitigatedDamage: 'N/A',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🐸'
+    },
+    {
+      id: 'lets_dance_2',
+      name: 'Let\'s Dance!',
+      time: 465,
+      description: 'Boss will tether the adds in order they posed. Boss uses eight half-room cleaves based on which hand the current add has raised.',
+      unmitigatedDamage: '~100,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '💃'
+    },
+    {
+      id: 'lets_pose_2',
+      name: 'Let\'s Pose!',
+      time: 490,
+      description: 'Party-wide magical damage that scales based on the Grooviness meter. Perfect dodges receive Perfect Groove buff, increasing damage dealt.',
+      unmitigatedDamage: '~170,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '✨'
+    },
+    {
+      id: 'deep_cut_3',
+      name: 'Deep Cut',
+      time: 514,
+      description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
+      unmitigatedDamage: '~350,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🛡️'
+    },
+    {
+      id: 'disco_infernal_3',
+      name: 'Disco Infernal',
+      time: 540,
+      description: 'Party-wide magical damage, summons three moving spotlights and assigns everyone Burn Baby Burn debuffs. Players must be in a spotlight when debuffs expire.',
+      unmitigatedDamage: '~120,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🔥'
+    },
+    {
+      id: 'celebrate_good_times_3',
+      name: 'Celebrate Good Times',
+      time: 561,
+      description: 'High party-wide magical damage that should be heavily mitigated.',
+      unmitigatedDamage: '~190,000',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🎉'
+    },
+    {
+      id: 'celebrate_good_times_enrage',
+      name: 'Celebrate Good Times (enrage)',
+      time: 580,
+      description: 'Wipe',
+      unmitigatedDamage: 'N/A',
+      damageType: 'magical',
+      importance: 'critical',
+      icon: '💀'
+    }
   ]
 };
 
