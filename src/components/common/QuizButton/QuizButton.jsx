@@ -9,7 +9,7 @@ const QuizLink = styled.a`
   border-radius: 16px;
   height: 36px;
   padding: 0 16px;
-  background-color: #4CAF50; /* Green color for the quiz button */
+  background-color: #333333; /* Green color for the quiz button */
   color: white;
   font-weight: bold;
   text-decoration: none;
