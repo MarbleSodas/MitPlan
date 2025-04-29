@@ -18,6 +18,7 @@ import ImportExport from './features/plans/ImportExport/ImportExport'
 import ThemeToggle from './components/common/ThemeToggle/ThemeToggle'
 import KofiButton from './components/common/KofiButton/KofiButton'
 import DiscordButton from './components/common/DiscordButton/DiscordButton'
+import QuizButton from './components/common/QuizButton/QuizButton'
 import MobileBottomSheet from './components/mobile/MobileBottomSheet/MobileBottomSheet'
 import MobileMitigationSelector from './components/mobile/MobileMitigationSelector/MobileMitigationSelector'
 
@@ -94,7 +95,7 @@ const Header = styled.header`
 const HeaderTop = styled.div`
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: ${props => props.theme.spacing.medium} 0;
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
@@ -825,9 +826,12 @@ function App() {
       <AppContainer>
         <Header>
           <HeaderTop>
-            <KofiButton />
-            <DiscordButton />
-            <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+            <QuizButton />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <KofiButton />
+              <DiscordButton />
+              <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+            </div>
           </HeaderTop>
           <h1>FFXIV Boss Timeline & Mitigation Planner</h1>
           <p>Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled.</p>
