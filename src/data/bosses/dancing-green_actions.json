@@ -1,0 +1,242 @@
+[
+  {
+    "id": "deep_cut_1",
+    "name": "Deep Cut",
+    "time": 1,
+    "description": "Deep Cut - high tank buster damage.",
+    "unmitigatedDamage": "299214",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "play_b-side_1",
+    "name": "Play B-side",
+    "time": 25,
+    "description": "Play B-side - high party-wide damage.",
+    "unmitigatedDamage": "129810",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "play_a-side_1",
+    "name": "Play A-side",
+    "time": 44,
+    "description": "Play A-side - high party-wide damage.",
+    "unmitigatedDamage": "96162",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "celebrate_good_times_1",
+    "name": "Celebrate Good Times",
+    "time": 51,
+    "description": "Celebrate Good Times - high party-wide damage.",
+    "unmitigatedDamage": "175372",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "disco_infernal_1",
+    "name": "Disco Infernal",
+    "time": 75,
+    "description": "Disco Infernal - moderate party-wide damage.",
+    "unmitigatedDamage": "N/A",
+    "importance": "low",
+    "icon": "💃",
+    "isTankBuster": false
+  },
+  {
+    "id": "play_a-side_2",
+    "name": "Play A-side",
+    "time": 107,
+    "description": "Play A-side - high party-wide damage.",
+    "unmitigatedDamage": "93303",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "celebrate_good_times_2",
+    "name": "Celebrate Good Times",
+    "time": 114,
+    "description": "Celebrate Good Times - high party-wide damage.",
+    "unmitigatedDamage": "178378",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "deep_cut_2",
+    "name": "Deep Cut",
+    "time": 121,
+    "description": "Deep Cut - high tank buster damage.",
+    "unmitigatedDamage": "281051",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "get_down!_1",
+    "name": "Get Down!",
+    "time": 135,
+    "description": "Get Down! - moderate party-wide damage.",
+    "unmitigatedDamage": "N/A",
+    "importance": "low",
+    "icon": "👇",
+    "isTankBuster": false
+  },
+  {
+    "id": "minor_freak_out_1",
+    "name": "Minor Freak Out",
+    "time": 171,
+    "description": "Minor Freak Out - low party-wide damage.",
+    "unmitigatedDamage": "32670",
+    "importance": "medium",
+    "icon": "😱",
+    "isTankBuster": false
+  },
+  {
+    "id": "ride_the_waves_1",
+    "name": "Ride the Waves",
+    "time": 234,
+    "description": "Ride the Waves - high party-wide damage.",
+    "unmitigatedDamage": "102500",
+    "importance": "high",
+    "icon": "🌊",
+    "isTankBuster": false
+  },
+  {
+    "id": "quarter_beats_1",
+    "name": "Quarter Beats",
+    "time": 242,
+    "description": "Quarter Beats - moderate party-wide damage.",
+    "unmitigatedDamage": "N/A",
+    "importance": "low",
+    "icon": "🎵",
+    "isTankBuster": false
+  },
+  {
+    "id": "eighth_beats_1",
+    "name": "Eighth Beats",
+    "time": 250,
+    "description": "Eighth Beats - high party-wide damage.",
+    "unmitigatedDamage": "114890",
+    "importance": "high",
+    "icon": "🎶",
+    "isTankBuster": false
+  },
+  {
+    "id": "play_a-side_3",
+    "name": "Play A-side",
+    "time": 262,
+    "description": "Play A-side - high party-wide damage.",
+    "unmitigatedDamage": "96575",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "deep_cut_3",
+    "name": "Deep Cut",
+    "time": 270,
+    "description": "Deep Cut - high tank buster damage.",
+    "unmitigatedDamage": "280952",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "celebrate_good_times_3",
+    "name": "Celebrate Good Times",
+    "time": 277,
+    "description": "Celebrate Good Times - high party-wide damage.",
+    "unmitigatedDamage": "175826",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "back-up_dance_1",
+    "name": "Back-up Dance",
+    "time": 322,
+    "description": "Back-up Dance - high party-wide damage.",
+    "unmitigatedDamage": "87028",
+    "importance": "high",
+    "icon": "👯",
+    "isTankBuster": false
+  },
+  {
+    "id": "back-up_dance_2",
+    "name": "Back-up Dance",
+    "time": 332,
+    "description": "Back-up Dance - high party-wide damage.",
+    "unmitigatedDamage": "95012",
+    "importance": "high",
+    "icon": "👯",
+    "isTankBuster": false
+  },
+  {
+    "id": "play_a-side_4",
+    "name": "Play A-side",
+    "time": 344,
+    "description": "Play A-side - high party-wide damage.",
+    "unmitigatedDamage": "93880",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "celebrate_good_times_4",
+    "name": "Celebrate Good Times",
+    "time": 350,
+    "description": "Celebrate Good Times - high party-wide damage.",
+    "unmitigatedDamage": "177066",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  },
+  {
+    "id": "back-up_dance_3",
+    "name": "Back-up Dance",
+    "time": 467,
+    "description": "Back-up Dance - high party-wide damage.",
+    "unmitigatedDamage": "1145540",
+    "importance": "high",
+    "icon": "👯",
+    "isTankBuster": false
+  },
+  {
+    "id": "back-up_dance_4",
+    "name": "Back-up Dance",
+    "time": 483,
+    "description": "Back-up Dance - high party-wide damage.",
+    "unmitigatedDamage": "1253510",
+    "importance": "high",
+    "icon": "👯",
+    "isTankBuster": false
+  },
+  {
+    "id": "deep_cut_4",
+    "name": "Deep Cut",
+    "time": 500,
+    "description": "Deep Cut - high tank buster damage.",
+    "unmitigatedDamage": "493281",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "celebrate_good_times_5",
+    "name": "Celebrate Good Times",
+    "time": 547,
+    "description": "Celebrate Good Times - high party-wide damage.",
+    "unmitigatedDamage": "169231",
+    "importance": "high",
+    "icon": "⚔️",
+    "isTankBuster": false
+  }
+]

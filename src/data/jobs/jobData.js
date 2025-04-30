@@ -85,6 +85,12 @@ export const ffxivJobs = {
       name: 'Reaper',
       icon: '/jobs-new/reaper.png',
       selected: false
+    },
+    {
+      id: 'VPR',
+      name: 'Viper',
+      icon: '/jobs-new/viper.png',
+      selected: false
     }
   ],
   ranged: [
@@ -124,6 +130,12 @@ export const ffxivJobs = {
       id: 'RDM',
       name: 'Red Mage',
       icon: '/jobs-new/redmage.png',
+      selected: false
+    },
+    {
+      id: 'PCM',
+      name: 'Pictomancer',
+      icon: '/jobs-new/pictomancer.png',
       selected: false
     }
   ]

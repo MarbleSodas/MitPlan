@@ -501,16 +501,6 @@ export const bossActionsMap = {
       icon: '🌈'
     },
     {
-      id: 'two_snap_twist_1',
-      name: '2-snap Twist',
-      time: 45,
-      description: 'Two successive half-room cleaves in one direction, followed by a cleave on the other side. These cleaves will be synced to the rhythm of the background music.',
-      unmitigatedDamage: '~125,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💃'
-    },
-    {
       id: 'funky_floor_1',
       name: 'Funky Floor',
       time: 60,
@@ -559,16 +549,6 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'high',
       icon: '🌊'
-    },
-    {
-      id: 'four_snap_twist_1',
-      name: '4-snap Twist',
-      time: 150,
-      description: 'Four half-room cleaves in one direction before a final cleave in the other direction. Similar to 2-snap Twist but with more cleaves.',
-      unmitigatedDamage: '~140,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💃'
     },
     {
       id: 'ensemble_assemble_1',
@@ -659,26 +639,6 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
-    },
-    {
-      id: 'two_snap_twist_2',
-      name: '2-snap Twist',
-      time: 360,
-      description: 'Two successive half-room cleaves in one direction, followed by a cleave on the other side. These cleaves will be synced to the rhythm of the background music.',
-      unmitigatedDamage: '~130,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💃'
-    },
-    {
-      id: 'four_snap_twist_2',
-      name: '4-snap Twist',
-      time: 390,
-      description: 'Four half-room cleaves in one direction before a final cleave in the other direction. Similar to 2-snap Twist but with more cleaves.',
-      unmitigatedDamage: '~145,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💃'
     },
     {
       id: 'celebrate_good_times_2',
