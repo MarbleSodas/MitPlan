@@ -415,6 +415,12 @@ export const ffxivJobs = {
       name: 'Reaper',
       icon: '/jobs-new/reaper.png',
       selected: false
+    },
+    {
+      id: 'VPR',
+      name: 'Viper',
+      icon: '/jobs-new/viper.png',
+      selected: false
     }
   ],
   ranged: [
@@ -454,6 +460,12 @@ export const ffxivJobs = {
       id: 'RDM',
       name: 'Red Mage',
       icon: '/jobs-new/redmage.png',
+      selected: false
+    },
+    {
+      id: 'PCM',
+      name: 'Pictomancer',
+      icon: '/jobs-new/pictomancer.png',
       selected: false
     }
   ]
@@ -790,6 +802,38 @@ export const mitigationAbilities = [
     cooldown: 30,
     jobs: ['SCH'],
     icon: '/abilities-gamerescape/sacred_soil.png',
+    type: 'mitigation',
+    mitigationValue: 0.10,
+    damageType: 'both'
+  },
+  {
+    id: 'fey_illumination',
+    name: 'Fey Illumination',
+    description: 'Increases healing magic potency by 10% and reduces magic damage taken by 5%',
+    levelRequirement: 40,
+    levelDescriptions: {
+      40: 'Increases healing magic potency by 10% and reduces magic damage taken by 5% for 20s'
+    },
+    duration: 20,
+    cooldown: 120,
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/fey_illumination.png',
+    type: 'mitigation',
+    mitigationValue: 0.05,
+    damageType: 'magical'
+  },
+  {
+    id: 'seraphic_illumination',
+    name: 'Seraphic Illumination',
+    description: 'Increases healing potency by 10% and reduces damage taken by party members by 10%',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Increases healing potency by 10% and reduces damage taken by party members by 10% for 20s'
+    },
+    duration: 20,
+    cooldown: 120, // Part of Summon Seraph which has 120s cooldown
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/seraphic_illumination.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both'

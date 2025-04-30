@@ -314,6 +314,11 @@ export const mitigationAbilities = [
     id: 'sacred_soil',
     name: 'Sacred Soil',
     description: 'Creates an area that reduces damage taken by 10% and applies regen',
+    levelRequirement: 45,
+    levelDescriptions: {
+      45: 'Creates an area that reduces damage taken by 10% for 15s',
+      78: 'Creates an area that reduces damage taken by 10% and applies regen for 15s'
+    },
     duration: 15,
     cooldown: 30,
     jobs: ['SCH'],
@@ -323,9 +328,46 @@ export const mitigationAbilities = [
     damageType: 'both'
   },
   {
+    id: 'fey_illumination',
+    name: 'Fey Illumination',
+    description: 'Increases healing magic potency by 10% and reduces magic damage taken by 5%',
+    levelRequirement: 40,
+    levelDescriptions: {
+      40: 'Increases healing magic potency by 10% and reduces magic damage taken by 5% for 20s'
+    },
+    duration: 20,
+    cooldown: 120,
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/fey_illumination.png',
+    type: 'mitigation',
+    mitigationValue: 0.05,
+    damageType: 'magical'
+  },
+
+  {
+    id: 'seraphic_illumination',
+    name: 'Seraphic Illumination',
+    description: 'Increases healing potency by 10% and reduces damage taken by party members by 10%',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Increases healing potency by 10% and reduces damage taken by party members by 10% for 20s'
+    },
+    duration: 20,
+    cooldown: 120, // Part of Summon Seraph which has 120s cooldown
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/seraphic_illumination.png',
+    type: 'mitigation',
+    mitigationValue: 0.10,
+    damageType: 'both'
+  },
+  {
     id: 'expedient',
     name: 'Expedient',
     description: 'Increases movement speed and reduces damage taken by 10%',
+    levelRequirement: 90,
+    levelDescriptions: {
+      90: 'Increases movement speed and reduces damage taken by 10% for 20s'
+    },
     duration: 20,
     cooldown: 120,
     jobs: ['SCH'],
