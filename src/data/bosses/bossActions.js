@@ -37,9 +37,19 @@ export const bossActionsMap = {
     {
       id: 'hydro_combo_2',
       name: 'Hydrofall || Hydrobullet',
-      time: 97, // 87 + 10
+      time: 91, // 87 + 10
       description: 'Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.',
       unmitigatedDamage: '~43,461', // Using the value from Hydrofall_2
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '💧'
+    },
+    {
+      id: 'hydro_combo_3',
+      name: 'Hydrofall || Hydrobullet',
+      time: 97, // 87 + 10
+      description: 'Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.',
+      unmitigatedDamage: '~43,341', // Using the value from Hydrofall_2
       damageType: 'magical',
       importance: 'medium',
       icon: '💧'
@@ -85,7 +95,7 @@ export const bossActionsMap = {
       icon: '🌊'
     },
     {
-      id: 'hydro_combo_3',
+      id: 'hydro_combo_4',
       name: 'Hydrofall || Hydrobullet',
       time: 207, // 197 + 10
       description: 'High party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.',
@@ -95,7 +105,7 @@ export const bossActionsMap = {
       icon: '💧'
     },
     {
-      id: 'hydro_combo_4',
+      id: 'hydro_combo_5',
       name: 'Hydrofall || Hydrobullet',
       time: 212, // 202 + 10
       description: 'Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.',
@@ -135,7 +145,7 @@ export const bossActionsMap = {
       icon: '🫧'
     },
     {
-      id: 'hydro_combo_5',
+      id: 'hydro_combo_6',
       name: 'Hydrofall || Hydrobullet',
       time: 280, // 270 + 10
       description: 'Moderate party-wide magical damage with both stack (Hydrofall) and spread (Hydrobullet) mechanics occurring simultaneously. Players must coordinate to handle both mechanics at once.',
@@ -179,19 +189,39 @@ export const bossActionsMap = {
     {
       id: 'inferno_theorem_1',
       name: 'Inferno Theorem',
-      time: 10, // 1 + 9
+      time: 10, // 0 + 10
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~86,000',
+      unmitigatedDamage: '~86,253',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
     },
     {
+      id: 'radiance_1',
+      name: 'Radiance',
+      time: 46, // 1 + 9
+      description: 'Party-wide magical damage that is applied during mechanics',
+      unmitigatedDamage: '~25,840',
+      damageType: 'magical',
+      importance: 'low',
+      icon: '🔥'
+    },
+    {
+      id: 'radiance_2',
+      name: 'Radiance',
+      time: 55, // 1 + 9
+      description: 'Party-wide magical damage that is applied during mechanics',
+      unmitigatedDamage: '~25,376',
+      damageType: 'magical',
+      importance: 'low',
+      icon: '🔥'
+    },
+    {
       id: 'targeted_light_1',
       name: 'Targeted Light',
-      time: 61, // 52 + 9
+      time: 60,
       description: 'Moderate party-wide magical damage with knockback. Players must face their character so their safe side is towards the boss when considering rotation, or they will take heavy damage and be knocked back.',
-      unmitigatedDamage: '~39,000',
+      unmitigatedDamage: '~38,987',
       damageType: 'magical',
       importance: 'medium',
       icon: '🔦'
@@ -201,19 +231,19 @@ export const bossActionsMap = {
       name: 'Strategic Strike',
       time: 71, // 62 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
-      unmitigatedDamage: '~55,000 per hit',
+      unmitigatedDamage: '~59,825 per hit',
       damageType: 'physical',
       importance: 'high',
       icon: '🛡️'
     },
     {
-      id: 'arcane_combustion_1',
-      name: 'Arcane Combustion',
+      id: 'symmetric_surge_1',
+      name: 'Symmetric Surge',
       time: 107, // 98 + 9
-      description: 'Moderate party-wide magical damage that occurs when players with Subtractive Suppressor Alpha debuffs disarm Arcane Mines. Part of the Arcane Mine mechanic.',
-      unmitigatedDamage: '~51,000',
+      description: 'Pair stacks. Part of the Planar Tactics mechanic.',
+      unmitigatedDamage: '~50,880',
       damageType: 'magical',
-      importance: 'medium',
+      importance: 'low',
       icon: '💥'
     },
     {
@@ -221,7 +251,7 @@ export const bossActionsMap = {
       name: 'Inferno Theorem',
       time: 112, // 103 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~85,000',
+      unmitigatedDamage: '~84,792',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -231,7 +261,7 @@ export const bossActionsMap = {
       name: 'Strategic Strike',
       time: 122, // 113 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
-      unmitigatedDamage: '~54,000 per hit',
+      unmitigatedDamage: '~59,854 per hit',
       damageType: 'physical',
       importance: 'high',
       icon: '🛡️'
@@ -239,9 +269,9 @@ export const bossActionsMap = {
     {
       id: 'inferno_theorem_3',
       name: 'Inferno Theorem',
-      time: 173, // 164 + 9
+      time: 172, // 164 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~82,000',
+      unmitigatedDamage: '~85,099',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -249,9 +279,9 @@ export const bossActionsMap = {
     {
       id: 'inferno_theorem_4',
       name: 'Inferno Theorem',
-      time: 184, // 175 + 9
+      time: 183, // 175 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~85,000',
+      unmitigatedDamage: '~85,099',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -271,7 +301,7 @@ export const bossActionsMap = {
       name: 'Explosive Theorem',
       time: 230, // 221 + 9
       description: 'High party-wide magical damage that follows a complex sequence of mechanics involving Symmetric Surge and other abilities.',
-      unmitigatedDamage: '~73,000',
+      unmitigatedDamage: '~54,536',
       damageType: 'magical',
       importance: 'high',
       icon: '💥'
@@ -291,7 +321,7 @@ export const bossActionsMap = {
       name: 'Strategic Strike',
       time: 248, // 239 + 9
       description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
-      unmitigatedDamage: '~55,000 per hit',
+      unmitigatedDamage: '~59,711 per hit',
       damageType: 'physical',
       importance: 'high',
       icon: '🛡️'
@@ -301,7 +331,7 @@ export const bossActionsMap = {
       name: 'Inferno Theorem',
       time: 257, // 248 + 9
       description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~87,000',
+      unmitigatedDamage: '~80,363',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -370,10 +400,10 @@ export const bossActionsMap = {
     },
     {
       id: 'trapshooting_3',
-      name: 'Trapshooting',
+      name: 'Trapshooting + Uncommon Ground',
       time: 120, // 111 + 9
       description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~68,108',
+      unmitigatedDamage: '~93,193',
       damageType: 'magical',
       importance: 'high',
       icon: '🎯'
@@ -420,10 +450,10 @@ export const bossActionsMap = {
     },
     {
       id: 'fireworks_2',
-      name: 'Fireworks',
+      name: 'Fireworks + Uncommon Ground',
       time: 236, // 227 + 9
       description: 'Moderate to high party-wide magical damage. Part of the Pinwheeling Dartboard mechanic where players must navigate rotating AoEs while resolving debuffs.',
-      unmitigatedDamage: '~60,226',
+      unmitigatedDamage: '~85,226',
       damageType: 'magical',
       importance: 'medium',
       icon: '🎆'
@@ -483,229 +513,279 @@ export const bossActionsMap = {
     {
       id: 'deep_cut_1',
       name: 'Deep Cut',
-      time: 15,
+      time: 10, // 1 + 9
       description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~310,000',
+      unmitigatedDamage: '~299,214',
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
     },
     {
-      id: 'do_the_hustle_1',
-      name: 'Do the Hustle',
-      time: 30,
-      description: 'One side of the boss will be surrounded by a wall of rainbow tiles, indicating a half-room cleave in that direction. Has no ground telegraph.',
-      unmitigatedDamage: '~150,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌈'
-    },
-    {
-      id: 'funky_floor_1',
-      name: 'Funky Floor',
-      time: 60,
-      description: 'Five sets of alternating square AoEs in a checkerboard pattern across the arena tiles.',
-      unmitigatedDamage: '~90,000',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🔲'
-    },
-    {
-      id: 'full_beat_1',
-      name: 'Full Beat',
-      time: 75,
-      description: 'Stack marker on a random player dealing magical damage. Players must stack up on a safe tile to split the damage.',
-      unmitigatedDamage: '~180,000',
+      id: 'play_combo_1',
+      name: 'Play A-side || Play B-side',
+      time: 34, // 25 + 9
+      description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
+      unmitigatedDamage: '~129,810',
       damageType: 'magical',
       importance: 'high',
       icon: '⚔️'
     },
     {
-      id: 'disco_infernal_1',
-      name: 'Disco Infernal',
-      time: 89,
-      description: 'Party-wide magical damage and assigns everyone Burn Baby Burn debuffs. Four spotlights will spawn and move in fixed patterns. Players must be in a spotlight when debuffs expire.',
-      unmitigatedDamage: '~100,000',
+      id: 'play_combo_2',
+      name: 'Play A-side || Play B-side',
+      time: 53, // 44 + 9
+      description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
+      unmitigatedDamage: '~96,162',
       damageType: 'magical',
       importance: 'high',
-      icon: '🔥'
+      icon: '⚔️'
     },
     {
       id: 'celebrate_good_times_1',
       name: 'Celebrate Good Times',
-      time: 114,
+      time: 60, // 51 + 9
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~175,000',
+      unmitigatedDamage: '~175,372',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
     },
     {
-      id: 'ride_the_waves_1',
-      name: 'Ride the Waves',
-      time: 135,
-      description: 'Arrow telegraphs appear at the north row of tiles, leaving one tile empty. These denote moving, three-tile-long AoEs that travel south.',
-      unmitigatedDamage: '~120,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌊'
-    },
-    {
-      id: 'ensemble_assemble_1',
-      name: 'Ensemble Assemble',
-      time: 175,
-      description: 'Summons eight untargetable Frogtourage backup dancer adds, one on each pedestal at the north of the arena.',
-      unmitigatedDamage: 'N/A',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🐸'
-    },
-    {
-      id: 'arcady_night_fever_1',
-      name: 'Arcady Night Fever',
-      time: 190,
-      description: 'The adds will each sequentially pose with either their right or left hand raised. A Grooviness duty gauge will also appear.',
-      unmitigatedDamage: 'N/A',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🕺'
-    },
-    {
-      id: 'lets_dance_1',
-      name: 'Let\'s Dance!',
-      time: 205,
-      description: 'Boss will tether the adds in order they posed. Boss uses eight half-room cleaves based on which hand the current add has raised.',
-      unmitigatedDamage: '~95,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💃'
-    },
-    {
-      id: 'lets_pose_1',
-      name: 'Let\'s Pose!',
-      time: 230,
-      description: 'Party-wide magical damage that scales based on the Grooviness meter. Perfect dodges receive Perfect Groove buff, increasing damage dealt.',
-      unmitigatedDamage: '~160,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '✨'
-    },
-    {
-      id: 'frogtourage_1',
-      name: 'Frogtourage',
-      time: 250,
-      description: 'Summons two Frogtourage adds that moonwalk around sections of the arena, marking AoEs (Moonburn).',
-      unmitigatedDamage: 'N/A',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🐸'
-    },
-    {
-      id: 'eighth_beats_1',
-      name: 'Eighth Beats',
-      time: 264,
-      description: 'All players receive a stack marker dealing magical damage. Players must group together to split the damage.',
-      unmitigatedDamage: '~115,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎶'
-    },
-    {
-      id: 'funky_floor_2',
-      name: 'Funky Floor',
-      time: 284,
-      description: 'Five sets of alternating square AoEs in a checkerboard pattern combined with 2-snap Twist. Players must dodge to the other half of the room between sets of tile AoEs.',
-      unmitigatedDamage: '~95,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🔲'
-    },
-    {
-      id: 'disco_infernal_2',
+      id: 'disco_infernal_1',
       name: 'Disco Infernal',
-      time: 310,
-      description: 'Party-wide magical damage, summons three moving spotlights and assigns everyone Burn Baby Burn debuffs. Players must be in a spotlight when debuffs expire.',
-      unmitigatedDamage: '~110,000',
+      time: 84, // 75 + 9
+      description: 'Party-wide magical damage and assigns everyone Burn Baby Burn debuffs. Spotlights will spawn and move in fixed patterns. Players must be in a spotlight when debuffs expire.',
+      unmitigatedDamage: '~122,903',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
     },
     {
-      id: 'deep_cut_2',
-      name: 'Deep Cut',
-      time: 335,
-      description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~320,000',
+      id: 'play_combo_3',
+      name: 'Play A-side || Play B-side',
+      time: 116, // 107 + 9
+      description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
+      unmitigatedDamage: '~93,303',
       damageType: 'magical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '⚔️'
     },
     {
       id: 'celebrate_good_times_2',
       name: 'Celebrate Good Times',
-      time: 414,
+      time: 123, // 114 + 9
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~180,000',
+      unmitigatedDamage: '~178,378',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
     },
     {
-      id: 'ensemble_assemble_2',
-      name: 'Ensemble Assemble',
-      time: 440,
-      description: 'Summons eight untargetable Frogtourage backup dancer adds, one on each pedestal at the north of the arena.',
-      unmitigatedDamage: 'N/A',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🐸'
-    },
-    {
-      id: 'lets_dance_2',
-      name: 'Let\'s Dance!',
-      time: 465,
-      description: 'Boss will tether the adds in order they posed. Boss uses eight half-room cleaves based on which hand the current add has raised.',
-      unmitigatedDamage: '~100,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '💃'
-    },
-    {
-      id: 'lets_pose_2',
-      name: 'Let\'s Pose!',
-      time: 490,
-      description: 'Party-wide magical damage that scales based on the Grooviness meter. Perfect dodges receive Perfect Groove buff, increasing damage dealt.',
-      unmitigatedDamage: '~170,000',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '✨'
-    },
-    {
-      id: 'deep_cut_3',
+      id: 'deep_cut_2',
       name: 'Deep Cut',
-      time: 514,
+      time: 130, // 121 + 9
       description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~350,000',
+      unmitigatedDamage: '~281,051',
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
     },
     {
-      id: 'disco_infernal_3',
+      id: 'get_down!_1',
+      name: 'Get Down!',
+      time: 144, // 135 + 9
+      description: 'Moderate party-wide magical damage. Players must perform specific dance moves to avoid additional damage.',
+      unmitigatedDamage: '~96,212',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '👇'
+    },
+    {
+      id: 'minor_freak_out_1',
+      name: 'Minor Freak Out',
+      time: 180, // 171 + 9
+      description: 'Low party-wide magical damage. Part of a involving pairs based on times',
+      unmitigatedDamage: '~32,670',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '😱'
+    },
+    {
+      id: 'beats_combo_1',
+      name: 'Quarter Beats || Eighth Beats',
+      time: 251, // 242 + 9
+      description: 'Moderate party-wide magical damage. Part of a sequence of increasingly rapid beat attacks.',
+      unmitigatedDamage: '~130,634',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🎵'
+    },
+    {
+      id: 'beats_combo_2',
+      name: 'Quarter Beats || Eighth Beats',
+      time: 259, // 250 + 9
+      description: 'All players receive a marker dealing magical damage. Players must spread the damage.',
+      unmitigatedDamage: '~114,890',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🎶'
+    },
+    {
+      id: 'play_combo_4',
+      name: 'Play A-side || Play B-side',
+      time: 271, // 262 + 9
+      description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
+      unmitigatedDamage: '~96,575',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '⚔️'
+    },
+    {
+      id: 'deep_cut_3',
+      name: 'Deep Cut',
+      time: 279, // 270 + 9
+      description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
+      unmitigatedDamage: '~280,952',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🛡️'
+    },
+    {
+      id: 'celebrate_good_times_3',
+      name: 'Celebrate Good Times',
+      time: 286, // 277 + 9
+      description: 'High party-wide magical damage that should be heavily mitigated.',
+      unmitigatedDamage: '~175,826',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🎉'
+    },
+    {
+      id: 'beats_combo_3',
+      name: 'Quarter Beats || Eighth Beats',
+      time: 311, // 277 + 9
+      description: 'All players receive a marker dealing magical damage. Players must spread the damage.',
+      unmitigatedDamage: '~124,712',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🎶'
+    },
+    {
+      id: 'disco_infernal_2',
       name: 'Disco Infernal',
-      time: 540,
-      description: 'Party-wide magical damage, summons three moving spotlights and assigns everyone Burn Baby Burn debuffs. Players must be in a spotlight when debuffs expire.',
-      unmitigatedDamage: '~120,000',
+      time: 319, // 310 + 9
+      description: 'Party-wide magical damage and assigns everyone Burn Baby Burn debuffs. Spotlights will spawn and move in fixed patterns. Players must be in a spotlight when debuffs expire.',
+      unmitigatedDamage: '~122,903',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
     },
     {
-      id: 'celebrate_good_times_3',
+      id: 'back-up_dance_1',
+      name: 'Back-up Dance',
+      time: 331, // 322 + 9
+      description: 'Baited Cleaves while completing splotlight mechanic',
+      unmitigatedDamage: '~87,028',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '👯'
+    },
+    {
+      id: 'back-up_dance_2',
+      name: 'Back-up Dance',
+      time: 341, // 332 + 9
+      description: 'Baited Cleaves while completing splotlight mechanic',
+      unmitigatedDamage: '~95,012',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '👯'
+    },
+    {
+      id: 'play_combo_5',
+      name: 'Play A-side || Play B-side',
+      time: 353, // 344 + 9
+      description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
+      unmitigatedDamage: '~93,880',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '⚔️'
+    },
+    {
+      id: 'celebrate_good_times_4',
       name: 'Celebrate Good Times',
-      time: 561,
+      time: 359, // 350 + 9
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~190,000',
+      unmitigatedDamage: '~177,066',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🎉'
+    },
+    {
+      id: 'get_down!_2',
+      name: 'Get Down!',
+      time: 378, // 369 + 9
+      description: 'Moderate party-wide magical damage. Players must perform specific dance moves to avoid additional damage.',
+      unmitigatedDamage: '~96,212',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '👇'
+    },
+    {
+      id: 'back-up_dance_3',
+      name: 'Back-up Dance',
+      time: 476, // 467 + 9
+      description: 'Baited Cleaves while avoiding frogtourage',
+      unmitigatedDamage: '~96,451',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '👯'
+    },
+    {
+      id: 'back-up_dance_4',
+      name: 'Back-up Dance',
+      time: 492, // 483 + 9
+      description: 'Baited Cleaves while avoiding frogtourage',
+      unmitigatedDamage: '~96,451',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '👯'
+    },
+    {
+      id: 'deep_cut_4',
+      name: 'Deep Cut',
+      time: 509, // 500 + 9
+      description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
+      unmitigatedDamage: '~299,214',
+      damageType: 'magical',
+      importance: 'high',
+      icon: '🛡️'
+    },
+    {
+      id: 'beats_combo_4',
+      name: 'Quarter Beats || Eighth Beats',
+      time: 528, // 518 + 9
+      description: 'Moderate party-wide magical damage. Pairs stacks',
+      unmitigatedDamage: '~130,634',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🎵'
+    },
+    {
+      id: 'beats_combo_5',
+      name: 'Quarter Beats || Eighth Beats',
+      time: 549, // 540 + 9
+      description: 'All players receive a marker dealing magical damage. Players spread the damage.',
+      unmitigatedDamage: '~114,890',
+      damageType: 'magical',
+      importance: 'medium',
+      icon: '🎶'
+    },
+    {
+      id: 'celebrate_good_times_5',
+      name: 'Celebrate Good Times',
+      time: 556, // 547 + 9
+      description: 'High party-wide magical damage that should be heavily mitigated.',
+      unmitigatedDamage: '~169,231',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
