@@ -5,6 +5,7 @@ import App from './App.jsx';
 import { AppProvider } from './contexts';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { checkForUpdates } from './utils';
 
 // Create root and render app
 const container = document.getElementById('root')
@@ -14,6 +15,9 @@ const root = createRoot(container)
 window.addEventListener('error', (event) => {
   console.error('Global error caught:', event.error)
 })
+
+// Check for updates - this will refresh the page if a new version is detected
+checkForUpdates()
 
 // Render the app
 root.render(

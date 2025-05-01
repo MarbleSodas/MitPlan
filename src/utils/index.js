@@ -39,6 +39,11 @@ export {
   reconstructJobs
 } from './url/urlUtils';
 
+export {
+  BUILD_TIMESTAMP,
+  checkForUpdates
+} from './version/versionUtils';
+
 // Commented out server-side log processing functions that use Node.js modules
 // These functions are not compatible with browser environments
 /*

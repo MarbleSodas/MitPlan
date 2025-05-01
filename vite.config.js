@@ -4,4 +4,9 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Replace the placeholder in the code with the actual build timestamp
+    // This ensures each build has a unique timestamp
+    __BUILD_TIMESTAMP__: JSON.stringify(Date.now())
+  }
 })
