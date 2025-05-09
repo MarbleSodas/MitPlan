@@ -1,8 +1,23 @@
 /**
  * Boss actions data for the application
  */
+import sugarRiotActions from './sugar-riot_actions.json';
+import dancingGreenActions from './dancing-green_actions.json';
+import lalaActions from './lala_actions.json';
+import staticeActions from './statice_actions.json';
+
+// Create a new array with Sugar Riot actions with a 10-second offset
+const sugarRiotActionsWithOffset = sugarRiotActions.map(action => ({
+  ...action,
+  time: action.time + 10 // Add 10 seconds to each action's time
+}));
 
 export const bossActionsMap = {
+  'sugar-riot': sugarRiotActions,
+  'sugar-riot-offset': sugarRiotActionsWithOffset, // Add the offset version
+  'dancing-green-m5s': dancingGreenActions,
+  'lala': lalaActions,
+  'statice': staticeActions,
   ketuduke: [
     {
       id: 'tidal_roar_1',
@@ -513,9 +528,9 @@ export const bossActionsMap = {
     {
       id: 'deep_cut_1',
       name: 'Deep Cut',
-      time: 10, // 1 + 9
+      time: 15,
       description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~299,214',
+      unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
@@ -523,9 +538,9 @@ export const bossActionsMap = {
     {
       id: 'play_combo_1',
       name: 'Play A-side || Play B-side',
-      time: 34, // 25 + 9
+      time: 40,
       description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
-      unmitigatedDamage: '~129,810',
+      unmitigatedDamage: '120,000',
       damageType: 'magical',
       importance: 'high',
       icon: '⚔️'
@@ -533,9 +548,9 @@ export const bossActionsMap = {
     {
       id: 'play_combo_2',
       name: 'Play A-side || Play B-side',
-      time: 53, // 44 + 9
+      time: 59,
       description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
-      unmitigatedDamage: '~96,162',
+      unmitigatedDamage: '120,000',
       damageType: 'magical',
       importance: 'high',
       icon: '⚔️'
@@ -543,9 +558,9 @@ export const bossActionsMap = {
     {
       id: 'celebrate_good_times_1',
       name: 'Celebrate Good Times',
-      time: 60, // 51 + 9
+      time: 65,
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~175,372',
+      unmitigatedDamage: '140,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
@@ -553,9 +568,9 @@ export const bossActionsMap = {
     {
       id: 'disco_infernal_1',
       name: 'Disco Infernal',
-      time: 84, // 75 + 9
+      time: 77,
       description: 'Party-wide magical damage and assigns everyone Burn Baby Burn debuffs. Spotlights will spawn and move in fixed patterns. Players must be in a spotlight when debuffs expire.',
-      unmitigatedDamage: '~122,903',
+      unmitigatedDamage: '95,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
@@ -563,9 +578,9 @@ export const bossActionsMap = {
     {
       id: 'play_combo_3',
       name: 'Play A-side || Play B-side',
-      time: 116, // 107 + 9
+      time: 122,
       description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
-      unmitigatedDamage: '~93,303',
+      unmitigatedDamage: '120,000',
       damageType: 'magical',
       importance: 'high',
       icon: '⚔️'
@@ -573,9 +588,9 @@ export const bossActionsMap = {
     {
       id: 'celebrate_good_times_2',
       name: 'Celebrate Good Times',
-      time: 123, // 114 + 9
+      time: 128,
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~178,378',
+      unmitigatedDamage: '140,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
@@ -583,9 +598,9 @@ export const bossActionsMap = {
     {
       id: 'deep_cut_2',
       name: 'Deep Cut',
-      time: 130, // 121 + 9
+      time: 136,
       description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~281,051',
+      unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
@@ -593,9 +608,9 @@ export const bossActionsMap = {
     {
       id: 'get_down!_1',
       name: 'Get Down!',
-      time: 144, // 135 + 9
+      time: 156,
       description: 'Moderate party-wide magical damage. Players must perform specific dance moves to avoid additional damage.',
-      unmitigatedDamage: '~96,212',
+      unmitigatedDamage: '100,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '👇'
@@ -603,9 +618,9 @@ export const bossActionsMap = {
     {
       id: 'minor_freak_out_1',
       name: 'Minor Freak Out',
-      time: 180, // 171 + 9
-      description: 'Low party-wide magical damage. Part of a involving pairs based on times',
-      unmitigatedDamage: '~32,670',
+      time: 186,
+      description: 'Low party-wide magical damage. Part of a mechanic involving pairs based on times',
+      unmitigatedDamage: '25,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '😱'
@@ -613,9 +628,9 @@ export const bossActionsMap = {
     {
       id: 'beats_combo_1',
       name: 'Quarter Beats || Eighth Beats',
-      time: 251, // 242 + 9
+      time: 243,
       description: 'Moderate party-wide magical damage. Part of a sequence of increasingly rapid beat attacks.',
-      unmitigatedDamage: '~130,634',
+      unmitigatedDamage: '130,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🎵'
@@ -623,9 +638,9 @@ export const bossActionsMap = {
     {
       id: 'beats_combo_2',
       name: 'Quarter Beats || Eighth Beats',
-      time: 259, // 250 + 9
+      time: 251,
       description: 'All players receive a marker dealing magical damage. Players must spread the damage.',
-      unmitigatedDamage: '~114,890',
+      unmitigatedDamage: '130,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🎶'
@@ -633,19 +648,19 @@ export const bossActionsMap = {
     {
       id: 'play_combo_4',
       name: 'Play A-side || Play B-side',
-      time: 271, // 262 + 9
+      time: 277,
       description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
-      unmitigatedDamage: '~96,575',
+      unmitigatedDamage: '120,000',
       damageType: 'magical',
-      importance: 'medium',
+      importance: 'high',
       icon: '⚔️'
     },
     {
       id: 'deep_cut_3',
       name: 'Deep Cut',
-      time: 279, // 270 + 9
+      time: 285,
       description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~280,952',
+      unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
@@ -653,9 +668,9 @@ export const bossActionsMap = {
     {
       id: 'celebrate_good_times_3',
       name: 'Celebrate Good Times',
-      time: 286, // 277 + 9
+      time: 291,
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~175,826',
+      unmitigatedDamage: '140,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
@@ -663,9 +678,9 @@ export const bossActionsMap = {
     {
       id: 'beats_combo_3',
       name: 'Quarter Beats || Eighth Beats',
-      time: 311, // 277 + 9
+      time: 306,
       description: 'All players receive a marker dealing magical damage. Players must spread the damage.',
-      unmitigatedDamage: '~124,712',
+      unmitigatedDamage: '130,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🎶'
@@ -673,29 +688,29 @@ export const bossActionsMap = {
     {
       id: 'disco_infernal_2',
       name: 'Disco Infernal',
-      time: 319, // 310 + 9
+      time: 325,
       description: 'Party-wide magical damage and assigns everyone Burn Baby Burn debuffs. Spotlights will spawn and move in fixed patterns. Players must be in a spotlight when debuffs expire.',
-      unmitigatedDamage: '~122,903',
+      unmitigatedDamage: '95,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🔥'
     },
     {
       id: 'back-up_dance_1',
-      name: 'Back-up Dance',
-      time: 331, // 322 + 9
-      description: 'Baited Cleaves while completing splotlight mechanic',
-      unmitigatedDamage: '~87,028',
+      name: 'Dancing Wave',
+      time: 336,
+      description: 'Baited Cleaves while completing spotlight mechanic',
+      unmitigatedDamage: '95,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '👯'
     },
     {
       id: 'back-up_dance_2',
-      name: 'Back-up Dance',
-      time: 341, // 332 + 9
-      description: 'Baited Cleaves while completing splotlight mechanic',
-      unmitigatedDamage: '~95,012',
+      name: 'Dancing Wave',
+      time: 347,
+      description: 'Baited Cleaves while completing spotlight mechanic',
+      unmitigatedDamage: '95,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '👯'
@@ -703,9 +718,9 @@ export const bossActionsMap = {
     {
       id: 'play_combo_5',
       name: 'Play A-side || Play B-side',
-      time: 353, // 344 + 9
+      time: 358,
       description: 'High party-wide magical damage that should be mitigated. Part of the boss\'s rotation of musical-themed attacks.',
-      unmitigatedDamage: '~93,880',
+      unmitigatedDamage: '120,000',
       damageType: 'magical',
       importance: 'high',
       icon: '⚔️'
@@ -713,9 +728,9 @@ export const bossActionsMap = {
     {
       id: 'celebrate_good_times_4',
       name: 'Celebrate Good Times',
-      time: 359, // 350 + 9
+      time: 364,
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~177,066',
+      unmitigatedDamage: '140,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
@@ -723,29 +738,29 @@ export const bossActionsMap = {
     {
       id: 'get_down!_2',
       name: 'Get Down!',
-      time: 378, // 369 + 9
+      time: 385,
       description: 'Moderate party-wide magical damage. Players must perform specific dance moves to avoid additional damage.',
-      unmitigatedDamage: '~96,212',
+      unmitigatedDamage: '100,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '👇'
     },
     {
       id: 'back-up_dance_3',
-      name: 'Back-up Dance',
-      time: 476, // 467 + 9
+      name: 'Dancing Wave',
+      time: 482,
       description: 'Baited Cleaves while avoiding frogtourage',
-      unmitigatedDamage: '~96,451',
+      unmitigatedDamage: '95,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '👯'
     },
     {
       id: 'back-up_dance_4',
-      name: 'Back-up Dance',
-      time: 492, // 483 + 9
+      name: 'Dancing Wave',
+      time: 498,
       description: 'Baited Cleaves while avoiding frogtourage',
-      unmitigatedDamage: '~96,451',
+      unmitigatedDamage: '95,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '👯'
@@ -753,9 +768,9 @@ export const bossActionsMap = {
     {
       id: 'deep_cut_4',
       name: 'Deep Cut',
-      time: 509, // 500 + 9
+      time: 515,
       description: 'Telegraphed conal magical tankbuster on both tanks. Requires heavy mitigation or tank invulnerability.',
-      unmitigatedDamage: '~299,214',
+      unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️'
@@ -763,9 +778,9 @@ export const bossActionsMap = {
     {
       id: 'beats_combo_4',
       name: 'Quarter Beats || Eighth Beats',
-      time: 528, // 518 + 9
+      time: 533,
       description: 'Moderate party-wide magical damage. Pairs stacks',
-      unmitigatedDamage: '~130,634',
+      unmitigatedDamage: '130,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🎵'
@@ -773,9 +788,9 @@ export const bossActionsMap = {
     {
       id: 'beats_combo_5',
       name: 'Quarter Beats || Eighth Beats',
-      time: 549, // 540 + 9
+      time: 553,
       description: 'All players receive a marker dealing magical damage. Players spread the damage.',
-      unmitigatedDamage: '~114,890',
+      unmitigatedDamage: '130,000',
       damageType: 'magical',
       importance: 'medium',
       icon: '🎶'
@@ -783,17 +798,17 @@ export const bossActionsMap = {
     {
       id: 'celebrate_good_times_5',
       name: 'Celebrate Good Times',
-      time: 556, // 547 + 9
+      time: 561,
       description: 'High party-wide magical damage that should be heavily mitigated.',
-      unmitigatedDamage: '~169,231',
+      unmitigatedDamage: '140,000',
       damageType: 'magical',
       importance: 'high',
       icon: '🎉'
     },
     {
       id: 'celebrate_good_times_enrage',
-      name: 'Celebrate Good Times (enrage)',
-      time: 580,
+      name: 'High Energy Night Fever (enrage)',
+      time: 606,
       description: 'Wipe',
       unmitigatedDamage: 'N/A',
       damageType: 'magical',

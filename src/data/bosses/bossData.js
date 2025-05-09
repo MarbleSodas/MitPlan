@@ -31,6 +31,13 @@ export const bosses = [
     icon: '💃',
     level: 100
   },
+  {
+    id: 'sugar-riot',
+    name: 'Sugar Riot (M6S)',
+    description: 'The artistic genius of Solution Nine, second boss of AAC Cruiserweight Tier (Savage).',
+    icon: '🎨',
+    level: 100
+  },
 ];
 
 export default bosses;
