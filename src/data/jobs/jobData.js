@@ -133,7 +133,7 @@ export const ffxivJobs = {
       selected: false
     },
     {
-      id: 'PCM',
+      id: 'PCT',
       name: 'Pictomancer',
       icon: '/jobs-new/pictomancer.png',
       selected: false

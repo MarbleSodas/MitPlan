@@ -404,21 +404,16 @@ const MobileMitigationSelector = ({
 
             const isDisabled = isAssigned ||
                               (cooldownResult && cooldownResult.isOnCooldown) ||
-                              hasNoAvailableCharges ||
-                              (cooldownResult && cooldownResult.reason === 'party-wide-already-assigned');
+                              hasNoAvailableCharges;
 
             // Get the cooldown reason if applicable
             let cooldownReason = null;
             if ((cooldownResult && cooldownResult.isOnCooldown) ||
                 (cooldownResult && cooldownResult.availableCharges === 0) ||
-                (cooldownResult && (cooldownResult.reason === 'already-assigned' || cooldownResult.reason === 'party-wide-already-assigned'))) {
+                (cooldownResult && cooldownResult.reason === 'already-assigned')) {
 
               if (cooldownResult.reason === 'already-assigned') {
                 cooldownReason = `Already assigned to this action`;
-              } else if (cooldownResult.reason === 'party-wide-already-assigned') {
-                const assignedMitigation = cooldownResult.partyWideMitigationsAssigned[0];
-                const assignedMitigationName = assignedMitigation ? assignedMitigation.name : 'Another party-wide mitigation';
-                cooldownReason = `${assignedMitigationName} already assigned.\nOnly one party-wide mitigation per action.`;
               }
               // Handle role-shared abilities
               else if (cooldownResult.isRoleShared && cooldownResult.roleSharedCount > 1) {
@@ -591,9 +586,8 @@ const MobileMitigationSelector = ({
 
                         // Calculate available instances
                         const totalInstances = cooldownResult.totalInstances || roleSharedCount;
-                        // For role-shared abilities, we want to show the actual number of available instances
-                        // This should be at least 1 if the ability is not on cooldown
-                        let availableInstances = cooldownResult.availableCharges / getAbilityChargeCount(mitigation, bossLevel);
+                        const instancesUsed = cooldownResult.instancesUsed || 0;
+                        let availableInstances = Math.max(0, totalInstances - instancesUsed);
 
                         // If this ability is being assigned but not yet in the assignments array,
                         // decrement the available instances to reflect the current assignment

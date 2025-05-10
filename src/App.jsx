@@ -1344,11 +1344,6 @@ function App() {
                             selectedBossAction.id
                           );
 
-                          // Check for party-wide mitigation restriction
-                          if (cooldownResult && cooldownResult.reason === 'party-wide-already-assigned') {
-                            return true;
-                          }
-
                           // For role-shared abilities, check if all instances are on cooldown
                           if (mitigation.isRoleShared && cooldownResult) {
                             return cooldownResult.availableCharges === 0;
@@ -1380,12 +1375,6 @@ function App() {
 
                           if (cooldownResult.reason === 'already-assigned') {
                             return `${mitigation.name} is already assigned to this boss action`;
-                          }
-
-                          if (cooldownResult.reason === 'party-wide-already-assigned') {
-                            const assignedMitigation = cooldownResult.partyWideMitigationsAssigned[0];
-                            const assignedMitigationName = assignedMitigation ? assignedMitigation.name : 'Another party-wide mitigation';
-                            return `${assignedMitigationName} is already assigned to this boss action.\nOnly one party-wide mitigation can be assigned per boss action.`;
                           }
 
                           // Handle role-shared abilities
@@ -1436,11 +1425,6 @@ function App() {
                             assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id) || hasPendingAssignment,
                             selectedBossAction.id
                           );
-
-                          // Check for party-wide mitigation restriction
-                          if (cooldownResult && cooldownResult.reason === 'party-wide-already-assigned') {
-                            return true;
-                          }
 
                           // For role-shared abilities, check if all instances are on cooldown
                           if (mitigation.isRoleShared && cooldownResult) {
@@ -1549,9 +1533,8 @@ function App() {
 
                               // Calculate available instances
                               const totalInstances = cooldownResult.totalInstances || roleSharedCount;
-                              // For role-shared abilities, we want to show the actual number of available instances
-                              // This should be at least 1 if the ability is not on cooldown
-                              let availableInstances = cooldownResult.availableCharges / getAbilityChargeCount(mitigation, currentBossLevel);
+                              const instancesUsed = cooldownResult.instancesUsed || 0;
+                              let availableInstances = Math.max(0, totalInstances - instancesUsed);
 
                               // Check if there are any pending assignments for this mitigation
                               // This ensures the UI updates immediately after assignment

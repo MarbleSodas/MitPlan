@@ -1,7 +1,12 @@
 /**
  * Utility functions for mitigation calculations
  */
-import { getAbilityMitigationValueForLevel, getAbilityDurationForLevel } from '../abilities/abilityUtils';
+import {
+  getAbilityMitigationValueForLevel,
+  getAbilityDurationForLevel,
+  getAbilityChargeCount,
+  getAbilityCooldownForLevel
+} from '../abilities/abilityUtils';
 
 /**
  * Find all mitigation abilities that are active at a specific time point
@@ -220,11 +225,152 @@ export const isMitigationAvailable = (mitigation, selectedJobs) => {
   });
 };
 
+/**
+ * Calculate an optimal mitigation plan for a set of boss actions
+ *
+ * @param {Array} bossActions - Array of boss action objects
+ * @param {Array} availableMitigations - Array of available mitigation abilities
+ * @param {Object} selectedJobs - Object containing selected jobs
+ * @param {number} bossLevel - The level of the boss
+ * @param {number} targetMinimumMitigation - Minimum mitigation percentage to aim for (0-1)
+ * @returns {Object} - Optimal mitigation assignments
+ */
+export const calculateOptimalMitigationPlan = (
+  bossActions,
+  availableMitigations,
+  selectedJobs,
+  bossLevel = 90,
+  targetMinimumMitigation = 0.15 // Default to 15% minimum mitigation
+) => {
+  // Sort boss actions by time
+  const sortedActions = [...bossActions].sort((a, b) => a.time - b.time);
+
+  // Filter mitigations to only include those available with selected jobs
+  const filteredMitigations = availableMitigations.filter(mitigation =>
+    isMitigationAvailable(mitigation, selectedJobs)
+  );
+
+  // Initialize assignments object
+  const assignments = {};
+
+  // Initialize ability usage tracking
+  const abilityUsage = {};
+  filteredMitigations.forEach(mitigation => {
+    abilityUsage[mitigation.id] = {
+      lastUsedTime: -Infinity,
+      chargesUsed: 0,
+      totalCharges: getAbilityChargeCount(mitigation, bossLevel)
+    };
+  });
+
+  // Process each boss action
+  for (const action of sortedActions) {
+    // Skip actions that don't deal damage
+    if (!action.unmitigatedDamage) continue;
+
+    // Initialize assignments for this action
+    assignments[action.id] = [];
+
+    // Get the damage type for this action (default to 'both' if not specified)
+    const damageType = action.damageType || 'both';
+
+    // Calculate which abilities are available at this time
+    const availableAbilities = filteredMitigations.filter(mitigation => {
+      // Skip abilities that don't apply to this damage type
+      if (mitigation.damageType && mitigation.damageType !== 'both' && mitigation.damageType !== damageType) {
+        return false;
+      }
+
+      // Skip abilities that don't match the action type (tankbuster/raidwide)
+      if (action.isTankBuster && !mitigation.forTankBusters) return false;
+      if (!action.isTankBuster && !mitigation.forRaidWide) return false;
+
+      // Check if the ability is on cooldown
+      const usage = abilityUsage[mitigation.id];
+      const cooldownDuration = getAbilityCooldownForLevel(mitigation, bossLevel);
+      const timeSinceLastUse = action.time - usage.lastUsedTime;
+
+      // For abilities with multiple charges
+      if (usage.totalCharges > 1) {
+        // If we haven't used all charges, the ability is available
+        if (usage.chargesUsed < usage.totalCharges) {
+          return true;
+        }
+
+        // If the oldest charge has recovered, the ability is available
+        if (timeSinceLastUse >= cooldownDuration) {
+          return true;
+        }
+
+        return false;
+      } else {
+        // For abilities with a single charge, just check if it's off cooldown
+        return timeSinceLastUse >= cooldownDuration;
+      }
+    });
+
+    // Sort abilities by mitigation value (highest first)
+    const sortedAbilities = [...availableAbilities].sort((a, b) => {
+      const aValue = typeof a.mitigationValue === 'object' ?
+        Math.max(a.mitigationValue.physical || 0, a.mitigationValue.magical || 0) :
+        a.mitigationValue || 0;
+
+      const bValue = typeof b.mitigationValue === 'object' ?
+        Math.max(b.mitigationValue.physical || 0, b.mitigationValue.magical || 0) :
+        b.mitigationValue || 0;
+
+      return bValue - aValue;
+    });
+
+    // Assign mitigations until we reach the target minimum
+    let currentMitigation = 0;
+    for (const ability of sortedAbilities) {
+      // Skip if we've already reached the target
+      if (currentMitigation >= targetMinimumMitigation) break;
+
+      // Add this ability to the assignments
+      assignments[action.id].push(ability);
+
+      // Update ability usage tracking
+      const usage = abilityUsage[ability.id];
+      if (usage.totalCharges > 1 && usage.chargesUsed < usage.totalCharges) {
+        // If we have charges available, increment the count
+        usage.chargesUsed++;
+      } else {
+        // Otherwise, reset the count and update the last used time
+        usage.chargesUsed = 1;
+        usage.lastUsedTime = action.time;
+      }
+
+      // Update current mitigation value
+      const mitigationValue = getAbilityMitigationValueForLevel(ability, bossLevel);
+      if (typeof mitigationValue === 'object') {
+        // For abilities with different physical/magical values
+        if (damageType === 'physical') {
+          currentMitigation = 1 - ((1 - currentMitigation) * (1 - (mitigationValue.physical || 0)));
+        } else if (damageType === 'magical') {
+          currentMitigation = 1 - ((1 - currentMitigation) * (1 - (mitigationValue.magical || 0)));
+        } else {
+          // For 'both', use the higher value
+          const value = Math.max(mitigationValue.physical || 0, mitigationValue.magical || 0);
+          currentMitigation = 1 - ((1 - currentMitigation) * (1 - value));
+        }
+      } else if (mitigationValue) {
+        // For abilities with a single mitigation value
+        currentMitigation = 1 - ((1 - currentMitigation) * (1 - mitigationValue));
+      }
+    }
+  }
+
+  return assignments;
+};
+
 // Create an index file for easier imports
 export default {
   findActiveMitigationsAtTime,
   calculateTotalMitigation,
   formatMitigation,
   generateMitigationBreakdown,
-  isMitigationAvailable
+  isMitigationAvailable,
+  calculateOptimalMitigationPlan
 };

@@ -1,0 +1,447 @@
+[
+  {
+    "id": "brutal_impact_1",
+    "name": "Brutal Impact",
+    "time": 10,
+    "description": "Multiple hits of raidwide physical damage that marks the beginning of the fight.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "smash_here_1",
+    "name": "Smash Here",
+    "time": 30,
+    "description": "An unmarked shared tank buster on the closest player. Requires tank swap and mitigation.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "sinister_seeds_1",
+    "name": "Sinister Seeds",
+    "time": 55,
+    "description": "The four closest or furthest players receive a marked AoE that drop Tendrils of Terror and inflicts a magic vuln. These create line AoEs extending cardinally and intercardinally.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌱"
+  },
+  {
+    "id": "impact_1",
+    "name": "Impact",
+    "time": 65,
+    "description": "Unmarked stack AoE on both healers that inflicts a magic vulnerability up debuff.",
+    "unmitigatedDamage": "74,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💥"
+  },
+
+  {
+    "id": "explosion_1",
+    "name": "Explosion",
+    "time": 85,
+    "description": "Three proximity AoEs around the edges drop in sequence. Players must move around the arena to avoid them.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💣"
+  },
+
+  {
+    "id": "smash_there_1",
+    "name": "Smash There",
+    "time": 105,
+    "description": "An unmarked shared tank buster on the furthest player. Requires tank swap and mitigation.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "pulp_smash_1",
+    "name": "Pulp Smash",
+    "time": 115,
+    "description": "Marked stack AoE on the healer. The boss jumps to the healer creating a small point-blank AoE, and all players take damage in a conal AoE that inflicts vulnerability.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "👊"
+  },
+  {
+    "id": "neo_bombarian_special_1",
+    "name": "Neo Bombarian Special",
+    "time": 130,
+    "description": "Heavy physical damage that knocks players back off the platform to the second arena.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "brutish_swing_1",
+    "name": "Brutish Swing",
+    "time": 150,
+    "description": "The boss does an AoE based on the weapon in his hand. If he is tethered to a building, jumps to it halfway through the cast and casts it from there.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "glower_power_1",
+    "name": "Glower Power",
+    "time": 155,
+    "description": "Line AoE in front of boss with unmarked circle AoEs on all players that inflicts a magic vulnerability.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👁️"
+  },
+  {
+    "id": "revenge_of_the_vines_1",
+    "name": "Revenge of the Vines",
+    "time": 160,
+    "description": "Heavy raidwide magical damage that requires significant mitigation.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌿"
+  },
+
+  {
+    "id": "abominable_blink_1",
+    "name": "Abominable Blink",
+    "time": 190,
+    "description": "A random tank receives a proximity flare AoE marker that needs to be mitigated.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💫"
+  },
+  {
+    "id": "sporesplosion_1",
+    "name": "Sporesplosion",
+    "time": 200,
+    "description": "Three sets of circle AoEs on the floor that must be avoided.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💥"
+  },
+  {
+    "id": "brutish_swing_2",
+    "name": "Brutish Swing",
+    "time": 210,
+    "description": "The boss does an AoE based on the weapon in his hand. If he is tethered to a building, jumps to it halfway through the cast and casts it from there.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "glower_power_2",
+    "name": "Glower Power",
+    "time": 215,
+    "description": "Line AoE in front of boss with unmarked circle AoEs on all players that inflicts a magic vulnerability.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👁️"
+  },
+  {
+    "id": "revenge_of_the_vines_2",
+    "name": "Revenge of the Vines",
+    "time": 220,
+    "description": "Heavy raidwide magical damage that requires significant mitigation.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌿"
+  },
+
+  {
+    "id": "abominable_blink_2",
+    "name": "Abominable Blink",
+    "time": 240,
+    "description": "A random tank receives a proximity flare AoE marker that needs to be mitigated.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💫"
+  },
+
+  {
+    "id": "strange_seeds_1",
+    "name": "Strange Seeds",
+    "time": 250,
+    "description": "Four sets of two marked AoEs that drop Tendrils of Terror AoEs. Each set targets one support and one DPS.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌱"
+  },
+  {
+    "id": "killer_seeds_1",
+    "name": "Killer Seeds",
+    "time": 260,
+    "description": "Four stack marker AoEs that also drop Tendrils of Terror AoEs. Spawns on four players of one role.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎯"
+  },
+  {
+    "id": "brutish_swing_3",
+    "name": "Brutish Swing",
+    "time": 270,
+    "description": "The boss does an AoE based on the weapon in his hand. If he is tethered to a building, jumps to it halfway through the cast and casts it from there.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "glower_power_3",
+    "name": "Glower Power",
+    "time": 275,
+    "description": "Line AoE in front of boss with unmarked circle AoEs on all players that inflicts a magic vulnerability.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👁️"
+  },
+  {
+    "id": "revenge_of_the_vines_3",
+    "name": "Revenge of the Vines",
+    "time": 280,
+    "description": "Heavy raidwide magical damage that requires significant mitigation.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌿"
+  },
+  {
+    "id": "powerslam_1",
+    "name": "Powerslam",
+    "time": 290,
+    "description": "Breaks the arena dealing heavy physical damage, causing all players to plummet down into the third arena.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+
+  {
+    "id": "brutal_impact_2",
+    "name": "Brutal Impact",
+    "time": 320,
+    "description": "Multiple hits of raidwide physical damage that requires significant mitigation.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "brutish_swing_4",
+    "name": "Brutish Swing",
+    "time": 330,
+    "description": "The boss does an AoE based on the glowing weapon in his hand. He tethers to a wall and jumps to it halfway through the cast.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "lashing_lariat_1",
+    "name": "Lashing Lariat",
+    "time": 335,
+    "description": "Once he uses Brutish Swing, the weapon he used disappears. He will do a large line AoE from that hand's side and dash across the arena.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "➡️"
+  },
+  {
+    "id": "brutish_swing_5",
+    "name": "Brutish Swing",
+    "time": 345,
+    "description": "The boss does an AoE based on the remaining weapon in his hand. He tethers to a wall and jumps to it halfway through the cast.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "glower_power_4",
+    "name": "Glower Power",
+    "time": 350,
+    "description": "Line AoE in front of boss with unmarked circle AoEs on all players that inflicts a magic vulnerability.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👁️"
+  },
+  {
+    "id": "slaminator_1",
+    "name": "Slaminator",
+    "time": 355,
+    "description": "A tower in the middle of the arena. Must be soaked and deals massive damage as Brute Abombinator jumps to it. Tank invulnerability recommended.",
+    "unmitigatedDamage": "200,000",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🏢"
+  },
+
+  {
+    "id": "smash_here_2",
+    "name": "Smash Here",
+    "time": 375,
+    "description": "An unmarked shared tank buster on the closest player. Requires tank swap and mitigation.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "brutal_impact_3",
+    "name": "Brutal Impact",
+    "time": 385,
+    "description": "Multiple hits of raidwide physical damage that requires significant mitigation.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+
+  {
+    "id": "killer_seeds_2",
+    "name": "Killer Seeds",
+    "time": 415,
+    "description": "Four stack marker AoEs that also drop Tendrils of Terror AoEs. Spawns on four players of one role.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎯"
+  },
+
+  {
+    "id": "sinister_seeds_2",
+    "name": "Sinister Seeds",
+    "time": 435,
+    "description": "The four closest or furthest players receive a marked AoE that drop Tendrils of Terror and inflicts a magic vuln. These create line AoEs extending cardinally and intercardinally.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌱"
+  },
+  {
+    "id": "pulp_smash_2",
+    "name": "Pulp Smash",
+    "time": 445,
+    "description": "Marked stack AoE on the healer. The boss jumps to the healer creating a small point-blank AoE, and all players take damage in a conal AoE that inflicts vulnerability.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "👊"
+  },
+  {
+    "id": "brutal_impact_4",
+    "name": "Brutal Impact",
+    "time": 455,
+    "description": "Multiple hits of raidwide physical damage that requires significant mitigation.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+
+  {
+    "id": "strange_seeds_2",
+    "name": "Strange Seeds",
+    "time": 475,
+    "description": "Four sets of two marked AoEs that drop Tendrils of Terror AoEs. Each set targets one support and one DPS.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌱"
+  },
+  {
+    "id": "brutish_swing_6",
+    "name": "Brutish Swing",
+    "time": 485,
+    "description": "The boss does an AoE based on the glowing weapon in his hand. He tethers to a wall and jumps to it halfway through the cast.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "lashing_lariat_2",
+    "name": "Lashing Lariat",
+    "time": 490,
+    "description": "Once he uses Brutish Swing, the weapon he used disappears. He will do a large line AoE from that hand's side and dash across the arena.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "➡️"
+  },
+  {
+    "id": "brutish_swing_7",
+    "name": "Brutish Swing",
+    "time": 500,
+    "description": "The boss does an AoE based on the remaining weapon in his hand. He tethers to a wall and jumps to it halfway through the cast.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "slaminator_2",
+    "name": "Slaminator",
+    "time": 510,
+    "description": "A tower in the middle of the arena. Must be soaked and deals massive damage as Brute Abombinator jumps to it. Tank invulnerability recommended.",
+    "unmitigatedDamage": "200,000",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🏢"
+  },
+
+  {
+    "id": "smash_there_2",
+    "name": "Smash There",
+    "time": 530,
+    "description": "An unmarked shared tank buster on the furthest player. Requires tank swap and mitigation.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "brutal_impact_5",
+    "name": "Brutal Impact",
+    "time": 540,
+    "description": "Multiple hits of raidwide physical damage that requires significant mitigation.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "special_bombarian_special",
+    "name": "Special Bombarian Special (Enrage)",
+    "time": 670,
+    "description": "Enrage wipe mechanic that occurs at 11:10 into the fight.",
+    "unmitigatedDamage": "N/A",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "💀"
+  }
+]

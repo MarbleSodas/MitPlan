@@ -7,7 +7,9 @@
     "unmitigatedDamage": "~81,436",
     "damageType": "magical",
     "importance": "high",
-    "icon": "⭕"
+    "icon": ""icon": "⭕"",
+    "isTankBuster": false,
+    "isTankBuster": false
   },
   {
     "id": "bubble_net_1",
@@ -17,7 +19,9 @@
     "unmitigatedDamage": "~71,090",
     "damageType": "magical",
     "importance": "high",
-    "icon": "🫧"
+    "icon": ""icon": "🫧"",
+    "isTankBuster": false,
+    "isTankBuster": false
   },
   {
     "id": "hydrofall_1",
@@ -27,7 +31,8 @@
     "unmitigatedDamage": "~42,098",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "hydrofall_2",
@@ -37,7 +42,8 @@
     "unmitigatedDamage": "~43,461",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "hydrobullet_1",
@@ -47,7 +53,8 @@
     "unmitigatedDamage": "~43,341",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "hydrofall_3",
@@ -57,7 +64,8 @@
     "unmitigatedDamage": "~42,239",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "bubble_net_2",
@@ -67,7 +75,8 @@
     "unmitigatedDamage": "~70,362",
     "damageType": "magical",
     "importance": "high",
-    "icon": "🫧"
+    "icon": ""icon": "🫧"",
+    "isTankBuster": false
   },
   {
     "id": "hydrobullet_2",
@@ -77,7 +86,8 @@
     "unmitigatedDamage": "~42,730",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "angry_seas_1",
@@ -87,7 +97,8 @@
     "unmitigatedDamage": "~27,199",
     "damageType": "both",
     "importance": "medium",
-    "icon": "🌊"
+    "icon": ""icon": "🌊"",
+    "isTankBuster": false
   },
   {
     "id": "hydrobullet_3",
@@ -97,7 +108,8 @@
     "unmitigatedDamage": "~68,233",
     "damageType": "magical",
     "importance": "high",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "hydrofall_4",
@@ -107,7 +119,8 @@
     "unmitigatedDamage": "~41,126",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": ""icon": "💧"",
+    "isTankBuster": false
   },
   {
     "id": "bubble_net_3",
@@ -117,7 +130,8 @@
     "unmitigatedDamage": "~71,767",
     "damageType": "magical",
     "importance": "high",
-    "icon": "🫧"
+    "icon": ""icon": "🫧"",
+    "isTankBuster": false
   },
   {
     "id": "burst_1",
@@ -127,7 +141,8 @@
     "unmitigatedDamage": "~27,279",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💥"
+    "icon": ""icon": "💥"",
+    "isTankBuster": false
   },
   {
     "id": "bubble_net_4",
@@ -137,7 +152,8 @@
     "unmitigatedDamage": "~70,824",
     "damageType": "magical",
     "importance": "high",
-    "icon": "🫧"
+    "icon": "🫧",
+    "isTankBuster": false
   },
   {
     "id": "hydrobullet_4",
@@ -147,7 +163,8 @@
     "unmitigatedDamage": "~43,424",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": "💧",
+    "isTankBuster": false
   },
   {
     "id": "hydrofall_5",
@@ -157,6 +174,7 @@
     "unmitigatedDamage": "~40,537",
     "damageType": "magical",
     "importance": "medium",
-    "icon": "💧"
+    "icon": "💧",
+    "isTankBuster": false
   }
 ]

@@ -38,6 +38,13 @@ export const bosses = [
     icon: '🎨',
     level: 100
   },
+  {
+    id: 'brute-abominator-m7s',
+    name: 'Brute Abominator (M7S)',
+    description: 'The monstrous creation of Solution Nine, third boss of AAC Cruiserweight Tier (Savage).',
+    icon: '👹',
+    level: 100
+  },
 ];
 
 export default bosses;

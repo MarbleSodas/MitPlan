@@ -1,10 +1,10 @@
 [
   {
     "id": "mousse_mural_1",
-    "name": "Mousse Mural",
-    "time": 12,
+    "name": "Mousse Mural", 
+    "time": 10,
     "description": "Raidwide magical damage that marks the beginning of the fight.",
-    "unmitigatedDamage": "80000",
+    "unmitigatedDamage": "80,000",
     "damageType": "magical",
     "importance": "medium",
     "icon": "🎨"
@@ -12,9 +12,9 @@
   {
     "id": "color_riot_1",
     "name": "Color Riot",
-    "time": 21,
+    "time": 19,
     "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
-    "unmitigatedDamage": "110000",
+    "unmitigatedDamage": "110,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🔫",
@@ -23,9 +23,9 @@
   {
     "id": "color_clash_1",
     "name": "Color Clash",
-    "time": 36,
+    "time": 34,
     "description": "Sugar Riot fires her gun into the air. Creates unmarked stack AoEs on healers or role-based stacks depending on the number of shots fired.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "💥"
@@ -33,9 +33,9 @@
   {
     "id": "sticky_mousse_1",
     "name": "Sticky Mousse",
-    "time": 56,
+    "time": 54,
     "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🍮"
@@ -43,9 +43,9 @@
   {
     "id": "color_riot_2",
     "name": "Color Riot",
-    "time": 71,
+    "time": 69,
     "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
-    "unmitigatedDamage": "110000",
+    "unmitigatedDamage": "110,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🔫",
@@ -54,9 +54,9 @@
   {
     "id": "desert_layer_1",
     "name": "Desert Layer 1",
-    "time": 96,
+    "time": 94,
     "description": "Sugar Riot paints cacti on the desert, creating six sets of cacti AoEs that spawn on the arena.",
-    "unmitigatedDamage": "80000",
+    "unmitigatedDamage": "80,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🌵"
@@ -64,9 +64,9 @@
   {
     "id": "heating_up_1",
     "name": "Heating Up",
-    "time": 111,
+    "time": 109,
     "description": "The marked tank and DPS with Heating Up debuffs explode in a large AoE and inflict damage down debuffs.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🔥"
@@ -74,9 +74,9 @@
   {
     "id": "sticky_mousse_2",
     "name": "Sticky Mousse",
-    "time": 126,
+    "time": 124,
     "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🍮"
@@ -84,9 +84,9 @@
   {
     "id": "pudding_graf_1",
     "name": "Pudding Graf",
-    "time": 156,
+    "time": 154,
     "description": "Sugar Riot jumps to the middle. The next Double Style will tether one role with Normal Paint Bombs and the other role with Winged Paint Bombs.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🎭"
@@ -94,9 +94,9 @@
   {
     "id": "color_riot_3",
     "name": "Color Riot",
-    "time": 167,
+    "time": 165,
     "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
-    "unmitigatedDamage": "110000",
+    "unmitigatedDamage": "110,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🔫",
@@ -106,9 +106,9 @@
   {
     "id": "ready_ore_not_1",
     "name": "Ready Ore Not",
-    "time": 211,
+    "time": 209,
     "description": "Raidwide magical damage. After this, any alive Mu adds will begin to cast Ore-Rigato, which deals damage and inflicts a stacking DoT to all players.",
-    "unmitigatedDamage": "80000",
+    "unmitigatedDamage": "80,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "⛏️"
@@ -116,9 +116,9 @@
   {
     "id": "ready_ore_not_2",
     "name": "Ready Ore Not",
-    "time": 281,
+    "time": 279,
     "description": "Raidwide magical damage. After this, any alive Mu adds will begin to cast Ore-Rigato, which deals damage and inflicts a stacking DoT to all players.",
-    "unmitigatedDamage": "80000",
+    "unmitigatedDamage": "80,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "⛏️"
@@ -126,9 +126,9 @@
   {
     "id": "color_riot_4",
     "name": "Color Riot",
-    "time": 361,
+    "time": 359,
     "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
-    "unmitigatedDamage": "110000",
+    "unmitigatedDamage": "110,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🔫",
@@ -137,9 +137,9 @@
   {
     "id": "mousse_mural_2",
     "name": "Mousse Mural",
-    "time": 371,
+    "time": 369,
     "description": "Raidwide magical damage that marks the end of the adds phase.",
-    "unmitigatedDamage": "80000",
+    "unmitigatedDamage": "80,000",
     "damageType": "magical",
     "importance": "medium",
     "icon": "🎨"
@@ -147,9 +147,9 @@
   {
     "id": "double_style_2",
     "name": "Double Style",
-    "time": 401,
+    "time": 399,
     "description": "Spawns Sweet Shot arrows at the edge of the arena and either Taste of Fire or Taste of Thunder.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🖌️"
@@ -157,9 +157,9 @@
   {
     "id": "taste_of_lightning_1",
     "name": "Taste of Lightning",
-    "time": 426,
+    "time": 424,
     "description": "The screen flashes with lightning. Unmarked AoEs spawn under all players when this happens, and they need to move away from where they were when the flash happened.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "⚡"
@@ -167,9 +167,9 @@
   {
     "id": "lightning_storm_1",
     "name": "Lightning Storm",
-    "time": 436,
+    "time": 434,
     "description": "One support and one DPS are targeted with a lightning prey marker. This will do an AoE around them and strike the island they are on. This will repeat for all players.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🌩️"
@@ -177,9 +177,9 @@
   {
     "id": "pudding_party_1",
     "name": "Pudding Party",
-    "time": 451,
+    "time": 449,
     "description": "A multi-hit stack marker that deals high magical damage. Hits five times.",
-    "unmitigatedDamage": "150000",
+    "unmitigatedDamage": "150,000",
     "damageType": "magical",
     "importance": "critical",
     "icon": "🍰"
@@ -187,9 +187,9 @@
   {
     "id": "mousse_drip_1",
     "name": "Mousse Drip",
-    "time": 481,
+    "time": 479,
     "description": "The furthest two players are targeted with a multi-hit stack AoE. Inflicts a short magic vuln each hit, and leaves behind a puddle. Hits four times.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "💧"
@@ -197,9 +197,9 @@
   {
     "id": "moussacre_1",
     "name": "Moussacre",
-    "time": 486,
+    "time": 484,
     "description": "Conal AoEs giving a magic vuln on the four closest players.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "📐"
@@ -207,9 +207,9 @@
   {
     "id": "taste_of_lightning_2",
     "name": "Taste of Lightning",
-    "time": 496,
+    "time": 494,
     "description": "The screen flashes with lightning. Unmarked AoEs spawn under all players when this happens, and they need to move away from where they were when the flash happened.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "⚡"
@@ -217,9 +217,9 @@
   {
     "id": "explosion_1",
     "name": "Explosion",
-    "time": 511,
+    "time": 509,
     "description": "Summons eight towers which must be soaked. Players must bait Taste of Lightning AoEs outside of the tower before going into their tower.",
-    "unmitigatedDamage": "450000",
+    "unmitigatedDamage": "450,000",
     "damageType": "magical",
     "importance": "critical",
     "icon": "💣"
@@ -227,9 +227,9 @@
   {
     "id": "mousse_mural_3",
     "name": "Mousse Mural",
-    "time": 531,
+    "time": 529,
     "description": "Raidwide magical damage.",
-    "unmitigatedDamage": "80000",
+    "unmitigatedDamage": "80,000",
     "damageType": "magical",
     "importance": "medium",
     "icon": "🎨"
@@ -237,9 +237,9 @@
   {
     "id": "sticky_mousse_3",
     "name": "Sticky Mousse",
-    "time": 546,
+    "time": 544,
     "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🍮"
@@ -247,9 +247,9 @@
   {
     "id": "color_riot_5",
     "name": "Color Riot",
-    "time": 561,
+    "time": 559,
     "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
-    "unmitigatedDamage": "110000",
+    "unmitigatedDamage": "110,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "🔫",
@@ -258,9 +258,9 @@
   {
     "id": "color_clash_2",
     "name": "Color Clash",
-    "time": 581,
+    "time": 579,
     "description": "Sugar Riot fires her gun into the air. Creates unmarked stack AoEs on healers or role-based stacks depending on the number of shots fired.",
-    "unmitigatedDamage": "74000",
+    "unmitigatedDamage": "74,000",
     "damageType": "magical",
     "importance": "high",
     "icon": "💥"
@@ -268,9 +268,9 @@
   {
     "id": "artistic_anarchy",
     "name": "Artistic Anarchy (Enrage)",
-    "time": 695,
+    "time": 693,
     "description": "Enrage wipe mechanic that occurs at 11:24 into the fight.",
-    "unmitigatedDamage": "999999",
+    "unmitigatedDamage": "N/A",
     "damageType": "magical",
     "importance": "critical",
     "icon": "💀"

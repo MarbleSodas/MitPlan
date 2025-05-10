@@ -5,19 +5,14 @@ import sugarRiotActions from './sugar-riot_actions.json';
 import dancingGreenActions from './dancing-green_actions.json';
 import lalaActions from './lala_actions.json';
 import staticeActions from './statice_actions.json';
-
-// Create a new array with Sugar Riot actions with a 10-second offset
-const sugarRiotActionsWithOffset = sugarRiotActions.map(action => ({
-  ...action,
-  time: action.time + 10 // Add 10 seconds to each action's time
-}));
+import bruteAbominatorActions from './brute-abominator_actions.json';
 
 export const bossActionsMap = {
   'sugar-riot': sugarRiotActions,
-  'sugar-riot-offset': sugarRiotActionsWithOffset, // Add the offset version
   'dancing-green-m5s': dancingGreenActions,
   'lala': lalaActions,
   'statice': staticeActions,
+  'brute-abominator-m7s': bruteAbominatorActions,
   ketuduke: [
     {
       id: 'tidal_roar_1',

@@ -8,100 +8,70 @@
  * Update charge counters in the DOM immediately
  *
  * @param {string} mitigationId - ID of the mitigation ability
- * @param {string} bossActionId - ID of the boss action (used for context in logs)
+ * @param {string} bossActionId - ID of the boss action
  * @param {boolean} isAdding - Whether we're adding or removing a mitigation
  */
 export const updateChargeCountersImmediately = (mitigationId, bossActionId, isAdding = true) => {
-  // Log the action for debugging
-  console.log(`Updating charge counters for mitigation ${mitigationId} on boss action ${bossActionId}, isAdding=${isAdding}`);
   try {
-    // Try multiple selector strategies to ensure we find all relevant charge counters
-    let foundCounters = false;
+    // First, try to find charge counters by data attributes (most specific)
+    const chargeCounters = document.querySelectorAll(`.ChargeCount[data-mitigation-id="${mitigationId}"]`);
 
-    // 1. First, try to find charge counters by data attributes (most specific)
-    // Use multiple selectors to catch all possible charge counters
-    const chargeCounters = document.querySelectorAll(
-      `.ChargeCount[data-mitigation-id="${mitigationId}"], ` +
-      `[data-mitigation-id="${mitigationId}"] .ChargeCount, ` +
-      `span[available][data-mitigation-id="${mitigationId}"]`
-    );
     if (chargeCounters.length > 0) {
-      console.log(`Found ${chargeCounters.length} charge counters by data-mitigation-id`);
+      // Update all found charge counters
       chargeCounters.forEach(counter => {
         updateChargeCounter(counter, isAdding);
       });
-      foundCounters = true;
+      return; // Exit early if we found and updated counters
     }
 
-    // 2. Try finding by parent element with mitigation ID
+    // If no charge counters are found with data attributes, try more aggressive approaches
+
+    // 1. Try to find by parent element with mitigation ID
     const mitigationElements = document.querySelectorAll(`[data-mitigation-id="${mitigationId}"]`);
+    let foundCounter = false;
+
     mitigationElements.forEach(element => {
       const chargeCounter = element.querySelector('.ChargeCount');
       if (chargeCounter) {
-        console.log(`Found charge counter within parent element with data-mitigation-id`);
         updateChargeCounter(chargeCounter, isAdding);
-        foundCounters = true;
+        foundCounter = true;
       }
     });
 
-    // 3. Try finding by mitigation ID in common attributes
-    const elementsWithMitigationIdAttr = document.querySelectorAll(`[id*="${mitigationId}"], [data-id*="${mitigationId}"], [data-mitigation*="${mitigationId}"]`);
-    elementsWithMitigationIdAttr.forEach(element => {
-      const chargeCounter = element.querySelector('.ChargeCount');
-      if (chargeCounter) {
-        console.log(`Found charge counter within element with mitigation ID in attributes`);
-        updateChargeCounter(chargeCounter, isAdding);
-        foundCounters = true;
-      }
+    if (foundCounter) return; // Exit if we found counters this way
 
-      // Also check if the element itself is a charge counter
-      if (element.classList && element.classList.contains('ChargeCount')) {
-        console.log(`Found charge counter element with mitigation ID in attributes`);
-        updateChargeCounter(element, isAdding);
-        foundCounters = true;
+    // 2. Try to find by mitigation name in the DOM
+    // This is a fallback approach for when data attributes aren't available
+    const allMitigationItems = document.querySelectorAll('.MitigationItem, [class*="mitigation"]');
+
+    allMitigationItems.forEach(item => {
+      // Check if this item contains the mitigation ID or name
+      const itemText = item.textContent || '';
+      const hasMitigationId = itemText.includes(mitigationId);
+
+      // If this item is for our mitigation, find and update its charge counter
+      if (hasMitigationId) {
+        const chargeCounter = item.querySelector('.ChargeCount');
+        if (chargeCounter) {
+          updateChargeCounter(chargeCounter, isAdding);
+          foundCounter = true;
+        }
       }
     });
 
-    // 4. Last resort: find by class and content pattern
-    if (!foundCounters) {
-      console.log(`No charge counters found by ID, trying content pattern matching`);
-      const allChargeCounters = document.querySelectorAll('.ChargeCount');
-      allChargeCounters.forEach(counter => {
-        const counterText = counter.textContent || '';
-        if (counterText.match(/\d+\/\d+\s+(Charges|Instances)/)) {
-          updateChargeCounter(counter, isAdding);
-          foundCounters = true;
-        }
-      });
-    }
+    if (foundCounter) return; // Exit if we found counters this way
 
-    if (!foundCounters) {
-      console.warn(`No charge counters found for mitigation ${mitigationId}, attempting to force update via React props`);
+    // 3. Last resort: update all charge counters that match the pattern
+    // This is the most aggressive approach and should only be used if all else fails
+    const allChargeCounters = document.querySelectorAll('.ChargeCount');
 
-      // Force update via React props - this is a last resort approach
-      // Find all elements that might contain the mitigation
-      const mitigationItems = document.querySelectorAll('.MitigationItem, .MitigationAbility, [class*="mitigation"]');
-
-      mitigationItems.forEach(item => {
-        // Check if this item contains text matching the mitigation ID or name
-        const itemText = item.textContent || '';
-        if (itemText.includes(mitigationId)) {
-          console.log(`Found potential mitigation item containing ID ${mitigationId}`);
-
-          // Look for any elements with numbers that might be charge counters
-          const potentialCounters = Array.from(item.querySelectorAll('*')).filter(el => {
-            const text = el.textContent || '';
-            return text.match(/\d+\/\d+/) && (text.includes('Charges') || text.includes('Instances'));
-          });
-
-          potentialCounters.forEach(counter => {
-            console.log(`Found potential charge counter with text: ${counter.textContent}`);
-            updateChargeCounter(counter, isAdding);
-            foundCounters = true;
-          });
-        }
-      });
-    }
+    allChargeCounters.forEach(counter => {
+      const counterText = counter.textContent || '';
+      // Look for counters with the pattern "X/Y Charges" or "X/Y Instances"
+      if (counterText.match(/\d+\/\d+\s+(Charges|Instances)/)) {
+        updateChargeCounter(counter, isAdding);
+      }
+    });
   } catch (error) {
     console.error('Error updating charge counters:', error);
   }
@@ -125,31 +95,61 @@ const updateChargeCounter = (counterElement, isAdding) => {
       const totalCharges = parseInt(match[2]);
 
       // Calculate the new value
-      // For adding a mitigation, we always want to show one less charge available
-      // For removing a mitigation, we always want to show one more charge available
       const newCharges = isAdding ?
         Math.max(0, currentCharges - 1) : // Decrement when adding a mitigation
         Math.min(totalCharges, currentCharges + 1); // Increment when removing a mitigation
 
-      // Always update the text content to ensure immediate visual feedback
-      // This is critical for ensuring the UI updates synchronously with the user action
-      counterElement.textContent = `${newCharges}/${totalCharges} ${text.includes('Charges') ? 'Charges' : 'Instances'}`;
+      // Only update if the value would actually change
+      if (newCharges !== currentCharges) {
+        // Store the original text for reference
+        const originalText = counterElement.textContent;
 
-      // Update the available attribute for styling
-      counterElement.setAttribute('available', newCharges);
+        // Create a temporary element to show the animation
+        const tempElement = document.createElement('span');
+        tempElement.className = 'charge-counter-animation';
+        tempElement.textContent = isAdding ? '-1' : '+1';
+        tempElement.style.position = 'absolute';
+        tempElement.style.color = isAdding ? 'red' : 'green';
+        tempElement.style.fontWeight = 'bold';
+        tempElement.style.fontSize = '14px';
+        tempElement.style.opacity = '1';
+        tempElement.style.transition = 'all 0.5s ease-out';
+        tempElement.style.zIndex = '9999';
 
-      // Add a flash effect to highlight the change
-      counterElement.classList.add('flash-update');
-      setTimeout(() => {
-        counterElement.classList.remove('flash-update');
-      }, 500);
+        // Position the temp element near the counter
+        const rect = counterElement.getBoundingClientRect();
+        tempElement.style.left = `${rect.left + rect.width / 2}px`;
+        tempElement.style.top = `${rect.top - 10}px`;
 
-      // Log the update for debugging
-      console.log(`Updated charge counter from ${currentCharges} to ${newCharges} (${text} -> ${counterElement.textContent})`);
+        // Add the temp element to the document
+        document.body.appendChild(tempElement);
 
-      // Force a reflow to ensure the browser updates the DOM
-      // This is a hack but can help ensure the visual update happens immediately
-      void counterElement.offsetHeight;
+        // Animate the temp element
+        setTimeout(() => {
+          tempElement.style.opacity = '0';
+          tempElement.style.transform = 'translateY(-20px)';
+        }, 10);
+
+        // Remove the temp element after animation
+        setTimeout(() => {
+          document.body.removeChild(tempElement);
+        }, 500);
+
+        // Update the text content
+        counterElement.textContent = `${newCharges}/${totalCharges} ${text.includes('Charges') ? 'Charges' : 'Instances'}`;
+
+        // Update the available attribute for styling
+        counterElement.setAttribute('available', newCharges);
+
+        // Add a flash effect to highlight the change
+        counterElement.classList.add('flash-update');
+        setTimeout(() => {
+          counterElement.classList.remove('flash-update');
+        }, 500);
+
+        // Log the update for debugging
+        console.log(`Updated charge counter from ${currentCharges} to ${newCharges} (${originalText} -> ${counterElement.textContent})`);
+      }
     }
   } catch (error) {
     console.error('Error updating individual charge counter:', error);
@@ -169,12 +169,22 @@ export const addFlashUpdateStyles = () => {
   style.textContent = `
     @keyframes flash-update {
       0% { transform: scale(1.2); background-color: rgba(255, 255, 0, 0.5); }
+      50% { transform: scale(1.5); background-color: rgba(255, 255, 0, 0.8); }
       100% { transform: scale(1); background-color: transparent; }
     }
 
     .flash-update {
-      animation: flash-update 0.3s ease-in-out;
+      animation: flash-update 0.5s ease-in-out;
       transition: all 0.3s ease;
+    }
+
+    @keyframes charge-counter-animation {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    .charge-counter-animation {
+      animation: charge-counter-animation 0.5s ease-out forwards;
     }
 
     /* Make charge counters more visible */
@@ -213,29 +223,40 @@ const setupMutationObserver = () => {
 
   // Create a new MutationObserver
   const observer = new MutationObserver((mutations) => {
+    // For each mutation
     mutations.forEach(mutation => {
+      // If nodes were added
       if (mutation.addedNodes.length) {
+        // Check each added node
         mutation.addedNodes.forEach(node => {
+          // If it's an element node
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Process any charge counters in this node
-            const processChargeCounter = (counter) => {
+            // Check if it's a charge counter
+            if (node.classList && node.classList.contains('ChargeCount')) {
+              // Make sure it has the data-mitigation-id attribute
+              const mitigationId = node.getAttribute('data-mitigation-id');
+              if (!mitigationId) {
+                // Try to find the mitigation ID from a parent element
+                const parent = node.closest('[data-mitigation-id]');
+                if (parent) {
+                  node.setAttribute('data-mitigation-id', parent.getAttribute('data-mitigation-id'));
+                }
+              }
+            }
+
+            // Check for charge counters within this node
+            const chargeCounters = node.querySelectorAll('.ChargeCount');
+            chargeCounters.forEach(counter => {
+              // Make sure it has the data-mitigation-id attribute
               const mitigationId = counter.getAttribute('data-mitigation-id');
               if (!mitigationId) {
+                // Try to find the mitigation ID from a parent element
                 const parent = counter.closest('[data-mitigation-id]');
                 if (parent) {
                   counter.setAttribute('data-mitigation-id', parent.getAttribute('data-mitigation-id'));
                 }
               }
-            };
-
-            // Check if the node itself is a charge counter
-            if (node.classList && node.classList.contains('ChargeCount')) {
-              processChargeCounter(node);
-            }
-
-            // Check for charge counters within this node
-            const chargeCounters = node.querySelectorAll('.ChargeCount');
-            chargeCounters.forEach(processChargeCounter);
+            });
           }
         });
       }

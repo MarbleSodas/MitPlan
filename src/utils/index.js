@@ -6,7 +6,9 @@ export {
   getAbilityDescriptionForLevel,
   getAbilityCooldownForLevel,
   getAbilityMitigationValueForLevel,
-  getAbilityDurationForLevel
+  getAbilityDurationForLevel,
+  getAbilityChargeCount,
+  getRoleSharedAbilityCount
 } from './abilities/abilityUtils';
 
 export {
@@ -14,7 +16,8 @@ export {
   calculateTotalMitigation,
   formatMitigation,
   generateMitigationBreakdown,
-  isMitigationAvailable
+  isMitigationAvailable,
+  calculateOptimalMitigationPlan
 } from './mitigation/mitigationUtils';
 
 export {

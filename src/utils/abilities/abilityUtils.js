@@ -146,11 +146,73 @@ export const getAbilityDurationForLevel = (ability, bossLevel) => {
   return ability.levelDurations[availableLevels[0]];
 };
 
+/**
+ * Get the number of charges for an ability
+ *
+ * @param {Object} ability - The mitigation ability object
+ * @param {number} bossLevel - The level of the boss
+ * @returns {number} - The number of charges for the ability (default: 1)
+ */
+export const getAbilityChargeCount = (ability, bossLevel) => {
+  if (!ability) return 1;
+
+  // If the ability doesn't have a count property, it has 1 charge
+  if (!ability.count) return 1;
+
+  // If the ability has level-specific charge counts, find the appropriate one
+  if (ability.levelCharges && bossLevel) {
+    const availableLevels = Object.keys(ability.levelCharges)
+      .map(Number)
+      .filter(level => level <= bossLevel)
+      .sort((a, b) => b - a); // Sort in descending order
+
+    if (availableLevels.length > 0) {
+      return ability.levelCharges[availableLevels[0]];
+    }
+  }
+
+  // Return the default count
+  return ability.count;
+};
+
+/**
+ * Count how many instances of a role-shared ability are available based on selected jobs
+ *
+ * @param {Object} ability - The mitigation ability object
+ * @param {Object} selectedJobs - Object containing selected jobs
+ * @returns {number} - The number of available instances of this ability
+ */
+export const getRoleSharedAbilityCount = (ability, selectedJobs) => {
+  // If the ability is not role-shared, return 1
+  if (!ability || !ability.isRoleShared) return 1;
+
+  // If no jobs are selected, return 0
+  if (!selectedJobs) return 0;
+
+  // Count how many selected jobs can use this ability
+  let count = 0;
+
+  for (const jobId of ability.jobs) {
+    // Find which role this job belongs to
+    for (const [, jobs] of Object.entries(selectedJobs)) {
+      const job = jobs.find(j => j.id === jobId);
+      if (job && job.selected) {
+        count++;
+        break; // Found a match for this job, move to the next one
+      }
+    }
+  }
+
+  return count;
+};
+
 // Create an index file for easier imports
 export default {
   filterAbilitiesByLevel,
   getAbilityDescriptionForLevel,
   getAbilityCooldownForLevel,
   getAbilityMitigationValueForLevel,
-  getAbilityDurationForLevel
+  getAbilityDurationForLevel,
+  getAbilityChargeCount,
+  getRoleSharedAbilityCount
 };
