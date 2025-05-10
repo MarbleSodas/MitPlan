@@ -159,36 +159,48 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
 
     // For role-shared abilities, we need to track cooldowns for each instance separately
     if (isRoleShared) {
-      // Group previous uses into "instances" based on time
-      // Each instance can only be used once per cooldown period
-      const instanceGroups = [];
+      // Create a fixed number of instance slots based on the roleSharedCount
+      // Each slot represents a player who can provide this ability
+      const instanceSlots = Array.from({ length: roleSharedCount }, () => null);
 
       // Sort previous uses by time (oldest first)
       const sortedUses = [...previousUses].sort((a, b) => a.time - b.time);
 
-      // Assign each use to an instance group
+      // For each use, find the most efficient assignment to instance slots
+      // that minimizes cooldown conflicts
       for (const use of sortedUses) {
-        // Try to find an instance group where this use doesn't conflict with cooldowns
-        let assigned = false;
+        // Find the best slot for this use
+        let bestSlotIndex = -1;
+        let bestSlotCooldownEndTime = -Infinity;
 
-        for (const group of instanceGroups) {
-          // Check if this use would conflict with any use in this group
-          const hasConflict = group.some(existingUse => {
-            const timeBetweenUses = Math.abs(use.time - existingUse.time);
-            return timeBetweenUses < cooldownDuration;
-          });
+        for (let i = 0; i < instanceSlots.length; i++) {
+          const slot = instanceSlots[i];
 
-          // If no conflict, add to this group
-          if (!hasConflict) {
-            group.push(use);
-            assigned = true;
+          // If slot is empty, it's a good candidate
+          if (slot === null) {
+            bestSlotIndex = i;
             break;
+          }
+
+          // Calculate when this slot will be available again
+          const cooldownEndTime = slot.time + cooldownDuration;
+
+          // If this use happens after the cooldown period, this slot is available
+          if (use.time >= cooldownEndTime) {
+            bestSlotIndex = i;
+            break;
+          }
+
+          // Otherwise, track the slot that will become available soonest
+          if (cooldownEndTime > bestSlotCooldownEndTime) {
+            bestSlotIndex = i;
+            bestSlotCooldownEndTime = cooldownEndTime;
           }
         }
 
-        // If couldn't assign to any existing group, create a new one
-        if (!assigned) {
-          instanceGroups.push([use]);
+        // Assign the use to the best slot
+        if (bestSlotIndex >= 0) {
+          instanceSlots[bestSlotIndex] = use;
         }
       }
 
@@ -196,13 +208,14 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       let instancesOnCooldown = 0;
       let nextAvailableTime = 0;
 
-      for (const group of instanceGroups) {
-        // Find the most recent use in this group
-        const mostRecentUse = group.reduce((latest, use) =>
-          use.time > latest.time ? use : latest, group[0]);
+      for (let i = 0; i < instanceSlots.length; i++) {
+        const use = instanceSlots[i];
+
+        // If no use is assigned to this slot, it's available
+        if (use === null) continue;
 
         // Check if this instance is still on cooldown
-        const timeSinceUse = targetTime - mostRecentUse.time;
+        const timeSinceUse = targetTime - use.time;
         if (timeSinceUse < cooldownDuration) {
           instancesOnCooldown++;
 
@@ -399,38 +412,50 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
         ...futureActions
       ].sort((a, b) => a.time - b.time);
 
-      // Group actions into instance groups based on cooldown periods
-      // Each instance can handle one use per cooldown period
-      const instanceGroups = Array.from({ length: roleSharedCount }, () => []);
+      // Create a fixed number of instance slots based on the roleSharedCount
+      // Each slot represents a player who can provide this ability
+      const instanceSlots = Array.from({ length: roleSharedCount }, () => null);
       const removedActions = [];
       const newAssignments = { ...assignments };
 
-      // First, assign all existing actions to instance groups
-      for (const action of allActions) {
-        // Skip the action we're adding to
-        if (action.id === bossActionId) continue;
+      // First, assign the current action we're adding to the first available slot
+      const currentAction = { id: bossActionId, time: bossActionTime, name: bossAction.name };
+      instanceSlots[0] = currentAction;
 
-        // Try to find an instance group where this action doesn't conflict with cooldowns
-        let assigned = false;
+      // Sort remaining actions by time (oldest first)
+      const remainingActions = allActions.filter(action => action.id !== bossActionId)
+                                        .sort((a, b) => a.time - b.time);
 
-        for (const group of instanceGroups) {
-          // Check if this action would conflict with any action in this group
-          const hasConflict = group.some(existingAction => {
-            const timeBetweenActions = Math.abs(action.time - existingAction.time);
-            return timeBetweenActions < cooldownDuration;
-          });
+      // For each action, find the most efficient assignment to instance slots
+      for (const action of remainingActions) {
+        // Find the best slot for this action
+        let bestSlotIndex = -1;
 
-          // If no conflict, add to this group
-          if (!hasConflict) {
-            group.push(action);
-            assigned = true;
+        for (let i = 0; i < instanceSlots.length; i++) {
+          const slot = instanceSlots[i];
+
+          // If slot is empty, it's a good candidate
+          if (slot === null) {
+            bestSlotIndex = i;
+            break;
+          }
+
+          // Calculate when this slot will be available again
+          const cooldownEndTime = slot.time + cooldownDuration;
+
+          // If this action happens after the cooldown period, this slot is available
+          if (action.time >= cooldownEndTime) {
+            bestSlotIndex = i;
             break;
           }
         }
 
-        // If couldn't assign to any existing group and it's a future action,
-        // remove the mitigation from this action
-        if (!assigned && action.time > bossActionTime) {
+        // If we found a slot, assign the action to it
+        if (bestSlotIndex >= 0) {
+          instanceSlots[bestSlotIndex] = action;
+        }
+        // If we couldn't find a slot and it's a future action, remove it
+        else if (action.time > bossActionTime) {
           if (newAssignments[action.id]) {
             // Filter out the mitigation from this action
             newAssignments[action.id] = newAssignments[action.id].filter(m => m.id !== mitigation.id);

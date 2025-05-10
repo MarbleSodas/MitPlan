@@ -591,8 +591,9 @@ const MobileMitigationSelector = ({
 
                         // Calculate available instances
                         const totalInstances = cooldownResult.totalInstances || roleSharedCount;
-                        const instancesUsed = cooldownResult.instancesUsed || 0;
-                        let availableInstances = Math.max(0, totalInstances - instancesUsed);
+                        // For role-shared abilities, we want to show the actual number of available instances
+                        // This should be at least 1 if the ability is not on cooldown
+                        let availableInstances = cooldownResult.availableCharges / getAbilityChargeCount(mitigation, bossLevel);
 
                         // If this ability is being assigned but not yet in the assignments array,
                         // decrement the available instances to reflect the current assignment
