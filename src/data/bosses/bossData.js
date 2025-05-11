@@ -45,6 +45,13 @@ export const bosses = [
     icon: '👹',
     level: 100
   },
+  {
+    id: 'howling-blade-m8s',
+    name: 'Howling Blade (M8S)',
+    description: 'The final boss of AAC Cruiserweight Tier (Savage), wielding a sword and commanding wind and stone.',
+    icon: '🐺',
+    level: 100
+  },
 ];
 
 export default bosses;

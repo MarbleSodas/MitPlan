@@ -1,0 +1,485 @@
+[
+  {
+    "id": "extraplanar_pursuit_1",
+    "name": "Extraplanar Pursuit",
+    "time": 10,
+    "description": "Heavy raidwide physical damage that marks the beginning of the fight.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "windfang_1",
+    "name": "Windfang",
+    "time": 25,
+    "description": "Hits all four players of one role with a conal AoE that deals split damage. Must be shared with one other player and inflicts vulnerability.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌪️"
+  },
+  {
+    "id": "eminent_reign_1",
+    "name": "Eminent Reign",
+    "time": 45,
+    "description": "Spawns clones that charge in a direction, doing an AoE at the edge of the arena as well as in the centre. Followed by conal AoEs on both healers and tanks.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👑"
+  },
+  {
+    "id": "extraplanar_pursuit_2",
+    "name": "Extraplanar Pursuit",
+    "time": 65,
+    "description": "Heavy raidwide physical damage.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "millenial_decay_1",
+    "name": "Millenial Decay",
+    "time": 85,
+    "description": "Heavy raidwide magic damage. Summons four wind wolf heads in succession that do line AoEs across the arena.",
+    "unmitigatedDamage": "110,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐺"
+  },
+  {
+    "id": "aero_iii_1",
+    "name": "Aero III",
+    "time": 95,
+    "description": "Knockback from the centre of the arena, dealing light magic damage. Knockback immunity abilities can be used.",
+    "unmitigatedDamage": "40,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💨"
+  },
+  {
+    "id": "wind_of_decay_1",
+    "name": "Wind of Decay",
+    "time": 105,
+    "description": "Wolf heads appear that tether to four players of one role at cardinals or intercardinals. These do a conal AoE towards them that deals proximity damage.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌀"
+  },
+  {
+    "id": "prowling_gale_1",
+    "name": "Prowling Gale",
+    "time": 115,
+    "description": "Towers that must be soaked by players, with the pillars in the tower determining how many players need to stand in them.",
+    "unmitigatedDamage": "60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🏛️"
+  },
+  {
+    "id": "tracking_tremors_1",
+    "name": "Tracking Tremors",
+    "time": 130,
+    "description": "A multi-hit stack marker on a healer. Hits eight times for heavy magic damage.",
+    "unmitigatedDamage": "120,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎯"
+  },
+  {
+    "id": "extraplanar_pursuit_3",
+    "name": "Extraplanar Pursuit",
+    "time": 145,
+    "description": "Heavy raidwide physical damage.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "great_divide_1",
+    "name": "Great Divide",
+    "time": 160,
+    "description": "Shared tank buster on 1st in aggro. Can be invulned.",
+    "unmitigatedDamage": "150,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "terrestrial_titans_1",
+    "name": "Terrestrial Titans",
+    "time": 180,
+    "description": "Summons two pillars that are slashed via Titanic Pursuit, causing them to fall. Creates two safe spots at opposite intercardinals.",
+    "unmitigatedDamage": "120,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🏔️"
+  },
+  {
+    "id": "revolutionary_reign_1",
+    "name": "Revolutionary Reign",
+    "time": 200,
+    "description": "Spawns clones that charge in a direction, doing an AoE at the edge of the arena as well as in the centre. Then does a large point-blank AoE which knocks back.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👑"
+  },
+
+  {
+    "id": "howling_havoc_1",
+    "name": "Howling Havoc",
+    "time": 225,
+    "description": "Heavy raidwide magic damage. A large persistent death AoE spawns in the middle of the arena.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💀"
+  },
+  {
+    "id": "pack_predation_1",
+    "name": "Pack Predation",
+    "time": 240,
+    "description": "Each add does a conal tank buster on #1 on their respective aggro, as well as a conal AoE prey marker on one of the three other closest players.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "ravenous_saber_1",
+    "name": "Ravenous Saber",
+    "time": 300,
+    "description": "Five fast hits of a heavy physical raidwide after both adds die.",
+    "unmitigatedDamage": "87,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+
+  {
+    "id": "heavensearth_1",
+    "name": "Heavensearth",
+    "time": 330,
+    "description": "Stack marker on one player of a role.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎯"
+  },
+  {
+    "id": "suspended_stone_1",
+    "name": "Suspended Stone",
+    "time": 330,
+    "description": "Marked AoE on four players in one role.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💣"
+  },
+  {
+    "id": "shadowchase_1",
+    "name": "Shadowchase",
+    "time": 345,
+    "description": "Line AoEs from Howling Blade clones.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "➡️"
+  },
+  {
+    "id": "roaring_wind_1",
+    "name": "Roaring Wind",
+    "time": 360,
+    "description": "Line AoEs from wind wolf heads.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌬️"
+  },
+  {
+    "id": "eminent_reign_2",
+    "name": "Eminent Reign",
+    "time": 380,
+    "description": "Spawns clones that charge in a direction, doing an AoE at the edge of the arena as well as in the centre.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "👑"
+  },
+  {
+    "id": "weal_of_stone_1",
+    "name": "Weal of Stone",
+    "time": 385,
+    "description": "Line AoEs from stone wolf heads.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🪨"
+  },
+  {
+    "id": "great_divide_2",
+    "name": "Great Divide",
+    "time": 400,
+    "description": "Shared tank buster on 1st in aggro. Can be invulned.",
+    "unmitigatedDamage": "150,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "beckon_moonlight_1",
+    "name": "Beckon Moonlight",
+    "time": 420,
+    "description": "Summons clones at cardinals, which cleave one half of the room the sword is facing with Moonbeam's Bite.",
+    "unmitigatedDamage": "120,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌙"
+  },
+  {
+    "id": "tracking_tremors_2",
+    "name": "Tracking Tremors",
+    "time": 450,
+    "description": "A multi-hit stack marker on a healer. Hits eight times for heavy magic damage.",
+    "unmitigatedDamage": "120,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎯"
+  },
+  {
+    "id": "extraplanar_pursuit_4",
+    "name": "Extraplanar Pursuit",
+    "time": 465,
+    "description": "Heavy raidwide physical damage.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+
+  {
+    "id": "quake_iii_1",
+    "name": "Quake III",
+    "time": 500,
+    "description": "Stack marker on both healers. Inflicts vulnerability and hits the entire platform the stack is on.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌋"
+  },
+  {
+    "id": "ultraviolent_ray_1",
+    "name": "Ultraviolent Ray",
+    "time": 520,
+    "description": "Four players of one role and one player of the other role are marked. This shoots a line AoE that inflicts vulnerability and hits the entire platform.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔆"
+  },
+  {
+    "id": "gleaming_beam_1",
+    "name": "Gleaming Beam",
+    "time": 520,
+    "description": "Two bits spawn on the back of each platform. One will charge up and fire, dealing damage to one half of the platform.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "✨"
+  },
+  {
+    "id": "twinbite_1",
+    "name": "Twinbite",
+    "time": 540,
+    "description": "Magic tank buster on #1 and #2 on aggro. Hits the entire platform.",
+    "unmitigatedDamage": "140,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "heros_blow_1",
+    "name": "Hero's Blow",
+    "time": 560,
+    "description": "Howling Blade looks at one platform and prepares to swing his sword on the side it's glowing. This cleaves his left or right.",
+    "unmitigatedDamage": "110,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "gleaming_barrage_1",
+    "name": "Gleaming Barrage",
+    "time": 560,
+    "description": "Donut or point-blank AoE from boss. Bits will be rotating around the boss, and the glow indicates if it hits in or out.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💫"
+  },
+  {
+    "id": "ultraviolent_ray_2",
+    "name": "Ultraviolent Ray",
+    "time": 580,
+    "description": "Four players of one role and one player of the other role are marked. This shoots a line AoE that inflicts vulnerability and hits the entire platform.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔆"
+  },
+  {
+    "id": "gleaming_beam_2",
+    "name": "Gleaming Beam",
+    "time": 580,
+    "description": "Two bits spawn on the back of each platform. One will charge up and fire, dealing damage to one half of the platform.",
+    "unmitigatedDamage": "70,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "✨"
+  },
+  {
+    "id": "quake_iii_2",
+    "name": "Quake III",
+    "time": 600,
+    "description": "Stack marker on both healers. Inflicts vulnerability and hits the entire platform the stack is on.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌋"
+  },
+
+  {
+    "id": "elemental_purge_1",
+    "name": "Elemental Purge",
+    "time": 640,
+    "description": "A 210 degree cleave on #1 in aggro after binding them, inflicting a vuln. Either #1 or #2 in aggro receive the Patience of Wind debuff, which is an AoE magical tank buster.",
+    "unmitigatedDamage": "160,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+
+  {
+    "id": "twofold_tempest_1",
+    "name": "Twofold Tempest",
+    "time": 680,
+    "description": "Begins the first tether AoE. In addition, the closest player receives a shared line AoE that inflicts a short magic vuln.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌪️"
+  },
+
+  {
+    "id": "champions_circuit_1",
+    "name": "Champion's Circuit",
+    "time": 750,
+    "description": "Each platform is hit by Gleaming Beam, as well as a wide line, donut, in-safe, or out-safe AoE. These AoEs will rotate in the direction indicated by the boss.",
+    "unmitigatedDamage": "100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔄"
+  },
+  {
+    "id": "quake_iii_3",
+    "name": "Quake III",
+    "time": 780,
+    "description": "Stack marker on both healers. Inflicts vulnerability and hits the entire platform the stack is on.",
+    "unmitigatedDamage": "90,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌋"
+  },
+  {
+    "id": "ultraviolent_ray_3",
+    "name": "Ultraviolent Ray",
+    "time": 800,
+    "description": "Four players of one role and one player of the other role are marked. This shoots a line AoE that inflicts vulnerability and hits the entire platform.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔆"
+  },
+  {
+    "id": "twinbite_2",
+    "name": "Twinbite",
+    "time": 820,
+    "description": "Magic tank buster on #1 and #2 on aggro. Hits the entire platform.",
+    "unmitigatedDamage": "140,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+
+  {
+    "id": "prowling_gale_2",
+    "name": "Prowling Gale",
+    "time": 880,
+    "description": "Towers that must be soaked by players, with the pillars in the tower determining how many players need to stand in them.",
+    "unmitigatedDamage": "60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🏛️"
+  },
+  {
+    "id": "heros_blow_2",
+    "name": "Hero's Blow",
+    "time": 900,
+    "description": "Howling Blade looks at one platform and prepares to swing his sword on the side it's glowing. This cleaves his left or right.",
+    "unmitigatedDamage": "110,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "gleaming_barrage_2",
+    "name": "Gleaming Barrage",
+    "time": 900,
+    "description": "Donut or point-blank AoE from boss. Bits will be rotating around the boss, and the glow indicates if it hits in or out.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💫"
+  },
+  {
+    "id": "ultraviolent_ray_4",
+    "name": "Ultraviolent Ray",
+    "time": 920,
+    "description": "Four players of one role and one player of the other role are marked. This shoots a line AoE that inflicts vulnerability and hits the entire platform.",
+    "unmitigatedDamage": "80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔆"
+  },
+  {
+    "id": "howling_eight_1",
+    "name": "Howling Eight",
+    "time": 940,
+    "description": "A multi-hit tower on a platform that hits eight times. Deals shared magic damage. This is followed by Mooncleaver.",
+    "unmitigatedDamage": "180,000",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🎯"
+  },
+  {
+    "id": "starcleaver_enrage",
+    "name": "Starcleaver (Enrage)",
+    "time": 1000,
+    "description": "Enrage wipe mechanic that destroys the final platform.",
+    "unmitigatedDamage": "N/A",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "💀"
+  }
+]
