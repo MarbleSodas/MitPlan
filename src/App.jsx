@@ -1216,10 +1216,10 @@ function App() {
                       isDisabled={!selectedBossAction || (selectedBossAction ?
                         (() => {
                           // Check if there's a pending assignment for this mitigation
-                          const hasPendingAssignment = pendingAssignments.some(pa =>
+                          const hasPendingAssignment = selectedBossAction ? pendingAssignments.some(pa =>
                             pa.mitigationId === mitigation.id &&
                             pa.bossActionId === selectedBossAction.id
-                          );
+                          ) : false;
 
                           // First, check if this mitigation can be assigned to this boss action
                           // based on the new rules for raid-wide vs tank buster mitigations
@@ -1248,10 +1248,10 @@ function App() {
                       cooldownReason={selectedBossAction ?
                         (() => {
                           // Check if there's a pending assignment for this mitigation
-                          const hasPendingAssignment = pendingAssignments.some(pa =>
+                          const hasPendingAssignment = selectedBossAction ? pendingAssignments.some(pa =>
                             pa.mitigationId === mitigation.id &&
                             pa.bossActionId === selectedBossAction.id
-                          );
+                          ) : false;
 
                           const cooldownResult = checkAbilityCooldown(
                             mitigation.id,
@@ -1312,10 +1312,10 @@ function App() {
                       <MitigationItem $disabled={!selectedBossAction || (selectedBossAction ?
                         (() => {
                           // Check if there's a pending assignment for this mitigation
-                          const hasPendingAssignment = pendingAssignments.some(pa =>
+                          const hasPendingAssignment = selectedBossAction ? pendingAssignments.some(pa =>
                             pa.mitigationId === mitigation.id &&
                             pa.bossActionId === selectedBossAction.id
-                          );
+                          ) : false;
 
                           const cooldownResult = checkAbilityCooldown(
                             mitigation.id,
@@ -1375,11 +1375,11 @@ function App() {
 
                               // Check if there are any pending assignments for this mitigation
                               // This ensures the UI updates immediately after assignment
-                              const hasPendingAssignment = pendingAssignments.some(pa =>
+                              const hasPendingAssignment = selectedBossAction ? pendingAssignments.some(pa =>
                                 pa.mitigationId === mitigation.id &&
                                 pa.bossActionId === selectedBossAction.id &&
                                 !assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id)
-                              );
+                              ) : false;
 
                               // We'll handle the event listener at the component level instead of in the render function
 
@@ -1437,11 +1437,11 @@ function App() {
 
                               // Check if there are any pending assignments for this mitigation
                               // This ensures the UI updates immediately after assignment
-                              const hasPendingAssignment = pendingAssignments.some(pa =>
+                              const hasPendingAssignment = selectedBossAction ? pendingAssignments.some(pa =>
                                 pa.mitigationId === mitigation.id &&
                                 pa.bossActionId === selectedBossAction.id &&
                                 !assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id)
-                              );
+                              ) : false;
 
                               // We'll handle the event listener at the component level instead of in the render function
 
@@ -1503,6 +1503,10 @@ function App() {
           <MobileBottomSheet
             isOpen={isMobileBottomSheetOpen}
             onClose={() => {
+              // Log for debugging
+              console.log('Bottom sheet close handler called');
+
+              // Ensure we set both state variables to close the sheet
               setIsMobileBottomSheetOpen(false);
               setSelectedActionForMobile(null);
             }}

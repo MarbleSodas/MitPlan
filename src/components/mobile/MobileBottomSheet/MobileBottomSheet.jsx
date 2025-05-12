@@ -114,44 +114,48 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
 
   // Add state to track if we should allow closing
   // This prevents accidental closures during mitigation assignment
+  // Default to true to ensure the X button works on initial render
   const [allowClosing, setAllowClosing] = useState(true);
-
-  // Add event listeners for mitigation processing events
-  useEffect(() => {
-    const handleProcessingStart = () => {
-      setIsProcessingAction(true);
-      setAllowClosing(false);
-    };
-
-    const handleProcessingEnd = () => {
-      setIsProcessingAction(false);
-      setAllowClosing(true);
-    };
-
-    // Add event listeners
-    window.addEventListener('mitigation-processing-start', handleProcessingStart);
-    window.addEventListener('mitigation-processing-end', handleProcessingEnd);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('mitigation-processing-start', handleProcessingStart);
-      window.removeEventListener('mitigation-processing-end', handleProcessingEnd);
-    };
-  }, []);
 
   // Listen for custom events from MobileMitigationSelector
   useEffect(() => {
-    const handleProcessingStart = () => {
-      setIsProcessingAction(true);
-      setAllowClosing(false);
+    // Create a ref to track if the component is mounted
+    const isMounted = { current: true };
+
+    // Track any active timeouts for cleanup
+    const timeouts = [];
+
+    const handleProcessingStart = (event) => {
+      if (isMounted.current) {
+        // Prevent default to avoid any potential browser issues
+        if (event && event.preventDefault) {
+          event.preventDefault();
+        }
+
+        setIsProcessingAction(true);
+        setAllowClosing(false);
+      }
     };
 
-    const handleProcessingEnd = () => {
-      setIsProcessingAction(false);
-      // Add a small delay before allowing closing again
-      setTimeout(() => {
-        setAllowClosing(true);
-      }, 500);
+    const handleProcessingEnd = (event) => {
+      if (isMounted.current) {
+        // Prevent default to avoid any potential browser issues
+        if (event && event.preventDefault) {
+          event.preventDefault();
+        }
+
+        setIsProcessingAction(false);
+
+        // Add a small delay before allowing closing again
+        const timeoutId = setTimeout(() => {
+          if (isMounted.current) {
+            setAllowClosing(true);
+          }
+        }, 300);
+
+        // Track the timeout for cleanup
+        timeouts.push(timeoutId);
+      }
     };
 
     // Create custom event listeners
@@ -159,6 +163,11 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
     window.addEventListener('mitigation-processing-end', handleProcessingEnd);
 
     return () => {
+      isMounted.current = false;
+
+      // Clean up all timeouts
+      timeouts.forEach(id => clearTimeout(id));
+
       window.removeEventListener('mitigation-processing-start', handleProcessingStart);
       window.removeEventListener('mitigation-processing-end', handleProcessingEnd);
     };
@@ -167,10 +176,11 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (sheetRef.current &&
-          !sheetRef.current.contains(event.target) &&
-          allowClosing &&
-          !isProcessingAction) {
+      // Always close when clicking outside, regardless of processing state
+      // This ensures users can always close the sheet
+      if (sheetRef.current && !sheetRef.current.contains(event.target)) {
+        // Log for debugging
+        console.log('Clicked outside, closing bottom sheet');
         onClose();
       }
     };
@@ -182,81 +192,127 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose, allowClosing, isProcessingAction]);
+  }, [isOpen, onClose]);
 
   // Handle swipe down to close
   const handleTouchStart = (e) => {
-    // Store the initial touch position
-    startY.current = e.touches[0].clientY;
-    // Reset current position
-    currentY.current = startY.current;
-  };
-
-  const handleTouchMove = (e) => {
-    // If we're processing an action, don't allow swiping
+    // Don't handle touch events if we're processing an action
     if (isProcessingAction || !allowClosing) {
       return;
     }
 
-    // Get the content element for scroll position checking
-    const content = sheetRef.current.querySelector('div:last-child');
-    // Update current touch position
-    currentY.current = e.touches[0].clientY;
-    const deltaY = currentY.current - startY.current;
+    try {
+      // Store the initial touch position
+      startY.current = e.touches[0].clientY;
+      // Reset current position
+      currentY.current = startY.current;
+    } catch (error) {
+      console.error('Error in handleTouchStart:', error);
+    }
+  };
 
-    // Only handle downward swipes
-    if (deltaY > 0) {
-      // Only prevent default and move the sheet if we're at the top of the content
-      // This allows normal scrolling within the content area
-      if (content && content.scrollTop <= 0) {
-        // Prevent default to stop scrolling when swiping down from the top of the content
-        e.preventDefault();
+  const handleTouchMove = (e) => {
+    // Removed the processing action check to ensure swiping always works
+    // This ensures users can always close the sheet
 
-        // Apply transform to move the sheet
-        let transformY = deltaY;
+    try {
+      // Safety check for sheetRef
+      if (!sheetRef.current) {
+        return;
+      }
 
-        // Add resistance as user drags down further
-        if (deltaY > 200) {
-          transformY = 200 + (deltaY - 200) * 0.2;
+      // Get the content element for scroll position checking
+      const content = sheetRef.current.querySelector('.bottom-sheet-content');
+
+      // Safety check for content
+      if (!content) {
+        return;
+      }
+
+      // Update current touch position
+      currentY.current = e.touches[0].clientY;
+      const deltaY = currentY.current - startY.current;
+
+      // Only handle downward swipes
+      if (deltaY > 0) {
+        // Only prevent default and move the sheet if we're at the top of the content
+        // This allows normal scrolling within the content area
+        if (content.scrollTop <= 0) {
+          // Prevent default to stop scrolling when swiping down from the top of the content
+          e.preventDefault();
+
+          // Apply transform to move the sheet
+          let transformY = deltaY;
+
+          // Add resistance as user drags down further
+          if (deltaY > 200) {
+            transformY = 200 + (deltaY - 200) * 0.2;
+          }
+
+          sheetRef.current.style.transform = `translateY(${transformY}px)`;
         }
+      }
+    } catch (error) {
+      console.error('Error in handleTouchMove:', error);
 
-        sheetRef.current.style.transform = `translateY(${transformY}px)`;
+      // Reset transform in case of error
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = '';
       }
     }
   };
 
   const handleTouchEnd = () => {
-    const deltaY = currentY.current - startY.current;
+    try {
+      // Safety check for sheetRef
+      if (!sheetRef.current) {
+        return;
+      }
 
-    // If swiped down more than threshold and not processing an action, close the sheet
-    if (deltaY > 80 && allowClosing && !isProcessingAction) {
-      // Add a small animation before closing
-      sheetRef.current.style.transition = 'transform 0.2s ease';
-      sheetRef.current.style.transform = `translateY(${Math.min(deltaY * 1.2, window.innerHeight)}px)`;
+      const deltaY = currentY.current - startY.current;
 
-      setTimeout(() => {
-        onClose();
-        // Reset the transition after closing
-        if (sheetRef.current) {
-          sheetRef.current.style.transition = 'transform 0.3s ease';
-          sheetRef.current.style.transform = '';
-        }
-      }, 200);
-    } else {
-      // Otherwise, reset the position with a bounce effect
-      sheetRef.current.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-      sheetRef.current.style.transform = '';
+      // If swiped down more than threshold, close the sheet
+      // Removed the isProcessingAction and allowClosing conditions to ensure the sheet can always be closed
+      if (deltaY > 80) {
+        // Add a small animation before closing
+        sheetRef.current.style.transition = 'transform 0.2s ease';
+        sheetRef.current.style.transform = `translateY(${Math.min(deltaY * 1.2, window.innerHeight)}px)`;
 
-      // Reset the transition after animation
-      setTimeout(() => {
-        if (sheetRef.current) {
-          sheetRef.current.style.transition = 'transform 0.3s ease';
-        }
-      }, 500);
+        setTimeout(() => {
+          // Log for debugging
+          console.log('Swipe down detected, closing bottom sheet');
+
+          onClose();
+          // Reset the transition after closing
+          if (sheetRef.current) {
+            sheetRef.current.style.transition = 'transform 0.3s ease';
+            sheetRef.current.style.transform = '';
+          }
+        }, 200);
+      } else {
+        // Otherwise, reset the position with a bounce effect
+        sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        sheetRef.current.style.transform = '';
+
+        // Reset the transition after animation
+        setTimeout(() => {
+          if (sheetRef.current) {
+            sheetRef.current.style.transition = 'transform 0.3s ease';
+          }
+        }, 300);
+      }
+    } catch (error) {
+      console.error('Error in handleTouchEnd:', error);
+
+      // Reset transform in case of error
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = '';
+      }
+    } finally {
+      // Always reset touch positions
+      startY.current = 0;
+      currentY.current = 0;
     }
-
-    startY.current = 0;
-    currentY.current = 0;
   };
 
   // Prevent body scrolling when sheet is open
@@ -299,7 +355,14 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
 
   return (
     <>
-      <BottomSheetOverlay $isOpen={isOpen} onClick={onClose} />
+      <BottomSheetOverlay
+        $isOpen={isOpen}
+        onClick={() => {
+          // Log for debugging
+          console.log('Overlay clicked, closing bottom sheet');
+          onClose();
+        }}
+      />
       <BottomSheetContainer
         $isOpen={isOpen}
         ref={sheetRef}
@@ -312,14 +375,18 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
           <BottomSheetTitle>{title}</BottomSheetTitle>
           <CloseButton
             onClick={() => {
-              if (allowClosing && !isProcessingAction) {
-                onClose();
-              }
+              // Always attempt to close the sheet when the X button is clicked
+              // This ensures the button is always functional
+              onClose();
+
+              // Log for debugging
+              console.log('X button clicked, closing bottom sheet');
             }}
             aria-label="Close"
+            // Remove conditional styling to ensure the button always looks clickable
             style={{
-              opacity: allowClosing && !isProcessingAction ? 1 : 0.5,
-              cursor: allowClosing && !isProcessingAction ? 'pointer' : 'not-allowed'
+              opacity: 1,
+              cursor: 'pointer'
             }}
           >
             <X size={24} />

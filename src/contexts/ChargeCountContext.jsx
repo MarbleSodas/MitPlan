@@ -86,54 +86,73 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
 
   // Add a pending assignment
   const addPendingAssignment = useCallback((bossActionId, mitigationId) => {
-    setPendingAssignments(prev => [
-      ...prev,
-      { bossActionId, mitigationId, timestamp: Date.now() }
-    ]);
+    // First, check if this assignment already exists to prevent duplicate decrements
+    const assignmentExists = pendingAssignments.some(
+      pa => pa.bossActionId === bossActionId && pa.mitigationId === mitigationId
+    );
 
-    // Update charge counts immediately for UI feedback
-    setChargeCounts(prev => {
-      const ability = mitigationAbilities.find(m => m.id === mitigationId);
-      if (!ability || getAbilityChargeCount(ability, bossLevel) <= 1) return prev;
-
-      const currentCount = prev[mitigationId] || {
-        totalCharges: getAbilityChargeCount(ability, bossLevel),
-        chargesUsed: 0,
-        availableCharges: getAbilityChargeCount(ability, bossLevel)
-      };
-
-      return {
+    if (!assignmentExists) {
+      setPendingAssignments(prev => [
         ...prev,
-        [mitigationId]: {
-          ...currentCount,
-          chargesUsed: currentCount.chargesUsed + 1,
-          availableCharges: Math.max(0, currentCount.availableCharges - 1)
-        }
-      };
-    });
+        { bossActionId, mitigationId, timestamp: Date.now() }
+      ]);
 
-    // Update instance counts immediately for UI feedback
-    setInstanceCounts(prev => {
-      const ability = mitigationAbilities.find(m => m.id === mitigationId);
-      if (!ability || !ability.isRoleShared) return prev;
+      // Update charge counts immediately for UI feedback
+      setChargeCounts(prev => {
+        const ability = mitigationAbilities.find(m => m.id === mitigationId);
+        if (!ability || getAbilityChargeCount(ability, bossLevel) <= 1) return prev;
 
-      const roleSharedCount = getRoleSharedAbilityCount(ability, selectedJobs);
-      const currentCount = prev[mitigationId] || {
-        totalInstances: roleSharedCount,
-        instancesUsed: 0,
-        availableInstances: roleSharedCount
-      };
+        const currentCount = prev[mitigationId] || {
+          totalCharges: getAbilityChargeCount(ability, bossLevel),
+          chargesUsed: 0,
+          availableCharges: getAbilityChargeCount(ability, bossLevel)
+        };
 
-      return {
-        ...prev,
-        [mitigationId]: {
-          ...currentCount,
-          instancesUsed: currentCount.instancesUsed + 1,
-          availableInstances: Math.max(0, currentCount.availableInstances - 1)
-        }
-      };
-    });
-  }, [bossLevel, selectedJobs]);
+        // Only decrement by 1, not to 0
+        const newAvailableCharges = Math.max(0, currentCount.availableCharges - 1);
+
+        // Log for debugging
+        console.log(`[ChargeCountContext] Updating charge count for ${mitigationId}: ${currentCount.availableCharges} -> ${newAvailableCharges}`);
+
+        return {
+          ...prev,
+          [mitigationId]: {
+            ...currentCount,
+            chargesUsed: currentCount.chargesUsed + 1,
+            availableCharges: newAvailableCharges
+          }
+        };
+      });
+
+      // Update instance counts immediately for UI feedback
+      setInstanceCounts(prev => {
+        const ability = mitigationAbilities.find(m => m.id === mitigationId);
+        if (!ability || !ability.isRoleShared) return prev;
+
+        const roleSharedCount = getRoleSharedAbilityCount(ability, selectedJobs);
+        const currentCount = prev[mitigationId] || {
+          totalInstances: roleSharedCount,
+          instancesUsed: 0,
+          availableInstances: roleSharedCount
+        };
+
+        // Only decrement by 1, not to 0
+        const newAvailableInstances = Math.max(0, currentCount.availableInstances - 1);
+
+        // Log for debugging
+        console.log(`[ChargeCountContext] Updating instance count for ${mitigationId}: ${currentCount.availableInstances} -> ${newAvailableInstances}`);
+
+        return {
+          ...prev,
+          [mitigationId]: {
+            ...currentCount,
+            instancesUsed: currentCount.instancesUsed + 1,
+            availableInstances: newAvailableInstances
+          }
+        };
+      });
+    }
+  }, [bossLevel, selectedJobs, pendingAssignments]);
 
   // Remove a pending assignment
   const removePendingAssignment = useCallback((bossActionId, mitigationId) => {
