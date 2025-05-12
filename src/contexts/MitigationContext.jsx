@@ -115,18 +115,32 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     // This enforces the restriction that an ability can only be used once per boss action
     const targetAction = bossActions.find(action => action.time === targetTime);
     if (targetAction && assignments[targetAction.id]?.some(m => m.id === abilityId)) {
-      return {
-        isOnCooldown: true,
-        lastUsedActionId: targetAction.id,
-        timeUntilReady: 0,
-        lastUsedTime: targetTime,
-        lastUsedActionName: targetAction.name,
-        reason: 'already-assigned',
-        availableCharges: 0,  // Can't use on this action again
-        totalCharges: totalCharges * roleSharedCount,
-        roleSharedCount: roleSharedCount,
-        isRoleShared: isRoleShared
-      };
+      // For tank buster mitigation abilities, allow them to be applied twice to the same boss action
+      // if they have multiple charges/instances
+      const isTankBusterMitigation = ability.forTankBusters && !ability.forRaidWide;
+
+      // If it's a tank buster specific mitigation and the boss action is a tank buster,
+      // allow it to be applied twice if it has multiple charges/instances
+      if (isTankBusterMitigation && targetAction.isTankBuster &&
+          ((totalCharges > 1) || (isRoleShared && roleSharedCount > 1))) {
+        // For tank buster mitigations, we'll continue with the normal cooldown check
+        // This will allow a second application if there are charges/instances available
+      } else {
+        // For raid-wide mitigations or any ability on a non-matching boss action type,
+        // prevent multiple assignments to the same boss action regardless of charges/instances
+        return {
+          isOnCooldown: true,
+          lastUsedActionId: targetAction.id,
+          timeUntilReady: 0,
+          lastUsedTime: targetTime,
+          lastUsedActionName: targetAction.name,
+          reason: 'already-assigned',
+          availableCharges: 0,  // Can't use on this action again
+          totalCharges: totalCharges * roleSharedCount,
+          roleSharedCount: roleSharedCount,
+          isRoleShared: isRoleShared
+        };
+      }
     }
 
     // For role-shared abilities, we need to track cooldowns for each instance separately

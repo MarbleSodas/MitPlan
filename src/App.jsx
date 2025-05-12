@@ -3,7 +3,14 @@ import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, Keyboa
 import styled, { createGlobalStyle } from 'styled-components'
 
 // Import contexts
-import { useTheme, useBossContext, useJobContext, useMitigationContext, useFilterContext } from './contexts'
+import {
+  useTheme,
+  useBossContext,
+  useJobContext,
+  useMitigationContext,
+  useFilterContext,
+  useChargeCountContext
+} from './contexts'
 
 // Import data from centralized data module
 import { mitigationAbilities } from './data'
@@ -22,6 +29,7 @@ import QuizButton from './components/common/QuizButton/QuizButton'
 import FilterToggle from './components/common/FilterToggle/FilterToggle'
 import MobileBottomSheet from './components/mobile/MobileBottomSheet/MobileBottomSheet'
 import MobileMitigationSelector from './components/mobile/MobileMitigationSelector/MobileMitigationSelector'
+import ChargeCounter from './components/ChargeCounter'
 
 // Import utility functions from centralized utils module
 import {
@@ -36,15 +44,11 @@ import {
   getAbilityChargeCount,
   getRoleSharedAbilityCount,
   isMobileDevice,
-  isTouchDevice,
   checkUrlForPlanData,
   reconstructMitigations,
   reconstructJobs,
   isMitigationAvailable
 } from './utils'
-
-// Import utility functions for immediate UI updates
-import { updateChargeCountersImmediately, addFlashUpdateStyles } from './utils/ui/immediateUIUpdates'
 
 // Global styles to apply theme to the entire app
 const GlobalStyle = createGlobalStyle`
@@ -160,20 +164,21 @@ const MitigationContainer = styled.div`
   }
 `;
 
-const TimelineHeader = styled.h2`
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  margin-top: 0;
-  border-bottom: 2px solid ${props => props.theme.colors.border};
-  padding-bottom: ${props => props.theme.spacing.medium};
-  background-color: ${props => props.theme.colors.secondary};
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: 18px;
-    padding-bottom: ${props => props.theme.spacing.small};
-  }
-`;
+// Timeline header is not currently used but kept for future reference
+// const TimelineHeader = styled.h2`
+//   position: sticky;
+//   top: 0;
+//   z-index: 10;
+//   margin-top: 0;
+//   border-bottom: 2px solid ${props => props.theme.colors.border};
+//   padding-bottom: ${props => props.theme.spacing.medium};
+//   background-color: ${props => props.theme.colors.secondary};
+//
+//   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+//     font-size: 18px;
+//     padding-bottom: ${props => props.theme.spacing.small};
+//   }
+// `;
 
 const BossActionsList = styled.div`
   display: flex;
@@ -408,20 +413,6 @@ const MitigationDescription = styled.p`
   font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
 `;
 
-const ChargeCount = styled.span`
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 10px;
-  background-color: ${props => props.available === 0 ?
-    props.theme.colors.error || '#ff5555' :
-    props.theme.colors.primary};
-  color: ${props => props.theme.colors.buttonText};
-  font-weight: bold;
-  margin-left: 4px;
-  font-size: 0.8rem;
-  opacity: ${props => props.available === 0 ? 0.8 : 1};
-`;
-
 const AssignedMitigations = styled.div`
   position: absolute;
   top: 35px; /* Align with content below the time indicator */
@@ -593,7 +584,6 @@ function App() {
   const {
     currentBossId,
     setCurrentBossId,
-    currentBossActions,
     sortedBossActions,
     selectedBossAction,
     toggleBossActionSelection,
@@ -614,10 +604,11 @@ function App() {
     getActiveMitigations,
     importAssignments
   } = useMitigationContext();
-
-  // Add a state variable to track when assignments change
-  // This will be used to force re-render when assignments change
-  const [assignmentsVersion, setAssignmentsVersion] = useState(0);
+  const {
+    addPendingAssignment,
+    removePendingAssignment,
+    canAssignMitigationToBossAction
+  } = useChargeCountContext();
 
   // Add a state variable to track pending assignments
   // This will be used to update the UI immediately when a mitigation is assigned
@@ -628,81 +619,20 @@ function App() {
     filterMitigations,
     showAllMitigations
   } = useFilterContext();
-
-  // Local state
-  const [activeId, setActiveId] = useState(null); // For drag and drop operations
   const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false); // For mobile bottom sheet
   const [selectedActionForMobile, setSelectedActionForMobile] = useState(null); // For mobile mitigation assignment
-
-  // Effect to update assignmentsVersion when assignments change
-  useEffect(() => {
-    setAssignmentsVersion(prev => prev + 1);
-  }, [assignments]);
 
   // Effect to clean up pending assignments after they've been processed
   useEffect(() => {
     if (pendingAssignments.length > 0) {
-      // Force a re-render to update the charge count display
-      // This is critical for immediate visual feedback
-      setAssignmentsVersion(prev => prev + 1);
-
-      // Dispatch a custom event to notify all components about the pending assignment change
-      // This ensures all components update their UI immediately
-      const pendingAssignmentEvent = new CustomEvent('pendingAssignmentChange', {
-        detail: { pendingAssignments }
-      });
-      window.dispatchEvent(pendingAssignmentEvent);
-
       // Set a timeout to clear the pending assignments after a short delay
-      // This ensures the UI updates properly and then resets for the next assignment
       const timeoutId = setTimeout(() => {
         setPendingAssignments([]);
-
-        // Dispatch another event when pending assignments are cleared
-        const clearEvent = new CustomEvent('pendingAssignmentChange', {
-          detail: { pendingAssignments: [] }
-        });
-        window.dispatchEvent(clearEvent);
       }, 1000); // Longer timeout to ensure the assignment is fully processed
 
       return () => clearTimeout(timeoutId);
     }
   }, [pendingAssignments]);
-
-  // Add a global event listener for pendingAssignmentChange events
-  // This ensures all components update their UI immediately when a mitigation is assigned or removed
-  useEffect(() => {
-    const handlePendingAssignmentChange = (event) => {
-      // Force a re-render to update the charge count display
-      setAssignmentsVersion(prev => prev + 1);
-
-      // Get the details from the event
-      if (event.detail) {
-        // If there's a new assignment, update the charge counters immediately
-        if (event.detail.latestAssignment) {
-          const { mitigationId, bossActionId } = event.detail.latestAssignment;
-          // Update the charge counters immediately in the DOM
-          updateChargeCountersImmediately(mitigationId, bossActionId, true);
-        }
-
-        // If there's a removed assignment, update the charge counters immediately
-        if (event.detail.removedAssignment) {
-          const { mitigationId, bossActionId } = event.detail.removedAssignment;
-          // Update the charge counters immediately in the DOM
-          updateChargeCountersImmediately(mitigationId, bossActionId, false);
-        }
-      }
-    };
-
-    // Add the flash update styles to the document
-    addFlashUpdateStyles();
-
-    window.addEventListener('pendingAssignmentChange', handlePendingAssignmentChange);
-
-    return () => {
-      window.removeEventListener('pendingAssignmentChange', handlePendingAssignmentChange);
-    };
-  }, []);
 
   // Detect if we're on a mobile device
   const [isMobile, setIsMobile] = useState(false);
@@ -829,7 +759,6 @@ function App() {
   // Handle drag start - memoized with useCallback
   const handleDragStart = useCallback((event) => {
     const id = event.active.id;
-    setActiveId(id);
 
     // Find the mitigation ability being dragged
     const mitigation = mitigationAbilities.find(m => m.id === id);
@@ -844,7 +773,6 @@ function App() {
 
     // If no drop target or no selected boss action, do nothing
     if (!over || !selectedBossAction) {
-      setActiveId(null);
       setActiveMitigation(null);
       return;
     }
@@ -852,18 +780,27 @@ function App() {
     // Find the mitigation ability being dragged
     const mitigation = mitigationAbilities.find(m => m.id === active.id);
     if (!mitigation) {
-      setActiveId(null);
       setActiveMitigation(null);
       return;
     }
 
     // Check if the drop target is the selected boss action
     if (over.id === selectedBossAction.id) {
+      // Check if this mitigation is already assigned to this boss action
+      const isAlreadyAssigned = assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id);
+
+      // If already assigned, check if it can be assigned again based on the new rules
+      if (isAlreadyAssigned && !canAssignMitigationToBossAction(selectedBossAction.id, mitigation.id)) {
+        console.log(`Cannot assign ${mitigation.name} to ${selectedBossAction.name} because it cannot be assigned multiple times to this boss action.`);
+        setActiveMitigation(null);
+        return;
+      }
+
       // Check if the ability would be on cooldown
       const cooldownResult = checkAbilityCooldown(
         mitigation.id,
         selectedBossAction.time,
-        false, // Not yet assigned
+        isAlreadyAssigned, // Pass true if already assigned
         selectedBossAction.id
       );
 
@@ -878,29 +815,12 @@ function App() {
           timestamp: Date.now()
         };
 
-        // CRITICAL: Update the charge counters immediately in the DOM
-        // This must happen before any state updates or event dispatches
-        // to ensure immediate visual feedback while the same boss action is selected
-        console.log(`Updating charge counter for ${mitigation.name} (ID: ${mitigation.id}) immediately`);
-        updateChargeCountersImmediately(mitigation.id, selectedBossAction.id, true);
+        // Add pending assignment to the ChargeCountContext
+        // This will update the charge/instance counts immediately
+        addPendingAssignment(selectedBossAction.id, mitigation.id);
 
-        // Add to pending assignments for state management
-        // This happens after the DOM update to ensure the UI updates synchronously
+        // Add to local pending assignments for state management
         setPendingAssignments(prev => [...prev, newPendingAssignment]);
-
-        // Force immediate UI update for charge count
-        // This ensures the UI updates synchronously with the user action
-        setAssignmentsVersion(prev => prev + 1);
-
-        // Dispatch a custom event to notify all components about the new pending assignment
-        // This ensures all components update their UI immediately without waiting for React state updates
-        const pendingAssignmentEvent = new CustomEvent('pendingAssignmentChange', {
-          detail: {
-            pendingAssignments: [...pendingAssignments, newPendingAssignment],
-            latestAssignment: newPendingAssignment
-          }
-        });
-        window.dispatchEvent(pendingAssignmentEvent);
 
         // Then add the mitigation to the boss action
         const result = addMitigation(selectedBossAction.id, mitigation);
@@ -912,9 +832,8 @@ function App() {
       }
     }
 
-    setActiveId(null);
     setActiveMitigation(null);
-  }, [selectedBossAction, mitigationAbilities, checkAbilityCooldown, addMitigation, setActiveMitigation, setAssignmentsVersion]);
+  }, [selectedBossAction, assignments, mitigationAbilities, checkAbilityCooldown, addMitigation, setActiveMitigation, addPendingAssignment, canAssignMitigationToBossAction]);
 
   // Handle mobile mitigation assignment
   const handleMobileAssignMitigation = useCallback((bossActionId, mitigation) => {
@@ -922,10 +841,19 @@ function App() {
     const bossAction = sortedBossActions.find(action => action.id === bossActionId);
     if (!bossAction) return;
 
+    // Check if this mitigation is already assigned to this boss action
+    const isAlreadyAssigned = assignments[bossActionId]?.some(m => m.id === mitigation.id);
+
+    // If already assigned, check if it can be assigned again based on the new rules
+    if (isAlreadyAssigned && !canAssignMitigationToBossAction(bossActionId, mitigation.id)) {
+      console.log(`Cannot assign ${mitigation.name} to ${bossAction.name} because it cannot be assigned multiple times to this boss action.`);
+      return;
+    }
+
     const cooldownResult = checkAbilityCooldown(
       mitigation.id,
       bossAction.time,
-      false, // Not yet assigned
+      isAlreadyAssigned, // Pass true if already assigned
       bossActionId
     );
 
@@ -940,29 +868,12 @@ function App() {
         timestamp: Date.now()
       };
 
-      // CRITICAL: Update the charge counters immediately in the DOM
-      // This must happen before any state updates or event dispatches
-      // to ensure immediate visual feedback while the same boss action is selected
-      console.log(`Updating charge counter for ${mitigation.name} (ID: ${mitigation.id}) immediately in mobile view`);
-      updateChargeCountersImmediately(mitigation.id, bossActionId, true);
+      // Add pending assignment to the ChargeCountContext
+      // This will update the charge/instance counts immediately
+      addPendingAssignment(bossActionId, mitigation.id);
 
-      // Add to pending assignments for state management
-      // This happens after the DOM update to ensure the UI updates synchronously
+      // Add to local pending assignments for state management
       setPendingAssignments(prev => [...prev, newPendingAssignment]);
-
-      // Force immediate UI update for charge count
-      // This ensures the UI updates synchronously with the user action
-      setAssignmentsVersion(prev => prev + 1);
-
-      // Dispatch a custom event to notify all components about the new pending assignment
-      // This ensures all components update their UI immediately without waiting for React state updates
-      const pendingAssignmentEvent = new CustomEvent('pendingAssignmentChange', {
-        detail: {
-          pendingAssignments: [...pendingAssignments, newPendingAssignment],
-          latestAssignment: newPendingAssignment
-        }
-      });
-      window.dispatchEvent(pendingAssignmentEvent);
 
       // Then add the mitigation to the boss action
       const result = addMitigation(bossActionId, mitigation);
@@ -972,7 +883,7 @@ function App() {
         console.log(`Added ${mitigation.name} to ${bossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
       }
     }
-  }, [sortedBossActions, addMitigation, checkAbilityCooldown, setAssignmentsVersion]);
+  }, [sortedBossActions, assignments, addMitigation, checkAbilityCooldown, addPendingAssignment, canAssignMitigationToBossAction]);
 
   // Handle boss action click for mobile
   const handleBossActionClick = useCallback((action) => {
@@ -1103,12 +1014,12 @@ function App() {
                       }).length > 0
                     }>
                       {action.description}
-                      {action.unmitigatedDamage && (
-                        <div style={{ marginTop: '5px', fontWeight: 'bold' }}>
-                          Unmitigated Damage: {action.unmitigatedDamage}
-                        </div>
-                      )}
                     </ActionDescription>
+                    {action.unmitigatedDamage && (
+                      <div style={{ marginTop: '5px', fontWeight: 'bold' }}>
+                        Unmitigated Damage: {action.unmitigatedDamage}
+                      </div>
+                    )}
 
                     {/* Calculate and display total mitigation including inherited mitigations */}
                     {(() => {
@@ -1215,43 +1126,17 @@ function App() {
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      // Create the removed assignment object
-                                      const removedAssignment = {
-                                        bossActionId: action.id,
-                                        mitigationId: mitigation.id
-                                      };
 
-                                      // CRITICAL: Update the charge counters immediately in the DOM
-                                      // This must happen before any state updates or event dispatches
-                                      // to ensure immediate visual feedback while the same boss action is selected
-                                      console.log(`Updating charge counter for ${mitigation.name} (ID: ${mitigation.id}) immediately on removal`);
-                                      updateChargeCountersImmediately(mitigation.id, action.id, false);
+                                      // Remove pending assignment from the ChargeCountContext
+                                      // This will update the charge/instance counts immediately
+                                      removePendingAssignment(action.id, mitigation.id);
 
-                                      // Remove any pending assignments for this mitigation
-                                      // This happens after the DOM update to ensure the UI updates synchronously
+                                      // Remove any pending assignments for this mitigation from local state
                                       setPendingAssignments(prev =>
                                         prev.filter(pa =>
                                           !(pa.bossActionId === action.id && pa.mitigationId === mitigation.id)
                                         )
                                       );
-
-                                      // Force immediate UI update for charge count
-                                      // This ensures the UI updates synchronously with the user action
-                                      setAssignmentsVersion(prev => prev + 1);
-
-                                      // Dispatch a custom event to notify all components about the removal
-                                      // This ensures all components update their UI immediately
-                                      const pendingAssignmentEvent = new CustomEvent('pendingAssignmentChange', {
-                                        detail: {
-                                          pendingAssignments: pendingAssignments.filter(pa =>
-                                            !(pa.bossActionId === action.id && pa.mitigationId === mitigation.id)
-                                          ),
-                                          removedAssignment: removedAssignment
-                                        }
-                                      });
-
-                                      // Dispatch the event immediately
-                                      window.dispatchEvent(pendingAssignmentEvent);
 
                                       // Remove the mitigation
                                       removeMitigation(action.id, mitigation.id);
@@ -1336,11 +1221,18 @@ function App() {
                             pa.bossActionId === selectedBossAction.id
                           );
 
+                          // First, check if this mitigation can be assigned to this boss action
+                          // based on the new rules for raid-wide vs tank buster mitigations
+                          const isAlreadyAssigned = assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id);
+                          if (isAlreadyAssigned && !canAssignMitigationToBossAction(selectedBossAction.id, mitigation.id)) {
+                            return true; // Disable if already assigned and can't be assigned again
+                          }
+
                           const cooldownResult = checkAbilityCooldown(
                             mitigation.id,
                             selectedBossAction.time,
                             // Consider both actual assignments and pending assignments
-                            assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id) || hasPendingAssignment,
+                            isAlreadyAssigned || hasPendingAssignment,
                             selectedBossAction.id
                           );
 
@@ -1372,6 +1264,13 @@ function App() {
                           if ((!cooldownResult || !cooldownResult.isOnCooldown) &&
                               !(cooldownResult && cooldownResult.reason === 'already-assigned') &&
                               !(cooldownResult && cooldownResult.availableCharges === 0)) return null;
+
+                          // First, check if this mitigation can be assigned to this boss action
+                          // based on the new rules for raid-wide vs tank buster mitigations
+                          const isAlreadyAssigned = assignments[selectedBossAction.id]?.some(m => m.id === mitigation.id);
+                          if (isAlreadyAssigned && !canAssignMitigationToBossAction(selectedBossAction.id, mitigation.id)) {
+                            return `${mitigation.name} cannot be assigned multiple times to this boss action`;
+                          }
 
                           if (cooldownResult.reason === 'already-assigned') {
                             return `${mitigation.name} is already assigned to this boss action`;
@@ -1493,13 +1392,13 @@ function App() {
                                 availableCharges = Math.max(0, availableCharges - 1);
                               }
 
-                              return <> | <ChargeCount
-                                available={availableCharges}
-                                data-mitigation-id={mitigation.id}
-                                data-charge-type="charges"
-                              >
-                                {availableCharges}/{cooldownResult.totalCharges} Charges
-                              </ChargeCount></>;
+                              return <> | <ChargeCounter
+                                mitigationId={mitigation.id}
+                                bossActionId={selectedBossAction?.id}
+                                type="charges"
+                                totalCount={cooldownResult.totalCharges}
+                                availableCount={availableCharges}
+                              /></>;
                             })()}
 
                             {/* Display instance count for role-shared abilities */}
@@ -1555,13 +1454,13 @@ function App() {
                                 availableInstances = Math.max(0, availableInstances - 1);
                               }
 
-                              return <> | <ChargeCount
-                                available={availableInstances}
-                                data-mitigation-id={mitigation.id}
-                                data-charge-type="instances"
-                              >
-                                {availableInstances}/{totalInstances} Instances
-                              </ChargeCount></>;
+                              return <> | <ChargeCounter
+                                mitigationId={mitigation.id}
+                                bossActionId={selectedBossAction?.id}
+                                type="instances"
+                                totalCount={totalInstances}
+                                availableCount={availableInstances}
+                              /></>;
                             })()}
                           </small>
                         </MitigationDescription>

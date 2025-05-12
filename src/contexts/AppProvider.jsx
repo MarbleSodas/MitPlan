@@ -3,9 +3,11 @@ import { ThemeProvider } from './ThemeContext.jsx';
 import { BossProvider } from './BossContext.jsx';
 import { JobProvider } from './JobContext.jsx';
 import { MitigationProvider } from './MitigationContext.jsx';
+import { ChargeCountProvider } from './ChargeCountContext.jsx';
 import { FilterProvider } from './FilterContext.jsx';
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
+import MitigationContext from './MitigationContext.jsx';
 
 /**
  * Combined provider component for all contexts
@@ -26,9 +28,20 @@ const AppProvider = ({ children }) => {
                     bossLevel={currentBossLevel}
                     selectedJobs={selectedJobs}
                   >
-                    <FilterProvider>
-                      {children}
-                    </FilterProvider>
+                    <MitigationContext.Consumer>
+                      {({ assignments }) => (
+                        <ChargeCountProvider
+                          bossActions={currentBossActions}
+                          bossLevel={currentBossLevel}
+                          selectedJobs={selectedJobs}
+                          assignments={assignments}
+                        >
+                          <FilterProvider>
+                            {children}
+                          </FilterProvider>
+                        </ChargeCountProvider>
+                      )}
+                    </MitigationContext.Consumer>
                   </MitigationProvider>
                 )}
               </JobContext.Consumer>

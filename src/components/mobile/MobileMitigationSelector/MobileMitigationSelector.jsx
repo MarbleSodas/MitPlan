@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { X, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import {
   isMitigationAvailable,
   getAbilityChargeCount,
@@ -8,23 +8,8 @@ import {
   getAbilityDurationForLevel,
   getRoleSharedAbilityCount
 } from '../../../utils';
-import { updateChargeCountersImmediately } from '../../../utils/ui/immediateUIUpdates';
-import { useFilterContext } from '../../../contexts';
-
-// Styled component for charge count display
-const ChargeCount = styled.span`
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 10px;
-  background-color: ${props => props.available === 0 ?
-    props.theme.colors.error || '#ff5555' :
-    props.theme.colors.primary};
-  color: ${props => props.theme.colors.buttonText};
-  font-weight: bold;
-  margin-left: 4px;
-  font-size: 0.8rem;
-  opacity: ${props => props.available === 0 ? 0.8 : 1};
-`;
+import { useFilterContext, useChargeCountContext } from '../../../contexts';
+import ChargeCounter from '../../../components/ChargeCounter';
 
 // Container for the entire component
 const Container = styled.div`
@@ -247,6 +232,24 @@ const NoAssignmentsMessage = styled.div`
   border-radius: ${props => props.theme.borderRadius.medium};
 `;
 
+const ErrorMessage = styled.div`
+  text-align: center;
+  padding: 12px;
+  margin: 8px 0;
+  color: ${props => props.theme.colors.error || '#ff5555'};
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.2)' : 'rgba(255, 100, 100, 0.1)'};
+  border-radius: ${props => props.theme.borderRadius.medium};
+  border-left: 4px solid ${props => props.theme.colors.error || '#ff5555'};
+  font-weight: 500;
+  font-size: 14px;
+  animation: fadeIn 0.3s ease;
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
+
 const BossActionDetails = styled.div`
   background-color: ${props => props.theme.colors.cardBackground};
   border-radius: ${props => props.theme.borderRadius.medium};
@@ -301,56 +304,23 @@ const MobileMitigationSelector = ({
   // Get the filter context
   const { filterMitigations, showAllMitigations } = useFilterContext();
 
+  // Get the charge count context
+  const { addPendingAssignment, removePendingAssignment, canAssignMitigationToBossAction } = useChargeCountContext();
+
   // Add state to track the currently assigned mitigation
   // This is used to force a re-render when a mitigation is assigned
-  const [justAssignedMitigation, setJustAssignedMitigation] = React.useState(null);
+  const [justAssignedMitigation, setJustAssignedMitigation] = useState(null);
 
   // Add state to track local pending assignments
   // This ensures the component can update immediately even before the parent's state updates
-  const [localPendingAssignments, setLocalPendingAssignments] = React.useState(pendingAssignments);
+  const [localPendingAssignments, setLocalPendingAssignments] = useState(pendingAssignments);
 
-  // Listen for pendingAssignmentChange events from the parent component
-  React.useEffect(() => {
-    const handlePendingAssignmentChange = (event) => {
-      // Make sure we have event details
-      if (!event.detail) return;
+  // Add state to track if we're currently processing an assignment
+  // This prevents multiple rapid assignments that could cause UI issues
+  const [isProcessingAssignment, setIsProcessingAssignment] = useState(false);
 
-      // Update local state with the latest pending assignments
-      if (event.detail.pendingAssignments) {
-        setLocalPendingAssignments(event.detail.pendingAssignments);
-      }
-
-      // If there's a new assignment for this boss action, set justAssignedMitigation
-      const latestAssignment = event.detail.latestAssignment;
-      if (latestAssignment && latestAssignment.bossActionId === bossAction.id) {
-        setJustAssignedMitigation(latestAssignment.mitigationId);
-
-        // Clear justAssignedMitigation after a delay
-        setTimeout(() => {
-          setJustAssignedMitigation(null);
-        }, 1000);
-      }
-
-      // If there's a removed assignment for this boss action, update the UI
-      const removedAssignment = event.detail.removedAssignment;
-      if (removedAssignment && removedAssignment.bossActionId === bossAction.id) {
-        // Force a re-render to update the charge count display
-        setTimeout(() => {
-          // Using setTimeout with 0 delay to ensure the state update happens after the current execution
-          const resizeEvent = new Event('resize');
-          window.dispatchEvent(resizeEvent);
-        }, 0);
-      }
-    };
-
-    // Add event listener
-    window.addEventListener('pendingAssignmentChange', handlePendingAssignmentChange);
-
-    // Clean up
-    return () => {
-      window.removeEventListener('pendingAssignmentChange', handlePendingAssignmentChange);
-    };
-  }, [bossAction.id]);
+  // Add error state to track and handle errors
+  const [error, setError] = useState(null);
 
   // Get the current assignments for this boss action
   const currentAssignments = assignments[bossAction.id] || [];
@@ -361,9 +331,15 @@ const MobileMitigationSelector = ({
   );
 
   // Filter mitigations based on the boss action type and filter settings
+  // First filter by availability with selected jobs
+  const availableMitigations = mitigations.filter(mitigation =>
+    isMitigationAvailable(mitigation, selectedJobs)
+  );
+
+  // Then filter by boss action type if needed
   const filteredMitigations = showAllMitigations || !bossAction
-    ? mitigations
-    : filterMitigations(mitigations, bossAction);
+    ? availableMitigations
+    : filterMitigations(availableMitigations, bossAction);
 
   return (
     <Container>
@@ -381,6 +357,13 @@ const MobileMitigationSelector = ({
           </UnmitigatedDamage>
         )}
       </BossActionDetails>
+
+      {/* Display error message if there is one */}
+      {error && (
+        <ErrorMessage>
+          {error}
+        </ErrorMessage>
+      )}
 
       <AvailableMitigationsSection>
         <SectionTitle>Available Mitigations</SectionTitle>
@@ -402,7 +385,11 @@ const MobileMitigationSelector = ({
                                          cooldownResult.totalCharges > 1 &&
                                          cooldownResult.availableCharges === 0;
 
-            const isDisabled = isAssigned ||
+            // Check if this mitigation can be assigned to this boss action
+            // based on the new rules for raid-wide vs tank buster mitigations
+            const cannotBeAssignedMultipleTimes = isAssigned && !canAssignMitigationToBossAction(bossAction.id, mitigation.id);
+
+            const isDisabled = cannotBeAssignedMultipleTimes ||
                               (cooldownResult && cooldownResult.isOnCooldown) ||
                               hasNoAvailableCharges;
 
@@ -410,9 +397,15 @@ const MobileMitigationSelector = ({
             let cooldownReason = null;
             if ((cooldownResult && cooldownResult.isOnCooldown) ||
                 (cooldownResult && cooldownResult.availableCharges === 0) ||
-                (cooldownResult && cooldownResult.reason === 'already-assigned')) {
+                (cooldownResult && cooldownResult.reason === 'already-assigned') ||
+                (isAssigned && !canAssignMitigationToBossAction(bossAction.id, mitigation.id))) {
 
-              if (cooldownResult.reason === 'already-assigned') {
+              // Check if this mitigation can be assigned to this boss action
+              // based on the new rules for raid-wide vs tank buster mitigations
+              if (isAssigned && !canAssignMitigationToBossAction(bossAction.id, mitigation.id)) {
+                cooldownReason = `Cannot be assigned multiple times to this action`;
+              }
+              else if (cooldownResult.reason === 'already-assigned') {
                 cooldownReason = `Already assigned to this action`;
               }
               // Handle role-shared abilities
@@ -447,55 +440,75 @@ const MobileMitigationSelector = ({
                   if (isAssigned) {
                     // If already assigned, do nothing (let the remove button handle it)
                     return;
-                  } else if (!isDisabled) {
-                    // Create a new pending assignment for local state
-                    const newPendingAssignment = {
-                      bossActionId: bossAction.id,
-                      mitigationId: mitigation.id,
-                      timestamp: Date.now()
-                    };
+                  } else if (!isDisabled && !isProcessingAssignment) {
+                    try {
+                      // Set processing flag to prevent multiple rapid assignments
+                      setIsProcessingAssignment(true);
 
-                    // CRITICAL: Update the charge counters immediately in the DOM
-                    // This must happen before any state updates or event dispatches
-                    // to ensure immediate visual feedback while the same boss action is selected
-                    console.log(`Updating charge counter for ${mitigation.name} (ID: ${mitigation.id}) immediately in mobile component`);
-                    updateChargeCountersImmediately(mitigation.id, bossAction.id, true);
+                      // Dispatch custom event to notify MobileBottomSheet
+                      window.dispatchEvent(new Event('mitigation-processing-start'));
 
-                    // Set justAssignedMitigation for immediate UI feedback
-                    // This will update the charge count display without requiring deselection
-                    setJustAssignedMitigation(mitigation.id);
+                      // Create a new pending assignment for local state
+                      const newPendingAssignment = {
+                        bossActionId: bossAction.id,
+                        mitigationId: mitigation.id,
+                        timestamp: Date.now()
+                      };
 
-                    // Update local pending assignments state
-                    // This happens after the DOM update to ensure the UI updates synchronously
-                    setLocalPendingAssignments(prev => [...prev, newPendingAssignment]);
+                      // Add pending assignment to the ChargeCountContext
+                      // This will update the charge/instance counts immediately
+                      addPendingAssignment(bossAction.id, mitigation.id);
 
-                    // Create a custom event to notify all components about the new pending assignment
-                    // This ensures all components update their UI immediately
-                    const pendingAssignmentEvent = new CustomEvent('pendingAssignmentChange', {
-                      detail: {
-                        pendingAssignments: [...localPendingAssignments, newPendingAssignment],
-                        latestAssignment: newPendingAssignment
-                      }
-                    });
+                      // Set justAssignedMitigation for immediate UI feedback
+                      // This will update the charge count display without requiring deselection
+                      setJustAssignedMitigation(mitigation.id);
 
-                    // Dispatch the event immediately
-                    window.dispatchEvent(pendingAssignmentEvent);
+                      // Update local pending assignments state
+                      setLocalPendingAssignments(prev => [...prev, newPendingAssignment]);
 
-                    // Force re-render to update UI immediately
-                    // We use both the resize event and a state update to ensure the UI updates properly
-                    // This is critical for ensuring the UI updates synchronously with the user action
-                    const event = new Event('resize');
-                    window.dispatchEvent(event);
+                      // Then assign the mitigation to the boss action
+                      // This ensures the UI updates immediately before the assignment is processed
+                      onAssignMitigation(bossAction.id, mitigation);
 
-                    // Then assign the mitigation to the boss action
-                    // This ensures the UI updates immediately before the assignment is processed
-                    onAssignMitigation(bossAction.id, mitigation);
+                      // Clear the justAssignedMitigation and processing flag after a delay
+                      // This ensures the UI has time to update before we clear the state
+                      setTimeout(() => {
+                        setJustAssignedMitigation(null);
+                        setIsProcessingAssignment(false);
 
-                    // Clear the justAssignedMitigation after a longer delay
-                    // This ensures the UI has time to update before we clear the state
-                    setTimeout(() => {
-                      setJustAssignedMitigation(null);
-                    }, 1000);
+                        // Dispatch custom event to notify MobileBottomSheet
+                        window.dispatchEvent(new Event('mitigation-processing-end'));
+
+                        // Force a re-render to ensure the UI is updated
+                        const event = new Event('resize');
+                        window.dispatchEvent(event);
+                      }, 500);
+                    } catch (err) {
+                      // Handle any errors that occur during assignment
+                      console.error('Error assigning mitigation:', err);
+                      setError(`Error assigning ${mitigation.name}: ${err.message}`);
+
+                      // Reset processing flag
+                      setIsProcessingAssignment(false);
+
+                      // Dispatch custom event to notify MobileBottomSheet
+                      window.dispatchEvent(new Event('mitigation-processing-end'));
+
+                      // Remove the pending assignment since it failed
+                      removePendingAssignment(bossAction.id, mitigation.id);
+
+                      // Update local pending assignments state to remove this mitigation
+                      setLocalPendingAssignments(prev =>
+                        prev.filter(pa =>
+                          !(pa.bossActionId === bossAction.id && pa.mitigationId === mitigation.id)
+                        )
+                      );
+
+                      // Clear the error after a delay
+                      setTimeout(() => {
+                        setError(null);
+                      }, 3000);
+                    }
                   }
                 }}
               >
@@ -554,13 +567,13 @@ const MobileMitigationSelector = ({
                           availableCharges = Math.max(0, availableCharges - 1);
                         }
 
-                        return <> | <ChargeCount
-                          available={availableCharges}
-                          data-mitigation-id={mitigation.id}
-                          data-charge-type="charges"
-                        >
-                          {availableCharges}/{cooldownResult.totalCharges} Charges
-                        </ChargeCount></>;
+                        return <> | <ChargeCounter
+                          mitigationId={mitigation.id}
+                          bossActionId={bossAction.id}
+                          type="charges"
+                          totalCount={cooldownResult.totalCharges}
+                          availableCount={availableCharges}
+                        /></>;
                       })()}
 
                       {/* Display instance count for role-shared abilities */}
@@ -612,13 +625,13 @@ const MobileMitigationSelector = ({
                           availableInstances = Math.max(0, availableInstances - 1);
                         }
 
-                        return <> | <ChargeCount
-                          available={availableInstances}
-                          data-mitigation-id={mitigation.id}
-                          data-charge-type="instances"
-                        >
-                          {availableInstances}/{totalInstances} Instances
-                        </ChargeCount></>;
+                        return <> | <ChargeCounter
+                          mitigationId={mitigation.id}
+                          bossActionId={bossAction.id}
+                          type="instances"
+                          totalCount={totalInstances}
+                          availableCount={availableInstances}
+                        /></>;
                       })()}
                     </small>
                   </MitigationDescription>
@@ -629,53 +642,62 @@ const MobileMitigationSelector = ({
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent the parent onClick from firing
 
-                      // Create the removed assignment object
-                      const removedAssignment = {
-                        bossActionId: bossAction.id,
-                        mitigationId: mitigation.id
-                      };
+                      if (isProcessingAssignment) {
+                        return; // Don't allow removal while processing an assignment
+                      }
 
-                      // CRITICAL: Update the charge counters immediately in the DOM
-                      // This must happen before any state updates or event dispatches
-                      // to ensure immediate visual feedback while the same boss action is selected
-                      console.log(`Updating charge counter for ${mitigation.name} (ID: ${mitigation.id}) immediately on removal in mobile component`);
-                      updateChargeCountersImmediately(mitigation.id, bossAction.id, false);
+                      try {
+                        // Set processing flag to prevent multiple rapid operations
+                        setIsProcessingAssignment(true);
 
-                      // Update local pending assignments state to remove this mitigation
-                      // This happens after the DOM update to ensure the UI updates synchronously
-                      setLocalPendingAssignments(prev =>
-                        prev.filter(pa =>
-                          !(pa.bossActionId === bossAction.id && pa.mitigationId === mitigation.id)
-                        )
-                      );
+                        // Dispatch custom event to notify MobileBottomSheet
+                        window.dispatchEvent(new Event('mitigation-processing-start'));
 
-                      // Create a custom event to notify all components about the removal
-                      const removalEvent = new CustomEvent('pendingAssignmentChange', {
-                        detail: {
-                          pendingAssignments: localPendingAssignments.filter(pa =>
+                        // Remove pending assignment from the ChargeCountContext
+                        // This will update the charge/instance counts immediately
+                        removePendingAssignment(bossAction.id, mitigation.id);
+
+                        // Update local pending assignments state to remove this mitigation
+                        setLocalPendingAssignments(prev =>
+                          prev.filter(pa =>
                             !(pa.bossActionId === bossAction.id && pa.mitigationId === mitigation.id)
-                          ),
-                          removedAssignment: removedAssignment
-                        }
-                      });
+                          )
+                        );
 
-                      // Dispatch the event immediately
-                      window.dispatchEvent(removalEvent);
+                        // Remove the mitigation
+                        onRemoveMitigation(bossAction.id, mitigation.id);
 
-                      // Remove the mitigation
-                      onRemoveMitigation(bossAction.id, mitigation.id);
+                        // Force re-render to update UI immediately
+                        // This will update the charge count display without requiring deselection
+                        setTimeout(() => {
+                          // Using setTimeout with a short delay to ensure the state update happens after the current execution
+                          // This is a workaround to force a re-render in the mobile view
+                          const event = new Event('resize');
+                          window.dispatchEvent(event);
 
-                      // Force re-render to update UI immediately
-                      // This will update the charge count display without requiring deselection
-                      setTimeout(() => {
-                        // Using setTimeout with 0 delay to ensure the state update happens after the current execution
-                        // This is a workaround to force a re-render in the mobile view
-                        const event = new Event('resize');
-                        window.dispatchEvent(event);
+                          // Also update the component state to force a re-render
+                          setJustAssignedMitigation(null);
+                          setIsProcessingAssignment(false);
 
-                        // Also update the component state to force a re-render
-                        setJustAssignedMitigation(null);
-                      }, 0);
+                          // Dispatch custom event to notify MobileBottomSheet
+                          window.dispatchEvent(new Event('mitigation-processing-end'));
+                        }, 300);
+                      } catch (err) {
+                        // Handle any errors that occur during removal
+                        console.error('Error removing mitigation:', err);
+                        setError(`Error removing ${mitigation.name}: ${err.message}`);
+
+                        // Reset processing flag
+                        setIsProcessingAssignment(false);
+
+                        // Dispatch custom event to notify MobileBottomSheet
+                        window.dispatchEvent(new Event('mitigation-processing-end'));
+
+                        // Clear the error after a delay
+                        setTimeout(() => {
+                          setError(null);
+                        }, 3000);
+                      }
                     }}
                     aria-label={`Remove ${mitigation.name}`}
                   >
@@ -712,50 +734,61 @@ const MobileMitigationSelector = ({
                 </AssignedMitigationName>
                 <RemoveButton
                   onClick={() => {
-                    // Update the charge counters immediately in the DOM
-                    // This provides immediate visual feedback before any state updates
-                    updateChargeCountersImmediately(mitigation.id, bossAction.id, false);
+                    if (isProcessingAssignment) {
+                      return; // Don't allow removal while processing an assignment
+                    }
 
-                    // Create the removed assignment object
-                    const removedAssignment = {
-                      bossActionId: bossAction.id,
-                      mitigationId: mitigation.id
-                    };
+                    try {
+                      // Set processing flag to prevent multiple rapid operations
+                      setIsProcessingAssignment(true);
 
-                    // Create a custom event to notify all components about the removal
-                    const removalEvent = new CustomEvent('pendingAssignmentChange', {
-                      detail: {
-                        pendingAssignments: localPendingAssignments.filter(pa =>
+                      // Dispatch custom event to notify MobileBottomSheet
+                      window.dispatchEvent(new Event('mitigation-processing-start'));
+
+                      // Remove pending assignment from the ChargeCountContext
+                      // This will update the charge/instance counts immediately
+                      removePendingAssignment(bossAction.id, mitigation.id);
+
+                      // Update local pending assignments state to remove this mitigation
+                      setLocalPendingAssignments(prev =>
+                        prev.filter(pa =>
                           !(pa.bossActionId === bossAction.id && pa.mitigationId === mitigation.id)
-                        ),
-                        removedAssignment: removedAssignment
-                      }
-                    });
+                        )
+                      );
 
-                    // Dispatch the event immediately
-                    window.dispatchEvent(removalEvent);
+                      // Remove the mitigation
+                      onRemoveMitigation(bossAction.id, mitigation.id);
 
-                    // Update local pending assignments state to remove this mitigation
-                    // This happens after the DOM update to ensure the UI updates synchronously
-                    setLocalPendingAssignments(prev =>
-                      prev.filter(pa =>
-                        !(pa.bossActionId === bossAction.id && pa.mitigationId === mitigation.id)
-                      )
-                    );
+                      // Force re-render to update UI immediately
+                      setTimeout(() => {
+                        // Using setTimeout with a short delay to ensure the state update happens after the current execution
+                        // This is a workaround to force a re-render in the mobile view
+                        const event = new Event('resize');
+                        window.dispatchEvent(event);
 
-                    // Remove the mitigation
-                    onRemoveMitigation(bossAction.id, mitigation.id);
+                        // Also update the component state to force a re-render
+                        setJustAssignedMitigation(null);
+                        setIsProcessingAssignment(false);
 
-                    // Force re-render to update UI immediately
-                    setTimeout(() => {
-                      // Using setTimeout with 0 delay to ensure the state update happens after the current execution
-                      // This is a workaround to force a re-render in the mobile view
-                      const event = new Event('resize');
-                      window.dispatchEvent(event);
+                        // Dispatch custom event to notify MobileBottomSheet
+                        window.dispatchEvent(new Event('mitigation-processing-end'));
+                      }, 300);
+                    } catch (err) {
+                      // Handle any errors that occur during removal
+                      console.error('Error removing mitigation:', err);
+                      setError(`Error removing ${mitigation.name}: ${err.message}`);
 
-                      // Also update the component state to force a re-render
-                      setJustAssignedMitigation(null);
-                    }, 0);
+                      // Reset processing flag
+                      setIsProcessingAssignment(false);
+
+                      // Dispatch custom event to notify MobileBottomSheet
+                      window.dispatchEvent(new Event('mitigation-processing-end'));
+
+                      // Clear the error after a delay
+                      setTimeout(() => {
+                        setError(null);
+                      }, 3000);
+                    }
                   }}
                   aria-label={`Remove ${mitigation.name}`}
                 >

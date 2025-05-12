@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { X } from 'lucide-react';
 
@@ -108,10 +108,69 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
   const startY = useRef(0);
   const currentY = useRef(0);
 
+  // Add state to track if we're currently processing an action
+  // This prevents the sheet from closing during mitigation assignment
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+
+  // Add state to track if we should allow closing
+  // This prevents accidental closures during mitigation assignment
+  const [allowClosing, setAllowClosing] = useState(true);
+
+  // Add event listeners for mitigation processing events
+  useEffect(() => {
+    const handleProcessingStart = () => {
+      setIsProcessingAction(true);
+      setAllowClosing(false);
+    };
+
+    const handleProcessingEnd = () => {
+      setIsProcessingAction(false);
+      setAllowClosing(true);
+    };
+
+    // Add event listeners
+    window.addEventListener('mitigation-processing-start', handleProcessingStart);
+    window.addEventListener('mitigation-processing-end', handleProcessingEnd);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('mitigation-processing-start', handleProcessingStart);
+      window.removeEventListener('mitigation-processing-end', handleProcessingEnd);
+    };
+  }, []);
+
+  // Listen for custom events from MobileMitigationSelector
+  useEffect(() => {
+    const handleProcessingStart = () => {
+      setIsProcessingAction(true);
+      setAllowClosing(false);
+    };
+
+    const handleProcessingEnd = () => {
+      setIsProcessingAction(false);
+      // Add a small delay before allowing closing again
+      setTimeout(() => {
+        setAllowClosing(true);
+      }, 500);
+    };
+
+    // Create custom event listeners
+    window.addEventListener('mitigation-processing-start', handleProcessingStart);
+    window.addEventListener('mitigation-processing-end', handleProcessingEnd);
+
+    return () => {
+      window.removeEventListener('mitigation-processing-start', handleProcessingStart);
+      window.removeEventListener('mitigation-processing-end', handleProcessingEnd);
+    };
+  }, []);
+
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (sheetRef.current && !sheetRef.current.contains(event.target)) {
+      if (sheetRef.current &&
+          !sheetRef.current.contains(event.target) &&
+          allowClosing &&
+          !isProcessingAction) {
         onClose();
       }
     };
@@ -123,7 +182,7 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, allowClosing, isProcessingAction]);
 
   // Handle swipe down to close
   const handleTouchStart = (e) => {
@@ -134,6 +193,11 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
   };
 
   const handleTouchMove = (e) => {
+    // If we're processing an action, don't allow swiping
+    if (isProcessingAction || !allowClosing) {
+      return;
+    }
+
     // Get the content element for scroll position checking
     const content = sheetRef.current.querySelector('div:last-child');
     // Update current touch position
@@ -164,8 +228,8 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
   const handleTouchEnd = () => {
     const deltaY = currentY.current - startY.current;
 
-    // If swiped down more than threshold, close the sheet
-    if (deltaY > 80) {
+    // If swiped down more than threshold and not processing an action, close the sheet
+    if (deltaY > 80 && allowClosing && !isProcessingAction) {
       // Add a small animation before closing
       sheetRef.current.style.transition = 'transform 0.2s ease';
       sheetRef.current.style.transform = `translateY(${Math.min(deltaY * 1.2, window.innerHeight)}px)`;
@@ -246,7 +310,18 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
         <SwipeIndicator />
         <BottomSheetHeader>
           <BottomSheetTitle>{title}</BottomSheetTitle>
-          <CloseButton onClick={onClose} aria-label="Close">
+          <CloseButton
+            onClick={() => {
+              if (allowClosing && !isProcessingAction) {
+                onClose();
+              }
+            }}
+            aria-label="Close"
+            style={{
+              opacity: allowClosing && !isProcessingAction ? 1 : 0.5,
+              cursor: allowClosing && !isProcessingAction ? 'pointer' : 'not-allowed'
+            }}
+          >
             <X size={24} />
           </CloseButton>
         </BottomSheetHeader>
