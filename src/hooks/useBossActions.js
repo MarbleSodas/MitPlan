@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { bossActionsMap } from '../data/bosses';
+import { bossActionsMap } from '../data';
 import useLocalStorage from './useLocalStorage';
 
 /**
  * Custom hook for managing boss actions
- * 
+ *
  * @returns {Object} - Boss actions state and functions
  */
 function useBossActions() {
   // Get boss ID from localStorage or use default
   const [currentBossId, setCurrentBossId] = useLocalStorage('currentBossId', 'ketuduke');
-  
+
   // Get boss actions for the current boss
   const [currentBossActions, setCurrentBossActions] = useState(bossActionsMap[currentBossId]);
-  
+
   // Track selected boss action
   const [selectedBossAction, setSelectedBossAction] = useState(null);
 

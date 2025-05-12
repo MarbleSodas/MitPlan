@@ -1,12 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { mitigationAbilities } from '../data/abilities';
-import { getAbilityCooldownForLevel } from '../utils/abilities';
-import { findActiveMitigationsAtTime } from '../utils/mitigation';
+import { mitigationAbilities } from '../data';
+import { getAbilityCooldownForLevel, findActiveMitigationsAtTime } from '../utils';
 import useLocalStorage from './useLocalStorage';
 
 /**
  * Custom hook for managing mitigation assignments
- * 
+ *
  * @param {Array} bossActions - Array of boss action objects
  * @param {number} bossLevel - The level of the boss
  * @returns {Object} - Mitigation state and functions
@@ -14,7 +13,7 @@ import useLocalStorage from './useLocalStorage';
 function useMitigation(bossActions, bossLevel = 90) {
   // Initialize assignments from localStorage or empty object
   const [assignments, setAssignments] = useLocalStorage('mitigationAssignments', {});
-  
+
   // Track active mitigation being dragged
   const [activeMitigation, setActiveMitigation] = useState(null);
 
@@ -59,7 +58,7 @@ function useMitigation(bossActions, bossLevel = 90) {
 
     // Get the most recent use
     const mostRecentUse = previousUses[previousUses.length - 1];
-    
+
     // Calculate time since last use
     const timeSinceLastUse = targetTime - mostRecentUse.time;
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { mitigationAbilities } from '../data';
 import {
   getAbilityChargeCount,
@@ -8,7 +8,9 @@ import {
 // Create the context
 const ChargeCountContext = createContext();
 
-// Create a provider component
+/**
+ * Provider component for tracking charge and instance counts for mitigation abilities
+ */
 export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, selectedJobs, assignments }) => {
   // State to track charge counts for each mitigation ability
   const [chargeCounts, setChargeCounts] = useState({});
@@ -19,8 +21,9 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
   // State to track pending assignments that haven't been fully processed yet
   const [pendingAssignments, setPendingAssignments] = useState([]);
 
-  // Calculate and update charge counts whenever assignments or selected jobs change
-  useEffect(() => {
+  // Memoize the calculation of charge and instance counts
+  // This prevents unnecessary recalculations when other state changes
+  const calculateCounts = useCallback(() => {
     const newChargeCounts = {};
     const newInstanceCounts = {};
 
@@ -79,10 +82,15 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
       }
     });
 
-    // Update state
+    return { newChargeCounts, newInstanceCounts };
+  }, [assignments, selectedJobs, bossActions, bossLevel]);
+
+  // Update charge and instance counts when dependencies change
+  useEffect(() => {
+    const { newChargeCounts, newInstanceCounts } = calculateCounts();
     setChargeCounts(newChargeCounts);
     setInstanceCounts(newInstanceCounts);
-  }, [assignments, selectedJobs, bossActions, bossLevel]);
+  }, [calculateCounts]);
 
   // Add a pending assignment
   const addPendingAssignment = useCallback((bossActionId, mitigationId) => {
@@ -111,9 +119,6 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
         // Only decrement by 1, not to 0
         const newAvailableCharges = Math.max(0, currentCount.availableCharges - 1);
 
-        // Log for debugging
-        console.log(`[ChargeCountContext] Updating charge count for ${mitigationId}: ${currentCount.availableCharges} -> ${newAvailableCharges}`);
-
         return {
           ...prev,
           [mitigationId]: {
@@ -138,9 +143,6 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
 
         // Only decrement by 1, not to 0
         const newAvailableInstances = Math.max(0, currentCount.availableInstances - 1);
-
-        // Log for debugging
-        console.log(`[ChargeCountContext] Updating instance count for ${mitigationId}: ${currentCount.availableInstances} -> ${newAvailableInstances}`);
 
         return {
           ...prev,
@@ -215,7 +217,6 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
   }, [instanceCounts]);
 
   // Check if a mitigation ability can be assigned to a specific boss action
-  // based on the new rules for raid-wide vs tank buster mitigations
   const canAssignMitigationToBossAction = useCallback((bossActionId, mitigationId) => {
     // Find the ability and boss action
     const ability = mitigationAbilities.find(m => m.id === mitigationId);
@@ -256,8 +257,8 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
     return false;
   }, [assignments, bossActions, bossLevel, chargeCounts, instanceCounts, selectedJobs]);
 
-  // Create the context value
-  const contextValue = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
     chargeCounts,
     instanceCounts,
     pendingAssignments,
@@ -267,7 +268,17 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
     getChargeCount,
     getInstanceCount,
     canAssignMitigationToBossAction
-  };
+  }), [
+    chargeCounts,
+    instanceCounts,
+    pendingAssignments,
+    addPendingAssignment,
+    removePendingAssignment,
+    hasPendingAssignment,
+    getChargeCount,
+    getInstanceCount,
+    canAssignMitigationToBossAction
+  ]);
 
   return (
     <ChargeCountContext.Provider value={contextValue}>
@@ -276,7 +287,7 @@ export const ChargeCountProvider = ({ children, bossActions, bossLevel = 90, sel
   );
 };
 
-// Create a custom hook for using the charge count context
+// Custom hook for using the charge count context
 export const useChargeCountContext = () => {
   const context = useContext(ChargeCountContext);
   if (context === undefined) {
