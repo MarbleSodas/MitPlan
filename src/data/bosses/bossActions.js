@@ -246,7 +246,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '~59,825 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'symmetric_surge_1',
@@ -276,7 +277,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '~59,854 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'inferno_theorem_3',
@@ -336,7 +338,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '~59,711 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'inferno_theorem_5',
@@ -366,7 +369,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '~54,000 per hit',
       damageType: 'physical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'inferno_theorem_enrage',
@@ -458,7 +462,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '~267,868',
       damageType: 'physical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'fireworks_2',
@@ -530,7 +535,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'play_combo_1',
@@ -600,7 +606,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'get_down!_1',
@@ -660,7 +667,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'celebrate_good_times_3',
@@ -770,7 +778,8 @@ export const bossActionsMap = {
       unmitigatedDamage: '400,000',
       damageType: 'magical',
       importance: 'high',
-      icon: '🛡️'
+      icon: '🛡️',
+      isTankBuster: true
     },
     {
       id: 'beats_combo_4',

@@ -295,7 +295,8 @@
     "unmitigatedDamage": "200,000",
     "damageType": "physical",
     "importance": "critical",
-    "icon": "🏢"
+    "icon": "🏢",
+    "isTankBuster": true
   },
 
   {
@@ -410,7 +411,8 @@
     "unmitigatedDamage": "200,000",
     "damageType": "physical",
     "importance": "critical",
-    "icon": "🏢"
+    "icon": "🏢",
+    "isTankBuster": true
   },
 
   {
