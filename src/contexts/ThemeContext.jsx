@@ -14,7 +14,11 @@ const lightTheme = {
     critical: '#ff0000',
     high: '#ff9900',
     medium: '#ffcc00',
-    low: '#99cc00'
+    low: '#99cc00',
+    barrier: '#ffcc00', // Yellow color for barriers
+    success: '#4caf50', // Green for healthy health bars
+    warning: '#ff9900', // Orange for moderate health
+    error: '#ff5555' // Red for low health
   },
   breakpoints: {
     mobile: '768px',
@@ -59,7 +63,11 @@ const darkTheme = {
     critical: '#ff6666', // Brighter for better visibility
     high: '#ffbb44', // Brighter for better visibility
     medium: '#ffee44', // Brighter for better visibility
-    low: '#bbee44'  // Brighter for better visibility
+    low: '#bbee44',  // Brighter for better visibility
+    barrier: '#ffdd44', // Brighter yellow for barriers in dark mode
+    success: '#66bb66', // Brighter green for healthy health bars
+    warning: '#ffbb44', // Brighter orange for moderate health
+    error: '#ff6666' // Brighter red for low health
   },
   breakpoints: {
     mobile: '768px',

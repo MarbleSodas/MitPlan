@@ -21,6 +21,15 @@ export {
 } from './mitigation/mitigationUtils';
 
 export {
+  calculateDamagePercentage,
+  calculateMitigatedDamage,
+  calculateBarrierAmount,
+  calculateRemainingHealth,
+  formatHealth,
+  formatPercentage
+} from './health/healthBarUtils';
+
+export {
   saveToLocalStorage,
   loadFromLocalStorage,
   removeFromLocalStorage,

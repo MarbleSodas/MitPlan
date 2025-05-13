@@ -205,8 +205,9 @@ export const mitigationAbilities = [
     cooldown: 90,
     jobs: ['PLD'],
     icon: '/abilities-gamerescape/divine_veil.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.10, // Barrier absorbs 10% of max HP
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -309,8 +310,9 @@ export const mitigationAbilities = [
     cooldown: 90,
     jobs: ['WAR'],
     icon: '/abilities-gamerescape/shake_it_off.png',
-    type: 'mitigation',
-    mitigationValue: 0.15, // 15% barrier + regen
+    type: 'barrier',
+    mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
+    barrierPotency: 0.15, // 15% max HP barrier
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -466,8 +468,9 @@ export const mitigationAbilities = [
     cooldown: 15,
     jobs: ['DRK'],
     icon: '/abilities-gamerescape/the_blackest_night.png',
-    type: 'mitigation',
-    mitigationValue: 0.25, // 25% max HP barrier
+    type: 'barrier',
+    mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
+    barrierPotency: 0.25, // 25% max HP barrier
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -665,8 +668,9 @@ export const mitigationAbilities = [
     count: 2, // Has 2 charges
     jobs: ['WHM'],
     icon: '/abilities-gamerescape/divine_benison.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.15, // Approximately 15% of max HP based on 500 potency
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -745,8 +749,9 @@ export const mitigationAbilities = [
     count: 2, // Has 2 charges
     jobs: ['WHM'],
     icon: '/abilities-gamerescape/divine_caress.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.20, // Approximately 20% of max HP
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -941,8 +946,9 @@ export const mitigationAbilities = [
     count: 2, // Has 2 charges
     jobs: ['AST'],
     icon: '/abilities-gamerescape/celestial_intersection.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.15, // Approximately 15% of max HP
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -1020,8 +1026,9 @@ export const mitigationAbilities = [
     cooldown: 120,
     jobs: ['SGE'],
     icon: '/abilities-gamerescape/haima.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.30, // Approximately 30% of max HP (multiple barriers)
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -1040,8 +1047,9 @@ export const mitigationAbilities = [
     cooldown: 120,
     jobs: ['SGE'],
     icon: '/abilities-gamerescape/panhaima.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.20, // Approximately 20% of max HP (multiple barriers)
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -1282,8 +1290,9 @@ export const mitigationAbilities = [
     cooldown: 120,
     jobs: ['PCT'],
     icon: '/abilities-gamerescape/tempera_coat.png',
-    type: 'mitigation',
-    mitigationValue: 0.20,
+    type: 'barrier',
+    mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
+    barrierPotency: 0.20, // 20% max HP barrier
     damageType: 'both',
     target: 'self',
     forTankBusters: false,
@@ -1301,8 +1310,9 @@ export const mitigationAbilities = [
     cooldown: 90,
     jobs: ['PCT'],
     icon: '/abilities-gamerescape/tempera_grassa.png',
-    type: 'mitigation',
-    mitigationValue: 0.10,
+    type: 'barrier',
+    mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
+    barrierPotency: 0.10, // 10% max HP barrier
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -1320,8 +1330,9 @@ export const mitigationAbilities = [
     cooldown: 60,
     jobs: ['RPR'],
     icon: '/abilities-gamerescape/arcane_crest.png',
-    type: 'mitigation',
+    type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
+    barrierPotency: 0.10, // 10% max HP barrier
     damageType: 'both',
     target: 'self',
     forTankBusters: false,

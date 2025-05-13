@@ -6,10 +6,15 @@ import {
   getAbilityChargeCount,
   getAbilityCooldownForLevel,
   getAbilityDurationForLevel,
-  getRoleSharedAbilityCount
+  getRoleSharedAbilityCount,
+  calculateTotalMitigation,
+  calculateMitigatedDamage,
+  calculateBarrierAmount
 } from '../../../utils';
 import { useFilterContext, useChargeCountContext } from '../../../contexts';
 import ChargeCounter from '../../../components/ChargeCounter';
+import HealthBar from '../../../components/common/HealthBar';
+import { bosses, mitigationAbilities } from '../../../data';
 
 // Container for the entire component
 const Container = styled.div`
@@ -678,9 +683,132 @@ const MobileMitigationSelector = ({
           {bossAction.description}
         </BossActionDescription>
         {bossAction.unmitigatedDamage && (
-          <UnmitigatedDamage>
-            Unmitigated Damage: {bossAction.unmitigatedDamage}
-          </UnmitigatedDamage>
+          <>
+            <UnmitigatedDamage>
+              Unmitigated Damage: {bossAction.unmitigatedDamage}
+            </UnmitigatedDamage>
+
+            {/* Health Bars */}
+            {(() => {
+              // Parse the unmitigated damage value
+              const parseUnmitigatedDamage = () => {
+                if (!bossAction.unmitigatedDamage) return 0;
+
+                // Extract numeric value from string (e.g., "~81,436" -> 81436)
+                const damageString = bossAction.unmitigatedDamage.replace(/[^0-9]/g, '');
+                return parseInt(damageString, 10) || 0;
+              };
+
+              // Get the current boss's base health values
+              const currentBoss = bosses.find(boss => boss.level === bossLevel);
+              const baseHealth = currentBoss ? currentBoss.baseHealth : { party: 80000, tank: 120000 };
+
+              // Calculate mitigation and damage
+              const unmitigatedDamage = parseUnmitigatedDamage();
+
+              // Get all assigned mitigations for this boss action
+              const directMitigations = assignments[bossAction.id] || [];
+
+              // Filter out mitigations that don't have any corresponding selected jobs
+              const filteredDirectMitigations = directMitigations.filter(mitigation =>
+                isMitigationAvailable(mitigation, selectedJobs)
+              );
+
+              // Find all active mitigations from previous actions
+              const activeMitigations = Object.entries(assignments)
+                .filter(([actionId, mitigations]) => {
+                  // Skip the current action
+                  if (actionId === bossAction.id) return false;
+
+                  // Get the boss action for this assignment
+                  const action = Object.values(bossAction).find(a => a.id === actionId);
+
+                  // Skip if we can't find the action or if it occurs after the current action
+                  if (!action || action.time >= bossAction.time) return false;
+
+                  // Check if any of the mitigations are still active at the current action's time
+                  return mitigations.some(mitigation => {
+                    const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+                    if (!fullMitigation) return false;
+
+                    const duration = getAbilityDurationForLevel(fullMitigation, bossLevel);
+
+                    // Check if the mitigation is still active
+                    return (action.time + duration) >= bossAction.time;
+                  });
+                })
+                .flatMap(([, mitigations]) => mitigations)
+                .map(mitigation => {
+                  // Find the full mitigation data
+                  return mitigationAbilities.find(full => full.id === mitigation.id);
+                })
+                .filter(Boolean);
+
+              // Filter out inherited mitigations that don't have any corresponding selected jobs
+              const filteredActiveMitigations = activeMitigations.filter(mitigation =>
+                isMitigationAvailable(mitigation, selectedJobs)
+              );
+
+              // Combine both types of mitigations
+              const allMitigations = [...filteredDirectMitigations, ...filteredActiveMitigations];
+
+              // Calculate barrier mitigations
+              const barrierMitigations = allMitigations.filter(m => m.type === 'barrier');
+
+              // Calculate mitigation percentage
+              const mitigationPercentage = calculateTotalMitigation(allMitigations, bossAction.damageType, bossLevel);
+              const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
+
+              // Calculate barrier amounts for party and tank
+              const partyBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
+                if (!mitigation.barrierPotency) return total;
+
+                // Only count party-wide barriers for party health bar
+                if (mitigation.target === 'party') {
+                  return total + calculateBarrierAmount(mitigation, baseHealth.party);
+                }
+
+                return total;
+              }, 0);
+
+              const tankBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
+                if (!mitigation.barrierPotency) return total;
+
+                // Count both tank-specific and party-wide barriers for tank health bar
+                if (mitigation.target === 'party' || mitigation.targetsTank) {
+                  return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+                }
+
+                return total;
+              }, 0);
+
+              return (
+                <>
+                  {/* Only show tank health bar for tank busters */}
+                  {bossAction.isTankBuster ? (
+                    <HealthBar
+                      label="Tank Health"
+                      maxHealth={baseHealth.tank}
+                      currentHealth={baseHealth.tank}
+                      damageAmount={mitigatedDamage}
+                      barrierAmount={tankBarrierAmount}
+                      isTankBuster={true}
+                    />
+                  ) : (
+                    /* Only show party health bar for non-tank busters */
+                    <HealthBar
+                      label="Party Health"
+                      maxHealth={baseHealth.party}
+                      currentHealth={baseHealth.party}
+                      damageAmount={mitigatedDamage}
+                      barrierAmount={partyBarrierAmount}
+                      isTankBuster={false}
+                    />
+                  )}
+                </>
+              );
+            })()}
+          </>
         )}
       </BossActionDetails>
 
