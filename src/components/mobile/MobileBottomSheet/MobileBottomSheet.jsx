@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { X } from 'lucide-react';
 
@@ -25,16 +25,18 @@ const BottomSheetContainer = styled.div`
   border-top-right-radius: ${props => props.theme.borderRadius.responsive.xlarge};
   box-shadow: ${props => props.theme.shadows.xlarge};
   z-index: 10001; /* Increased z-index to ensure it's above the overlay */
-  transform: translateY(${props => props.$isOpen ? '0' : '100%'});
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, ${props => props.$isOpen ? '0' : '100%'}, 0);
+  transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1); /* Material Design standard curve */
   max-height: ${props => props.$isFullScreen ? '100vh' : '90vh'}; /* Adjustable height based on content */
   height: ${props => props.$isFullScreen ? '100vh' : '90vh'}; /* Fixed height to ensure consistent sizing */
   display: flex;
   flex-direction: column;
   will-change: transform; /* Optimize for animations */
-  touch-action: pan-y; /* Allow vertical scrolling */
+  touch-action: none; /* Prevent default touch behavior on container */
   -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
   overscroll-behavior: contain; /* Prevent scroll chaining */
+  backface-visibility: hidden; /* Prevent flickering during animations */
+  transform-style: preserve-3d; /* Better 3D rendering */
 
   /* Safe area insets for notched devices */
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -58,6 +60,11 @@ const BottomSheetContainer = styled.div`
     max-height: 95vh; /* Take up more space on small screens */
     height: 95vh;
   }
+
+  /* Prevent content from being selectable during swipe */
+  &.is-swiping * {
+    user-select: none !important;
+  }
 `;
 
 const BottomSheetHeader = styled.div`
@@ -74,17 +81,48 @@ const BottomSheetHeader = styled.div`
   z-index: 2; /* Ensure header stays above content when scrolling */
   box-shadow: ${props => props.theme.shadows.small}; /* Subtle shadow to emphasize the header */
   user-select: none; /* Prevent text selection */
+  touch-action: none; /* Prevent default touch behavior */
+  cursor: grab;
+  min-height: 56px; /* Ensure minimum touch target size */
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  /* Visual indicator for draggable area */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(
+      to bottom,
+      ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'},
+      transparent
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  &:active::before {
+    opacity: 1;
+  }
 
   /* Tablet styles */
   @media (min-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.responsive.large};
     border-top-left-radius: ${props => props.theme.borderRadius.xlarge};
     border-top-right-radius: ${props => props.theme.borderRadius.xlarge};
+    min-height: 64px;
   }
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
     padding: ${props => props.theme.spacing.responsive.small};
+    min-height: 48px;
   }
 `;
 
@@ -180,18 +218,32 @@ const BottomSheetContent = styled.div`
   }
 `;
 
+const SwipeHandleArea = styled.div`
+  width: 100%;
+  padding: 8px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: none; /* Prevent default touch behavior */
+  user-select: none; /* Prevent text selection */
+  cursor: grab;
+  position: relative;
+  z-index: 3; /* Ensure it's above other elements */
+
+  &:active {
+    cursor: grabbing;
+  }
+`;
+
 const SwipeIndicator = styled.div`
   width: 60px;
   height: 6px;
   background-color: ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.pill};
-  margin: 12px auto 4px;
   opacity: 0.8;
   transition: all 0.2s ease;
-  user-select: none; /* Prevent text selection */
-  touch-action: none; /* Prevent touch events */
 
-  &:active {
+  ${SwipeHandleArea}:active & {
     opacity: 1;
     background-color: ${props => props.theme.colors.primary};
     transform: scale(1.1);
@@ -201,21 +253,23 @@ const SwipeIndicator = styled.div`
   @media (min-width: ${props => props.theme.breakpoints.tablet}) {
     width: 70px;
     height: 7px;
-    margin: 14px auto 6px;
   }
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
     width: 50px;
     height: 5px;
-    margin: 10px auto 2px;
   }
 `;
 
 const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = false }) => {
   const sheetRef = useRef(null);
+  const headerRef = useRef(null);
   const startY = useRef(0);
   const currentY = useRef(0);
+  const startTime = useRef(0);
+  const isSwiping = useRef(false);
+  const swipeVelocity = useRef(0);
 
   // Add state to track if we're currently processing an action
   // This prevents the sheet from closing during mitigation assignment
@@ -225,6 +279,9 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = fa
   // This prevents accidental closures during mitigation assignment
   // Default to true to ensure the X button works on initial render
   const [allowClosing, setAllowClosing] = useState(true);
+
+  // Add state to track animation state
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Listen for custom events from MobileMitigationSelector
   useEffect(() => {
@@ -303,63 +360,129 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = fa
     };
   }, [isOpen, onClose]);
 
+  // Check if the touch event is in the swipe handle area or header
+  const isTouchInSwipeArea = (e) => {
+    if (!sheetRef.current) return false;
+
+    // Get the swipe handle and header elements
+    const swipeHandle = sheetRef.current.querySelector('.swipe-handle-area');
+    const header = sheetRef.current.querySelector('.bottom-sheet-header');
+
+    if (!swipeHandle && !header) return false;
+
+    // Get the touch coordinates
+    const touchY = e.touches[0].clientY;
+    const touchX = e.touches[0].clientX;
+
+    // Check if the touch is in the swipe handle area
+    if (swipeHandle) {
+      const swipeRect = swipeHandle.getBoundingClientRect();
+      if (
+        touchY >= swipeRect.top &&
+        touchY <= swipeRect.bottom &&
+        touchX >= swipeRect.left &&
+        touchX <= swipeRect.right
+      ) {
+        return true;
+      }
+    }
+
+    // Check if the touch is in the header area
+    if (header) {
+      const headerRect = header.getBoundingClientRect();
+      if (
+        touchY >= headerRect.top &&
+        touchY <= headerRect.bottom &&
+        touchX >= headerRect.left &&
+        touchX <= headerRect.right
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   // Handle swipe down to close
   const handleTouchStart = (e) => {
-    // Don't handle touch events if we're processing an action
-    if (isProcessingAction || !allowClosing) {
+    // Don't handle touch events if we're processing an action or animation
+    if (isProcessingAction || !allowClosing || isAnimating) {
+      return;
+    }
+
+    // Only handle touches in the swipe handle area or header
+    if (!isTouchInSwipeArea(e)) {
       return;
     }
 
     try {
-      // Store the initial touch position
+      // Store the initial touch position and time
       startY.current = e.touches[0].clientY;
-      // Reset current position
       currentY.current = startY.current;
+      startTime.current = Date.now();
+      isSwiping.current = true;
+
+      // Reset velocity
+      swipeVelocity.current = 0;
+
+      // Set initial transition to none for immediate response
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = 'none';
+        // Add is-swiping class to prevent content selection during swipe
+        sheetRef.current.classList.add('is-swiping');
+      }
     } catch (error) {
       console.error('Error in handleTouchStart:', error);
+      isSwiping.current = false;
     }
   };
 
   const handleTouchMove = (e) => {
-    // Removed the processing action check to ensure swiping always works
-    // This ensures users can always close the sheet
+    // Only handle if we're in a swiping state
+    if (!isSwiping.current || !sheetRef.current) {
+      return;
+    }
 
     try {
-      // Safety check for sheetRef
-      if (!sheetRef.current) {
-        return;
-      }
-
-      // Get the content element for scroll position checking
-      const content = sheetRef.current.querySelector('.bottom-sheet-content');
-
-      // Safety check for content
-      if (!content) {
-        return;
-      }
-
       // Update current touch position
+      const prevY = currentY.current;
       currentY.current = e.touches[0].clientY;
       const deltaY = currentY.current - startY.current;
 
+      // Calculate velocity (pixels per millisecond)
+      const deltaTime = Date.now() - startTime.current;
+      if (deltaTime > 0) {
+        const instantVelocity = (currentY.current - prevY) / deltaTime;
+        // Smooth velocity with exponential moving average
+        swipeVelocity.current = swipeVelocity.current * 0.7 + instantVelocity * 0.3;
+      }
+
       // Only handle downward swipes
       if (deltaY > 0) {
-        // Only prevent default and move the sheet if we're at the top of the content
-        // This allows normal scrolling within the content area
-        if (content.scrollTop <= 0) {
-          // Prevent default to stop scrolling when swiping down from the top of the content
-          e.preventDefault();
+        // Prevent default to stop scrolling
+        e.preventDefault();
+        e.stopPropagation();
 
-          // Apply transform to move the sheet
-          let transformY = deltaY;
+        // Apply transform with easing
+        let transformY = deltaY;
 
-          // Add resistance as user drags down further
-          if (deltaY > 200) {
-            transformY = 200 + (deltaY - 200) * 0.2;
-          }
+        // Add resistance as user drags down further (cubic easing)
+        // This creates a more natural feel with increasing resistance
+        transformY = Math.pow(deltaY, 0.8);
 
-          sheetRef.current.style.transform = `translateY(${transformY}px)`;
+        // Limit maximum drag distance
+        const maxDrag = window.innerHeight * 0.4;
+        if (transformY > maxDrag) {
+          transformY = maxDrag + (transformY - maxDrag) * 0.2;
         }
+
+        // Apply the transform with hardware acceleration
+        // Using requestAnimationFrame for smoother animation
+        requestAnimationFrame(() => {
+          if (sheetRef.current && isSwiping.current) {
+            sheetRef.current.style.transform = `translate3d(0, ${transformY}px, 0)`;
+          }
+        });
       }
     } catch (error) {
       console.error('Error in handleTouchMove:', error);
@@ -367,47 +490,77 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = fa
       // Reset transform in case of error
       if (sheetRef.current) {
         sheetRef.current.style.transform = '';
+        sheetRef.current.classList.remove('is-swiping');
       }
+
+      isSwiping.current = false;
     }
   };
 
   const handleTouchEnd = () => {
+    // Only handle if we're in a swiping state
+    if (!isSwiping.current || !sheetRef.current) {
+      isSwiping.current = false;
+      return;
+    }
+
     try {
-      // Safety check for sheetRef
-      if (!sheetRef.current) {
-        return;
+      setIsAnimating(true);
+
+      // Remove is-swiping class
+      if (sheetRef.current) {
+        sheetRef.current.classList.remove('is-swiping');
       }
 
       const deltaY = currentY.current - startY.current;
+      const velocity = swipeVelocity.current;
 
-      // If swiped down more than threshold, close the sheet
-      // Removed the isProcessingAction and allowClosing conditions to ensure the sheet can always be closed
-      if (deltaY > 80) {
-        // Add a small animation before closing
-        sheetRef.current.style.transition = 'transform 0.2s ease';
-        sheetRef.current.style.transform = `translateY(${Math.min(deltaY * 1.2, window.innerHeight)}px)`;
+      // Velocity threshold for quick swipes (pixels per millisecond)
+      const VELOCITY_THRESHOLD = 0.5;
 
+      // Distance threshold for slower swipes
+      const DISTANCE_THRESHOLD = window.innerHeight * 0.15; // 15% of screen height
+
+      // Determine if we should close based on velocity or distance
+      const shouldClose =
+        (velocity > VELOCITY_THRESHOLD) || // Fast swipe
+        (deltaY > DISTANCE_THRESHOLD);     // Sufficient distance
+
+      if (shouldClose) {
+        // Calculate animation duration based on velocity
+        const baseDuration = 300; // Base duration in ms
+        const velocityFactor = Math.abs(velocity) > 0 ? Math.min(1, 1 / Math.abs(velocity) * 0.5) : 1;
+        const duration = Math.max(150, Math.min(300, baseDuration * velocityFactor));
+
+        // Use a natural easing curve
+        sheetRef.current.style.transition = `transform ${duration}ms cubic-bezier(0.4, 0.0, 0.2, 1)`;
+        sheetRef.current.style.transform = `translate3d(0, ${window.innerHeight}px, 0)`;
+
+        // Delay closing to allow animation to complete
         setTimeout(() => {
           // Log for debugging
           console.log('Swipe down detected, closing bottom sheet');
-
           onClose();
-          // Reset the transition after closing
+
+          // Reset the sheet position after closing
           if (sheetRef.current) {
-            sheetRef.current.style.transition = 'transform 0.3s ease';
+            sheetRef.current.style.transition = 'none';
             sheetRef.current.style.transform = '';
           }
-        }, 200);
+
+          setIsAnimating(false);
+        }, duration);
       } else {
-        // Otherwise, reset the position with a bounce effect
-        sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        sheetRef.current.style.transform = '';
+        // Return to original position with a bounce effect
+        sheetRef.current.style.transition = 'transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        sheetRef.current.style.transform = 'translate3d(0, 0, 0)';
 
         // Reset the transition after animation
         setTimeout(() => {
           if (sheetRef.current) {
-            sheetRef.current.style.transition = 'transform 0.3s ease';
+            sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)';
           }
+          setIsAnimating(false);
         }, 300);
       }
     } catch (error) {
@@ -417,11 +570,42 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = fa
       if (sheetRef.current) {
         sheetRef.current.style.transform = '';
       }
+      setIsAnimating(false);
     } finally {
-      // Always reset touch positions
+      // Always reset touch state
+      isSwiping.current = false;
       startY.current = 0;
       currentY.current = 0;
+      startTime.current = 0;
+      swipeVelocity.current = 0;
     }
+  };
+
+  // Handle touch cancel
+  const handleTouchCancel = () => {
+    // Reset to original position
+    if (sheetRef.current && isSwiping.current) {
+      // Remove is-swiping class
+      sheetRef.current.classList.remove('is-swiping');
+
+      // Animate back to original position with bounce effect
+      sheetRef.current.style.transition = 'transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      sheetRef.current.style.transform = 'translate3d(0, 0, 0)';
+
+      setTimeout(() => {
+        if (sheetRef.current) {
+          sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)';
+        }
+        setIsAnimating(false);
+      }, 300);
+    }
+
+    // Reset state
+    isSwiping.current = false;
+    startY.current = 0;
+    currentY.current = 0;
+    startTime.current = 0;
+    swipeVelocity.current = 0;
   };
 
   // Prevent body scrolling when sheet is open
@@ -476,24 +660,33 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = fa
         $isOpen={isOpen}
         $isFullScreen={isFullScreen}
         ref={sheetRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
-        <SwipeIndicator />
-        <BottomSheetHeader>
+        <SwipeHandleArea
+          className="swipe-handle-area"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+        >
+          <SwipeIndicator />
+        </SwipeHandleArea>
+
+        <BottomSheetHeader
+          className="bottom-sheet-header"
+          ref={headerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+        >
           <BottomSheetTitle>{title}</BottomSheetTitle>
           <CloseButton
             onClick={() => {
               // Always attempt to close the sheet when the X button is clicked
-              // This ensures the button is always functional
               onClose();
-
-              // Log for debugging
               console.log('X button clicked, closing bottom sheet');
             }}
             aria-label="Close"
-            // Remove conditional styling to ensure the button always looks clickable
             style={{
               opacity: 1,
               cursor: 'pointer'
@@ -502,6 +695,7 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = fa
             <X size={24} />
           </CloseButton>
         </BottomSheetHeader>
+
         <BottomSheetContent className="bottom-sheet-content">
           {children}
         </BottomSheetContent>
