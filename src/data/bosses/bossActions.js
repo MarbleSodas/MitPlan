@@ -356,9 +356,9 @@ export const bossActionsMap = {
       name: 'Targeted Light',
       time: 296, // 287 + 9
       description: 'High party-wide magical damage with knockback. Players must face their character so their safe side is towards the boss when considering rotation, or they will take heavy damage and be knocked back.',
-      unmitigatedDamage: '~67,000',
+      unmitigatedDamage: '~31,000',
       damageType: 'magical',
-      importance: 'high',
+      importance: 'medium',
       icon: '🔦'
     },
     {

@@ -58,15 +58,17 @@ const MitigationItem = styled.div`
       return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
     } else if (props.$isDisabled) {
       return props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)';
+    } else if (props.$isTouched) {
+      return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.05)';
     } else {
       return props.theme.colors.cardBackground;
     }
   }};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  padding: 12px;
+  border-radius: ${props => props.theme.borderRadius.responsive.medium};
+  padding: ${props => props.theme.spacing.responsive.medium};
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: ${props => props.theme.spacing.responsive.medium};
   box-shadow: ${props => props.theme.shadows.small};
   transition: all 0.2s ease;
   position: relative;
@@ -80,28 +82,90 @@ const MitigationItem = styled.div`
       return 'transparent';
     }
   }};
+  -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
+  touch-action: manipulation; /* Optimize for touch */
+  user-select: none; /* Prevent text selection */
+  min-height: 72px; /* Ensure minimum touch target size */
+  margin-bottom: ${props => props.theme.spacing.responsive.small};
 
+  /* Desktop hover effect */
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: ${props => props.$isDisabled && !props.$isAssigned ?
+        props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)' :
+        props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.05)'};
+      transform: ${props => props.$isDisabled && !props.$isAssigned ? 'none' : 'translateY(-1px)'};
+      box-shadow: ${props => props.$isDisabled && !props.$isAssigned ? props.theme.shadows.small : props.theme.shadows.medium};
+    }
+  }
+
+  /* Touch feedback */
   &:active {
     background-color: ${props => props.$isDisabled && !props.$isAssigned ?
       props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)' :
       props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
-    transform: ${props => props.$isDisabled && !props.$isAssigned ? 'none' : 'translateY(-2px)'};
+    transform: ${props => props.$isDisabled && !props.$isAssigned ? 'none' : 'scale(0.98)'};
+    box-shadow: ${props => props.$isDisabled && !props.$isAssigned ? props.theme.shadows.small : props.theme.shadows.active};
+    opacity: ${props => props.$isDisabled && !props.$isAssigned ? 0.7 : 0.95};
+  }
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.medium};
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    min-height: 80px;
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.responsive.small};
+    border-radius: ${props => props.theme.borderRadius.responsive.small};
+    min-height: 64px;
   }
 `;
 
 const MitigationIcon = styled.div`
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: ${props => props.theme.borderRadius.small};
+  border-radius: ${props => props.theme.borderRadius.responsive.medium};
   background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
   flex-shrink: 0;
+  user-select: none; /* Prevent text selection */
 
   img {
-    max-width: 32px;
-    max-height: 32px;
+    max-width: 36px;
+    max-height: 36px;
+    user-drag: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+  }
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    width: 56px;
+    height: 56px;
+
+    img {
+      max-width: 42px;
+      max-height: 42px;
+    }
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    width: 40px;
+    height: 40px;
+
+    img {
+      max-width: 32px;
+      max-height: 32px;
+    }
   }
 `;
 
@@ -109,22 +173,52 @@ const MitigationContent = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: ${props => props.theme.spacing.responsive.small};
+  user-select: none; /* Prevent text selection */
 `;
 
 const MitigationName = styled.div`
   font-weight: 600;
-  font-size: 16px;
+  font-size: ${props => props.theme.fontSizes.responsive.medium};
   color: ${props => props.theme.colors.text};
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    font-size: ${props => props.theme.fontSizes.responsive.large};
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    font-size: ${props => props.theme.fontSizes.responsive.small};
+  }
 `;
 
 const MitigationDescription = styled.div`
-  font-size: 14px;
+  font-size: ${props => props.theme.fontSizes.responsive.small};
   color: ${props => props.theme.colors.lightText};
+  line-height: 1.4;
 
   small {
-    font-size: 12px;
+    font-size: ${props => props.theme.fontSizes.responsive.xsmall};
     opacity: 0.8;
+  }
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
+
+    small {
+      font-size: ${props => props.theme.fontSizes.responsive.small};
+    }
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    font-size: ${props => props.theme.fontSizes.xsmall};
+
+    small {
+      font-size: ${props => props.theme.fontSizes.xsmall};
+    }
   }
 `;
 
@@ -179,17 +273,52 @@ const AssignedMitigationItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  margin-bottom: 12px;
+  padding: ${props => props.theme.spacing.responsive.medium};
+  background-color: ${props => {
+    if (props.$isTouched) {
+      return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.25)' : 'rgba(51, 153, 255, 0.15)';
+    }
+    return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
+  }};
+  border-radius: ${props => props.theme.borderRadius.responsive.medium};
+  margin-bottom: ${props => props.theme.spacing.responsive.small};
   box-shadow: ${props => props.theme.shadows.small};
   transition: all 0.2s ease;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
+  touch-action: manipulation; /* Optimize for touch */
+  user-select: none; /* Prevent text selection */
+  min-height: 60px; /* Ensure minimum touch target size */
 
+  /* Desktop hover effect */
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.25)' : 'rgba(51, 153, 255, 0.15)'};
+      transform: translateY(-1px);
+      box-shadow: ${props => props.theme.shadows.medium};
+    }
+  }
+
+  /* Touch feedback */
   &:active {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)'};
-    transform: translateY(-2px);
+    transform: scale(0.98);
+    box-shadow: ${props => props.theme.shadows.active};
+    opacity: 0.95;
+  }
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.medium};
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    min-height: 70px;
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.responsive.small};
+    border-radius: ${props => props.theme.borderRadius.responsive.small};
+    min-height: 50px;
   }
 `;
 
@@ -212,17 +341,47 @@ const RemoveButton = styled.button`
   border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.3)' : 'rgba(255, 100, 100, 0.2)'};
   color: ${props => props.theme.colors.text};
   cursor: pointer;
-  padding: 8px 12px;
+  padding: ${props => props.theme.spacing.responsive.small} ${props => props.theme.spacing.responsive.medium};
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: ${props => props.theme.borderRadius.small};
-  gap: 6px;
-  font-size: 14px;
+  border-radius: ${props => props.theme.borderRadius.responsive.medium};
+  gap: ${props => props.theme.spacing.responsive.xsmall};
+  font-size: ${props => props.theme.fontSizes.responsive.small};
   font-weight: 500;
+  min-height: 44px; /* Minimum touch target size */
+  min-width: 80px; /* Minimum touch target width */
+  -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
+  touch-action: manipulation; /* Optimize for touch */
+  user-select: none; /* Prevent text selection */
+  transition: all 0.2s ease;
 
-  &:hover, &:active {
+  /* Desktop hover effect */
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.25)' : 'rgba(255, 100, 100, 0.15)'};
+    }
+  }
+
+  /* Touch feedback */
+  &:active {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.3)' : 'rgba(255, 100, 100, 0.2)'};
+    transform: scale(0.95);
+  }
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.small} ${props => props.theme.spacing.responsive.medium};
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    min-width: 100px;
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.xsmall} ${props => props.theme.spacing.small};
+    font-size: ${props => props.theme.fontSizes.xsmall};
+    min-width: 70px;
+    min-height: 40px;
   }
 `;
 
@@ -336,6 +495,12 @@ const MobileMitigationSelector = ({
   // Add state to track if we're currently processing an assignment
   // This is used to prevent UI issues during processing
   const [isProcessingAssignment, setIsProcessingAssignment] = useState(false);
+
+  // Add state to track touch feedback
+  const [touchedMitigation, setTouchedMitigation] = useState(null);
+
+  // Add state to track touched assigned mitigation
+  const [touchedAssignedMitigation, setTouchedAssignedMitigation] = useState(null);
 
   // Add a ref to track if we're currently processing an assignment
   // This is used to prevent multiple rapid assignments
@@ -928,6 +1093,7 @@ const MobileMitigationSelector = ({
                 key={mitigation.id}
                 $isDisabled={isDisabled}
                 $isAssigned={isAssigned}
+                $isTouched={touchedMitigation === mitigation.id}
                 onClick={() => {
                   if (isAssigned) {
                     // If already assigned, handle removal
@@ -937,6 +1103,9 @@ const MobileMitigationSelector = ({
                     handleMitigationAssignment(mitigation);
                   }
                 }}
+                onTouchStart={() => setTouchedMitigation(mitigation.id)}
+                onTouchEnd={() => setTouchedMitigation(null)}
+                onTouchCancel={() => setTouchedMitigation(null)}
               >
                 <MitigationIcon>
                   {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
@@ -1085,10 +1254,14 @@ const MobileMitigationSelector = ({
             filteredAssignments.map(mitigation => (
               <AssignedMitigationItem
                 key={mitigation.id}
+                $isTouched={touchedAssignedMitigation === mitigation.id}
                 onClick={() => {
                   // Use our helper function for removal
                   handleMitigationRemoval(mitigation.id);
                 }}
+                onTouchStart={() => setTouchedAssignedMitigation(mitigation.id)}
+                onTouchEnd={() => setTouchedAssignedMitigation(null)}
+                onTouchCancel={() => setTouchedAssignedMitigation(null)}
               >
                 <AssignedMitigationName>
                   {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?

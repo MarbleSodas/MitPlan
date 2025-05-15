@@ -21,32 +21,66 @@ const lightTheme = {
     error: '#ff5555' // Red for low health
   },
   breakpoints: {
-    mobile: '768px',
-    tablet: '992px',
-    desktop: '1200px'
+    smallMobile: '320px',  // Small smartphones
+    mobile: '480px',       // Regular smartphones
+    largeMobile: '640px',  // Large smartphones
+    tablet: '768px',       // Small tablets
+    largeTablet: '992px',  // Large tablets
+    desktop: '1200px',     // Desktops
+    largeDesktop: '1440px' // Large desktops
   },
   spacing: {
-    small: '5px',
-    medium: '10px',
-    large: '20px',
-    xlarge: '30px'
+    xsmall: '4px',
+    small: '8px',
+    medium: '12px',
+    large: '16px',
+    xlarge: '24px',
+    xxlarge: '32px',
+    responsive: {
+      small: 'clamp(4px, 1vw, 8px)',
+      medium: 'clamp(8px, 2vw, 16px)',
+      large: 'clamp(12px, 3vw, 24px)',
+      xlarge: 'clamp(16px, 4vw, 32px)'
+    }
   },
   fontSizes: {
+    xsmall: '10px',
     small: '12px',
     medium: '14px',
     large: '16px',
-    xlarge: '24px',
-    xxlarge: '32px'
+    xlarge: '20px',
+    xxlarge: '24px',
+    xxxlarge: '32px',
+    responsive: {
+      small: 'clamp(10px, 0.8rem, 12px)',
+      medium: 'clamp(12px, 0.9rem, 14px)',
+      large: 'clamp(14px, 1rem, 16px)',
+      xlarge: 'clamp(16px, 1.25rem, 20px)',
+      xxlarge: 'clamp(20px, 1.5rem, 24px)',
+      xxxlarge: 'clamp(24px, 2rem, 32px)'
+    }
   },
   borderRadius: {
     small: '4px',
     medium: '6px',
-    large: '8px'
+    large: '8px',
+    xlarge: '12px',
+    pill: '9999px',
+    responsive: {
+      small: 'clamp(2px, 0.5vw, 4px)',
+      medium: 'clamp(4px, 0.75vw, 6px)',
+      large: 'clamp(6px, 1vw, 8px)',
+      xlarge: 'clamp(8px, 1.5vw, 12px)'
+    }
   },
   shadows: {
     small: '0 1px 3px rgba(0, 0, 0, 0.1)',
     medium: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    large: '0 4px 8px rgba(0, 0, 0, 0.1)'
+    large: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    xlarge: '0 8px 16px rgba(0, 0, 0, 0.1)',
+    focus: '0 0 0 3px rgba(51, 153, 255, 0.5)',
+    hover: '0 2px 8px rgba(0, 0, 0, 0.15)',
+    active: '0 1px 2px rgba(0, 0, 0, 0.2) inset'
   },
   mode: 'light'
 };
@@ -70,32 +104,66 @@ const darkTheme = {
     error: '#ff6666' // Brighter red for low health
   },
   breakpoints: {
-    mobile: '768px',
-    tablet: '992px',
-    desktop: '1200px'
+    smallMobile: '320px',  // Small smartphones
+    mobile: '480px',       // Regular smartphones
+    largeMobile: '640px',  // Large smartphones
+    tablet: '768px',       // Small tablets
+    largeTablet: '992px',  // Large tablets
+    desktop: '1200px',     // Desktops
+    largeDesktop: '1440px' // Large desktops
   },
   spacing: {
-    small: '5px',
-    medium: '10px',
-    large: '20px',
-    xlarge: '30px'
+    xsmall: '4px',
+    small: '8px',
+    medium: '12px',
+    large: '16px',
+    xlarge: '24px',
+    xxlarge: '32px',
+    responsive: {
+      small: 'clamp(4px, 1vw, 8px)',
+      medium: 'clamp(8px, 2vw, 16px)',
+      large: 'clamp(12px, 3vw, 24px)',
+      xlarge: 'clamp(16px, 4vw, 32px)'
+    }
   },
   fontSizes: {
+    xsmall: '10px',
     small: '12px',
     medium: '14px',
     large: '16px',
-    xlarge: '24px',
-    xxlarge: '32px'
+    xlarge: '20px',
+    xxlarge: '24px',
+    xxxlarge: '32px',
+    responsive: {
+      small: 'clamp(10px, 0.8rem, 12px)',
+      medium: 'clamp(12px, 0.9rem, 14px)',
+      large: 'clamp(14px, 1rem, 16px)',
+      xlarge: 'clamp(16px, 1.25rem, 20px)',
+      xxlarge: 'clamp(20px, 1.5rem, 24px)',
+      xxxlarge: 'clamp(24px, 2rem, 32px)'
+    }
   },
   borderRadius: {
     small: '4px',
     medium: '6px',
-    large: '8px'
+    large: '8px',
+    xlarge: '12px',
+    pill: '9999px',
+    responsive: {
+      small: 'clamp(2px, 0.5vw, 4px)',
+      medium: 'clamp(4px, 0.75vw, 6px)',
+      large: 'clamp(6px, 1vw, 8px)',
+      xlarge: 'clamp(8px, 1.5vw, 12px)'
+    }
   },
   shadows: {
     small: '0 1px 3px rgba(0, 0, 0, 0.3)',
     medium: '0 2px 4px rgba(0, 0, 0, 0.3)',
-    large: '0 4px 8px rgba(0, 0, 0, 0.3)'
+    large: '0 4px 8px rgba(0, 0, 0, 0.3)',
+    xlarge: '0 8px 16px rgba(0, 0, 0, 0.3)',
+    focus: '0 0 0 3px rgba(51, 153, 255, 0.6)',
+    hover: '0 2px 8px rgba(0, 0, 0, 0.3)',
+    active: '0 1px 2px rgba(0, 0, 0, 0.4) inset'
   },
   mode: 'dark'
 };

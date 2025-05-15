@@ -55,3 +55,7 @@ export {
   BUILD_TIMESTAMP,
   checkForUpdates
 } from './version/versionUtils';
+
+export {
+  processMultiHitTankBusters
+} from './boss/bossActionUtils';

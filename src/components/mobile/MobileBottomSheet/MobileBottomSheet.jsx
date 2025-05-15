@@ -21,21 +21,42 @@ const BottomSheetContainer = styled.div`
   right: 0;
   bottom: 0;
   background-color: ${props => props.theme.colors.secondary};
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
+  border-top-left-radius: ${props => props.theme.borderRadius.responsive.xlarge};
+  border-top-right-radius: ${props => props.theme.borderRadius.responsive.xlarge};
+  box-shadow: ${props => props.theme.shadows.xlarge};
   z-index: 10001; /* Increased z-index to ensure it's above the overlay */
   transform: translateY(${props => props.$isOpen ? '0' : '100%'});
-  transition: transform 0.3s ease;
-  max-height: 90vh; /* Increased from 80vh to 90vh to take up more space */
-  height: 90vh; /* Fixed height to ensure consistent sizing */
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: ${props => props.$isFullScreen ? '100vh' : '90vh'}; /* Adjustable height based on content */
+  height: ${props => props.$isFullScreen ? '100vh' : '90vh'}; /* Fixed height to ensure consistent sizing */
   display: flex;
   flex-direction: column;
+  will-change: transform; /* Optimize for animations */
+  touch-action: pan-y; /* Allow vertical scrolling */
+  -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
+  overscroll-behavior: contain; /* Prevent scroll chaining */
+
+  /* Safe area insets for notched devices */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    max-width: 600px; /* Limit width on larger screens */
+    margin: 0 auto; /* Center on larger screens */
+    border-top-left-radius: ${props => props.theme.borderRadius.xlarge};
+    border-top-right-radius: ${props => props.theme.borderRadius.xlarge};
+  }
 
   /* Special handling for browser inspect mode */
   @media (min-height: 300px) and (max-height: 500px) {
     max-height: 95vh; /* Allow even more space in browser inspect mode */
     height: 95vh; /* Fixed height for browser inspect mode */
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    max-height: 95vh; /* Take up more space on small screens */
+    height: 95vh;
   }
 `;
 
@@ -43,22 +64,45 @@ const BottomSheetHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: ${props => props.theme.spacing.responsive.medium};
   border-bottom: 1px solid ${props => props.theme.colors.border};
   position: sticky;
   top: 0;
   background-color: ${props => props.theme.colors.secondary};
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  border-top-left-radius: ${props => props.theme.borderRadius.responsive.xlarge};
+  border-top-right-radius: ${props => props.theme.borderRadius.responsive.xlarge};
   z-index: 2; /* Ensure header stays above content when scrolling */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow to emphasize the header */
+  box-shadow: ${props => props.theme.shadows.small}; /* Subtle shadow to emphasize the header */
+  user-select: none; /* Prevent text selection */
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.large};
+    border-top-left-radius: ${props => props.theme.borderRadius.xlarge};
+    border-top-right-radius: ${props => props.theme.borderRadius.xlarge};
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.responsive.small};
+  }
 `;
 
 const BottomSheetTitle = styled.h3`
   margin: 0;
-  font-size: 18px;
+  font-size: ${props => props.theme.fontSizes.responsive.large};
   font-weight: 600;
   color: ${props => props.theme.colors.text};
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    font-size: ${props => props.theme.fontSizes.responsive.xlarge};
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
+  }
 `;
 
 const CloseButton = styled.button`
@@ -66,44 +110,109 @@ const CloseButton = styled.button`
   border: none;
   color: ${props => props.theme.colors.text};
   cursor: pointer;
-  padding: 8px;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  min-width: 44px; /* Minimum touch target size */
+  min-height: 44px; /* Minimum touch target size */
+  -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
+  touch-action: manipulation; /* Optimize for touch */
+  user-select: none; /* Prevent text selection */
+  transition: all 0.2s ease;
 
-  &:hover, &:active {
+  &:hover {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+  }
+
+  &:active {
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'};
+    transform: scale(0.95);
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: 10px;
   }
 `;
 
 const BottomSheetContent = styled.div`
-  padding: 16px;
+  padding: ${props => props.theme.spacing.responsive.medium};
   overflow-y: auto;
   flex: 1;
   -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
   max-height: 75vh; /* Increased from 60vh to 75vh to take up more space */
   overscroll-behavior: contain; /* Prevent scroll chaining */
   touch-action: pan-y; /* Allow vertical scrolling */
-  padding-bottom: 24px; /* Add more padding at the bottom for better scrolling experience */
+  padding-bottom: calc(${props => props.theme.spacing.responsive.xlarge} + env(safe-area-inset-bottom, 0)); /* Add more padding at the bottom for better scrolling experience */
+  scroll-padding: ${props => props.theme.spacing.responsive.large}; /* Ensure content is not hidden behind fixed elements */
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.large};
+    padding-bottom: calc(${props => props.theme.spacing.responsive.xlarge} + env(safe-area-inset-bottom, 0));
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.responsive.small};
+    padding-bottom: calc(${props => props.theme.spacing.responsive.large} + env(safe-area-inset-bottom, 0));
+  }
+
+  /* Scrollbar styling for webkit browsers */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
+  }
 `;
 
 const SwipeIndicator = styled.div`
-  width: 50px;
-  height: 5px;
+  width: 60px;
+  height: 6px;
   background-color: ${props => props.theme.colors.border};
-  border-radius: 3px;
-  margin: 10px auto;
+  border-radius: ${props => props.theme.borderRadius.pill};
+  margin: 12px auto 4px;
   opacity: 0.8;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
+  user-select: none; /* Prevent text selection */
+  touch-action: none; /* Prevent touch events */
 
   &:active {
     opacity: 1;
     background-color: ${props => props.theme.colors.primary};
+    transform: scale(1.1);
+  }
+
+  /* Tablet styles */
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    width: 70px;
+    height: 7px;
+    margin: 14px auto 6px;
+  }
+
+  /* Small mobile styles */
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    width: 50px;
+    height: 5px;
+    margin: 10px auto 2px;
   }
 `;
 
-const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
+const MobileBottomSheet = ({ isOpen, onClose, title, children, isFullScreen = false }) => {
   const sheetRef = useRef(null);
   const startY = useRef(0);
   const currentY = useRef(0);
@@ -365,6 +474,7 @@ const MobileBottomSheet = ({ isOpen, onClose, title, children }) => {
       />
       <BottomSheetContainer
         $isOpen={isOpen}
+        $isFullScreen={isFullScreen}
         ref={sheetRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

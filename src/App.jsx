@@ -65,8 +65,16 @@ const AppContainer = styled.div`
   color: ${props => props.theme.colors.text};
   box-sizing: border-box;
 
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.medium};
+  }
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.medium};
+    padding: ${props => props.theme.spacing.small};
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.xsmall};
   }
 `;
 
@@ -77,20 +85,51 @@ const Header = styled.header`
   flex-direction: column;
   position: relative;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     margin-bottom: ${props => props.theme.spacing.large};
   }
 
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-bottom: ${props => props.theme.spacing.medium};
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    margin-bottom: ${props => props.theme.spacing.small};
+  }
+
   h1 {
+    font-size: ${props => props.theme.fontSizes.responsive.xxxlarge};
+
+    @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+      font-size: ${props => props.theme.fontSizes.responsive.xxlarge};
+      margin-bottom: ${props => props.theme.spacing.medium};
+    }
+
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      font-size: 24px;
-      margin-bottom: 10px;
+      font-size: ${props => props.theme.fontSizes.responsive.xlarge};
+      margin-bottom: ${props => props.theme.spacing.small};
+    }
+
+    @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+      font-size: ${props => props.theme.fontSizes.responsive.large};
+      margin-bottom: ${props => props.theme.spacing.small};
     }
   }
 
   p {
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
+
+    @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+      font-size: ${props => props.theme.fontSizes.responsive.medium};
+    }
+
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      font-size: 14px;
+      font-size: ${props => props.theme.fontSizes.responsive.small};
+    }
+
+    @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+      font-size: ${props => props.theme.fontSizes.responsive.small};
+      display: none; /* Hide on very small screens to save space */
     }
   }
 `;
@@ -101,9 +140,19 @@ const HeaderTop = styled.div`
   justify-content: space-between;
   padding: ${props => props.theme.spacing.medium} 0;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.small} 0;
+    gap: 8px;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.xsmall} 0;
     gap: 6px;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.xsmall} 0;
+    gap: 4px;
   }
 `;
 
@@ -112,8 +161,13 @@ const MainContent = styled.main`
   gap: ${props => props.theme.spacing.large};
   width: 100%;
 
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    gap: ${props => props.theme.spacing.responsive.medium};
+  }
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     flex-direction: column;
+    gap: ${props => props.theme.spacing.responsive.small};
   }
 `;
 
@@ -130,15 +184,31 @@ const TimelineContainer = styled.div`
   display: flex;
   flex-direction: column;
 
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.medium};
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    height: calc(100vh - 90px);
+    min-height: 450px;
+  }
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.medium};
+    padding: ${props => props.theme.spacing.responsive.small};
+    border-radius: ${props => props.theme.borderRadius.responsive.small};
     height: calc(100vh - 80px);
     min-height: 400px;
-    margin-bottom: ${props => props.theme.spacing.medium};
+    margin-bottom: ${props => props.theme.spacing.responsive.medium};
     flex: 1;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.xsmall};
+    border-radius: ${props => props.theme.borderRadius.small};
+    height: calc(100vh - 70px);
+    min-height: 350px;
+    margin-bottom: ${props => props.theme.spacing.small};
   }
 `;
 
@@ -151,6 +221,13 @@ const MitigationContainer = styled.div`
   overflow-y: auto;
   height: calc(100vh - 100px);
   min-height: 500px;
+
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.medium};
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    height: calc(100vh - 90px);
+    min-height: 450px;
+  }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     display: none;
@@ -166,6 +243,10 @@ const BossActionsList = styled.div`
   margin: 0;
   flex-grow: 1;
 
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.small};
+  }
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.small};
     overflow-y: auto;
@@ -173,6 +254,10 @@ const BossActionsList = styled.div`
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+    padding: ${props => props.theme.spacing.xsmall};
   }
 `;
 

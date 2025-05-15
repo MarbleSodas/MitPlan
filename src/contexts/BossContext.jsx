@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { bossActionsMap, bosses } from '../data';
-import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
+import { loadFromLocalStorage, saveToLocalStorage, processMultiHitTankBusters } from '../utils';
 
 // Create the context
 const BossContext = createContext();
@@ -16,19 +16,29 @@ export const BossProvider = ({ children }) => {
     }
     return 'ketuduke'; // Default boss ID
   });
-  
+
   // Get boss actions for the current boss
   const [currentBossActions, setCurrentBossActions] = useState(bossActionsMap[currentBossId]);
-  
+
   // Track selected boss action
   const [selectedBossAction, setSelectedBossAction] = useState(null);
 
   // Update boss actions when boss changes
   useEffect(() => {
-    setCurrentBossActions(bossActionsMap[currentBossId]);
+    // Get the raw boss actions
+    const rawBossActions = bossActionsMap[currentBossId];
+
+    // Process multi-hit tank busters
+    const processedActions = processMultiHitTankBusters(rawBossActions);
+
+    // Update the state with processed actions
+// DEBUG: Log boss action selection
+console.log('[BossContext] currentBossId:', currentBossId, 'First action:', processedActions[0]?.name);
+    setCurrentBossActions(processedActions);
+
     // Deselect any selected action when changing bosses
     setSelectedBossAction(null);
-    
+
     // Update localStorage
     const autosavedPlan = loadFromLocalStorage('mitPlanAutosave', {});
     saveToLocalStorage('mitPlanAutosave', {
