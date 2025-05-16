@@ -9,8 +9,7 @@ import {
   useJobContext,
   useMitigationContext,
   useFilterContext,
-  useChargeCountContext,
-  useAetherflowContext
+  useChargeCountContext
 } from './contexts';
 
 // Import data from centralized data module
@@ -32,7 +31,6 @@ import MobileMitigationSelector from './components/mobile/MobileMitigationSelect
 import BossActionItem from './components/BossActionItem';
 import AssignedMitigations from './components/AssignedMitigations';
 import MitigationItem from './components/MitigationItem';
-import AetherflowGauge from './components/AetherflowGauge';
 
 // Import hooks
 import { useDragAndDrop, useMobileInteraction, useUrlHandler } from './hooks';
@@ -100,47 +98,37 @@ const Header = styled.header`
   }
 
   h1 {
-    font-size: ${props => props.theme.fontSizes.xxxlarge};
-    font-weight: bold;
-    color: ${props => props.theme.colors.text};
-    margin-bottom: ${props => props.theme.spacing.medium};
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    font-size: ${props => props.theme.fontSizes.responsive.xxxlarge};
 
     @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-      font-size: ${props => props.theme.fontSizes.xxlarge};
+      font-size: ${props => props.theme.fontSizes.responsive.xxlarge};
       margin-bottom: ${props => props.theme.spacing.medium};
     }
 
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      font-size: ${props => props.theme.fontSizes.xlarge};
+      font-size: ${props => props.theme.fontSizes.responsive.xlarge};
       margin-bottom: ${props => props.theme.spacing.small};
     }
 
     @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-      font-size: ${props => props.theme.fontSizes.large};
+      font-size: ${props => props.theme.fontSizes.responsive.large};
       margin-bottom: ${props => props.theme.spacing.small};
     }
   }
 
   p {
-    font-size: ${props => props.theme.fontSizes.medium};
-    color: ${props => props.theme.colors.textSecondary};
-    max-width: 800px;
-    margin: 0 auto;
-    line-height: ${props => props.theme.lineHeights ? props.theme.lineHeights.normal : 1.5};
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
 
     @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-      font-size: ${props => props.theme.fontSizes.small};
-      max-width: 600px;
+      font-size: ${props => props.theme.fontSizes.responsive.medium};
     }
 
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      font-size: ${props => props.theme.fontSizes.small};
-      max-width: 100%;
+      font-size: ${props => props.theme.fontSizes.responsive.small};
     }
 
     @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
+      font-size: ${props => props.theme.fontSizes.responsive.small};
       display: none; /* Hide on very small screens to save space */
     }
   }
@@ -148,23 +136,23 @@ const Header = styled.header`
 
 const HeaderTop = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.small};
+  gap: 8px;
   justify-content: space-between;
   padding: ${props => props.theme.spacing.medium} 0;
-  align-items: center;
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.small} 0;
+    gap: 8px;
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.xsmall} 0;
-    gap: ${props => props.theme.spacing.xsmall};
+    gap: 6px;
   }
 
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    padding: ${props => props.theme.spacing.xxsmall} 0;
-    gap: ${props => props.theme.spacing.xxsmall};
+    padding: ${props => props.theme.spacing.xsmall} 0;
+    gap: 4px;
   }
 `;
 
@@ -172,17 +160,14 @@ const MainContent = styled.main`
   display: flex;
   gap: ${props => props.theme.spacing.large};
   width: 100%;
-  margin-top: ${props => props.theme.spacing.large};
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     gap: ${props => props.theme.spacing.responsive.medium};
-    margin-top: ${props => props.theme.spacing.medium};
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     flex-direction: column;
     gap: ${props => props.theme.spacing.responsive.small};
-    margin-top: ${props => props.theme.spacing.small};
   }
 `;
 
@@ -194,43 +179,22 @@ const TimelineContainer = styled.div`
   padding-bottom: ${props => props.theme.spacing.xlarge};
   box-shadow: ${props => props.theme.shadows.medium};
   overflow-y: auto;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 100px);
   min-height: 500px;
   display: flex;
   flex-direction: column;
-  transition: background-color ${props => (props.theme.transitions?.normal || '0.2s')},
-              box-shadow ${props => (props.theme.transitions?.normal || '0.2s')};
-
-  /* Improved scrollbar styling */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'};
-    border-radius: ${props => props.theme.borderRadius.small};
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
-    border-radius: ${props => props.theme.borderRadius.small};
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
-  }
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.responsive.medium};
-    border-radius: ${props => props.theme.borderRadius.medium};
-    height: calc(100vh - 100px);
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    height: calc(100vh - 90px);
     min-height: 450px;
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.responsive.small};
-    border-radius: ${props => props.theme.borderRadius.small};
-    height: calc(100vh - 90px);
+    border-radius: ${props => props.theme.borderRadius.responsive.small};
+    height: calc(100vh - 80px);
     min-height: 400px;
     margin-bottom: ${props => props.theme.spacing.responsive.medium};
     flex: 1;
@@ -242,7 +206,7 @@ const TimelineContainer = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
     padding: ${props => props.theme.spacing.xsmall};
     border-radius: ${props => props.theme.borderRadius.small};
-    height: calc(100vh - 80px);
+    height: calc(100vh - 70px);
     min-height: 350px;
     margin-bottom: ${props => props.theme.spacing.small};
   }
@@ -255,34 +219,13 @@ const MitigationContainer = styled.div`
   padding: ${props => props.theme.spacing.large};
   box-shadow: ${props => props.theme.shadows.medium};
   overflow-y: auto;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 100px);
   min-height: 500px;
-  transition: background-color ${props => (props.theme.transitions?.normal || '0.2s')},
-              box-shadow ${props => (props.theme.transitions?.normal || '0.2s')};
-
-  /* Improved scrollbar styling */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'};
-    border-radius: ${props => props.theme.borderRadius.small};
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
-    border-radius: ${props => props.theme.borderRadius.small};
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
-  }
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.responsive.medium};
-    border-radius: ${props => props.theme.borderRadius.medium};
-    height: calc(100vh - 100px);
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    height: calc(100vh - 90px);
     min-height: 450px;
   }
 
@@ -299,16 +242,13 @@ const BossActionsList = styled.div`
   width: 100%;
   margin: 0;
   flex-grow: 1;
-  gap: ${props => props.theme.spacing.medium}; /* Add consistent spacing between boss actions */
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.responsive.small};
-    gap: ${props => props.theme.spacing.small};
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.small};
-    gap: ${props => props.theme.spacing.small};
     overflow-y: auto;
     height: 100%;
     -webkit-overflow-scrolling: touch;
@@ -318,7 +258,6 @@ const BossActionsList = styled.div`
 
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
     padding: ${props => props.theme.spacing.xsmall};
-    gap: ${props => props.theme.spacing.xsmall};
   }
 `;
 
@@ -331,28 +270,22 @@ const MitigationList = styled.div`
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  padding: ${props => props.theme.spacing.small};
-
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    gap: ${props => props.theme.spacing.small};
-  }
 `;
 
 const DragPreview = styled.div`
   background-color: ${props => props.theme.colors.cardBackground};
   border-radius: ${props => props.theme.borderRadius.medium};
   padding: ${props => props.theme.spacing.medium};
-  box-shadow: ${props => props.theme.shadows.large};
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   border-left: 4px solid ${props => props.theme.colors.primary};
   max-width: 300px;
   pointer-events: none;
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.small};
+  gap: 10px;
   transform: scale(0.9);
   opacity: 0.9;
-  z-index: ${props => props.theme.zIndices.tooltip};
-  transition: all ${props => props.theme.transitions.fast};
+  z-index: 9999;
 `;
 
 const DragPreviewIcon = styled.div`
@@ -362,30 +295,22 @@ const DragPreviewIcon = styled.div`
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-
-  img {
-    max-width: 100%;
-    max-height: 100%;
-  }
 `;
 
 const DragPreviewContent = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0; /* Ensures text truncation works properly */
 `;
 
 const DragPreviewName = styled.div`
-  font-weight: ${props => props.theme.fontWeights?.semibold ?? 600};
-  font-size: ${props => props.theme.fontSizes?.small ?? '1rem'};
-  margin-bottom: ${props => props.theme.spacing.xxsmall};
-  color: ${props => props.theme.colors.text};
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 2px;
 `;
 
 const DragPreviewDescription = styled.div`
-  font-size: ${props => props.theme.fontSizes?.xsmall ?? '0.875rem'};
-  color: ${props => props.theme.colors.textSecondary};
+  font-size: 12px;
+  color: ${props => props.theme.colors.lightText};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -427,9 +352,6 @@ function App() {
     filterMitigations,
     showAllMitigations
   } = useFilterContext();
-
-  // Get Aetherflow context
-  useAetherflowContext(); // We need this context for the AetherflowGauge component
 
   // Local state
   const [pendingAssignments, setPendingAssignments] = useState([]);

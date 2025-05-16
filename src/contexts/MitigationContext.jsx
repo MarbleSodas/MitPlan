@@ -533,48 +533,11 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     }
   }, [assignments, bossActions, bossLevel, selectedJobs]);
 
-  // Reference to the Aetherflow context
-  const aetherflowContextRef = useRef(null);
-
   // Add a mitigation to a boss action
   const addMitigation = useCallback((bossActionId, mitigation) => {
     // Check if this mitigation is already assigned to this action
     if (assignments[bossActionId] && assignments[bossActionId].some(m => m.id === mitigation.id)) {
       return false;
-    }
-
-    // Check if this is an Aetherflow ability
-    if (mitigation.consumesAetherflow) {
-      // If we have access to the Aetherflow context, check if we can use the ability
-      if (aetherflowContextRef.current) {
-        const { canUseAbility, useAetherflowStack } = aetherflowContextRef.current;
-
-        // Check if we can use this ability
-        if (!canUseAbility(mitigation.id)) {
-          return {
-            success: false,
-            reason: 'Not enough Aetherflow stacks'
-          };
-        }
-
-        // Use an Aetherflow stack
-        useAetherflowStack();
-      }
-    }
-
-    // Check if this is the Aetherflow ability itself
-    if (mitigation.isAetherflowProvider) {
-      // If we have access to the Aetherflow context, refresh stacks
-      if (aetherflowContextRef.current) {
-        const { refreshAetherflowStacks } = aetherflowContextRef.current;
-
-        // Find the boss action to get its time
-        const bossAction = bossActions.find(action => action.id === bossActionId);
-        if (bossAction) {
-          // Refresh Aetherflow stacks
-          refreshAetherflowStacks(bossAction.time);
-        }
-      }
     }
 
     // Check for cooldown conflicts and remove future assignments if needed
