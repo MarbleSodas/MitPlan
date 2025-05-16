@@ -13,7 +13,7 @@ import {
   isTouchDevice
 } from '../../utils';
 import { mitigationAbilities, bosses } from '../../data';
-import { useAetherflowContext } from '../../contexts';
+import { useAetherflowContext, useTankPositionContext } from '../../contexts';
 
 const BossAction = styled.div`
   background-color: ${props => {
@@ -405,17 +405,34 @@ const BossActionItem = memo(({
     }).length > 0;
 
   // Calculate total mitigation
-  const calculateMitigationInfo = () => {
+  const calculateMitigationInfo = (tankPosition = null) => {
     // Get directly assigned mitigations
     const directMitigations = assignments[action.id] || [];
 
     // Filter out mitigations that don't have any corresponding selected jobs
-    const filteredDirectMitigations = directMitigations.filter(mitigation =>
+    let filteredDirectMitigations = directMitigations.filter(mitigation =>
       isMitigationAvailable(mitigation, selectedJobs)
     );
 
+    // If a tank position is specified, filter mitigations by tank position
+    if (tankPosition) {
+      filteredDirectMitigations = filteredDirectMitigations.filter(mitigation => {
+        // Include mitigations specifically for this tank position
+        if (mitigation.tankPosition === tankPosition) {
+          return true;
+        }
+
+        // Include shared mitigations (party-wide)
+        if (mitigation.tankPosition === 'shared' || !mitigation.tankPosition) {
+          return true;
+        }
+
+        return false;
+      });
+    }
+
     // Get inherited mitigations from previous actions
-    const inheritedMitigations = getActiveMitigations(action.id, action.time)
+    const inheritedMitigations = getActiveMitigations(action.id, action.time, tankPosition)
       .map(m => {
         // Find the full mitigation data
         return mitigationAbilities.find(full => full.id === m.id);
@@ -439,10 +456,14 @@ const BossActionItem = memo(({
     };
   };
 
+  // Get general mitigation info (for display in the UI)
   const { allMitigations, barrierMitigations, hasMitigations } = calculateMitigationInfo();
 
   // Get Aetherflow context
   const { isScholarSelected } = useAetherflowContext();
+
+  // Get tank position context
+  const { tankPositions } = useTankPositionContext();
 
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
@@ -458,10 +479,26 @@ const BossActionItem = memo(({
   };
 
   const unmitigatedDamage = parseUnmitigatedDamage();
+
+  // Calculate general mitigation percentage (for display in the UI)
   const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
   const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
 
-  // Calculate barrier amounts for party and tank
+  // Calculate tank-specific mitigation percentages
+  const mainTankMitigations = action.isTankBuster && tankPositions.mainTank ?
+    calculateMitigationInfo('mainTank').allMitigations : [];
+  const offTankMitigations = action.isTankBuster && tankPositions.offTank ?
+    calculateMitigationInfo('offTank').allMitigations : [];
+
+  const mainTankMitigationPercentage = mainTankMitigations.length > 0 ?
+    calculateTotalMitigation(mainTankMitigations, action.damageType, currentBossLevel) : mitigationPercentage;
+  const offTankMitigationPercentage = offTankMitigations.length > 0 ?
+    calculateTotalMitigation(offTankMitigations, action.damageType, currentBossLevel) : mitigationPercentage;
+
+  const mainTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage);
+  const offTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage);
+
+  // Calculate barrier amounts for party and tanks
   const partyBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
     if (!mitigation.barrierPotency) return total;
 
@@ -473,6 +510,7 @@ const BossActionItem = memo(({
     return total;
   }, 0);
 
+  // Generic tank barrier amount for when no tank positions are assigned
   const tankBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
     if (!mitigation.barrierPotency) return total;
 
@@ -483,6 +521,20 @@ const BossActionItem = memo(({
 
     return total;
   }, 0);
+
+  // Calculate barrier amounts for main tank
+  const mainTankBarrierAmount = action.isTankBuster && tankPositions.mainTank ?
+    calculateMitigationInfo('mainTank').barrierMitigations.reduce((total, mitigation) => {
+      if (!mitigation.barrierPotency) return total;
+      return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+    }, 0) : tankBarrierAmount;
+
+  // Calculate barrier amounts for off tank
+  const offTankBarrierAmount = action.isTankBuster && tankPositions.offTank ?
+    calculateMitigationInfo('offTank').barrierMitigations.reduce((total, mitigation) => {
+      if (!mitigation.barrierPotency) return total;
+      return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+    }, 0) : tankBarrierAmount;
 
   return (
     <BossAction
@@ -544,28 +596,70 @@ const BossActionItem = memo(({
       {unmitigatedDamage > 0 && (
         <>
           {/* Show tank or party health bar, with AetherflowGauge adjacent if selected and Scholar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {action.isTankBuster ? (
-              <HealthBar
-                label="Tank Health"
-                maxHealth={baseHealth.tank}
-                currentHealth={baseHealth.tank}
-                damageAmount={mitigatedDamage}
-                barrierAmount={tankBarrierAmount}
-                isTankBuster={true}
-              />
+              <>
+                {/* For tank busters, show separate health bars for each selected tank */}
+                {tankPositions.mainTank && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <HealthBar
+                      label={`Main Tank (${tankPositions.mainTank})`}
+                      maxHealth={baseHealth.tank}
+                      currentHealth={baseHealth.tank}
+                      damageAmount={calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage)}
+                      barrierAmount={mainTankBarrierAmount}
+                      isTankBuster={true}
+                      tankPosition="mainTank"
+                    />
+                    {isSelected && isScholarSelected && (
+                      <AetherflowGauge />
+                    )}
+                  </div>
+                )}
+
+                {tankPositions.offTank && (
+                  <HealthBar
+                    label={`Off Tank (${tankPositions.offTank})`}
+                    maxHealth={baseHealth.tank}
+                    currentHealth={baseHealth.tank}
+                    damageAmount={calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage)}
+                    barrierAmount={offTankBarrierAmount}
+                    isTankBuster={true}
+                    tankPosition="offTank"
+                  />
+                )}
+
+                {/* If no tanks are assigned positions, show generic tank health bar */}
+                {!tankPositions.mainTank && !tankPositions.offTank && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <HealthBar
+                      label="Tank Health"
+                      maxHealth={baseHealth.tank}
+                      currentHealth={baseHealth.tank}
+                      damageAmount={mitigatedDamage}
+                      barrierAmount={tankBarrierAmount}
+                      isTankBuster={true}
+                    />
+                    {isSelected && isScholarSelected && (
+                      <AetherflowGauge />
+                    )}
+                  </div>
+                )}
+              </>
             ) : (
-              <HealthBar
-                label="Party Health"
-                maxHealth={baseHealth.party}
-                currentHealth={baseHealth.party}
-                damageAmount={mitigatedDamage}
-                barrierAmount={partyBarrierAmount}
-                isTankBuster={false}
-              />
-            )}
-            {isSelected && isScholarSelected && (
-              <AetherflowGauge />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <HealthBar
+                  label="Party Health"
+                  maxHealth={baseHealth.party}
+                  currentHealth={baseHealth.party}
+                  damageAmount={mitigatedDamage}
+                  barrierAmount={partyBarrierAmount}
+                  isTankBuster={false}
+                />
+                {isSelected && isScholarSelected && (
+                  <AetherflowGauge />
+                )}
+              </div>
             )}
           </div>
         </>

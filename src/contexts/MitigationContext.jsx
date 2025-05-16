@@ -25,21 +25,55 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
         const reconstructedAssignments = {};
 
         // Reconstruct assignments
-        Object.entries(autosavedPlan.assignments).forEach(([bossActionId, mitigationIds]) => {
-          reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-            // Find the full mitigation object by ID
-            const mitigation = mitigationAbilities.find(m => m.id === id);
-            return mitigation || {
-              id,
-              name: 'Unknown Ability',
-              description: 'Ability not found',
-              duration: 0,
-              cooldown: 0,
-              jobs: [],
-              icon: '',
-              type: 'unknown'
-            };
-          });
+        Object.entries(autosavedPlan.assignments).forEach(([bossActionId, mitigationData]) => {
+          // Check if the data is in the new format (with tankPosition)
+          if (Array.isArray(mitigationData)) {
+            // Old format - just an array of mitigation IDs
+            reconstructedAssignments[bossActionId] = mitigationData.map(id => {
+              // Find the full mitigation object by ID
+              const mitigation = mitigationAbilities.find(m => m.id === id);
+              return mitigation || {
+                id,
+                name: 'Unknown Ability',
+                description: 'Ability not found',
+                duration: 0,
+                cooldown: 0,
+                jobs: [],
+                icon: '',
+                type: 'unknown'
+              };
+            });
+          } else {
+            // New format - object with tankPosition
+            reconstructedAssignments[bossActionId] = [];
+
+            // Process each tank position's mitigations
+            Object.entries(mitigationData).forEach(([position, mitigationIds]) => {
+              if (position === 'shared') {
+                // Shared mitigations (apply to both tanks)
+                mitigationIds.forEach(id => {
+                  const mitigation = mitigationAbilities.find(m => m.id === id);
+                  if (mitigation) {
+                    reconstructedAssignments[bossActionId].push({
+                      ...mitigation,
+                      tankPosition: 'shared'
+                    });
+                  }
+                });
+              } else if (position === 'mainTank' || position === 'offTank') {
+                // Tank-specific mitigations
+                mitigationIds.forEach(id => {
+                  const mitigation = mitigationAbilities.find(m => m.id === id);
+                  if (mitigation) {
+                    reconstructedAssignments[bossActionId].push({
+                      ...mitigation,
+                      tankPosition: position
+                    });
+                  }
+                });
+              }
+            });
+          }
         });
         return reconstructedAssignments;
       } catch (err) {
@@ -534,9 +568,31 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
   }, [assignments, bossActions, bossLevel, selectedJobs]);
 
   // Add a mitigation to a boss action
-  const addMitigation = useCallback((bossActionId, mitigation) => {
-    // Check if this mitigation is already assigned to this action
-    if (assignments[bossActionId] && assignments[bossActionId].some(m => m.id === mitigation.id)) {
+  const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
+    // Determine if this is a tank-specific mitigation
+    const isTankSpecific = mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide;
+
+    // For tank-specific mitigations, ensure a valid tank position is provided
+    if (isTankSpecific && !['mainTank', 'offTank'].includes(tankPosition)) {
+      // Default to mainTank if not specified for tank-specific mitigations
+      tankPosition = 'mainTank';
+    }
+
+    // For party-wide mitigations, always use 'shared'
+    if (!isTankSpecific) {
+      tankPosition = 'shared';
+    }
+
+    // Add tankPosition to the mitigation object
+    const mitigationWithPosition = {
+      ...mitigation,
+      tankPosition
+    };
+
+    // Check if this mitigation is already assigned to this action for this tank position
+    if (assignments[bossActionId] && assignments[bossActionId].some(m =>
+      m.id === mitigation.id && m.tankPosition === tankPosition
+    )) {
       return false;
     }
 
@@ -546,7 +602,7 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     // Add the mitigation to the assignments
     setAssignments(prev => ({
       ...prev,
-      [bossActionId]: [...(prev[bossActionId] || []), mitigation]
+      [bossActionId]: [...(prev[bossActionId] || []), mitigationWithPosition]
     }));
 
     // Check if this is an Aetherflow ability
@@ -581,13 +637,16 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
   }, [assignments, checkAndRemoveFutureConflicts, bossActions]);
 
   // Remove a mitigation from a boss action
-  const removeMitigation = useCallback((bossActionId, mitigationId) => {
+  const removeMitigation = useCallback((bossActionId, mitigationId, tankPosition = null) => {
     if (!assignments[bossActionId]) {
       return false;
     }
 
     // Find the mitigation being removed
-    const mitigation = assignments[bossActionId].find(m => m.id === mitigationId);
+    // If tankPosition is provided, only remove the mitigation for that tank position
+    const mitigation = tankPosition
+      ? assignments[bossActionId].find(m => m.id === mitigationId && m.tankPosition === tankPosition)
+      : assignments[bossActionId].find(m => m.id === mitigationId);
 
     // If this is an Aetherflow-consuming ability, refund the stack
     if (mitigation && mitigation.consumesAetherflow) {
@@ -600,17 +659,20 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
 
     setAssignments(prev => ({
       ...prev,
-      [bossActionId]: prev[bossActionId].filter(m => m.id !== mitigationId)
+      [bossActionId]: tankPosition
+        ? prev[bossActionId].filter(m => !(m.id === mitigationId && m.tankPosition === tankPosition))
+        : prev[bossActionId].filter(m => m.id !== mitigationId)
     }));
 
     return true;
   }, [assignments]);
 
   // Find active mitigations at a specific time
-  const getActiveMitigations = useCallback((targetActionId, targetTime) => {
+  const getActiveMitigations = useCallback((targetActionId, targetTime, tankPosition = null) => {
     if (!bossActions) return [];
 
-    return findActiveMitigationsAtTime(
+    // Get all active mitigations
+    const activeMitigations = findActiveMitigationsAtTime(
       assignments,
       bossActions,
       mitigationAbilities,
@@ -618,6 +680,29 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       targetTime,
       bossLevel
     );
+
+    // If no tank position is specified, return all mitigations
+    if (!tankPosition) {
+      return activeMitigations;
+    }
+
+    // Filter mitigations based on tank position
+    return activeMitigations.filter(mitigation => {
+      // If the mitigation has a tankPosition property, check if it matches
+      if (mitigation.tankPosition) {
+        // Return true if it's for the specified tank or if it's shared
+        return mitigation.tankPosition === tankPosition || mitigation.tankPosition === 'shared';
+      }
+
+      // For mitigations without a tankPosition property:
+      // - If it's a tank-specific mitigation (self-target, tank buster only), assume it's for the main tank
+      if (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) {
+        return tankPosition === 'mainTank';
+      }
+
+      // Otherwise, it's a shared mitigation that applies to all tanks
+      return true;
+    });
   }, [assignments, bossActions, bossLevel]);
 
   // Clear all assignments
@@ -636,13 +721,39 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     const optimizedAssignments = {};
 
     Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
-      // Store only the mitigation IDs instead of the full objects
-      optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
+      // Group mitigations by tank position
+      const groupedMitigations = {
+        shared: [],
+        mainTank: [],
+        offTank: []
+      };
+
+      // Sort mitigations into their respective groups
+      mitigations.forEach(mitigation => {
+        const position = mitigation.tankPosition || 'shared';
+        if (['shared', 'mainTank', 'offTank'].includes(position)) {
+          groupedMitigations[position].push(mitigation.id);
+        } else {
+          // Fallback for any mitigations without a position
+          groupedMitigations.shared.push(mitigation.id);
+        }
+      });
+
+      // Only include non-empty groups in the optimized assignments
+      const positionAssignments = {};
+      Object.entries(groupedMitigations).forEach(([position, ids]) => {
+        if (ids.length > 0) {
+          positionAssignments[position] = ids;
+        }
+      });
+
+      // Store the grouped mitigation IDs
+      optimizedAssignments[bossActionId] = positionAssignments;
     });
 
     // Create the autosave data
     const autosaveData = {
-      version: '1.2',
+      version: '1.3', // Increment version to indicate new format
       lastSaved: new Date().toISOString(),
       assignments: optimizedAssignments
     };
@@ -672,10 +783,17 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     aetherflowContextRef.current = context;
   };
 
+  // Set up a function to receive the TankPosition context
+  const tankPositionContextRef = useRef(null);
+  const setTankPositionContext = (context) => {
+    tankPositionContextRef.current = context;
+  };
+
   return (
     <MitigationContext.Provider value={{
       ...contextValue,
-      setAetherflowContext
+      setAetherflowContext,
+      setTankPositionContext
     }}>
       {children}
     </MitigationContext.Provider>

@@ -9,7 +9,8 @@ import {
   useJobContext,
   useMitigationContext,
   useFilterContext,
-  useChargeCountContext
+  useChargeCountContext,
+  useTankPositionContext
 } from './contexts';
 
 // Import data from centralized data module
@@ -31,6 +32,7 @@ import MobileMitigationSelector from './components/mobile/MobileMitigationSelect
 import BossActionItem from './components/BossActionItem';
 import AssignedMitigations from './components/AssignedMitigations';
 import MitigationItem from './components/MitigationItem';
+import TankPositionSelector from './components/TankPositionSelector';
 
 // Import hooks
 import { useDragAndDrop, useMobileInteraction, useUrlHandler } from './hooks';
@@ -352,6 +354,10 @@ function App() {
     filterMitigations,
     showAllMitigations
   } = useFilterContext();
+  const {
+    tankPositions,
+    selectedTankJobs
+  } = useTankPositionContext();
 
   // Local state
   const [pendingAssignments, setPendingAssignments] = useState([]);
@@ -366,7 +372,8 @@ function App() {
     addMitigation,
     addPendingAssignment,
     canAssignMitigationToBossAction,
-    setPendingAssignments
+    setPendingAssignments,
+    tankPositions
   });
 
   const { handleMobileAssignMitigation, handleBossActionClick } = useMobileInteraction({
@@ -477,6 +484,11 @@ function App() {
             onJobsChange={setSelectedJobs}
             initialJobs={selectedJobs}
           />
+
+          {/* Only show tank position selector if at least one tank is selected */}
+          {selectedJobs.tank.some(job => job.selected) && (
+            <TankPositionSelector />
+          )}
 
           <FilterToggle />
 

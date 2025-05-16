@@ -68,7 +68,7 @@ const DamageOverlay = styled.div`
 
 /**
  * HealthBar component for displaying health and damage
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.label - Label for the health bar
  * @param {number} props.maxHealth - Maximum health value
@@ -76,6 +76,7 @@ const DamageOverlay = styled.div`
  * @param {number} props.damageAmount - Amount of damage to display
  * @param {number} props.barrierAmount - Amount of barrier to display (optional)
  * @param {boolean} props.isTankBuster - Whether this is a tank buster health bar
+ * @param {string} props.tankPosition - Tank position (mainTank, offTank, or null)
  * @returns {JSX.Element} - Rendered component
  */
 const HealthBar = ({
@@ -84,16 +85,17 @@ const HealthBar = ({
   currentHealth,
   damageAmount,
   barrierAmount = 0,
-  isTankBuster = false
+  isTankBuster = false,
+  tankPosition = null
 }) => {
   // Calculate percentages for display
   const healthPercentage = Math.max(0, Math.min(100, (currentHealth / maxHealth) * 100));
   const barrierPercentage = Math.max(0, Math.min(100, (barrierAmount / maxHealth) * 100));
   const damagePercentage = Math.max(0, Math.min(100, (damageAmount / maxHealth) * 100));
-  
+
   // Calculate where damage overlay should start
   const damageStartPercentage = Math.max(0, healthPercentage - damagePercentage);
-  
+
   // Calculate remaining health after damage (considering barriers)
   const damageToHealth = Math.max(0, damageAmount - barrierAmount);
   const remainingHealth = Math.max(0, currentHealth - damageToHealth);
@@ -112,21 +114,21 @@ const HealthBar = ({
     <Tooltip content={tooltipContent}>
       <HealthBarContainer>
         <HealthBarLabel>
-          <span>{label} {isTankBuster ? '(Tank)' : '(Party)'}</span>
+          <span>{label}</span>
           <span>{formatHealth(remainingHealth)} / {formatHealth(maxHealth)}</span>
         </HealthBarLabel>
         <HealthBarOuter>
           <HealthBarFill $percentage={healthPercentage} />
           {barrierAmount > 0 && (
-            <BarrierOverlay 
-              $healthPercentage={healthPercentage} 
-              $barrierPercentage={barrierPercentage} 
+            <BarrierOverlay
+              $healthPercentage={healthPercentage}
+              $barrierPercentage={barrierPercentage}
             />
           )}
           {damageAmount > 0 && (
-            <DamageOverlay 
-              $startPercentage={damageStartPercentage} 
-              $damagePercentage={damagePercentage} 
+            <DamageOverlay
+              $startPercentage={damageStartPercentage}
+              $damagePercentage={damagePercentage}
             />
           )}
         </HealthBarOuter>

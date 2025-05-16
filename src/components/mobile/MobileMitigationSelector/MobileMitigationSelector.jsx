@@ -11,7 +11,7 @@ import {
   calculateMitigatedDamage,
   calculateBarrierAmount
 } from '../../../utils';
-import { useFilterContext, useChargeCountContext } from '../../../contexts';
+import { useFilterContext, useChargeCountContext, useTankPositionContext } from '../../../contexts';
 import ChargeCounter from '../../../components/ChargeCounter';
 import HealthBar from '../../../components/common/HealthBar';
 import { bosses, mitigationAbilities } from '../../../data';
@@ -484,6 +484,9 @@ const MobileMitigationSelector = ({
     getInstanceCount
   } = useChargeCountContext();
 
+  // Get the tank position context
+  const { tankPositions } = useTankPositionContext();
+
   // Add state to track the currently assigned mitigation
   // This is used to force a re-render when a mitigation is assigned
   const [justAssignedMitigation, setJustAssignedMitigation] = useState(null);
@@ -536,7 +539,7 @@ const MobileMitigationSelector = ({
   };
 
   // Helper function to handle mitigation removal
-  const handleMitigationRemoval = useCallback((mitigationId) => {
+  const handleMitigationRemoval = useCallback((mitigationId, tankPosition = null) => {
     // Check if we're already processing to prevent multiple rapid operations
     if (isProcessingRef.current) return;
 
@@ -571,8 +574,15 @@ const MobileMitigationSelector = ({
         )
       );
 
-      // Remove the mitigation
-      onRemoveMitigation(bossAction.id, mitigationId);
+      // Find the mitigation in the current assignments to get its tank position
+      const currentAssignments = assignments[bossAction.id] || [];
+      const assignedMitigation = currentAssignments.find(m => m.id === mitigationId);
+
+      // Use the tank position from the assigned mitigation if available
+      const positionToRemove = tankPosition || (assignedMitigation && assignedMitigation.tankPosition) || null;
+
+      // Remove the mitigation with the appropriate tank position
+      onRemoveMitigation(bossAction.id, mitigationId, positionToRemove);
 
       // Immediately set processing flags to false to allow immediate follow-up actions
       setIsProcessingAssignment(false);
@@ -605,7 +615,7 @@ const MobileMitigationSelector = ({
         setError(null);
       }, 3000);
     }
-  }, [bossAction, justAssignedMitigation, onRemoveMitigation, removePendingAssignment]);
+  }, [bossAction, justAssignedMitigation, onRemoveMitigation, removePendingAssignment, assignments]);
 
   // Helper function to handle mitigation assignment
   const handleMitigationAssignment = useCallback((mitigation) => {
@@ -653,9 +663,31 @@ const MobileMitigationSelector = ({
       // Update local pending assignments state with the new assignment
       setLocalPendingAssignments(prev => [...prev, newPendingAssignment]);
 
-      // Then assign the mitigation to the boss action
+      // Determine tank position for tank-specific mitigations
+      let tankPosition = 'shared';
+
+      // If this is a tank buster and a tank-specific mitigation
+      if (bossAction.isTankBuster &&
+          mitigation.target === 'self' &&
+          mitigation.forTankBusters &&
+          !mitigation.forRaidWide) {
+
+        // If we have both tanks selected, use the main tank by default
+        if (tankPositions.mainTank && tankPositions.offTank) {
+          tankPosition = 'mainTank';
+        }
+        // If only one tank is selected, use that tank's position
+        else if (tankPositions.mainTank) {
+          tankPosition = 'mainTank';
+        }
+        else if (tankPositions.offTank) {
+          tankPosition = 'offTank';
+        }
+      }
+
+      // Then assign the mitigation to the boss action with the appropriate tank position
       // This ensures the UI updates immediately before the assignment is processed
-      onAssignMitigation(bossAction.id, mitigation);
+      onAssignMitigation(bossAction.id, mitigation, tankPosition);
 
       // Immediately set processing flags to false to allow immediate follow-up actions
       setIsProcessingAssignment(false);
@@ -702,7 +734,7 @@ const MobileMitigationSelector = ({
         setError(null);
       }, 3000);
     }
-  }, [bossAction, onAssignMitigation, addPendingAssignment, removePendingAssignment]);
+  }, [bossAction, onAssignMitigation, addPendingAssignment, removePendingAssignment, tankPositions]);
 
   // Cleanup on unmount
   useEffect(() => {

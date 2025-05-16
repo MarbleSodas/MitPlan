@@ -3,7 +3,7 @@ import { mitigationAbilities } from '../data';
 
 /**
  * Custom hook for handling drag and drop operations in the mitigation planner
- * 
+ *
  * @param {Object} options - Configuration options
  * @param {Function} options.setActiveMitigation - Function to set the active mitigation
  * @param {Function} options.checkAbilityCooldown - Function to check if an ability is on cooldown
@@ -19,7 +19,8 @@ const useDragAndDrop = ({
   addMitigation,
   addPendingAssignment,
   canAssignMitigationToBossAction,
-  setPendingAssignments
+  setPendingAssignments,
+  tankPositions
 }) => {
   // Handle drag start
   const handleDragStart = useCallback((event) => {
@@ -87,18 +88,40 @@ const useDragAndDrop = ({
         // Add to local pending assignments for state management
         setPendingAssignments(prev => [...prev, newPendingAssignment]);
 
-        // Then add the mitigation to the boss action
-        const result = addMitigation(selectedBossAction.id, mitigation);
+        // Determine tank position for tank-specific mitigations
+        let tankPosition = 'shared';
+
+        // If this is a tank buster and a tank-specific mitigation
+        if (selectedBossAction.isTankBuster &&
+            mitigation.target === 'self' &&
+            mitigation.forTankBusters &&
+            !mitigation.forRaidWide) {
+
+          // If we have both tanks selected, use the main tank by default
+          if (tankPositions?.mainTank && tankPositions?.offTank) {
+            tankPosition = 'mainTank';
+          }
+          // If only one tank is selected, use that tank's position
+          else if (tankPositions?.mainTank) {
+            tankPosition = 'mainTank';
+          }
+          else if (tankPositions?.offTank) {
+            tankPosition = 'offTank';
+          }
+        }
+
+        // Then add the mitigation to the boss action with the appropriate tank position
+        const result = addMitigation(selectedBossAction.id, mitigation, tankPosition);
 
         if (result && result.conflicts && result.conflicts.removedCount > 0) {
           // Log about removed future assignments only if there are conflicts
-          console.log(`Added ${mitigation.name} to ${selectedBossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+          console.log(`Added ${mitigation.name} to ${selectedBossAction.name} for ${tankPosition}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
         }
       }
     }
 
     setActiveMitigation(null);
-  }, [setActiveMitigation, checkAbilityCooldown, addMitigation, addPendingAssignment, canAssignMitigationToBossAction, setPendingAssignments]);
+  }, [setActiveMitigation, checkAbilityCooldown, addMitigation, addPendingAssignment, canAssignMitigationToBossAction, setPendingAssignments, tankPositions]);
 
   return {
     handleDragStart,
