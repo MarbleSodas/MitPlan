@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
+import AetherflowGauge from '../AetherflowGauge/AetherflowGauge';
 import {
   calculateTotalMitigation,
   formatMitigation,
@@ -16,14 +17,14 @@ import { mitigationAbilities, bosses } from '../../data';
 const BossAction = styled.div`
   background-color: ${props => {
     if (props.$isSelected) {
-      return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
+      return props.theme.mode === 'dark' ? 'rgba(77, 171, 255, 0.25)' : 'rgba(51, 153, 255, 0.15)';
     }
     if (props.$isTouched) {
-      return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.05)';
+      return props.theme.mode === 'dark' ? 'rgba(77, 171, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
     }
     return props.theme.colors.cardBackground;
   }};
-  border-radius: ${props => props.theme.borderRadius.responsive.medium};
+  border-radius: ${props => props.theme.borderRadius.medium};
   padding: ${props => props.theme.spacing.medium};
   padding-top: 40px; /* Fixed padding at top for time indicator */
   padding-right: ${props => props.$hasAssignments ? '160px' : props.theme.spacing.medium}; /* Extra space on right for mitigations */
@@ -37,9 +38,11 @@ const BossAction = styled.div`
       default: return props.theme.colors.low;
     }
   }};
-  transition: all 0.2s ease;
+  transition: all ${props => props.theme.transitions.normal};
   color: ${props => props.theme.colors.text};
-  border: ${props => props.$isSelected ? `2px solid ${props.theme.colors.primary}` : '1px solid ${props.theme.colors.border}'};
+  border: ${props => props.$isSelected
+    ? `2px solid ${props.theme.colors.primary}`
+    : `1px solid ${props.theme.colors.border}`};
   cursor: pointer;
   width: 100%; /* Full width */
   min-height: 140px; /* Minimum height for all boss action cards */
@@ -50,6 +53,7 @@ const BossAction = styled.div`
   -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
   touch-action: manipulation; /* Optimize for touch */
   user-select: none; /* Prevent text selection on touch */
+  overflow: hidden; /* Ensure content doesn't overflow */
 
   /* Desktop hover effect */
   @media (hover: hover) and (pointer: fine) {
@@ -69,22 +73,22 @@ const BossAction = styled.div`
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    padding: ${props => props.theme.spacing.responsive.medium};
+    padding: ${props => props.theme.spacing.medium};
     padding-top: 40px;
-    padding-right: ${props => props.$hasAssignments ? '140px' : props.theme.spacing.responsive.medium};
+    padding-right: ${props => props.$hasAssignments ? '140px' : props.theme.spacing.medium};
     min-height: 130px;
-    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+    border-radius: ${props => props.theme.borderRadius.medium};
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.responsive.small};
+    padding: ${props => props.theme.spacing.small};
     padding-top: 35px; /* Slightly smaller padding for time indicator on mobile */
-    padding-right: ${props => props.$hasAssignments ? '110px' : props.theme.spacing.responsive.small}; /* Increased space for mitigations on mobile */
+    padding-right: ${props => props.$hasAssignments ? '110px' : props.theme.spacing.small}; /* Increased space for mitigations on mobile */
     min-height: 120px; /* Smaller minimum height on mobile */
-    margin-bottom: ${props => props.theme.spacing.responsive.small}; /* Increased spacing between boss actions */
+    margin-bottom: ${props => props.theme.spacing.small}; /* Increased spacing between boss actions */
     position: relative; /* Ensure proper positioning context for absolute elements */
-    border-radius: ${props => props.theme.borderRadius.responsive.small};
+    border-radius: ${props => props.theme.borderRadius.small};
   }
 
   /* Small mobile styles */
@@ -103,50 +107,53 @@ const ActionTime = styled.div`
   left: 0;
   right: 0;
   padding: 8px;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  font-weight: bold;
+  font-size: ${props => props.theme.typography.fontSize.medium};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
   color: ${props => props.theme.colors.text};
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
+  background-color: ${props => props.theme.mode === 'dark'
+    ? 'rgba(0, 0, 0, 0.3)'
+    : 'rgba(0, 0, 0, 0.05)'};
   border-bottom: 1px solid ${props => props.theme.colors.border};
-  border-top-left-radius: ${props => props.theme.borderRadius.responsive.medium};
-  border-top-right-radius: ${props => props.theme.borderRadius.responsive.medium};
+  border-top-left-radius: ${props => props.theme.borderRadius.medium};
+  border-top-right-radius: ${props => props.theme.borderRadius.medium};
   text-align: center;
-  height: 30px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none; /* Prevent text selection */
   z-index: 1; /* Ensure it's above other elements */
+  transition: all ${props => props.theme.transitions.fast};
 
   &::before {
     content: '⏱️';
-    margin-right: 5px;
+    margin-right: 6px;
     font-size: 1em;
   }
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    font-size: ${props => props.theme.typography.fontSize.small};
     padding: 8px;
-    height: 28px;
-    border-top-left-radius: ${props => props.theme.borderRadius.responsive.medium};
-    border-top-right-radius: ${props => props.theme.borderRadius.responsive.medium};
+    height: 30px;
+    border-top-left-radius: ${props => props.theme.borderRadius.medium};
+    border-top-right-radius: ${props => props.theme.borderRadius.medium};
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
+    font-size: ${props => props.theme.typography.fontSize.small};
     padding: 6px;
-    height: 24px;
-    border-top-left-radius: ${props => props.theme.borderRadius.responsive.small};
-    border-top-right-radius: ${props => props.theme.borderRadius.responsive.small};
+    height: 26px;
+    border-top-left-radius: ${props => props.theme.borderRadius.small};
+    border-top-right-radius: ${props => props.theme.borderRadius.small};
   }
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
+    font-size: ${props => props.theme.typography.fontSize.xsmall};
     padding: 4px;
-    height: 22px;
+    height: 24px;
     border-top-left-radius: ${props => props.theme.borderRadius.small};
     border-top-right-radius: ${props => props.theme.borderRadius.small};
   }
@@ -161,12 +168,19 @@ const ActionIcon = styled.span`
   margin-right: 12px;
   flex-shrink: 0;
   user-select: none; /* Prevent text selection */
+  font-size: 1.25rem;
+  background-color: ${props => props.theme.mode === 'dark'
+    ? 'rgba(255, 255, 255, 0.05)'
+    : 'rgba(0, 0, 0, 0.03)'};
+  border-radius: ${props => props.theme.borderRadius.circle};
+  padding: 4px;
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     width: 30px;
     height: 30px;
     margin-right: 10px;
+    font-size: 1.2rem;
   }
 
   /* Mobile styles */
@@ -174,6 +188,7 @@ const ActionIcon = styled.span`
     width: 28px;
     height: 28px;
     margin-right: 8px;
+    font-size: 1.1rem;
   }
 
   /* Small mobile styles */
@@ -181,40 +196,46 @@ const ActionIcon = styled.span`
     width: 24px;
     height: 24px;
     margin-right: 6px;
+    font-size: 1rem;
   }
 `;
 
 const ActionName = styled.h3`
   margin: 0;
-  font-size: ${props => props.theme.fontSizes.responsive.large};
-  font-weight: bold;
+  font-size: ${props => props.theme.typography.fontSize.large};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
   flex-grow: 1;
   user-select: none; /* Prevent text selection */
+  color: ${props => props.theme.colors.text};
+  line-height: ${props => props.theme.typography.lineHeight.tight};
+  letter-spacing: -0.01em;
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    font-size: ${props => props.theme.typography.fontSize.medium};
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    font-size: ${props => props.theme.typography.fontSize.medium};
   }
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
+    font-size: ${props => props.theme.typography.fontSize.small};
   }
 `;
 
 const ActionDescription = styled.p`
   margin: 0;
-  color: ${props => props.theme.colors.lightText};
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: ${props => props.theme.typography.fontSize.medium};
+  font-weight: ${props => props.theme.mode === 'dark'
+    ? props.theme.typography.fontWeight.medium
+    : props.theme.typography.fontWeight.regular};
   min-height: 40px; /* Ensure all descriptions have at least this height */
   flex-grow: 1; /* Allow description to grow and fill available space */
-  line-height: 1.5; /* Improve readability */
+  line-height: ${props => props.theme.typography.lineHeight.normal}; /* Improve readability */
   padding-left: 2px; /* Slight indent */
   margin-bottom: ${props => props.theme.spacing.medium}; /* Add space before mitigations */
   width: ${props => props.$hasAssignments ? 'calc(100% - 100px)' : '100%'}; /* Ensure description doesn't flow into assignments */
@@ -226,29 +247,29 @@ const ActionDescription = styled.p`
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    font-size: ${props => props.theme.typography.fontSize.small};
     min-height: 36px;
-    line-height: 1.4;
-    margin-bottom: ${props => props.theme.spacing.responsive.medium};
+    line-height: ${props => props.theme.typography.lineHeight.normal};
+    margin-bottom: ${props => props.theme.spacing.medium};
     width: ${props => props.$hasAssignments ? 'calc(100% - 80px)' : '100%'};
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 80px)' : '100%'};
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
+    font-size: ${props => props.theme.typography.fontSize.small};
     min-height: 32px;
-    line-height: 1.3;
-    margin-bottom: ${props => props.theme.spacing.responsive.small};
+    line-height: ${props => props.theme.typography.lineHeight.normal};
+    margin-bottom: ${props => props.theme.spacing.small};
     width: ${props => props.$hasAssignments ? 'calc(100% - 40px)' : '100%'};
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 40px)' : '100%'};
   }
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
+    font-size: ${props => props.theme.typography.fontSize.xsmall};
     min-height: 28px;
-    line-height: 1.2;
+    line-height: ${props => props.theme.typography.lineHeight.normal};
     margin-bottom: ${props => props.theme.spacing.small};
     width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
@@ -259,34 +280,40 @@ const MitigationPercentage = styled.div`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
+  background-color: ${props => props.theme.mode === 'dark'
+    ? 'rgba(77, 171, 255, 0.25)'
+    : 'rgba(51, 153, 255, 0.15)'};
   color: ${props => props.theme.colors.text};
-  font-weight: bold;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  padding: 6px 10px;
-  border-radius: ${props => props.theme.borderRadius.responsive.small};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  font-size: ${props => props.theme.typography.fontSize.medium};
+  padding: 8px 12px;
+  border-radius: ${props => props.theme.borderRadius.small};
   margin-top: 8px;
   margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)'};
+  border: 1px solid ${props => props.theme.mode === 'dark'
+    ? 'rgba(77, 171, 255, 0.35)'
+    : 'rgba(51, 153, 255, 0.25)'};
   user-select: none; /* Prevent text selection */
   min-height: 36px; /* Ensure minimum touch target size */
   min-width: 100px; /* Ensure minimum touch target width */
+  transition: all ${props => props.theme.transitions.fast};
+  box-shadow: ${props => props.theme.shadows.xsmall};
 
   &::before {
     content: '🛡️';
-    margin-right: 6px;
+    margin-right: 8px;
   }
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    font-size: ${props => props.theme.typography.fontSize.small};
     padding: 6px 10px;
     min-height: 34px;
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
+    font-size: ${props => props.theme.typography.fontSize.small};
     padding: 5px 8px;
     margin-top: 6px;
     margin-bottom: 10px;
@@ -295,7 +322,7 @@ const MitigationPercentage = styled.div`
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
+    font-size: ${props => props.theme.typography.fontSize.xsmall};
     padding: 4px 6px;
     margin-top: 4px;
     margin-bottom: 8px;
@@ -307,35 +334,41 @@ const MultiHitIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 0, 0.2)' : 'rgba(255, 102, 0, 0.1)'};
+  background-color: ${props => props.theme.mode === 'dark'
+    ? 'rgba(255, 169, 77, 0.25)'
+    : 'rgba(255, 169, 77, 0.15)'};
   color: ${props => props.theme.colors.text};
-  font-weight: bold;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  padding: 6px 10px;
-  border-radius: ${props => props.theme.borderRadius.responsive.small};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  font-size: ${props => props.theme.typography.fontSize.medium};
+  padding: 8px 12px;
+  border-radius: ${props => props.theme.borderRadius.small};
   margin-top: 8px;
   margin-right: 10px;
   margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 102, 0, 0.2)'};
+  border: 1px solid ${props => props.theme.mode === 'dark'
+    ? 'rgba(255, 169, 77, 0.35)'
+    : 'rgba(255, 169, 77, 0.25)'};
   user-select: none; /* Prevent text selection */
   min-height: 36px; /* Ensure minimum touch target size */
   min-width: 100px; /* Ensure minimum touch target width */
+  transition: all ${props => props.theme.transitions.fast};
+  box-shadow: ${props => props.theme.shadows.xsmall};
 
   &::before {
     content: '💥';
-    margin-right: 6px;
+    margin-right: 8px;
   }
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    font-size: ${props => props.theme.typography.fontSize.small};
     padding: 6px 10px;
     min-height: 34px;
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
+    font-size: ${props => props.theme.typography.fontSize.small};
     padding: 5px 8px;
     margin-top: 6px;
     margin-right: 8px;
@@ -345,7 +378,7 @@ const MultiHitIndicator = styled.div`
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
+    font-size: ${props => props.theme.typography.fontSize.xsmall};
     padding: 4px 6px;
     margin-top: 4px;
     margin-right: 6px;
@@ -498,6 +531,11 @@ const BossActionItem = memo(({
         </ActionIcon>
         <ActionName>{action.name}</ActionName>
       </div>
+      {isSelected && (
+        <div style={{ marginBottom: 8 }}>
+          <AetherflowGauge />
+        </div>
+      )}
       <ActionDescription $hasAssignments={hasAssignments}>
         {action.description}
       </ActionDescription>

@@ -5,6 +5,7 @@ import { JobProvider } from './JobContext.jsx';
 import { MitigationProvider } from './MitigationContext.jsx';
 import { ChargeCountProvider } from './ChargeCountContext.jsx';
 import { FilterProvider } from './FilterContext.jsx';
+import { AetherflowProvider } from './AetherflowContext.jsx';
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
 import MitigationContext from './MitigationContext.jsx';
@@ -36,9 +37,11 @@ const AppProvider = ({ children }) => {
                           selectedJobs={selectedJobs}
                           assignments={assignments}
                         >
-                          <FilterProvider>
-                            {children}
-                          </FilterProvider>
+                          <AetherflowProvider>
+                            <FilterProvider>
+                              {children}
+                            </FilterProvider>
+                          </AetherflowProvider>
                         </ChargeCountProvider>
                       )}
                     </MitigationContext.Consumer>

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { mitigationAbilities } from '../data';
 import {
   findActiveMitigationsAtTime,
@@ -532,11 +532,48 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     }
   }, [assignments, bossActions, bossLevel, selectedJobs]);
 
+  // Reference to the Aetherflow context
+  const aetherflowContextRef = useRef(null);
+
   // Add a mitigation to a boss action
   const addMitigation = useCallback((bossActionId, mitigation) => {
     // Check if this mitigation is already assigned to this action
     if (assignments[bossActionId] && assignments[bossActionId].some(m => m.id === mitigation.id)) {
       return false;
+    }
+
+    // Check if this is an Aetherflow ability
+    if (mitigation.consumesAetherflow) {
+      // If we have access to the Aetherflow context, check if we can use the ability
+      if (aetherflowContextRef.current) {
+        const { canUseAbility, useAetherflowStack } = aetherflowContextRef.current;
+
+        // Check if we can use this ability
+        if (!canUseAbility(mitigation.id)) {
+          return {
+            success: false,
+            reason: 'Not enough Aetherflow stacks'
+          };
+        }
+
+        // Use an Aetherflow stack
+        useAetherflowStack();
+      }
+    }
+
+    // Check if this is the Aetherflow ability itself
+    if (mitigation.isAetherflowProvider) {
+      // If we have access to the Aetherflow context, refresh stacks
+      if (aetherflowContextRef.current) {
+        const { refreshAetherflowStacks } = aetherflowContextRef.current;
+
+        // Find the boss action to get its time
+        const bossAction = bossActions.find(action => action.id === bossActionId);
+        if (bossAction) {
+          // Refresh Aetherflow stacks
+          refreshAetherflowStacks(bossAction.time);
+        }
+      }
     }
 
     // Check for cooldown conflicts and remove future assignments if needed
@@ -552,12 +589,24 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       success: true,
       conflicts
     };
-  }, [assignments, checkAndRemoveFutureConflicts]);
+  }, [assignments, checkAndRemoveFutureConflicts, bossActions]);
 
   // Remove a mitigation from a boss action
   const removeMitigation = useCallback((bossActionId, mitigationId) => {
     if (!assignments[bossActionId]) {
       return false;
+    }
+
+    // Find the mitigation being removed
+    const mitigation = assignments[bossActionId].find(m => m.id === mitigationId);
+
+    // If this is an Aetherflow-consuming ability, refund the stack
+    if (mitigation && mitigation.consumesAetherflow) {
+      // If we have access to the Aetherflow context, refund the stack
+      if (aetherflowContextRef.current) {
+        // We don't have a direct refund function, but we can recalculate stacks
+        // This will be handled by the useEffect in AetherflowContext
+      }
     }
 
     setAssignments(prev => ({
@@ -626,8 +675,16 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     importAssignments
   };
 
+  // Set up a function to receive the Aetherflow context
+  const setAetherflowContext = (context) => {
+    aetherflowContextRef.current = context;
+  };
+
   return (
-    <MitigationContext.Provider value={contextValue}>
+    <MitigationContext.Provider value={{
+      ...contextValue,
+      setAetherflowContext
+    }}>
       {children}
     </MitigationContext.Provider>
   );
