@@ -8,6 +8,7 @@ import {
   loadFromLocalStorage,
   saveToLocalStorage
 } from '../utils';
+import { useBossContext } from './BossContext';
 
 // Create the context
 const MitigationContext = createContext();
@@ -122,7 +123,7 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       // If it's a tank buster specific mitigation and the boss action is a tank buster,
       // allow it to be applied twice if it has multiple charges/instances
       if (isTankBusterMitigation && targetAction.isTankBuster &&
-          ((totalCharges > 1) || (isRoleShared && roleSharedCount > 1))) {
+        ((totalCharges > 1) || (isRoleShared && roleSharedCount > 1))) {
         // For tank buster mitigations, we'll continue with the normal cooldown check
         // This will allow a second application if there are charges/instances available
       } else {
@@ -585,6 +586,31 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       [bossActionId]: [...(prev[bossActionId] || []), mitigation]
     }));
 
+    // Check if this is an Aetherflow ability
+    if (mitigation.consumesAetherflow) {
+      // If we have access to the Aetherflow context, check if we can use the ability
+      if (aetherflowContextRef.current) {
+        const { useAetherflowStack } = aetherflowContextRef.current;
+        // Use an Aetherflow stack
+        useAetherflowStack();
+      }
+    }
+
+    // Check if this is the Aetherflow ability itself
+    if (mitigation.isAetherflowProvider) {
+      // If we have access to the Aetherflow context, refresh stacks
+      if (aetherflowContextRef.current) {
+        const { refreshAetherflowStacks } = aetherflowContextRef.current;
+
+        // Find the boss action to get its time
+        const bossAction = bossActions.find(action => action.id === bossActionId);
+        if (bossAction) {
+          // Refresh Aetherflow stacks
+          refreshAetherflowStacks(bossAction.time);
+        }
+      }
+    }
+
     return {
       success: true,
       conflicts
@@ -661,6 +687,9 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     // Save to localStorage
     saveToLocalStorage('mitPlanAutosave', autosaveData);
   }, [assignments]);
+
+  // Reference to the Aetherflow context
+  const aetherflowContextRef = useRef(null);
 
   // Create the context value
   const contextValue = {

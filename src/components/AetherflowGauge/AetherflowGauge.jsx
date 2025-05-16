@@ -47,11 +47,11 @@ const GaugeIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   img {
     width: 24px;
     height: 24px;
-    
+
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
       width: 20px;
       height: 20px;
@@ -102,7 +102,7 @@ const CooldownText = styled.div`
 
 /**
  * AetherflowGauge component for displaying Scholar's Aetherflow stacks
- * 
+ *
  * @returns {JSX.Element} - Rendered component
  */
 const AetherflowGauge = () => {
@@ -118,10 +118,12 @@ const AetherflowGauge = () => {
     return null;
   }
 
+  console.log(`[AetherflowGauge] Rendering gauge with ${aetherflowStacks} stacks`);
+
   // Create tooltip content
   const tooltipContent = `
     Aetherflow Stacks: ${aetherflowStacks}/3
-    
+
     Aetherflow is a Scholar resource that allows the use of powerful healing and utility abilities.
     Each stack is consumed when using abilities like Sacred Soil, Lustrate, Indomitability, Excogitation, or Energy Drain.
     Stacks are refreshed to 3/3 when using the Aetherflow ability (60s cooldown).
@@ -132,26 +134,22 @@ const AetherflowGauge = () => {
       <GaugeContainer>
         <GaugeTitle>
           <GaugeIcon>
-            <img 
-              src={aetherflowAbility?.icon || '/abilities-gamerescape/aetherflow.png'} 
-              alt="Aetherflow" 
+            <img
+              src={aetherflowAbility?.icon || '/abilities-gamerescape/aetherflow.png'}
+              alt="Aetherflow"
             />
           </GaugeIcon>
           <span>Aetherflow</span>
         </GaugeTitle>
-        
+
         <StacksContainer>
           {[...Array(3)].map((_, index) => (
-            <StackIndicator 
-              key={index} 
-              $active={index < aetherflowStacks} 
+            <StackIndicator
+              key={index}
+              $active={index < aetherflowStacks}
             />
           ))}
         </StacksContainer>
-        
-        <CooldownText>
-          {aetherflowStacks < 3 ? 'Use Aetherflow to refresh stacks' : 'Full stacks available'}
-        </CooldownText>
       </GaugeContainer>
     </Tooltip>
   );

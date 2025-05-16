@@ -112,14 +112,19 @@ export const AetherflowProvider = ({ children }) => {
   // Use an Aetherflow stack
   const useAetherflowStack = () => {
     if (aetherflowStacks > 0) {
-      setAetherflowStacks(prev => prev - 1);
+      setAetherflowStacks(prev => {
+        console.log(`[AetherflowContext] Using a stack. Current: ${prev}, New: ${prev - 1}`);
+        return prev - 1;
+      });
       return true;
     }
+    console.log(`[AetherflowContext] Cannot use stack. Current: ${aetherflowStacks}`);
     return false;
   };
 
   // Refresh Aetherflow stacks
   const refreshAetherflowStacks = (time) => {
+    console.log(`[AetherflowContext] Refreshing stacks to 3 at time ${time}`);
     setAetherflowStacks(3);
     setLastAetherflowTime(time);
     return true;

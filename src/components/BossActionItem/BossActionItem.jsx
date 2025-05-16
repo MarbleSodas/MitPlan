@@ -2,7 +2,7 @@ import React, { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
-import AetherflowGauge from '../AetherflowGauge/AetherflowGauge';
+import AetherflowGauge from '../AetherflowGauge';
 import {
   calculateTotalMitigation,
   formatMitigation,
@@ -13,6 +13,7 @@ import {
   isTouchDevice
 } from '../../utils';
 import { mitigationAbilities, bosses } from '../../data';
+import { useAetherflowContext } from '../../contexts';
 
 const BossAction = styled.div`
   background-color: ${props => {
@@ -27,7 +28,7 @@ const BossAction = styled.div`
   border-radius: ${props => props.theme.borderRadius.medium};
   padding: ${props => props.theme.spacing.medium};
   padding-top: 40px; /* Fixed padding at top for time indicator */
-  padding-right: ${props => props.$hasAssignments ? '160px' : props.theme.spacing.medium}; /* Extra space on right for mitigations */
+  padding-right: ${props => props.$hasAssignments ? '165px' : props.theme.spacing.medium}; /* Extra space on right for mitigations */
   box-shadow: ${props => props.theme.shadows.small};
   position: relative;
   border-left: 4px solid ${props => {
@@ -75,7 +76,7 @@ const BossAction = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.medium};
     padding-top: 40px;
-    padding-right: ${props => props.$hasAssignments ? '140px' : props.theme.spacing.medium};
+    padding-right: ${props => props.$hasAssignments ? '150px' : props.theme.spacing.responsive.medium};
     min-height: 130px;
     border-radius: ${props => props.theme.borderRadius.medium};
   }
@@ -470,6 +471,9 @@ const BossActionItem = memo(({
 
   const { allMitigations, barrierMitigations, hasMitigations } = calculateMitigationInfo();
 
+  // Get Aetherflow context
+  const { isScholarSelected } = useAetherflowContext();
+
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
   const baseHealth = currentBoss ? currentBoss.baseHealth : { party: 80000, tank: 120000 };
@@ -574,29 +578,36 @@ const BossActionItem = memo(({
       {/* Display health bars if we have unmitigated damage */}
       {unmitigatedDamage > 0 && (
         <>
-          {/* Only show tank health bar for tank busters */}
-          {action.isTankBuster ? (
-            <HealthBar
-              label="Tank Health"
-              maxHealth={baseHealth.tank}
-              currentHealth={baseHealth.tank}
-              damageAmount={mitigatedDamage}
-              barrierAmount={tankBarrierAmount}
-              isTankBuster={true}
-            />
-          ) : (
-            /* Only show party health bar for non-tank busters */
-            <HealthBar
-              label="Party Health"
-              maxHealth={baseHealth.party}
-              currentHealth={baseHealth.party}
-              damageAmount={mitigatedDamage}
-              barrierAmount={partyBarrierAmount}
-              isTankBuster={false}
-            />
-          )}
+          {/* Show tank or party health bar, with AetherflowGauge adjacent if selected and Scholar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {action.isTankBuster ? (
+              <HealthBar
+                label="Tank Health"
+                maxHealth={baseHealth.tank}
+                currentHealth={baseHealth.tank}
+                damageAmount={mitigatedDamage}
+                barrierAmount={tankBarrierAmount}
+                isTankBuster={true}
+              />
+            ) : (
+              <HealthBar
+                label="Party Health"
+                maxHealth={baseHealth.party}
+                currentHealth={baseHealth.party}
+                damageAmount={mitigatedDamage}
+                barrierAmount={partyBarrierAmount}
+                isTankBuster={false}
+              />
+            )}
+            {isSelected && isScholarSelected && (
+              <AetherflowGauge />
+            )}
+          </div>
         </>
       )}
+
+      {/* Display Aetherflow gauge if Scholar is selected and this is the selected boss action */}
+      {/* (Moved next to tank health bar for tank busters) */}
 
       {/* Render children (assigned mitigations) */}
       {children}
