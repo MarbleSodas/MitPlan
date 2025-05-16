@@ -26,10 +26,10 @@ const ToggleButton = styled.button`
   &::before {
     content: "";
     position: absolute;
-    height: 26px;
-    width: 26px;
-    left: ${props => props.$isDarkMode ? '32px' : '6px'};
-    bottom: 5px;
+    height: 28px;
+    width: 28px;
+    left: ${props => props.$isDarkMode ? '31px' : '5px'};
+    bottom: 8px;
     background-color: ${props => props.$isDarkMode ? '#ffffff' : '#ffffff'};
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     transition: left 0.3s;

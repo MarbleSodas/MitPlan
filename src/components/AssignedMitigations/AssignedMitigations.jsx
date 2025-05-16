@@ -13,51 +13,56 @@ import { mitigationAbilities } from '../../data';
 
 const AssignedMitigationsContainer = styled.div`
   position: absolute;
-  top: 35px; /* Align with content below the time indicator */
+  top: 35px;
   right: 0;
-  width: 230px; /* Reduced width to allow more space for description */
+  width: 100%;
+  max-width: 260px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.small};
+  gap: 4px;
   border-left: 1px solid ${props => props.theme.colors.border};
-  padding: ${props => props.theme.spacing.small};
-  padding-left: ${props => props.theme.spacing.small}; /* Reduced left padding */
-  height: calc(100% - 40px); /* Full height minus time indicator */
-  overflow-y: auto; /* Allow scrolling if many mitigations */
+  padding: 4px 6px;
+  height: calc(100% - 40px);
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.5)'};
   border-bottom-right-radius: ${props => props.theme.borderRadius.medium};
-  -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS devices */
-  z-index: 1; /* Ensure it's above the description */
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05); /* Subtle shadow to separate from description */
+  -webkit-overflow-scrolling: touch;
+  z-index: 1;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 125px; /* Optimized width for mobile */
-    top: 30px; /* Adjust for smaller time indicator */
-    padding: 4px; /* Smaller padding on mobile */
-    padding-left: 6px; /* Slightly larger left padding */
-    gap: 3px; /* Reduced gap between items */
+    width: 100%;
+    max-width: 100vw;
+    min-width: 0;
+    top: 30px;
+    padding: 2px 2px 2px 4px;
+    gap: 2px;
     height: calc(100% - 30px);
-    touch-action: pan-y; /* Allow vertical scrolling */
-    overscroll-behavior: contain; /* Prevent scroll chaining */
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.7)'}; /* Slight background for better visibility */
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.7)'};
     border-left: 1px solid ${props => props.theme.colors.border};
-    max-height: calc(100% - 30px); /* Ensure it doesn't overflow */
-    overflow-x: hidden; /* Prevent horizontal overflow */
+    max-height: calc(100% - 30px);
+    overflow-x: hidden;
   }
 `;
 
 const AssignedMitigationItem = styled.div`
   background-color: transparent;
   border-radius: ${props => props.theme.borderRadius.small};
-  padding: 2px 4px;
-  font-size: ${props => props.theme.fontSizes.small};
+  padding: 1px 3px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   border-left: 2px solid ${props => props.theme.colors.primary};
   color: ${props => props.theme.colors.text};
   font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-  margin-bottom: 2px;
+  margin-bottom: 1px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   transition: background-color 0.2s ease;
 
   &:hover {
@@ -65,16 +70,17 @@ const AssignedMitigationItem = styled.div`
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 2px 4px;
-    font-size: 10px; /* Smaller font on mobile */
-    margin-bottom: 3px; /* Increased spacing between items */
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.1)'}; /* Slight background for better visibility */
-    border-radius: 3px;
-    white-space: nowrap; /* Prevent text wrapping */
-    overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ellipsis for overflow text */
-    max-width: 110px; /* Ensure it doesn't overflow the container */
-    width: 110px; /* Fixed width to prevent overflow */
+    padding: 1px 2px;
+    font-size: 10px;
+    margin-bottom: 1px;
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.1)'};
+    border-radius: 2px;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
   }
 `;
 
@@ -96,15 +102,17 @@ const InheritedMitigationsContainer = styled.div`
 const InheritedMitigationItem = styled.div`
   background-color: transparent;
   border-radius: ${props => props.theme.borderRadius.small};
-  padding: 3px 6px;
-  font-size: ${props => props.theme.fontSizes.small};
+  padding: 1px 3px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   border-left: 2px solid ${props => props.theme.colors.lightText};
   color: ${props => props.theme.colors.lightText};
   font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-  margin-bottom: 2px;
+  margin-bottom: 1px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   opacity: 0.8;
   font-style: italic;
   transition: background-color 0.2s ease;
@@ -114,60 +122,74 @@ const InheritedMitigationItem = styled.div`
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 2px 4px;
-    font-size: 9px; /* Even smaller font for inherited mitigations */
-    margin-bottom: 2px;
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(150, 150, 150, 0.15)' : 'rgba(150, 150, 150, 0.1)'}; /* Slight background for better visibility */
-    border-radius: 3px;
-    white-space: nowrap; /* Prevent text wrapping */
-    overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ellipsis for overflow text */
-    opacity: 0.9; /* Slightly more visible on mobile */
-    max-width: 110px; /* Ensure it doesn't overflow the container */
-    width: 110px; /* Fixed width to prevent overflow */
+    padding: 1px 2px;
+    font-size: 9px;
+    margin-bottom: 1px;
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(150, 150, 150, 0.15)' : 'rgba(150, 150, 150, 0.1)'};
+    border-radius: 2px;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
   }
 `;
 
 const MitigationIcon = styled.span`
-  margin-right: ${props => props.theme.spacing.small};
+  margin-right: 4px;
   vertical-align: middle;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    margin-right: 4px;
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0; /* Prevent icon from shrinking */
+    margin-right: 3px;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
   }
 `;
 
 const RemoveButton = styled.button`
   cursor: pointer;
-  font-size: 12px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  max-width: 28px;
+  max-height: 28px;
   border-radius: 50%;
   border: none;
-  background-color: rgba(255, 100, 100, 0.2);
+  background-color: rgba(255, 100, 100, 0.18);
   color: inherit;
   transition: background-color 0.2s ease;
   padding: 0;
+  margin-left: 8px;
+  line-height: 1;
+  flex-shrink: 0;
 
   &:hover {
-    background-color: rgba(255, 100, 100, 0.3);
+    background-color: rgba(255, 100, 100, 0.28);
   }
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 16px;
-    height: 16px;
-    font-size: 10px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    font-size: 16px;
+    margin-left: 6px;
   }
 `;
 
@@ -226,26 +248,33 @@ const AssignedMitigations = memo(({
                 mitigation.icon
               }
             </MitigationIcon>
-            <span style={{
-              flex: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: isMobile ? 'nowrap' : 'normal'
-            }}>{mitigation.name}</span>
-            <RemoveButton
-              onClick={(e) => {
-                e.stopPropagation();
-
-                // Remove pending assignment
-                removePendingAssignment(action.id, mitigation.id);
-
-                // Remove the mitigation
-                onRemoveMitigation(action.id, mitigation.id);
+            <span
+              style={{
+                flex: '1 1 auto',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: isMobile ? 'nowrap' : 'normal',
+                minWidth: 0
               }}
-              aria-label={`Remove ${mitigation.name}`}
             >
-              ×
-            </RemoveButton>
+              {mitigation.name}
+            </span>
+            <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
+              <RemoveButton
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  // Remove pending assignment
+                  removePendingAssignment(action.id, mitigation.id);
+
+                  // Remove the mitigation
+                  onRemoveMitigation(action.id, mitigation.id);
+                }}
+                aria-label={`Remove ${mitigation.name}`}
+              >
+                ×
+              </RemoveButton>
+            </div>
           </AssignedMitigationItem>
         </Tooltip>
       ))}

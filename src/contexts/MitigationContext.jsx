@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { mitigationAbilities } from '../data';
 import {
   findActiveMitigationsAtTime,
@@ -8,6 +8,7 @@ import {
   loadFromLocalStorage,
   saveToLocalStorage
 } from '../utils';
+import { useBossContext } from './BossContext';
 
 // Create the context
 const MitigationContext = createContext();
@@ -122,7 +123,7 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       // If it's a tank buster specific mitigation and the boss action is a tank buster,
       // allow it to be applied twice if it has multiple charges/instances
       if (isTankBusterMitigation && targetAction.isTankBuster &&
-          ((totalCharges > 1) || (isRoleShared && roleSharedCount > 1))) {
+        ((totalCharges > 1) || (isRoleShared && roleSharedCount > 1))) {
         // For tank buster mitigations, we'll continue with the normal cooldown check
         // This will allow a second application if there are charges/instances available
       } else {
@@ -548,16 +549,53 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       [bossActionId]: [...(prev[bossActionId] || []), mitigation]
     }));
 
+    // Check if this is an Aetherflow ability
+    if (mitigation.consumesAetherflow) {
+      // If we have access to the Aetherflow context, check if we can use the ability
+      if (aetherflowContextRef.current) {
+        const { useAetherflowStack } = aetherflowContextRef.current;
+        // Use an Aetherflow stack
+        useAetherflowStack();
+      }
+    }
+
+    // Check if this is the Aetherflow ability itself
+    if (mitigation.isAetherflowProvider) {
+      // If we have access to the Aetherflow context, refresh stacks
+      if (aetherflowContextRef.current) {
+        const { refreshAetherflowStacks } = aetherflowContextRef.current;
+
+        // Find the boss action to get its time
+        const bossAction = bossActions.find(action => action.id === bossActionId);
+        if (bossAction) {
+          // Refresh Aetherflow stacks
+          refreshAetherflowStacks(bossAction.time);
+        }
+      }
+    }
+
     return {
       success: true,
       conflicts
     };
-  }, [assignments, checkAndRemoveFutureConflicts]);
+  }, [assignments, checkAndRemoveFutureConflicts, bossActions]);
 
   // Remove a mitigation from a boss action
   const removeMitigation = useCallback((bossActionId, mitigationId) => {
     if (!assignments[bossActionId]) {
       return false;
+    }
+
+    // Find the mitigation being removed
+    const mitigation = assignments[bossActionId].find(m => m.id === mitigationId);
+
+    // If this is an Aetherflow-consuming ability, refund the stack
+    if (mitigation && mitigation.consumesAetherflow) {
+      // If we have access to the Aetherflow context, refund the stack
+      if (aetherflowContextRef.current) {
+        // We don't have a direct refund function, but we can recalculate stacks
+        // This will be handled by the useEffect in AetherflowContext
+      }
     }
 
     setAssignments(prev => ({
@@ -613,6 +651,9 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     saveToLocalStorage('mitPlanAutosave', autosaveData);
   }, [assignments]);
 
+  // Reference to the Aetherflow context
+  const aetherflowContextRef = useRef(null);
+
   // Create the context value
   const contextValue = {
     assignments,
@@ -626,8 +667,16 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     importAssignments
   };
 
+  // Set up a function to receive the Aetherflow context
+  const setAetherflowContext = (context) => {
+    aetherflowContextRef.current = context;
+  };
+
   return (
-    <MitigationContext.Provider value={contextValue}>
+    <MitigationContext.Provider value={{
+      ...contextValue,
+      setAetherflowContext
+    }}>
       {children}
     </MitigationContext.Provider>
   );

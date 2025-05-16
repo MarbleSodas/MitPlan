@@ -17,6 +17,14 @@
  * - The number of available instances depends on how many players of the relevant role are selected
  * - Each instance has its own cooldown tracking
  * - Only one instance of a specific ability can be used per boss action
+ *
+ * consumesAetherflow property:
+ * - When true, this ability consumes one Aetherflow stack when used
+ * - Only relevant for Scholar abilities that use the Aetherflow resource
+ *
+ * isAetherflowProvider property:
+ * - When true, this ability provides Aetherflow stacks (Aetherflow ability)
+ * - Refreshes all Aetherflow stacks to maximum (3)
  */
 
 export const mitigationAbilities = [
@@ -759,6 +767,106 @@ export const mitigationAbilities = [
     targetsTank: true
   },
   {
+    id: 'aetherflow',
+    name: 'Aetherflow',
+    description: 'Restores 3 Aetherflow stacks',
+    levelRequirement: 45,
+    levelDescriptions: {
+      45: 'Restores 3 Aetherflow stacks'
+    },
+    duration: 0, // Not a buff
+    cooldown: 60,
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/aetherflow.png',
+    type: 'utility',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'self',
+    forTankBusters: false,
+    forRaidWide: false,
+    isAetherflowProvider: true
+  },
+  {
+    id: 'energy_drain',
+    name: 'Energy Drain',
+    description: 'Deals damage and restores MP',
+    levelRequirement: 45,
+    levelDescriptions: {
+      45: 'Deals damage and restores MP'
+    },
+    duration: 0, // Not a buff
+    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/energy_drain.png',
+    type: 'utility',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: false,
+    forRaidWide: false,
+    consumesAetherflow: true
+  },
+  {
+    id: 'lustrate',
+    name: 'Lustrate',
+    description: 'Restores target\'s HP',
+    levelRequirement: 45,
+    levelDescriptions: {
+      45: 'Restores target\'s HP'
+    },
+    duration: 0, // Not a buff
+    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/lustrate.png',
+    type: 'healing',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: false,
+    forRaidWide: false,
+    consumesAetherflow: true
+  },
+  {
+    id: 'indomitability',
+    name: 'Indomitability',
+    description: 'Restores HP of all nearby party members',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Restores HP of all nearby party members'
+    },
+    duration: 0, // Not a buff
+    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/indomitability.png',
+    type: 'healing',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: false,
+    consumesAetherflow: true
+  },
+  {
+    id: 'excogitation',
+    name: 'Excogitation',
+    description: 'Grants healing effect that activates when HP falls below 50% or effect expires',
+    levelRequirement: 62,
+    levelDescriptions: {
+      62: 'Grants healing effect that activates when HP falls below 50% or effect expires'
+    },
+    duration: 45,
+    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/excogitation.png',
+    type: 'healing',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: false,
+    forRaidWide: false,
+    consumesAetherflow: true
+  },
+  {
     id: 'sacred_soil',
     name: 'Sacred Soil',
     description: 'Creates an area that reduces damage taken by 10% and applies regen',
@@ -776,7 +884,8 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'area',
     forTankBusters: true,
-    forRaidWide: true
+    forRaidWide: true,
+    consumesAetherflow: true
   },
   {
     id: 'fey_illumination',
