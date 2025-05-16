@@ -100,43 +100,43 @@ const Header = styled.header`
   }
 
   h1 {
-    font-size: ${props => props.theme.typography.fontSize.xxxlarge};
-    font-weight: ${props => props.theme.typography.fontWeight.bold};
+    font-size: ${props => props.theme.fontSizes.xxxlarge};
+    font-weight: bold;
     color: ${props => props.theme.colors.text};
     margin-bottom: ${props => props.theme.spacing.medium};
-    line-height: ${props => props.theme.typography.lineHeight.tight};
+    line-height: 1.1;
     letter-spacing: -0.02em;
 
     @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-      font-size: ${props => props.theme.typography.fontSize.xxlarge};
+      font-size: ${props => props.theme.fontSizes.xxlarge};
       margin-bottom: ${props => props.theme.spacing.medium};
     }
 
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      font-size: ${props => props.theme.typography.fontSize.xlarge};
+      font-size: ${props => props.theme.fontSizes.xlarge};
       margin-bottom: ${props => props.theme.spacing.small};
     }
 
     @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-      font-size: ${props => props.theme.typography.fontSize.large};
+      font-size: ${props => props.theme.fontSizes.large};
       margin-bottom: ${props => props.theme.spacing.small};
     }
   }
 
   p {
-    font-size: ${props => props.theme.typography.fontSize.medium};
+    font-size: ${props => props.theme.fontSizes.medium};
     color: ${props => props.theme.colors.textSecondary};
     max-width: 800px;
     margin: 0 auto;
-    line-height: ${props => props.theme.typography.lineHeight.normal};
+    line-height: ${props => props.theme.lineHeights ? props.theme.lineHeights.normal : 1.5};
 
     @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-      font-size: ${props => props.theme.typography.fontSize.small};
+      font-size: ${props => props.theme.fontSizes.small};
       max-width: 600px;
     }
 
     @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      font-size: ${props => props.theme.typography.fontSize.small};
+      font-size: ${props => props.theme.fontSizes.small};
       max-width: 100%;
     }
 
@@ -198,8 +198,8 @@ const TimelineContainer = styled.div`
   min-height: 500px;
   display: flex;
   flex-direction: column;
-  transition: background-color ${props => props.theme.transitions.normal},
-              box-shadow ${props => props.theme.transitions.normal};
+  transition: background-color ${props => (props.theme.transitions?.normal || '0.2s')},
+              box-shadow ${props => (props.theme.transitions?.normal || '0.2s')};
 
   /* Improved scrollbar styling */
   &::-webkit-scrollbar {
@@ -257,8 +257,8 @@ const MitigationContainer = styled.div`
   overflow-y: auto;
   height: calc(100vh - 120px);
   min-height: 500px;
-  transition: background-color ${props => props.theme.transitions.normal},
-              box-shadow ${props => props.theme.transitions.normal};
+  transition: background-color ${props => (props.theme.transitions?.normal || '0.2s')},
+              box-shadow ${props => (props.theme.transitions?.normal || '0.2s')};
 
   /* Improved scrollbar styling */
   &::-webkit-scrollbar {
@@ -377,14 +377,14 @@ const DragPreviewContent = styled.div`
 `;
 
 const DragPreviewName = styled.div`
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  font-size: ${props => props.theme.typography.fontSize.small};
+  font-weight: ${props => props.theme.fontWeights?.semibold ?? 600};
+  font-size: ${props => props.theme.fontSizes?.small ?? '1rem'};
   margin-bottom: ${props => props.theme.spacing.xxsmall};
   color: ${props => props.theme.colors.text};
 `;
 
 const DragPreviewDescription = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.xsmall};
+  font-size: ${props => props.theme.fontSizes?.xsmall ?? '0.875rem'};
   color: ${props => props.theme.colors.textSecondary};
   white-space: nowrap;
   overflow: hidden;

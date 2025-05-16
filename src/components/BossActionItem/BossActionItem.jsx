@@ -38,7 +38,7 @@ const BossAction = styled.div`
       default: return props.theme.colors.low;
     }
   }};
-  transition: all ${props => props.theme.transitions.normal};
+  transition: all ${props => (props.theme.transitions?.normal || '0.2s')};
   color: ${props => props.theme.colors.text};
   border: ${props => props.$isSelected
     ? `2px solid ${props.theme.colors.primary}`
@@ -107,8 +107,8 @@ const ActionTime = styled.div`
   left: 0;
   right: 0;
   padding: 8px;
-  font-size: ${props => props.theme.typography.fontSize.medium};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  font-size: ${props => props.theme.fontSizes.medium};
+  font-weight: 600;
   color: ${props => props.theme.colors.text};
   background-color: ${props => props.theme.mode === 'dark'
     ? 'rgba(0, 0, 0, 0.3)'
@@ -123,7 +123,7 @@ const ActionTime = styled.div`
   justify-content: center;
   user-select: none; /* Prevent text selection */
   z-index: 1; /* Ensure it's above other elements */
-  transition: all ${props => props.theme.transitions.fast};
+  transition: all ${props => (props.theme.transitions?.fast || '0.1s')};
 
   &::before {
     content: '⏱️';
@@ -133,7 +133,7 @@ const ActionTime = styled.div`
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes.small};
     padding: 8px;
     height: 30px;
     border-top-left-radius: ${props => props.theme.borderRadius.medium};
@@ -142,7 +142,7 @@ const ActionTime = styled.div`
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes.small};
     padding: 6px;
     height: 26px;
     border-top-left-radius: ${props => props.theme.borderRadius.small};
@@ -151,7 +151,7 @@ const ActionTime = styled.div`
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.typography.fontSize.xsmall};
+    font-size: ${props => props.theme.fontSizes.xsmall};
     padding: 4px;
     height: 24px;
     border-top-left-radius: ${props => props.theme.borderRadius.small};
@@ -202,40 +202,38 @@ const ActionIcon = styled.span`
 
 const ActionName = styled.h3`
   margin: 0;
-  font-size: ${props => props.theme.typography.fontSize.large};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  font-size: ${props => props.theme.fontSizes.large};
+  font-weight: 600;
   flex-grow: 1;
   user-select: none; /* Prevent text selection */
   color: ${props => props.theme.colors.text};
-  line-height: ${props => props.theme.typography.lineHeight.tight};
+  line-height: 1.1;
   letter-spacing: -0.01em;
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.typography.fontSize.medium};
+    font-size: ${props => props.theme.fontSizes.medium};
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.typography.fontSize.medium};
+    font-size: ${props => props.theme.fontSizes.medium};
   }
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes.small};
   }
 `;
 
 const ActionDescription = styled.p`
   margin: 0;
   color: ${props => props.theme.colors.textSecondary};
-  font-size: ${props => props.theme.typography.fontSize.medium};
-  font-weight: ${props => props.theme.mode === 'dark'
-    ? props.theme.typography.fontWeight.medium
-    : props.theme.typography.fontWeight.regular};
+  font-size: ${props => props.theme.fontSizes.medium};
+  font-weight: 400;
   min-height: 40px; /* Ensure all descriptions have at least this height */
   flex-grow: 1; /* Allow description to grow and fill available space */
-  line-height: ${props => props.theme.typography.lineHeight.normal}; /* Improve readability */
+  line-height: 1.5; /* Improve readability */
   padding-left: 2px; /* Slight indent */
   margin-bottom: ${props => props.theme.spacing.medium}; /* Add space before mitigations */
   width: ${props => props.$hasAssignments ? 'calc(100% - 100px)' : '100%'}; /* Ensure description doesn't flow into assignments */
@@ -247,9 +245,9 @@ const ActionDescription = styled.p`
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes.small};
     min-height: 36px;
-    line-height: ${props => props.theme.typography.lineHeight.normal};
+    line-height: 1.5;
     margin-bottom: ${props => props.theme.spacing.medium};
     width: ${props => props.$hasAssignments ? 'calc(100% - 80px)' : '100%'};
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 80px)' : '100%'};
@@ -257,9 +255,9 @@ const ActionDescription = styled.p`
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes.small};
     min-height: 32px;
-    line-height: ${props => props.theme.typography.lineHeight.normal};
+    line-height: 1.5;
     margin-bottom: ${props => props.theme.spacing.small};
     width: ${props => props.$hasAssignments ? 'calc(100% - 40px)' : '100%'};
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 40px)' : '100%'};
@@ -267,9 +265,9 @@ const ActionDescription = styled.p`
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.typography.fontSize.xsmall};
+    font-size: ${props => props.theme.fontSizes.xsmall};
     min-height: 28px;
-    line-height: ${props => props.theme.typography.lineHeight.normal};
+    line-height: 1.5;
     margin-bottom: ${props => props.theme.spacing.small};
     width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
@@ -284,8 +282,8 @@ const MitigationPercentage = styled.div`
     ? 'rgba(77, 171, 255, 0.25)'
     : 'rgba(51, 153, 255, 0.15)'};
   color: ${props => props.theme.colors.text};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  font-size: ${props => props.theme.typography.fontSize.medium};
+  font-weight: ${props => props.theme.fontWeights?.semibold ?? 600};
+  font-size: ${props => props.theme.fontSizes?.medium ?? '1rem'};
   padding: 8px 12px;
   border-radius: ${props => props.theme.borderRadius.small};
   margin-top: 8px;
@@ -306,14 +304,14 @@ const MitigationPercentage = styled.div`
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes?.small ?? '0.875rem'};
     padding: 6px 10px;
     min-height: 34px;
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes?.small ?? '0.875rem'};
     padding: 5px 8px;
     margin-top: 6px;
     margin-bottom: 10px;
@@ -322,7 +320,7 @@ const MitigationPercentage = styled.div`
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.typography.fontSize.xsmall};
+    font-size: ${props => props.theme.fontSizes?.xsmall ?? '0.75rem'};
     padding: 4px 6px;
     margin-top: 4px;
     margin-bottom: 8px;
@@ -338,8 +336,8 @@ const MultiHitIndicator = styled.div`
     ? 'rgba(255, 169, 77, 0.25)'
     : 'rgba(255, 169, 77, 0.15)'};
   color: ${props => props.theme.colors.text};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  font-size: ${props => props.theme.typography.fontSize.medium};
+  font-weight: ${props => props.theme.fontWeights?.semibold ?? 600};
+  font-size: ${props => props.theme.fontSizes?.medium ?? '1rem'};
   padding: 8px 12px;
   border-radius: ${props => props.theme.borderRadius.small};
   margin-top: 8px;
@@ -361,14 +359,14 @@ const MultiHitIndicator = styled.div`
 
   /* Tablet styles */
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes?.small ?? '0.875rem'};
     padding: 6px 10px;
     min-height: 34px;
   }
 
   /* Mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.typography.fontSize.small};
+    font-size: ${props => props.theme.fontSizes?.small ?? '0.875rem'};
     padding: 5px 8px;
     margin-top: 6px;
     margin-right: 8px;
@@ -378,7 +376,7 @@ const MultiHitIndicator = styled.div`
 
   /* Small mobile styles */
   @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.typography.fontSize.xsmall};
+    font-size: ${props => props.theme.fontSizes?.xsmall ?? '0.75rem'};
     padding: 4px 6px;
     margin-top: 4px;
     margin-right: 6px;
