@@ -58,14 +58,14 @@ const BossAction = styled.div`
   @media (hover: hover) and (pointer: fine) {
     &:hover {
       box-shadow: ${props => props.theme.shadows.hover};
-      transform: translateY(-2px);
+      /* Removed transform animation for better performance */
       border-color: ${props => props.theme.colors.primary};
     }
   }
 
   /* Touch feedback */
   &:active {
-    transform: scale(0.98);
+    /* Removed transform scale for better performance */
     box-shadow: ${props => props.theme.shadows.active};
     opacity: 0.95;
   }
@@ -257,7 +257,6 @@ const ActionDescription = styled.p`
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
   }
 `;
-
 const MitigationPercentage = styled.div`
   display: inline-flex;
   align-items: center;
@@ -405,7 +404,7 @@ const BossActionItem = memo(({
     }
     // Default assignment (no modal)
     assignCallback();
-  }, [action.isDualTankBuster, openTankSelectionModal]);
+  }, [action, openTankSelectionModal]);
 
   // Touch event handlers
   const handleTouchStart = useCallback(() => {
@@ -440,7 +439,6 @@ const BossActionItem = memo(({
       const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
       return fullMitigation && isMitigationAvailable(fullMitigation, selectedJobs);
     }).length > 0;
-
   // Calculate total mitigation
   const calculateMitigationInfo = (tankPosition = null) => {
     // Get directly assigned mitigations
@@ -599,7 +597,6 @@ const BossActionItem = memo(({
   // Calculate the mitigated damage for each tank
   const mainTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage);
   const offTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage);
-
   // Calculate barrier amounts for party and tanks
   const partyBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
     if (!mitigation.barrierPotency) return total;
@@ -772,7 +769,6 @@ const BossActionItem = memo(({
           </MitigationPercentage>
         </Tooltip>
       )}
-
       {/* Display health bars if we have unmitigated damage */}
       {unmitigatedDamage > 0 && (
         <>
@@ -780,13 +776,13 @@ const BossActionItem = memo(({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {action.isTankBuster ? (
               <>
-                {/* For dual tank busters, always show both tank health bars if both tanks are selected */}
-                {action.isDualTankBuster && tankPositions.mainTank && tankPositions.offTank ? (
+                {/* For dual tank busters */}
+                {action.isDualTankBuster ? (
                   <>
-                    {/* Main Tank */}
+                    {/* Main Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Main Tank (${tankPositions.mainTank})`}
+                        label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={baseHealth.tank}
                         currentHealth={baseHealth.tank}
                         damageAmount={mainTankMitigatedDamage}
@@ -800,9 +796,9 @@ const BossActionItem = memo(({
                       )}
                     </div>
 
-                    {/* Off Tank */}
+                    {/* Off Tank - show "N/A" if no tank is selected */}
                     <HealthBar
-                      label={`Off Tank (${tankPositions.offTank})`}
+                      label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
                       maxHealth={baseHealth.tank}
                       currentHealth={baseHealth.tank}
                       damageAmount={offTankMitigatedDamage}
@@ -813,57 +809,21 @@ const BossActionItem = memo(({
                     />
                   </>
                 ) : (
-                  <>
-                    {/* For single-target tank busters, only show the Main Tank health bar */}
-                    {!action.isDualTankBuster && tankPositions.mainTank ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <HealthBar
-                          label={`Main Tank (${tankPositions.mainTank})`}
-                          maxHealth={baseHealth.tank}
-                          currentHealth={baseHealth.tank}
-                          damageAmount={mainTankMitigatedDamage}
-                          barrierAmount={mainTankBarrierAmount}
-                          isTankBuster={true}
-                          tankPosition="mainTank"
-                        />
-                        {isSelected && isScholarSelected && (
-                          <AetherflowGauge />
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        {/* For regular tank busters when no main tank is selected but off tank is, show off tank health bar */}
-                        {!action.isDualTankBuster && !tankPositions.mainTank && tankPositions.offTank && (
-                          <HealthBar
-                            label={`Off Tank (${tankPositions.offTank})`}
-                            maxHealth={baseHealth.tank}
-                            currentHealth={baseHealth.tank}
-                            damageAmount={offTankMitigatedDamage}
-                            barrierAmount={offTankBarrierAmount}
-                            isTankBuster={true}
-                            tankPosition="offTank"
-                          />
-                        )}
-
-                        {/* If no tanks are assigned positions, show generic tank health bar */}
-                        {!tankPositions.mainTank && !tankPositions.offTank && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <HealthBar
-                              label="Tank Health"
-                              maxHealth={baseHealth.tank}
-                              currentHealth={baseHealth.tank}
-                              damageAmount={mitigatedDamage}
-                              barrierAmount={tankBarrierAmount}
-                              isTankBuster={true}
-                            />
-                            {isSelected && isScholarSelected && (
-                              <AetherflowGauge />
-                            )}
-                          </div>
-                        )}
-                      </>
+                  /* For single-target tank busters, only show the Main Tank health bar */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <HealthBar
+                      label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                      maxHealth={baseHealth.tank}
+                      currentHealth={baseHealth.tank}
+                      damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
+                      barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
+                      isTankBuster={true}
+                      tankPosition="mainTank"
+                    />
+                    {isSelected && isScholarSelected && (
+                      <AetherflowGauge />
                     )}
-                  </>
+                  </div>
                 )}
               </>
             ) : (

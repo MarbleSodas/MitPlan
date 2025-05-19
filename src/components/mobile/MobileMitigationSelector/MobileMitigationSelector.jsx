@@ -627,8 +627,6 @@ const MobileMitigationSelector = ({
   }, [bossAction, justAssignedMitigation, onRemoveMitigation, removePendingAssignment, assignments]);
 
   // Helper function to handle mitigation assignment
-// DEBUG: Entered handleMitigationAssignment
-console.log('[DEBUG] Entered handleMitigationAssignment', { mitigation, bossAction });
   const handleMitigationAssignment = useCallback((mitigation) => {
     // Check if we're already processing to prevent multiple rapid operations
     if (isProcessingRef.current) return;
@@ -1172,13 +1170,13 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
 
               return (
                 <>
-                  {/* For dual tank busters, show both tank health bars if both tanks are selected */}
+                  {/* Health bars for tank busters and non-tank busters */}
                   {bossAction.isTankBuster ? (
-                    bossAction.isDualTankBuster && tankPositions.mainTank && tankPositions.offTank ? (
+                    bossAction.isDualTankBuster ? (
                       <>
-                        {/* Main Tank */}
+                        {/* Main Tank - show "N/A" if no tank is selected */}
                         <HealthBar
-                          label={`Main Tank (${tankPositions.mainTank})`}
+                          label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
                           maxHealth={baseHealth.tank}
                           currentHealth={baseHealth.tank}
                           damageAmount={mainTankMitigatedDamage}
@@ -1188,9 +1186,9 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
                           isDualTankBuster={true}
                         />
 
-                        {/* Off Tank */}
+                        {/* Off Tank - show "N/A" if no tank is selected */}
                         <HealthBar
-                          label={`Off Tank (${tankPositions.offTank})`}
+                          label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
                           maxHealth={baseHealth.tank}
                           currentHealth={baseHealth.tank}
                           damageAmount={offTankMitigatedDamage}
@@ -1200,37 +1198,16 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
                           isDualTankBuster={true}
                         />
                       </>
-                    ) : !bossAction.isDualTankBuster && tankPositions.mainTank ? (
+                    ) : (
                       // For single-target tank busters, only show the Main Tank health bar
                       <HealthBar
-                        label={`Main Tank (${tankPositions.mainTank})`}
+                        label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={baseHealth.tank}
                         currentHealth={baseHealth.tank}
-                        damageAmount={mainTankMitigatedDamage}
-                        barrierAmount={mainTankBarrierAmount}
+                        damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
+                        barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
                         isTankBuster={true}
                         tankPosition="mainTank"
-                      />
-                    ) : !bossAction.isDualTankBuster && !tankPositions.mainTank && tankPositions.offTank ? (
-                      // For single-target tank busters when only off tank is selected
-                      <HealthBar
-                        label={`Off Tank (${tankPositions.offTank})`}
-                        maxHealth={baseHealth.tank}
-                        currentHealth={baseHealth.tank}
-                        damageAmount={offTankMitigatedDamage}
-                        barrierAmount={offTankBarrierAmount}
-                        isTankBuster={true}
-                        tankPosition="offTank"
-                      />
-                    ) : (
-                      // If no tanks are assigned positions, show generic tank health bar
-                      <HealthBar
-                        label="Tank Health"
-                        maxHealth={baseHealth.tank}
-                        currentHealth={baseHealth.tank}
-                        damageAmount={mitigatedDamage}
-                        barrierAmount={tankBarrierAmount}
-                        isTankBuster={true}
                       />
                     )
                   ) : (
@@ -1497,9 +1474,15 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
                 {isAssigned ? (
                   <MitigationActionButton
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent the parent onClick from firing
-                      // Use our helper function for removal
-                      handleMitigationRemoval(mitigation.id);
+                      // Prevent event bubbling
+                      e.stopPropagation();
+                      e.preventDefault();
+
+                      // Add a small delay to ensure the click is processed
+                      setTimeout(() => {
+                        // Use our helper function for removal
+                        handleMitigationRemoval(mitigation.id);
+                      }, 10);
                     }}
                     aria-label={`Remove ${mitigation.name}`}
                   >
@@ -1546,9 +1529,15 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
                 </AssignedMitigationName>
                 <RemoveButton
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent the parent onClick from firing
-                    // Use our helper function for removal
-                    handleMitigationRemoval(mitigation.id);
+                    // Prevent event bubbling
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    // Add a small delay to ensure the click is processed
+                    setTimeout(() => {
+                      // Use our helper function for removal
+                      handleMitigationRemoval(mitigation.id);
+                    }, 10);
                   }}
                   aria-label={`Remove ${mitigation.name}`}
                 >
