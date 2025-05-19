@@ -10,8 +10,10 @@ import {
   useMitigationContext,
   useFilterContext,
   useChargeCountContext,
-  useTankPositionContext
+  useTankPositionContext,
+  useTankSelectionModalContext
 } from './contexts';
+import { TankSelectionModalProvider } from './contexts/TankSelectionModalContext';
 
 // Import data from centralized data module
 import { mitigationAbilities } from './data';
@@ -452,51 +454,50 @@ function App() {
   }, [handleBossActionClick, isMobile, toggleBossActionSelection]);
 
   return (
-    <>
-      <GlobalStyle />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={memoizedHandleDragEnd}
-      >
-        <AppContainer>
-          <Header>
-            <HeaderTop>
-              <QuizButton />
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <KofiButton />
-                <DiscordButton />
-                <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
-              </div>
-            </HeaderTop>
-            <h1>FFXIV Boss Timeline & Mitigation Planner</h1>
-            <p>Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled.</p>
-          </Header>
+    <TankSelectionModalProvider>
+      <>
+        <GlobalStyle />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={memoizedHandleDragEnd}
+        >
+          <AppContainer>
+            <Header>
+              <HeaderTop>
+                <QuizButton />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <KofiButton />
+                  <DiscordButton />
+                  <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+                </div>
+              </HeaderTop>
+              <h1>FFXIV Boss Timeline & Mitigation Planner</h1>
+              <p>Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled.</p>
+            </Header>
 
-          <BossSelector
-            selectedBossId={currentBossId}
-            onSelectBoss={setCurrentBossId}
-          />
+            <BossSelector
+              selectedBossId={currentBossId}
+              onSelectBoss={setCurrentBossId}
+            />
 
-          <JobSelector
-            key={`job-selector-${JSON.stringify(selectedJobs)}`}
-            onJobsChange={setSelectedJobs}
-            initialJobs={selectedJobs}
-          />
+            <JobSelector
+              key={`job-selector-${JSON.stringify(selectedJobs)}`}
+              onJobsChange={setSelectedJobs}
+              initialJobs={selectedJobs}
+            />
 
-          {/* Only show tank position selector if at least one tank is selected */}
-          {selectedJobs.tank.some(job => job.selected) && (
+            {/* Only show tank position selector if exactly 2 tanks are selected */}
             <TankPositionSelector />
-          )}
 
-          <FilterToggle />
+            <FilterToggle />
 
-          <ImportExport
-            assignments={assignments}
-            bossId={currentBossId}
-            selectedJobs={selectedJobs}
-            onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
+            <ImportExport
+              assignments={assignments}
+              bossId={currentBossId}
+              selectedJobs={selectedJobs}
+              onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
               if (importedAssignments) {
                 importAssignments(importedAssignments);
               }
@@ -696,32 +697,8 @@ function App() {
         </DragOverlay>
       </DndContext>
 
-      {/* Mobile Bottom Sheet for Mitigation Assignment */}
-      {isMobile && (
-        <MobileBottomSheet
-          isOpen={isMobileBottomSheetOpen}
-          onClose={() => {
-            setIsMobileBottomSheetOpen(false);
-            setSelectedActionForMobile(null);
-          }}
-          title={selectedActionForMobile ? `Assign Mitigations: ${selectedActionForMobile.name}` : 'Assign Mitigations'}
-        >
-          {selectedActionForMobile && (
-            <MobileMitigationSelector
-              mitigations={filterAbilitiesByLevel(mitigationAbilities, selectedJobs, currentBossLevel)}
-              bossAction={selectedActionForMobile}
-              assignments={assignments}
-              pendingAssignments={pendingAssignments}
-              onAssignMitigation={handleMobileAssignMitigation}
-              onRemoveMitigation={removeMitigation}
-              checkAbilityCooldown={checkAbilityCooldown}
-              bossLevel={currentBossLevel}
-              selectedJobs={selectedJobs}
-            />
-          )}
-        </MobileBottomSheet>
-      )}
     </>
+  </TankSelectionModalProvider>
   );
 }
 

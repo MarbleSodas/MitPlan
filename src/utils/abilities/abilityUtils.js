@@ -206,6 +206,29 @@ export const getRoleSharedAbilityCount = (ability, selectedJobs) => {
   return count;
 };
 
+/**
+ * Check if a self-targeting ability is usable by a specific tank
+ *
+ * @param {Object} ability - The mitigation ability object
+ * @param {string} tankJobId - The job ID of the tank to check
+ * @param {Object} tankPositions - Object containing tank positions
+ * @returns {boolean} - Whether the ability is usable by the specified tank
+ */
+export const isSelfTargetingAbilityUsableByTank = (ability, tankJobId, tankPositions) => {
+  // If the ability is not self-targeting or not for tank busters, it's not relevant
+  if (!ability || ability.target !== 'self' || !ability.forTankBusters) {
+    return true;
+  }
+
+  // If the ability can be used by the specified tank job, it's usable
+  if (ability.jobs.includes(tankJobId)) {
+    return true;
+  }
+
+  // Otherwise, it's not usable by this tank
+  return false;
+};
+
 // Create an index file for easier imports
 export default {
   filterAbilitiesByLevel,
@@ -214,5 +237,6 @@ export default {
   getAbilityMitigationValueForLevel,
   getAbilityDurationForLevel,
   getAbilityChargeCount,
-  getRoleSharedAbilityCount
+  getRoleSharedAbilityCount,
+  isSelfTargetingAbilityUsableByTank
 };

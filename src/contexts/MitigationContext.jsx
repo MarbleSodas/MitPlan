@@ -686,22 +686,49 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       return activeMitigations;
     }
 
+    // We no longer need to check for dual tank busters since we're properly
+    // filtering by tank position and targeting type for all mitigation abilities
+
     // Filter mitigations based on tank position
     return activeMitigations.filter(mitigation => {
-      // If the mitigation has a tankPosition property, check if it matches
-      if (mitigation.tankPosition) {
-        // Return true if it's for the specified tank or if it's shared
-        return mitigation.tankPosition === tankPosition || mitigation.tankPosition === 'shared';
+      // Get the full mitigation ability data
+      const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+      if (!fullMitigation) return false;
+
+      // For self-targeting abilities (like Rampart), only include if they match this tank position
+      if (fullMitigation.target === 'self') {
+        return mitigation.tankPosition === tankPosition;
+      }
+
+      // For single-target abilities (like Intervention, Heart of Corundum)
+      // Only include if they're specifically targeted at this tank position
+      if (fullMitigation.target === 'single') {
+        return mitigation.tankPosition === tankPosition;
+      }
+
+      // For party-wide abilities (like Reprisal, Divine Veil), include for all tanks
+      if (fullMitigation.target === 'party' || fullMitigation.target === 'area') {
+        return true;
+      }
+
+      // Include mitigations specifically for this tank position
+      if (mitigation.tankPosition === tankPosition) {
+        return true;
+      }
+
+      // Include shared mitigations
+      if (mitigation.tankPosition === 'shared') {
+        return true;
       }
 
       // For mitigations without a tankPosition property:
       // - If it's a tank-specific mitigation (self-target, tank buster only), assume it's for the main tank
-      if (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) {
+      if (!mitigation.tankPosition && fullMitigation.target === 'self' && fullMitigation.forTankBusters && !fullMitigation.forRaidWide) {
         return tankPosition === 'mainTank';
       }
 
-      // Otherwise, it's a shared mitigation that applies to all tanks
-      return true;
+      // For abilities without a specific target, include only if they're shared or for this tank
+      return mitigation.tankPosition === 'shared' || !mitigation.tankPosition;
     });
   }, [assignments, bossActions, bossLevel]);
 

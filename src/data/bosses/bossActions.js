@@ -321,7 +321,7 @@ export const bossActionsMap = {
       icon: '💥'
     },
     {
-      id: 'symmetric_surge_1',
+      id: 'symmetric_surge_2',
       name: 'Symmetric Surge',
       time: 234, // 225 + 9
       description: 'Moderate party-wide magical damage. A two-person stack AoE that inflicts Magic Vulnerability Up. Will deal lethal damage if only one player is in the stack or if two stacks overlap.',
@@ -536,7 +536,8 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️',
-      isTankBuster: true
+      "isTankBuster": true,
+      "isDualTankBuster": true
     },
     {
       id: 'play_combo_1',
@@ -607,7 +608,8 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️',
-      isTankBuster: true
+      "isTankBuster": true,
+      "isDualTankBuster": true
     },
     {
       id: 'get_down!_1',
@@ -668,7 +670,8 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️',
-      isTankBuster: true
+      "isTankBuster": true,
+      "isDualTankBuster": true
     },
     {
       id: 'celebrate_good_times_3',
@@ -779,7 +782,8 @@ export const bossActionsMap = {
       damageType: 'magical',
       importance: 'high',
       icon: '🛡️',
-      isTankBuster: true
+      "isTankBuster": true,
+        "isDualTankBuster": true
     },
     {
       id: 'beats_combo_4',

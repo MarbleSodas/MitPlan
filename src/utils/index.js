@@ -8,7 +8,8 @@ export {
   getAbilityMitigationValueForLevel,
   getAbilityDurationForLevel,
   getAbilityChargeCount,
-  getRoleSharedAbilityCount
+  getRoleSharedAbilityCount,
+  isSelfTargetingAbilityUsableByTank
 } from './abilities/abilityUtils';
 
 export {

@@ -6,8 +6,10 @@ import {
   getAbilityDurationForLevel,
   getAbilityCooldownForLevel,
   getAbilityChargeCount,
-  getRoleSharedAbilityCount
+  getRoleSharedAbilityCount,
+  isSelfTargetingAbilityUsableByTank
 } from '../../utils';
+import { useTankPositionContext } from '../../contexts';
 
 const MitigationItemContainer = styled.div`
   background-color: ${props => props.$disabled ?
@@ -102,6 +104,8 @@ const MitigationItem = memo(({
   checkAbilityCooldown,
   selectedJobs
 }) => {
+  // Get the tank position context
+  const { tankPositions } = useTankPositionContext();
   // Render charge counter for abilities with multiple charges
   const renderChargeCounter = () => {
     if (getAbilityChargeCount(mitigation, currentBossLevel) <= 1) {
@@ -215,8 +219,26 @@ const MitigationItem = memo(({
     );
   };
 
+  // Check if this is a self-targeting ability that's not usable by the current tank
+  const isSelfTargetingAbility = mitigation.target === 'self' && mitigation.forTankBusters;
+
+  // Check if the ability is usable by the main tank or off tank
+  const isUsableByMainTank = !isSelfTargetingAbility || isSelfTargetingAbilityUsableByTank(mitigation, tankPositions.mainTank, tankPositions);
+  const isUsableByOffTank = !isSelfTargetingAbility || isSelfTargetingAbilityUsableByTank(mitigation, tankPositions.offTank, tankPositions);
+
+  // If this is a self-targeting ability and it's not usable by either tank, disable it
+  const isTankSpecificDisabled = isSelfTargetingAbility && !isUsableByMainTank && !isUsableByOffTank;
+
+  // Combine the original disabled state with the tank-specific disabled state
+  const finalDisabled = isDisabled || isTankSpecificDisabled;
+
+  // Create a custom reason for tank-specific abilities
+  const finalReason = isTankSpecificDisabled && !isDisabled ?
+    `This ability can only be used by ${mitigation.jobs.join(', ')}` :
+    cooldownReason;
+
   return (
-    <MitigationItemContainer $disabled={isDisabled}>
+    <MitigationItemContainer $disabled={finalDisabled}>
       <MitigationIcon>
         {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
           <img src={mitigation.icon} alt={mitigation.name} style={{ maxHeight: '24px', maxWidth: '24px' }} /> :
@@ -233,9 +255,9 @@ const MitigationItem = memo(({
           {renderInstanceCounter()}
         </small>
       </MitigationDescription>
-      {isDisabled && cooldownReason && (
+      {finalDisabled && finalReason && (
         <CooldownOverlay className="cooldown-reason">
-          {cooldownReason}
+          {finalReason}
         </CooldownOverlay>
       )}
     </MitigationItemContainer>

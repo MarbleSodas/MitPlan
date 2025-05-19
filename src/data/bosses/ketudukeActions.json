@@ -7,8 +7,7 @@
     "unmitigatedDamage": "~81,436",
     "damageType": "magical",
     "importance": "high",
-    "icon": ""icon": "⭕"",
-    "isTankBuster": false,
+    "icon": "⭕",
     "isTankBuster": false
   },
   {
@@ -19,8 +18,7 @@
     "unmitigatedDamage": "~71,090",
     "damageType": "magical",
     "importance": "high",
-    "icon": ""icon": "🫧"",
-    "isTankBuster": false,
+    "icon": "🫧",
     "isTankBuster": false
   },
   {
@@ -31,7 +29,7 @@
     "unmitigatedDamage": "~42,098",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -42,7 +40,7 @@
     "unmitigatedDamage": "~43,461",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -53,7 +51,7 @@
     "unmitigatedDamage": "~43,341",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -64,7 +62,7 @@
     "unmitigatedDamage": "~42,239",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -75,7 +73,7 @@
     "unmitigatedDamage": "~70,362",
     "damageType": "magical",
     "importance": "high",
-    "icon": ""icon": "🫧"",
+    "icon": "🫧",
     "isTankBuster": false
   },
   {
@@ -86,7 +84,7 @@
     "unmitigatedDamage": "~42,730",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -97,7 +95,7 @@
     "unmitigatedDamage": "~27,199",
     "damageType": "both",
     "importance": "medium",
-    "icon": ""icon": "🌊"",
+    "icon": "🌊",
     "isTankBuster": false
   },
   {
@@ -108,7 +106,7 @@
     "unmitigatedDamage": "~68,233",
     "damageType": "magical",
     "importance": "high",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -119,7 +117,7 @@
     "unmitigatedDamage": "~41,126",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💧"",
+    "icon": "💧",
     "isTankBuster": false
   },
   {
@@ -130,7 +128,7 @@
     "unmitigatedDamage": "~71,767",
     "damageType": "magical",
     "importance": "high",
-    "icon": ""icon": "🫧"",
+    "icon": "🫧",
     "isTankBuster": false
   },
   {
@@ -141,7 +139,7 @@
     "unmitigatedDamage": "~27,279",
     "damageType": "magical",
     "importance": "medium",
-    "icon": ""icon": "💥"",
+    "icon": "💥",
     "isTankBuster": false
   },
   {

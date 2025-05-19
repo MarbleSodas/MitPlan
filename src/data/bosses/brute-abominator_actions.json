@@ -18,7 +18,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "sinister_seeds_1",
@@ -61,7 +62,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "pulp_smash_1",
@@ -296,7 +298,8 @@
     "damageType": "physical",
     "importance": "critical",
     "icon": "🏢",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
 
   {
@@ -308,7 +311,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "brutal_impact_3",
@@ -412,7 +416,8 @@
     "damageType": "physical",
     "importance": "critical",
     "icon": "🏢",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
 
   {
@@ -424,7 +429,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "brutal_impact_5",

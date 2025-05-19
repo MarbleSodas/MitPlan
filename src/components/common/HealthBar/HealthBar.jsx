@@ -9,6 +9,11 @@ const HealthBarContainer = styled.div`
   flex-direction: column;
   width: 100%;
   margin: 8px 0;
+  ${props => props.$isDualTankBuster && props.$tankPosition && `
+    border-left: 3px solid ${props.$tankPosition === 'mainTank' ? props.theme.colors.primary : props.theme.colors.secondary};
+    padding-left: 8px;
+    border-radius: 4px;
+  `}
 `;
 
 // Label for the health bar
@@ -77,6 +82,7 @@ const DamageOverlay = styled.div`
  * @param {number} props.barrierAmount - Amount of barrier to display (optional)
  * @param {boolean} props.isTankBuster - Whether this is a tank buster health bar
  * @param {string} props.tankPosition - Tank position (mainTank, offTank, or null)
+ * @param {boolean} props.isDualTankBuster - Whether this is a dual tank buster health bar
  * @returns {JSX.Element} - Rendered component
  */
 const HealthBar = ({
@@ -86,7 +92,8 @@ const HealthBar = ({
   damageAmount,
   barrierAmount = 0,
   isTankBuster = false,
-  tankPosition = null
+  tankPosition = null,
+  isDualTankBuster = false
 }) => {
   // Calculate percentages for display
   const healthPercentage = Math.max(0, Math.min(100, (currentHealth / maxHealth) * 100));
@@ -110,9 +117,14 @@ const HealthBar = ({
     Remaining Health: ${formatHealth(remainingHealth)} (${formatPercentage(remainingHealth / maxHealth)})
   `;
 
+  // Add dual tank buster indicator to the tooltip content if applicable
+  const enhancedTooltipContent = isDualTankBuster && tankPosition
+    ? `${tooltipContent}\n\nThis is a dual-tank buster that hits both tanks simultaneously.`
+    : tooltipContent;
+
   return (
-    <Tooltip content={tooltipContent}>
-      <HealthBarContainer>
+    <Tooltip content={enhancedTooltipContent}>
+      <HealthBarContainer $isDualTankBuster={isDualTankBuster} $tankPosition={tankPosition}>
         <HealthBarLabel>
           <span>{label}</span>
           <span>{formatHealth(remainingHealth)} / {formatHealth(maxHealth)}</span>

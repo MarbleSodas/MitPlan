@@ -129,10 +129,11 @@ export const mitigationAbilities = [
       98: 0.10  // At level 98, mitigation is 10% with extended duration
     },
     damageType: 'both',
-    target: 'area',
-    forTankBusters: true,
-    forRaidWide: true,
-    isRoleShared: true // Can be provided by multiple tanks
+    target: 'area', // Area effect that affects all enemies in range
+    forTankBusters: true, // Works for tank busters
+    forRaidWide: true, // Works for raid-wide damage
+    isRoleShared: true, // Can be provided by multiple tanks
+    count: 1 // Each tank has 1 charge of Reprisal
   },
   {
     id: 'rampart',
@@ -158,7 +159,10 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'self',
     forTankBusters: true,
-    forRaidWide: false
+    forRaidWide: false,
+    // Each tank has their own Rampart, but it's not a charge-based ability
+    isRoleShared: true, // This allows tracking separate instances per tank
+    count: 1 // Rampart has only 1 charge per tank
   },
 
   // Paladin specific
@@ -177,9 +181,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
-    target: 'self',
+    target: 'self', // Can only be used on self
     forTankBusters: true,
-    forRaidWide: false
+    forRaidWide: false,
+    count: 1 // Has 1 charge
   },
   {
     id: 'passage',
@@ -196,9 +201,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
-    target: 'area',
-    forTankBusters: false,
-    forRaidWide: true
+    target: 'party', // Affects all party members behind the PLD
+    forTankBusters: false, // Not typically used for tank busters
+    forRaidWide: true, // Primarily used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'divine_veil',
@@ -217,9 +223,10 @@ export const mitigationAbilities = [
     mitigationValue: 0, // Shield, not direct mitigation
     barrierPotency: 0.10, // Barrier absorbs 10% of max HP
     damageType: 'both',
-    target: 'party',
-    forTankBusters: false,
-    forRaidWide: true
+    target: 'party', // Affects all party members
+    forTankBusters: false, // Not typically used for tank busters
+    forRaidWide: true, // Primarily used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'holy_sheltron',
@@ -230,15 +237,16 @@ export const mitigationAbilities = [
       82: 'Reduces damage taken by 15% and grants a healing over time effect for 8s'
     },
     duration: 8,
-    cooldown: 5,
+    cooldown: 5, // Uses oath gauge, not a traditional cooldown
     jobs: ['PLD'],
     icon: '/abilities-gamerescape/holy_sheltron.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge (uses oath gauge)
   },
   {
     id: 'intervention',
@@ -250,7 +258,7 @@ export const mitigationAbilities = [
       82: 'Reduces target party member\'s damage taken by 10% for 8s and grants healing over time for 12s'
     },
     duration: 8,
-    cooldown: 10,
+    cooldown: 10, // Uses oath gauge, not a traditional cooldown
     jobs: ['PLD'],
     icon: '/abilities-gamerescape/intervention.png',
     type: 'mitigation',
@@ -260,10 +268,11 @@ export const mitigationAbilities = [
       82: 0.10  // At level 82, mitigation is 10% with healing over time
     },
     damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    target: 'single', // Can be cast on another player
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    targetsTank: true, // Can target other tanks
+    count: 1 // Has 1 charge (uses oath gauge)
   },
   {
     id: 'guardian',
@@ -280,9 +289,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.40,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Primarily used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
 
   // Warrior specific
@@ -301,9 +311,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Primarily used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'shake',
@@ -322,9 +333,10 @@ export const mitigationAbilities = [
     mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
     barrierPotency: 0.15, // 15% max HP barrier
     damageType: 'both',
-    target: 'party',
-    forTankBusters: false,
-    forRaidWide: true
+    target: 'party', // Affects all party members
+    forTankBusters: false, // Not typically used for tank busters
+    forRaidWide: true, // Primarily used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'bloodwhetting',
@@ -341,9 +353,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'nascent_flash',
@@ -360,10 +373,11 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    target: 'single', // Can be cast on another player
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    targetsTank: true, // Can target other tanks
+    count: 1 // Has 1 charge
   },
   {
     id: 'thrill_of_battle',
@@ -380,9 +394,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.20, // Effective mitigation through HP increase
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'damnation',
@@ -399,9 +414,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.40,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Primarily used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
 
   // Dark Knight specific
@@ -420,9 +436,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Primarily used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'dark_missionary',
@@ -438,10 +455,11 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/dark_missionary.png',
     type: 'mitigation',
     mitigationValue: 0.10,
-    damageType: 'magical',
-    target: 'party',
-    forTankBusters: false,
-    forRaidWide: true
+    damageType: 'magical', // Only works on magic damage
+    target: 'party', // Affects all party members
+    forTankBusters: false, // Not typically used for tank busters
+    forRaidWide: true, // Primarily used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'oblation',
@@ -459,10 +477,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    target: 'single', // Can be cast on self or another player
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    targetsTank: true // Can target other tanks
   },
   {
     id: 'the_blackest_night',
@@ -480,10 +498,11 @@ export const mitigationAbilities = [
     mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
     barrierPotency: 0.25, // 25% max HP barrier
     damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    target: 'single', // Can be cast on self or another player
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    targetsTank: true, // Can target other tanks
+    count: 1 // Has 1 charge
   },
   {
     id: 'dark_mind',
@@ -499,10 +518,11 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/dark_mind.png',
     type: 'mitigation',
     mitigationValue: 0.20,
-    damageType: 'magical',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    damageType: 'magical', // Only works on magic damage
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Commonly used for magic tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'shadowed_vigil',
@@ -519,9 +539,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.40,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Primarily used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
 
   // Gunbreaker specific
@@ -540,9 +561,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Primarily used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'heart_of_light',
@@ -558,10 +580,11 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/heart_of_light.png',
     type: 'mitigation',
     mitigationValue: 0.10,
-    damageType: 'magical',
-    target: 'party',
-    forTankBusters: false,
-    forRaidWide: true
+    damageType: 'magical', // Only works on magic damage
+    target: 'party', // Affects all party members
+    forTankBusters: false, // Not typically used for tank busters
+    forRaidWide: true, // Primarily used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'heart_of_corundum',
@@ -578,10 +601,11 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    target: 'single', // Can be cast on self or another player
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    targetsTank: true, // Can target other tanks
+    count: 1 // Has 1 charge
   },
   {
     id: 'heart_of_stone',
@@ -598,10 +622,11 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    target: 'single', // Can be cast on self or another player
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    targetsTank: true, // Can target other tanks
+    count: 1 // Has 1 charge
   },
   {
     id: 'camouflage',
@@ -618,9 +643,10 @@ export const mitigationAbilities = [
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
-    target: 'self',
-    forTankBusters: true,
-    forRaidWide: false
+    target: 'self', // Can only be used on self
+    forTankBusters: true, // Commonly used for tank busters
+    forRaidWide: false, // Not used for raid-wide damage
+    count: 1 // Has 1 charge
   },
   {
     id: 'aurora',

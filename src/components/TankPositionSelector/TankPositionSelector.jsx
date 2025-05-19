@@ -96,6 +96,7 @@ const EmptyState = styled.div`
 
 /**
  * Component for selecting tank positions (MT/OT)
+ * Only visible when exactly 2 tank jobs are selected
  */
 const TankPositionSelector = () => {
   const {
@@ -104,22 +105,15 @@ const TankPositionSelector = () => {
     selectedTankJobs
   } = useTankPositionContext();
 
-  // If no tanks are selected, show a message
-  if (selectedTankJobs.length === 0) {
-    return (
-      <Container>
-        <Title>Tank Positions</Title>
-        <EmptyState>
-          Select at least one tank job to assign tank positions.
-        </EmptyState>
-      </Container>
-    );
+  // If not exactly 2 tanks are selected, don't render the component at all
+  if (selectedTankJobs.length !== 2) {
+    return null;
   }
 
   return (
     <Container>
       <Title>Tank Positions</Title>
-      
+
       <TankPositionsGrid>
         {/* Main Tank Position */}
         <TankPositionCard>
