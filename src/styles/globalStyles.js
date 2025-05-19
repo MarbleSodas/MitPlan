@@ -87,14 +87,7 @@ const GlobalStyles = createGlobalStyle`
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Force hardware acceleration for smoother scrolling */
-    * {
-      -webkit-transform: translateZ(0);
-      -moz-transform: translateZ(0);
-      -ms-transform: translateZ(0);
-      -o-transform: translateZ(0);
-      transform: translateZ(0);
-    }
+    /* Removed hardware acceleration transforms that were causing responsiveness issues */
   }
 
   ::-webkit-scrollbar-thumb:hover {

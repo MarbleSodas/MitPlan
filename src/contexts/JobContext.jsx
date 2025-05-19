@@ -104,16 +104,29 @@ export const JobProvider = ({ children }) => {
   // Toggle job selection
   const toggleJobSelection = (roleKey, jobId) => {
     setSelectedJobs(prev => {
+      // Get the job we're toggling
+      const job = prev[roleKey].find(j => j.id === jobId);
+
+      // If we're selecting a tank, check if we already have 2 tanks selected
+      if (roleKey === 'tank' && !job.selected) {
+        const selectedTankCount = prev.tank.filter(j => j.selected).length;
+
+        // If we already have 2 tanks selected, don't allow selecting another one
+        if (selectedTankCount >= 2) {
+          console.log('%c[JOB CONTEXT] Cannot select more than 2 tanks', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
+          return prev; // Return the previous state unchanged
+        }
+      }
+
       // Create the new state
       const newState = {
         ...prev,
-        [roleKey]: prev[roleKey].map(job =>
-          job.id === jobId ? { ...job, selected: !job.selected } : job
+        [roleKey]: prev[roleKey].map(j =>
+          j.id === jobId ? { ...j, selected: !j.selected } : j
         )
       };
 
       // If we're deselecting a job, check if any mitigations need to be removed
-      const job = prev[roleKey].find(j => j.id === jobId);
       if (job && job.selected) {
         // We're deselecting this job
         checkAndRemoveUnavailableMitigations(newState);
@@ -126,7 +139,18 @@ export const JobProvider = ({ children }) => {
   // Set all jobs in a role
   const setAllJobsInRole = (roleKey, selected) => {
     setSelectedJobs(prev => {
-      // Create the new state
+      // If we're selecting all tanks, limit to the first 2
+      if (roleKey === 'tank' && selected) {
+        // Create a new state with only the first 2 tanks selected
+        const newState = {
+          ...prev,
+          [roleKey]: prev[roleKey].map((job, index) => ({ ...job, selected: index < 2 && selected }))
+        };
+
+        return newState;
+      }
+
+      // For other roles or when deselecting, proceed normally
       const newState = {
         ...prev,
         [roleKey]: prev[roleKey].map(job => ({ ...job, selected }))
@@ -152,6 +176,24 @@ export const JobProvider = ({ children }) => {
 
     console.log('%c[JOB CONTEXT] Imported jobs have selections:', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', hasSelectedJobs);
 
+    // Enforce the 2-tank limit
+    const modifiedImportedJobs = { ...importedJobs };
+
+    // Check if there are more than 2 tanks selected
+    const selectedTanks = importedJobs.tank.filter(job => job.selected);
+    if (selectedTanks.length > 2) {
+      console.log('%c[JOB CONTEXT] Limiting imported tanks to 2', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
+
+      // Keep only the first 2 selected tanks
+      const selectedTankIds = selectedTanks.slice(0, 2).map(job => job.id);
+
+      // Update the tank selection
+      modifiedImportedJobs.tank = importedJobs.tank.map(job => ({
+        ...job,
+        selected: selectedTankIds.includes(job.id)
+      }));
+    }
+
     setSelectedJobs(prev => {
       console.log('%c[JOB CONTEXT] Previous jobs state:', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', prev);
 
@@ -163,7 +205,7 @@ export const JobProvider = ({ children }) => {
         jobs.forEach(job => {
           if (job.selected) {
             // Check if this job is still selected in the imported jobs
-            const importedRole = importedJobs[roleKey];
+            const importedRole = modifiedImportedJobs[roleKey];
             const importedJob = importedRole?.find(j => j.id === job.id);
             if (!importedJob || !importedJob.selected) {
               jobsDeselected = true;
@@ -175,12 +217,12 @@ export const JobProvider = ({ children }) => {
       // If jobs are being deselected, check if any mitigations need to be removed
       if (jobsDeselected) {
         console.log('%c[JOB CONTEXT] Jobs are being deselected, checking mitigations', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
-        checkAndRemoveUnavailableMitigations(importedJobs);
+        checkAndRemoveUnavailableMitigations(modifiedImportedJobs);
       }
 
       // Force update localStorage to ensure it has the latest data
       console.log('%c[JOB CONTEXT] Updating localStorage with imported jobs', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
-      saveToLocalStorage('selectedJobs', importedJobs);
+      saveToLocalStorage('selectedJobs', modifiedImportedJobs);
 
       // Also update the autosave
       const autosavedPlan = loadFromLocalStorage('mitPlanAutosave', {});
@@ -188,7 +230,7 @@ export const JobProvider = ({ children }) => {
       // Create optimized selectedJobs object with only the selected job IDs
       const optimizedSelectedJobs = {};
 
-      Object.entries(importedJobs).forEach(([roleKey, jobs]) => {
+      Object.entries(modifiedImportedJobs).forEach(([roleKey, jobs]) => {
         // Filter to include only selected jobs and store only their IDs
         const selectedJobIds = jobs
           .filter(job => job.selected)
@@ -207,7 +249,7 @@ export const JobProvider = ({ children }) => {
         selectedJobs: optimizedSelectedJobs
       });
 
-      return importedJobs;
+      return modifiedImportedJobs;
     });
   };
 

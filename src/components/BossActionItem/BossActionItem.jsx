@@ -12,8 +12,9 @@ import {
   calculateBarrierAmount,
   isTouchDevice
 } from '../../utils';
+import { isDualTankBusterAction } from '../../utils/boss/bossActionUtils';
 import { mitigationAbilities, bosses } from '../../data';
-import { useAetherflowContext } from '../../contexts';
+import { useAetherflowContext, useTankPositionContext, useTankSelectionModalContext } from '../../contexts';
 
 const BossAction = styled.div`
   background-color: ${props => {
@@ -57,14 +58,14 @@ const BossAction = styled.div`
   @media (hover: hover) and (pointer: fine) {
     &:hover {
       box-shadow: ${props => props.theme.shadows.hover};
-      transform: translateY(-2px);
+      /* Removed transform animation for better performance */
       border-color: ${props => props.theme.colors.primary};
     }
   }
 
   /* Touch feedback */
   &:active {
-    transform: scale(0.98);
+    /* Removed transform scale for better performance */
     box-shadow: ${props => props.theme.shadows.active};
     opacity: 0.95;
   }
@@ -256,7 +257,6 @@ const ActionDescription = styled.p`
     max-width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
   }
 `;
-
 const MitigationPercentage = styled.div`
   display: inline-flex;
   align-items: center;
@@ -370,6 +370,42 @@ const BossActionItem = memo(({
   const [isTouched, setIsTouched] = useState(false);
   const isTouch = isTouchDevice();
 
+  // Tank selection modal context
+  const { openTankSelectionModal } = useTankSelectionModalContext();
+
+  // Handler for assigning mitigation (single-target, dual tank buster)
+  const handleAssignMitigation = useCallback((mitigation, assignCallback) => {
+    // DEBUG: Log all relevant values before modal condition in BossActionItem
+    console.log('[DEBUG] BossActionItem Modal Condition Check', {
+      action,
+      mitigation,
+      isTankBuster: action.isTankBuster,
+      isDualTankBuster: isDualTankBusterAction(action),
+      isDualTankBusterProperty: action.isDualTankBuster,
+      mitigationTarget: mitigation.target
+    });
+
+    if (
+      mitigation.target === 'single' &&
+      isDualTankBusterAction(action)
+    ) {
+      // DEBUG: Log when modal logic is triggered for dual tank buster in BossActionItem
+      console.log('[DEBUG] BossActionItem Dual Tank Buster Modal Trigger:', {
+        action,
+        mitigation,
+        isDualTankBusterAction: isDualTankBusterAction(action),
+        isDualTankBusterProperty: action.isDualTankBuster
+      });
+
+      openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
+        assignCallback(selectedTankPosition);
+      });
+      return;
+    }
+    // Default assignment (no modal)
+    assignCallback();
+  }, [action, openTankSelectionModal]);
+
   // Touch event handlers
   const handleTouchStart = useCallback(() => {
     setIsTouched(true);
@@ -403,19 +439,55 @@ const BossActionItem = memo(({
       const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
       return fullMitigation && isMitigationAvailable(fullMitigation, selectedJobs);
     }).length > 0;
-
   // Calculate total mitigation
-  const calculateMitigationInfo = () => {
+  const calculateMitigationInfo = (tankPosition = null) => {
     // Get directly assigned mitigations
     const directMitigations = assignments[action.id] || [];
 
     // Filter out mitigations that don't have any corresponding selected jobs
-    const filteredDirectMitigations = directMitigations.filter(mitigation =>
+    let filteredDirectMitigations = directMitigations.filter(mitigation =>
       isMitigationAvailable(mitigation, selectedJobs)
     );
 
+    // If a tank position is specified, filter mitigations by tank position and targeting type
+    if (tankPosition) {
+      filteredDirectMitigations = filteredDirectMitigations.filter(mitigation => {
+        // Get the full mitigation ability data
+        const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+        if (!fullMitigation) return false;
+
+        // For self-targeting abilities (like Rampart), only include if they match this tank position
+        if (fullMitigation.target === 'self') {
+          return mitigation.tankPosition === tankPosition;
+        }
+
+        // For single-target abilities (like Intervention, Heart of Corundum)
+        // Only include if they're specifically targeted at this tank position
+        if (fullMitigation.target === 'single') {
+          return mitigation.tankPosition === tankPosition;
+        }
+
+        // For party-wide abilities (like Reprisal, Divine Veil), include for all tanks
+        if (fullMitigation.target === 'party' || fullMitigation.target === 'area') {
+          return true;
+        }
+
+        // Include mitigations specifically for this tank position
+        if (mitigation.tankPosition === tankPosition) {
+          return true;
+        }
+
+        // Include shared mitigations
+        if (mitigation.tankPosition === 'shared') {
+          return true;
+        }
+
+        return false;
+      });
+    }
+
     // Get inherited mitigations from previous actions
-    const inheritedMitigations = getActiveMitigations(action.id, action.time)
+    const inheritedMitigations = getActiveMitigations(action.id, action.time, tankPosition)
       .map(m => {
         // Find the full mitigation data
         return mitigationAbilities.find(full => full.id === m.id);
@@ -425,6 +497,45 @@ const BossActionItem = memo(({
     const filteredInheritedMitigations = inheritedMitigations.filter(mitigation =>
       isMitigationAvailable(mitigation, selectedJobs)
     );
+
+    // If a tank position is specified, filter inherited mitigations by targeting type
+    if (tankPosition) {
+      const filteredByTarget = filteredInheritedMitigations.filter(mitigation => {
+        // For self-targeting abilities (like Rampart), check if they were applied to this tank
+        if (mitigation.target === 'self') {
+          // Find the original assignment to check its tank position
+          const originalAssignment = getActiveMitigations(action.id, action.time, tankPosition)
+            .find(m => m.id === mitigation.id);
+          return originalAssignment && originalAssignment.tankPosition === tankPosition;
+        }
+
+        // For single-target abilities, check if they were cast on this tank
+        if (mitigation.target === 'single') {
+          // Find the original assignment to check its tank position
+          const originalAssignment = getActiveMitigations(action.id, action.time, tankPosition)
+            .find(m => m.id === mitigation.id);
+          return originalAssignment && originalAssignment.tankPosition === tankPosition;
+        }
+
+        // For party-wide abilities, always include
+        if (mitigation.target === 'party' || mitigation.target === 'area') {
+          return true;
+        }
+
+        // For abilities without a specific target, include only if they're shared or for this tank
+        const originalAssignment = getActiveMitigations(action.id, action.time, tankPosition)
+          .find(m => m.id === mitigation.id);
+        return originalAssignment &&
+          (originalAssignment.tankPosition === 'shared' || originalAssignment.tankPosition === tankPosition);
+      });
+
+      // Use the filtered list
+      return {
+        allMitigations: [...filteredDirectMitigations, ...filteredByTarget],
+        barrierMitigations: [...filteredDirectMitigations, ...filteredByTarget].filter(m => m.type === 'barrier'),
+        hasMitigations: filteredDirectMitigations.length > 0 || filteredByTarget.length > 0
+      };
+    }
 
     // Combine both types of mitigations
     const allMitigations = [...filteredDirectMitigations, ...filteredInheritedMitigations];
@@ -439,10 +550,14 @@ const BossActionItem = memo(({
     };
   };
 
+  // Get general mitigation info (for display in the UI)
   const { allMitigations, barrierMitigations, hasMitigations } = calculateMitigationInfo();
 
   // Get Aetherflow context
   const { isScholarSelected } = useAetherflowContext();
+
+  // Get tank position context
+  const { tankPositions } = useTankPositionContext();
 
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
@@ -458,10 +573,31 @@ const BossActionItem = memo(({
   };
 
   const unmitigatedDamage = parseUnmitigatedDamage();
+
+  // Calculate general mitigation percentage (for display in the UI)
   const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
   const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
 
-  // Calculate barrier amounts for party and tank
+  // Calculate tank-specific mitigation percentages
+  // Get the mitigation info for each tank position
+  const mainTankMitigationInfo = action.isTankBuster && tankPositions.mainTank ?
+    calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
+  const offTankMitigationInfo = action.isTankBuster && tankPositions.offTank ?
+    calculateMitigationInfo('offTank') : { allMitigations: [], barrierMitigations: [] };
+
+  // Extract the mitigations for each tank
+  const mainTankMitigations = mainTankMitigationInfo.allMitigations;
+  const offTankMitigations = offTankMitigationInfo.allMitigations;
+
+  // Calculate the mitigation percentages for each tank
+  // Always calculate from the filtered mitigations, never fall back to the general percentage
+  const mainTankMitigationPercentage = calculateTotalMitigation(mainTankMitigations, action.damageType, currentBossLevel);
+  const offTankMitigationPercentage = calculateTotalMitigation(offTankMitigations, action.damageType, currentBossLevel);
+
+  // Calculate the mitigated damage for each tank
+  const mainTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage);
+  const offTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage);
+  // Calculate barrier amounts for party and tanks
   const partyBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
     if (!mitigation.barrierPotency) return total;
 
@@ -473,16 +609,110 @@ const BossActionItem = memo(({
     return total;
   }, 0);
 
+  // Generic tank barrier amount for when no tank positions are assigned
   const tankBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
     if (!mitigation.barrierPotency) return total;
 
-    // Count both tank-specific and party-wide barriers for tank health bar
-    if (mitigation.target === 'party' || mitigation.targetsTank) {
+    // For party-wide barriers, include for all tanks
+    if (mitigation.target === 'party') {
+      return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+    }
+
+    // For self-targeting barriers, only include if they're assigned to a tank
+    if (mitigation.target === 'self' && mitigation.tankPosition) {
+      // Since we don't know which tank this is for in the generic case,
+      // only include if it's marked as shared
+      if (mitigation.tankPosition === 'shared') {
+        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      }
+      return total;
+    }
+
+    // For single-target barriers, only include if they're assigned to a tank
+    if (mitigation.target === 'single' && mitigation.tankPosition) {
+      // Since we don't know which tank this is for in the generic case,
+      // only include if it's marked as shared
+      if (mitigation.tankPosition === 'shared') {
+        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      }
+      return total;
+    }
+
+    // For other barriers that target tanks
+    if (mitigation.targetsTank) {
       return total + calculateBarrierAmount(mitigation, baseHealth.tank);
     }
 
     return total;
   }, 0);
+
+  // Calculate barrier amounts for main tank using the same filtering logic as for mitigations
+  const mainTankBarrierAmount = action.isTankBuster && tankPositions.mainTank ?
+    mainTankMitigationInfo.barrierMitigations.reduce((total, mitigation) => {
+      if (!mitigation.barrierPotency) return total;
+
+      // For self-targeting barriers, only include if they match this tank position
+      if (mitigation.target === 'self') {
+        if (mitigation.tankPosition === 'mainTank') {
+          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        }
+        return total;
+      }
+
+      // For single-target barriers, only include if they're targeted at this tank
+      if (mitigation.target === 'single') {
+        if (mitigation.tankPosition === 'mainTank') {
+          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        }
+        return total;
+      }
+
+      // For party-wide barriers, include for all tanks
+      if (mitigation.target === 'party' || mitigation.target === 'area') {
+        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      }
+
+      // Include barriers specifically for this tank position
+      if (mitigation.tankPosition === 'mainTank' || mitigation.tankPosition === 'shared') {
+        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      }
+
+      return total;
+    }, 0) : tankBarrierAmount;
+
+  // Calculate barrier amounts for off tank using the same filtering logic as for mitigations
+  const offTankBarrierAmount = action.isTankBuster && tankPositions.offTank ?
+    offTankMitigationInfo.barrierMitigations.reduce((total, mitigation) => {
+      if (!mitigation.barrierPotency) return total;
+
+      // For self-targeting barriers, only include if they match this tank position
+      if (mitigation.target === 'self') {
+        if (mitigation.tankPosition === 'offTank') {
+          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        }
+        return total;
+      }
+
+      // For single-target barriers, only include if they're targeted at this tank
+      if (mitigation.target === 'single') {
+        if (mitigation.tankPosition === 'offTank') {
+          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        }
+        return total;
+      }
+
+      // For party-wide barriers, include for all tanks
+      if (mitigation.target === 'party' || mitigation.target === 'area') {
+        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      }
+
+      // Include barriers specifically for this tank position
+      if (mitigation.tankPosition === 'offTank' || mitigation.tankPosition === 'shared') {
+        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      }
+
+      return total;
+    }, 0) : tankBarrierAmount;
 
   return (
     <BossAction
@@ -539,33 +769,77 @@ const BossActionItem = memo(({
           </MitigationPercentage>
         </Tooltip>
       )}
-
       {/* Display health bars if we have unmitigated damage */}
       {unmitigatedDamage > 0 && (
         <>
           {/* Show tank or party health bar, with AetherflowGauge adjacent if selected and Scholar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {action.isTankBuster ? (
-              <HealthBar
-                label="Tank Health"
-                maxHealth={baseHealth.tank}
-                currentHealth={baseHealth.tank}
-                damageAmount={mitigatedDamage}
-                barrierAmount={tankBarrierAmount}
-                isTankBuster={true}
-              />
+              <>
+                {/* For dual tank busters */}
+                {action.isDualTankBuster ? (
+                  <>
+                    {/* Main Tank - show "N/A" if no tank is selected */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <HealthBar
+                        label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                        maxHealth={baseHealth.tank}
+                        currentHealth={baseHealth.tank}
+                        damageAmount={mainTankMitigatedDamage}
+                        barrierAmount={mainTankBarrierAmount}
+                        isTankBuster={true}
+                        tankPosition="mainTank"
+                        isDualTankBuster={true}
+                      />
+                      {isSelected && isScholarSelected && (
+                        <AetherflowGauge />
+                      )}
+                    </div>
+
+                    {/* Off Tank - show "N/A" if no tank is selected */}
+                    <HealthBar
+                      label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
+                      maxHealth={baseHealth.tank}
+                      currentHealth={baseHealth.tank}
+                      damageAmount={offTankMitigatedDamage}
+                      barrierAmount={offTankBarrierAmount}
+                      isTankBuster={true}
+                      tankPosition="offTank"
+                      isDualTankBuster={true}
+                    />
+                  </>
+                ) : (
+                  /* For single-target tank busters, only show the Main Tank health bar */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <HealthBar
+                      label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                      maxHealth={baseHealth.tank}
+                      currentHealth={baseHealth.tank}
+                      damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
+                      barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
+                      isTankBuster={true}
+                      tankPosition="mainTank"
+                    />
+                    {isSelected && isScholarSelected && (
+                      <AetherflowGauge />
+                    )}
+                  </div>
+                )}
+              </>
             ) : (
-              <HealthBar
-                label="Party Health"
-                maxHealth={baseHealth.party}
-                currentHealth={baseHealth.party}
-                damageAmount={mitigatedDamage}
-                barrierAmount={partyBarrierAmount}
-                isTankBuster={false}
-              />
-            )}
-            {isSelected && isScholarSelected && (
-              <AetherflowGauge />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <HealthBar
+                  label="Party Health"
+                  maxHealth={baseHealth.party}
+                  currentHealth={baseHealth.party}
+                  damageAmount={mitigatedDamage}
+                  barrierAmount={partyBarrierAmount}
+                  isTankBuster={false}
+                />
+                {isSelected && isScholarSelected && (
+                  <AetherflowGauge />
+                )}
+              </div>
             )}
           </div>
         </>

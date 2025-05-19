@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
 import { mitigationAbilities } from '../data';
+import { useTankSelectionModalContext } from '../contexts/TankSelectionModalContext';
+import { isDualTankBusterAction } from '../utils/boss/bossActionUtils';
 
 /**
  * Custom hook for handling drag and drop operations in the mitigation planner
- * 
+ *
  * @param {Object} options - Configuration options
  * @param {Function} options.setActiveMitigation - Function to set the active mitigation
  * @param {Function} options.checkAbilityCooldown - Function to check if an ability is on cooldown
@@ -19,8 +21,37 @@ const useDragAndDrop = ({
   addMitigation,
   addPendingAssignment,
   canAssignMitigationToBossAction,
-  setPendingAssignments
+  setPendingAssignments,
+  tankPositions
 }) => {
+  // Get the tank selection modal context
+  const { openTankSelectionModal } = useTankSelectionModalContext();
+
+  // Process mitigation assignment after all checks
+  const processMitigationAssignment = useCallback((selectedBossAction, mitigation, tankPosition = 'shared') => {
+    // Create the pending assignment object
+    const newPendingAssignment = {
+      bossActionId: selectedBossAction.id,
+      mitigationId: mitigation.id,
+      timestamp: Date.now()
+    };
+
+    // Add pending assignment to the ChargeCountContext
+    // This will update the charge/instance counts immediately
+    addPendingAssignment(selectedBossAction.id, mitigation.id);
+
+    // Add to local pending assignments for state management
+    setPendingAssignments(prev => [...prev, newPendingAssignment]);
+
+    // Then add the mitigation to the boss action with the appropriate tank position
+    const result = addMitigation(selectedBossAction.id, mitigation, tankPosition);
+
+    if (result && result.conflicts && result.conflicts.removedCount > 0) {
+      // Log about removed future assignments only if there are conflicts
+      console.log(`Added ${mitigation.name} to ${selectedBossAction.name} for ${tankPosition}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+    }
+  }, [addMitigation, addPendingAssignment, setPendingAssignments]);
+
   // Handle drag start
   const handleDragStart = useCallback((event) => {
     const id = event.active.id;
@@ -73,32 +104,66 @@ const useDragAndDrop = ({
         // Ability is on cooldown, but we no longer show error messages
         console.log(`Cannot assign ${mitigation.name} to ${selectedBossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
       } else {
-        // Create the pending assignment object
-        const newPendingAssignment = {
-          bossActionId: selectedBossAction.id,
-          mitigationId: mitigation.id,
-          timestamp: Date.now()
-        };
+        // Determine tank position for tank-specific mitigations
+        let tankPosition = 'shared';
 
-        // Add pending assignment to the ChargeCountContext
-        // This will update the charge/instance counts immediately
-        addPendingAssignment(selectedBossAction.id, mitigation.id);
+        // If this is a tank buster and either:
+        // 1. A self-targeting ability for tank busters, or
+        // 2. A single-target ability for tank busters that can target tanks
+        // DEBUG: Log all relevant values before modal condition in useDragAndDrop
+        console.log('[DEBUG] useDragAndDrop Modal Condition Check', {
+          selectedBossAction,
+          mitigation,
+          isTankBuster: selectedBossAction.isTankBuster,
+          isDualTankBuster: isDualTankBusterAction(selectedBossAction),
+          isDualTankBusterProperty: selectedBossAction.isDualTankBuster,
+          mitigationTarget: mitigation.target,
+          forTankBusters: mitigation.forTankBusters,
+          forRaidWide: mitigation.forRaidWide,
+          targetsTank: mitigation.targetsTank
+        });
 
-        // Add to local pending assignments for state management
-        setPendingAssignments(prev => [...prev, newPendingAssignment]);
+        if (selectedBossAction.isTankBuster &&
+            ((mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) ||
+             (mitigation.target === 'single' && mitigation.forTankBusters && mitigation.targetsTank))) {
 
-        // Then add the mitigation to the boss action
-        const result = addMitigation(selectedBossAction.id, mitigation);
+          // For dual tank busters, we need to ask which tank to apply the mitigation to
+          // DEBUG: Log when modal logic is triggered for dual tank buster in useDragAndDrop
+          console.log('[DEBUG] useDragAndDrop Dual Tank Buster Modal Trigger:', {
+            selectedBossAction,
+            mitigation,
+            isDualTankBusterAction: isDualTankBusterAction(selectedBossAction),
+            isDualTankBusterProperty: selectedBossAction.isDualTankBuster,
+            tankPositions
+          });
 
-        if (result && result.conflicts && result.conflicts.removedCount > 0) {
-          // Log about removed future assignments only if there are conflicts
-          console.log(`Added ${mitigation.name} to ${selectedBossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+          if (selectedBossAction.isDualTankBuster && tankPositions?.mainTank && tankPositions?.offTank) {
+            // Use the custom modal to select which tank to apply the mitigation to
+            openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
+              processMitigationAssignment(selectedBossAction, mitigation, selectedTankPosition);
+            });
+
+            // Set active mitigation to null and return early
+            // The modal callback will handle the assignment when a tank is selected
+            setActiveMitigation(null);
+            return;
+          }
+          // If only one tank is selected, use that tank's position
+          else if (tankPositions?.mainTank) {
+            tankPosition = 'mainTank';
+          }
+          else if (tankPositions?.offTank) {
+            tankPosition = 'offTank';
+          }
         }
+
+        // Process the mitigation assignment with the determined tank position
+        processMitigationAssignment(selectedBossAction, mitigation, tankPosition);
       }
     }
 
     setActiveMitigation(null);
-  }, [setActiveMitigation, checkAbilityCooldown, addMitigation, addPendingAssignment, canAssignMitigationToBossAction, setPendingAssignments]);
+  }, [setActiveMitigation, checkAbilityCooldown, canAssignMitigationToBossAction, tankPositions, openTankSelectionModal, processMitigationAssignment]);
 
   return {
     handleDragStart,

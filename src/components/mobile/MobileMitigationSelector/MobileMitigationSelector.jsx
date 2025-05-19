@@ -11,10 +11,16 @@ import {
   calculateMitigatedDamage,
   calculateBarrierAmount
 } from '../../../utils';
-import { useFilterContext, useChargeCountContext } from '../../../contexts';
+import {
+  useFilterContext,
+  useChargeCountContext,
+  useTankPositionContext,
+  useTankSelectionModalContext
+} from '../../../contexts';
 import ChargeCounter from '../../../components/ChargeCounter';
 import HealthBar from '../../../components/common/HealthBar';
 import { bosses, mitigationAbilities } from '../../../data';
+import { isDualTankBusterAction } from '../../../utils/boss/bossActionUtils';
 
 // Container for the entire component
 const Container = styled.div`
@@ -484,6 +490,12 @@ const MobileMitigationSelector = ({
     getInstanceCount
   } = useChargeCountContext();
 
+  // Get the tank position context
+  const { tankPositions } = useTankPositionContext();
+
+  // Get the tank selection modal context
+  const { openTankSelectionModal } = useTankSelectionModalContext();
+
   // Add state to track the currently assigned mitigation
   // This is used to force a re-render when a mitigation is assigned
   const [justAssignedMitigation, setJustAssignedMitigation] = useState(null);
@@ -536,7 +548,7 @@ const MobileMitigationSelector = ({
   };
 
   // Helper function to handle mitigation removal
-  const handleMitigationRemoval = useCallback((mitigationId) => {
+  const handleMitigationRemoval = useCallback((mitigationId, tankPosition = null) => {
     // Check if we're already processing to prevent multiple rapid operations
     if (isProcessingRef.current) return;
 
@@ -571,8 +583,15 @@ const MobileMitigationSelector = ({
         )
       );
 
-      // Remove the mitigation
-      onRemoveMitigation(bossAction.id, mitigationId);
+      // Find the mitigation in the current assignments to get its tank position
+      const currentAssignments = assignments[bossAction.id] || [];
+      const assignedMitigation = currentAssignments.find(m => m.id === mitigationId);
+
+      // Use the tank position from the assigned mitigation if available
+      const positionToRemove = tankPosition || (assignedMitigation && assignedMitigation.tankPosition) || null;
+
+      // Remove the mitigation with the appropriate tank position
+      onRemoveMitigation(bossAction.id, mitigationId, positionToRemove);
 
       // Immediately set processing flags to false to allow immediate follow-up actions
       setIsProcessingAssignment(false);
@@ -605,7 +624,7 @@ const MobileMitigationSelector = ({
         setError(null);
       }, 3000);
     }
-  }, [bossAction, justAssignedMitigation, onRemoveMitigation, removePendingAssignment]);
+  }, [bossAction, justAssignedMitigation, onRemoveMitigation, removePendingAssignment, assignments]);
 
   // Helper function to handle mitigation assignment
   const handleMitigationAssignment = useCallback((mitigation) => {
@@ -653,9 +672,69 @@ const MobileMitigationSelector = ({
       // Update local pending assignments state with the new assignment
       setLocalPendingAssignments(prev => [...prev, newPendingAssignment]);
 
-      // Then assign the mitigation to the boss action
+      // Determine tank position for tank-specific mitigations
+      let tankPosition = 'shared';
+
+      // If this is a tank buster and either:
+      // 1. A self-targeting ability for tank busters, or
+      // 2. A single-target ability for tank busters that can target tanks
+// DEBUG: Log all relevant values before modal condition
+console.log('[DEBUG] Modal Condition Check', {
+  bossAction,
+  mitigation,
+  isTankBuster: bossAction.isTankBuster,
+  isDualTankBuster: isDualTankBusterAction(bossAction),
+  isDualTankBusterProperty: bossAction.isDualTankBuster,
+  mitigationTarget: mitigation.target,
+  forTankBusters: mitigation.forTankBusters,
+  forRaidWide: mitigation.forRaidWide,
+  targetsTank: mitigation.targetsTank
+});
+      if (bossAction.isTankBuster &&
+          ((mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) ||
+           (mitigation.target === 'single' && mitigation.forTankBusters && mitigation.targetsTank))) {
+
+        // For dual tank busters, we need to ask which tank to apply the mitigation to
+// DEBUG: Log when modal logic is triggered for dual tank buster
+console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
+  bossAction,
+  mitigation,
+  isDualTankBusterAction: isDualTankBusterAction(bossAction),
+  isDualTankBusterProperty: bossAction.isDualTankBuster
+});
+        if (isDualTankBusterAction(bossAction) && mitigation.target === 'single') {
+          // Always show the tank selection modal for dual tank busters with single-target mitigation
+          openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
+            // Process the mitigation assignment with the selected tank position
+            onAssignMitigation(bossAction.id, mitigation, selectedTankPosition);
+
+            // Reset processing flags
+            setIsProcessingAssignment(false);
+            isProcessingRef.current = false;
+
+            // Dispatch custom event to notify MobileBottomSheet
+            try {
+              window.dispatchEvent(new Event('mitigation-processing-end'));
+            } catch (eventError) {
+              console.error('Error dispatching mitigation-processing-end event:', eventError);
+            }
+          });
+
+          // Return early since the modal callback will handle the assignment
+          return;
+        }
+        // If only one tank is selected, use that tank's position
+        else if (tankPositions.mainTank) {
+          tankPosition = 'mainTank';
+        }
+        else if (tankPositions.offTank) {
+          tankPosition = 'offTank';
+        }
+      }
+
+      // Then assign the mitigation to the boss action with the appropriate tank position
       // This ensures the UI updates immediately before the assignment is processed
-      onAssignMitigation(bossAction.id, mitigation);
+      onAssignMitigation(bossAction.id, mitigation, tankPosition);
 
       // Immediately set processing flags to false to allow immediate follow-up actions
       setIsProcessingAssignment(false);
@@ -702,7 +781,7 @@ const MobileMitigationSelector = ({
         setError(null);
       }, 3000);
     }
-  }, [bossAction, onAssignMitigation, addPendingAssignment, removePendingAssignment]);
+  }, [bossAction, onAssignMitigation, addPendingAssignment, removePendingAssignment, tankPositions]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -947,18 +1026,190 @@ const MobileMitigationSelector = ({
                 return total;
               }, 0);
 
+              // Calculate tank-specific mitigation percentages
+              const mainTankMitigations = bossAction.isTankBuster && tankPositions.mainTank ?
+                allMitigations.filter(m => {
+                  // Get the full mitigation ability data
+                  const fullMitigation = mitigationAbilities.find(ability => ability.id === m.id);
+                  if (!fullMitigation) return false;
+
+                  // For self-targeting abilities (like Rampart), only include if they match this tank position
+                  if (fullMitigation.target === 'self') {
+                    return m.tankPosition === 'mainTank';
+                  }
+
+                  // For single-target abilities (like Intervention), only include if they're targeted at this tank
+                  if (fullMitigation.target === 'single') {
+                    return m.tankPosition === 'mainTank';
+                  }
+
+                  // For party-wide abilities (like Reprisal), include for all tanks
+                  if (fullMitigation.target === 'party' || fullMitigation.target === 'area') {
+                    return true;
+                  }
+
+                  // Include mitigations specifically for this tank position
+                  if (m.tankPosition === 'mainTank') {
+                    return true;
+                  }
+
+                  // Include shared mitigations
+                  if (m.tankPosition === 'shared') {
+                    return true;
+                  }
+
+                  return false;
+                }) : [];
+
+              const offTankMitigations = bossAction.isTankBuster && tankPositions.offTank ?
+                allMitigations.filter(m => {
+                  // Get the full mitigation ability data
+                  const fullMitigation = mitigationAbilities.find(ability => ability.id === m.id);
+                  if (!fullMitigation) return false;
+
+                  // For self-targeting abilities (like Rampart), only include if they match this tank position
+                  if (fullMitigation.target === 'self') {
+                    return m.tankPosition === 'offTank';
+                  }
+
+                  // For single-target abilities (like Intervention), only include if they're targeted at this tank
+                  if (fullMitigation.target === 'single') {
+                    return m.tankPosition === 'offTank';
+                  }
+
+                  // For party-wide abilities (like Reprisal), include for all tanks
+                  if (fullMitigation.target === 'party' || fullMitigation.target === 'area') {
+                    return true;
+                  }
+
+                  // Include mitigations specifically for this tank position
+                  if (m.tankPosition === 'offTank') {
+                    return true;
+                  }
+
+                  // Include shared mitigations
+                  if (m.tankPosition === 'shared') {
+                    return true;
+                  }
+
+                  return false;
+                }) : [];
+
+              // Always calculate from the filtered mitigations, never fall back to the general percentage
+              const mainTankMitigationPercentage = calculateTotalMitigation(mainTankMitigations, bossAction.damageType, bossLevel);
+              const offTankMitigationPercentage = calculateTotalMitigation(offTankMitigations, bossAction.damageType, bossLevel);
+
+              const mainTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage);
+              const offTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage);
+
+              // Calculate barrier amounts for main tank
+              const mainTankBarrierAmount = bossAction.isTankBuster && tankPositions.mainTank ?
+                barrierMitigations.filter(m => {
+                  // Get the full mitigation ability data
+                  const fullMitigation = mitigationAbilities.find(ability => ability.id === m.id);
+                  if (!fullMitigation) return false;
+
+                  // For self-targeting barriers, only include if they match this tank position
+                  if (fullMitigation.target === 'self') {
+                    return m.tankPosition === 'mainTank';
+                  }
+
+                  // For single-target barriers, only include if they're targeted at this tank
+                  if (fullMitigation.target === 'single') {
+                    return m.tankPosition === 'mainTank';
+                  }
+
+                  // For party-wide barriers, include for all tanks
+                  if (fullMitigation.target === 'party' || fullMitigation.target === 'area') {
+                    return true;
+                  }
+
+                  // Include barriers specifically for this tank position
+                  if (m.tankPosition === 'mainTank' || m.tankPosition === 'shared') {
+                    return true;
+                  }
+
+                  return false;
+                }).reduce((total, mitigation) => {
+                  if (!mitigation.barrierPotency) return total;
+                  return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+                }, 0) : tankBarrierAmount;
+
+              // Calculate barrier amounts for off tank
+              const offTankBarrierAmount = bossAction.isTankBuster && tankPositions.offTank ?
+                barrierMitigations.filter(m => {
+                  // Get the full mitigation ability data
+                  const fullMitigation = mitigationAbilities.find(ability => ability.id === m.id);
+                  if (!fullMitigation) return false;
+
+                  // For self-targeting barriers, only include if they match this tank position
+                  if (fullMitigation.target === 'self') {
+                    return m.tankPosition === 'offTank';
+                  }
+
+                  // For single-target barriers, only include if they're targeted at this tank
+                  if (fullMitigation.target === 'single') {
+                    return m.tankPosition === 'offTank';
+                  }
+
+                  // For party-wide barriers, include for all tanks
+                  if (fullMitigation.target === 'party' || fullMitigation.target === 'area') {
+                    return true;
+                  }
+
+                  // Include barriers specifically for this tank position
+                  if (m.tankPosition === 'offTank' || m.tankPosition === 'shared') {
+                    return true;
+                  }
+
+                  return false;
+                }).reduce((total, mitigation) => {
+                  if (!mitigation.barrierPotency) return total;
+                  return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+                }, 0) : tankBarrierAmount;
+
               return (
                 <>
-                  {/* Only show tank health bar for tank busters */}
+                  {/* Health bars for tank busters and non-tank busters */}
                   {bossAction.isTankBuster ? (
-                    <HealthBar
-                      label="Tank Health"
-                      maxHealth={baseHealth.tank}
-                      currentHealth={baseHealth.tank}
-                      damageAmount={mitigatedDamage}
-                      barrierAmount={tankBarrierAmount}
-                      isTankBuster={true}
-                    />
+                    bossAction.isDualTankBuster ? (
+                      <>
+                        {/* Main Tank - show "N/A" if no tank is selected */}
+                        <HealthBar
+                          label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                          maxHealth={baseHealth.tank}
+                          currentHealth={baseHealth.tank}
+                          damageAmount={mainTankMitigatedDamage}
+                          barrierAmount={mainTankBarrierAmount}
+                          isTankBuster={true}
+                          tankPosition="mainTank"
+                          isDualTankBuster={true}
+                        />
+
+                        {/* Off Tank - show "N/A" if no tank is selected */}
+                        <HealthBar
+                          label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
+                          maxHealth={baseHealth.tank}
+                          currentHealth={baseHealth.tank}
+                          damageAmount={offTankMitigatedDamage}
+                          barrierAmount={offTankBarrierAmount}
+                          isTankBuster={true}
+                          tankPosition="offTank"
+                          isDualTankBuster={true}
+                        />
+                      </>
+                    ) : (
+                      // For single-target tank busters, only show the Main Tank health bar
+                      <HealthBar
+                        label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                        maxHealth={baseHealth.tank}
+                        currentHealth={baseHealth.tank}
+                        damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
+                        barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
+                        isTankBuster={true}
+                        tankPosition="mainTank"
+                      />
+                    )
                   ) : (
                     /* Only show party health bar for non-tank busters */
                     <HealthBar
@@ -1223,9 +1474,15 @@ const MobileMitigationSelector = ({
                 {isAssigned ? (
                   <MitigationActionButton
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent the parent onClick from firing
-                      // Use our helper function for removal
-                      handleMitigationRemoval(mitigation.id);
+                      // Prevent event bubbling
+                      e.stopPropagation();
+                      e.preventDefault();
+
+                      // Add a small delay to ensure the click is processed
+                      setTimeout(() => {
+                        // Use our helper function for removal
+                        handleMitigationRemoval(mitigation.id);
+                      }, 10);
                     }}
                     aria-label={`Remove ${mitigation.name}`}
                   >
@@ -1272,9 +1529,15 @@ const MobileMitigationSelector = ({
                 </AssignedMitigationName>
                 <RemoveButton
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent the parent onClick from firing
-                    // Use our helper function for removal
-                    handleMitigationRemoval(mitigation.id);
+                    // Prevent event bubbling
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    // Add a small delay to ensure the click is processed
+                    setTimeout(() => {
+                      // Use our helper function for removal
+                      handleMitigationRemoval(mitigation.id);
+                    }, 10);
                   }}
                   aria-label={`Remove ${mitigation.name}`}
                 >

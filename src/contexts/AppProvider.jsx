@@ -6,6 +6,7 @@ import { MitigationProvider } from './MitigationContext.jsx';
 import { ChargeCountProvider } from './ChargeCountContext.jsx';
 import { FilterProvider } from './FilterContext.jsx';
 import { AetherflowProvider } from './AetherflowContext.jsx';
+import { TankPositionProvider } from './TankPositionContext.jsx';
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
 import MitigationContext from './MitigationContext.jsx';
@@ -37,11 +38,13 @@ const AppProvider = ({ children }) => {
                           selectedJobs={selectedJobs}
                           assignments={assignments}
                         >
-                          <AetherflowProvider>
-                            <FilterProvider>
-                              {children}
-                            </FilterProvider>
-                          </AetherflowProvider>
+                          <TankPositionProvider>
+                            <AetherflowProvider>
+                              <FilterProvider>
+                                {children}
+                              </FilterProvider>
+                            </AetherflowProvider>
+                          </TankPositionProvider>
                         </ChargeCountProvider>
                       )}
                     </MitigationContext.Consumer>

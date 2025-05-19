@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 /**
  * Custom hook for handling mobile interactions in the mitigation planner
- * 
+ *
  * @param {Object} options - Configuration options
  * @param {Function} options.checkAbilityCooldown - Function to check if an ability is on cooldown
  * @param {Function} options.addMitigation - Function to add a mitigation to a boss action
@@ -23,7 +23,7 @@ const useMobileInteraction = ({
   assignments
 }) => {
   // Handle mobile mitigation assignment
-  const handleMobileAssignMitigation = useCallback((bossActionId, mitigation) => {
+  const handleMobileAssignMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
     // Check if the ability would be on cooldown
     const bossAction = sortedBossActions.find(action => action.id === bossActionId);
     if (!bossAction) return;
@@ -62,12 +62,12 @@ const useMobileInteraction = ({
       // Add to local pending assignments for state management
       setPendingAssignments(prev => [...prev, newPendingAssignment]);
 
-      // Then add the mitigation to the boss action
-      const result = addMitigation(bossActionId, mitigation);
+      // Then add the mitigation to the boss action with the specified tank position
+      const result = addMitigation(bossActionId, mitigation, tankPosition);
 
       if (result && result.conflicts && result.conflicts.removedCount > 0) {
         // Log about removed future assignments only if there are conflicts
-        console.log(`Added ${mitigation.name} to ${bossAction.name}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+        console.log(`Added ${mitigation.name} to ${bossAction.name} for ${tankPosition}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
       }
     }
   }, [sortedBossActions, assignments, checkAbilityCooldown, addMitigation, addPendingAssignment, canAssignMitigationToBossAction, setPendingAssignments]);

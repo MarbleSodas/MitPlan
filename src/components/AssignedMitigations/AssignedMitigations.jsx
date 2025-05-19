@@ -1,15 +1,16 @@
 import React, { memo } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
-import { 
-  getAbilityDescriptionForLevel, 
-  getAbilityDurationForLevel, 
-  getAbilityCooldownForLevel, 
+import {
+  getAbilityDescriptionForLevel,
+  getAbilityDurationForLevel,
+  getAbilityCooldownForLevel,
   getAbilityMitigationValueForLevel,
   getAbilityChargeCount,
   isMitigationAvailable
 } from '../../utils';
-import { mitigationAbilities } from '../../data';
+import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
+import { useTankPositionContext } from '../../contexts';
 
 const AssignedMitigationsContainer = styled.div`
   position: absolute;
@@ -63,7 +64,7 @@ const AssignedMitigationItem = styled.div`
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  transition: background-color 0.2s ease;
+  /* Removed transition for better performance */
 
   &:hover {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.1)' : 'rgba(51, 153, 255, 0.05)'};
@@ -115,7 +116,7 @@ const InheritedMitigationItem = styled.div`
   min-width: 0;
   opacity: 0.8;
   font-style: italic;
-  transition: background-color 0.2s ease;
+  /* Removed transition for better performance */
 
   &:hover {
     background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.05)' : 'rgba(51, 153, 255, 0.02)'};
@@ -171,11 +172,14 @@ const RemoveButton = styled.button`
   border: none;
   background-color: rgba(255, 100, 100, 0.18);
   color: inherit;
-  transition: background-color 0.2s ease;
+  /* Removed transition for better performance */
   padding: 0;
   margin-left: 8px;
   line-height: 1;
   flex-shrink: 0;
+  /* Ensure button is above other elements and can receive clicks */
+  position: relative;
+  z-index: 5;
 
   &:hover {
     background-color: rgba(255, 100, 100, 0.28);
@@ -193,6 +197,34 @@ const RemoveButton = styled.button`
   }
 `;
 
+const TankPositionBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 3px;
+  border-radius: 3px;
+  margin-left: 4px;
+  background-color: ${props => {
+    if (props.$position === 'mainTank') {
+      return props.theme.mode === 'dark' ? 'rgba(0, 150, 255, 0.3)' : 'rgba(0, 150, 255, 0.2)';
+    } else if (props.$position === 'offTank') {
+      return props.theme.mode === 'dark' ? 'rgba(100, 200, 255, 0.3)' : 'rgba(100, 200, 255, 0.2)';
+    }
+    return 'transparent';
+  }};
+  color: ${props => props.theme.colors.text};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: 7px;
+    padding: 1px 2px;
+    margin-left: 2px;
+  }
+`;
+
 const AssignedMitigations = memo(({
   action,
   assignments,
@@ -203,6 +235,8 @@ const AssignedMitigations = memo(({
   onRemoveMitigation,
   removePendingAssignment
 }) => {
+  // Get tank position context
+  const { tankPositions } = useTankPositionContext();
   // Get directly assigned mitigations
   const directMitigations = assignments[action.id] || [];
 
@@ -217,7 +251,7 @@ const AssignedMitigations = memo(({
   // Filter out inherited mitigations that don't have any corresponding selected jobs
   const filteredActiveMitigations = activeMitigations.filter(mitigation => {
     // Find the full mitigation data
-    const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+    const fullMitigation = mitigationAbilities.find(a => a.id === mitigation.id);
     if (!fullMitigation) return false;
 
     // Check if any of the jobs that can use this ability are selected
@@ -229,68 +263,85 @@ const AssignedMitigations = memo(({
     return null;
   }
 
+  console.log('[AssignedMitigations] filteredDirectMitigations.length:', filteredDirectMitigations.length);
   return (
     <AssignedMitigationsContainer>
       {/* Render directly assigned mitigations */}
-      {filteredDirectMitigations.map(mitigation => (
-        <Tooltip
-          key={mitigation.id}
-          content={`${mitigation.name}: ${getAbilityDescriptionForLevel(mitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(mitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(mitigation, currentBossLevel)}s${getAbilityChargeCount(mitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(mitigation, currentBossLevel)}` : ''})${mitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(mitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel) * 100}%`}` : ''}`}
-        >
-          <AssignedMitigationItem>
-            <MitigationIcon>
-              {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
-                <img src={mitigation.icon} alt={mitigation.name} style={{
-                  maxHeight: isMobile ? '14px' : '18px',
-                  maxWidth: isMobile ? '14px' : '18px',
-                  display: 'block'
-                }} /> :
-                mitigation.icon
-              }
-            </MitigationIcon>
-            <span
-              style={{
-                flex: '1 1 auto',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: isMobile ? 'nowrap' : 'normal',
-                minWidth: 0
-              }}
-            >
-              {mitigation.name}
-            </span>
-            <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
-              <RemoveButton
-                onClick={(e) => {
-                  e.stopPropagation();
-
-                  // Remove pending assignment
-                  removePendingAssignment(action.id, mitigation.id);
-
-                  // Remove the mitigation
-                  onRemoveMitigation(action.id, mitigation.id);
+      {filteredDirectMitigations.map(mitigation => {
+        // Compute tooltip content directly (no useMemo)
+        const tooltipContent = `${mitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: ${getAbilityDescriptionForLevel(mitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(mitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(mitigation, currentBossLevel)}s${getAbilityChargeCount(mitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(mitigation, currentBossLevel)}` : ''})${mitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(mitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel) * 100}%`}` : ''}`;
+        return (
+          <Tooltip
+            key={mitigation.id}
+            content={tooltipContent}
+          >
+            <AssignedMitigationItem>
+              <MitigationIcon>
+                {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
+                  <img src={mitigation.icon} alt={mitigation.name} style={{
+                    maxHeight: isMobile ? '14px' : '18px',
+                    maxWidth: isMobile ? '14px' : '18px',
+                    display: 'block'
+                  }} /> :
+                  mitigation.icon
+                }
+              </MitigationIcon>
+              <span
+                style={{
+                  flex: '1 1 auto',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: isMobile ? 'nowrap' : 'normal',
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
-                aria-label={`Remove ${mitigation.name}`}
               >
-                ×
-              </RemoveButton>
-            </div>
-          </AssignedMitigationItem>
-        </Tooltip>
-      ))}
+                {mitigation.name}
+                {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
+                  <TankPositionBadge $position={mitigation.tankPosition}>
+                    {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
+                  </TankPositionBadge>
+                )}
+              </span>
+              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
+                <RemoveButton
+                  onClick={(e) => {
+                    // Prevent event bubbling
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    // Add a small delay to ensure the click is processed
+                    setTimeout(() => {
+                      // Remove pending assignment
+                      removePendingAssignment(action.id, mitigation.id);
+
+                      // Remove the mitigation with its tank position
+                      onRemoveMitigation(action.id, mitigation.id, mitigation.tankPosition);
+                    }, 10);
+                  }}
+                  aria-label={`Remove ${mitigation.name}`}
+                >
+                  ×
+                </RemoveButton>
+              </div>
+            </AssignedMitigationItem>
+          </Tooltip>
+        );
+      })}
 
       {/* Render inherited mitigations from previous boss actions */}
       {filteredActiveMitigations.length > 0 && (
         <InheritedMitigationsContainer>
           {filteredActiveMitigations.map(mitigation => {
             // Find the full mitigation data
-            const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+            const fullMitigation = mitigationAbilities.find(a => a.id === mitigation.id);
             if (!fullMitigation) return null;
 
             return (
               <Tooltip
                 key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
-                content={`${fullMitigation.name}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s\n${fullMitigation.mitigationValue ? `Mitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
+                content={`${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s\n${fullMitigation.mitigationValue ? `Mitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
               >
                 <InheritedMitigationItem>
                   <MitigationIcon>
@@ -308,8 +359,17 @@ const AssignedMitigations = memo(({
                     flex: 1,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: isMobile ? 'nowrap' : 'normal'
-                  }}>{fullMitigation.name}</span>
+                    whiteSpace: isMobile ? 'nowrap' : 'normal',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    {fullMitigation.name}
+                    {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
+                      <TankPositionBadge $position={mitigation.tankPosition}>
+                        {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
+                      </TankPositionBadge>
+                    )}
+                  </span>
                   <small style={{
                     fontSize: isMobile ? '8px' : '9px',
                     opacity: isMobile ? 0.9 : 0.8,

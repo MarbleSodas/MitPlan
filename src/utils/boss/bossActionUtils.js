@@ -75,3 +75,16 @@ export const processMultiHitTankBusters = (bossActions, timeThreshold = 10) => {
 export default {
   processMultiHitTankBusters
 };
+
+/**
+ * Returns true if the action is a dual tank buster mechanic, based on the isDualTankBuster property.
+ */
+export function isDualTankBusterAction(action) {
+  // DEBUG: Log the action and its isDualTankBuster property
+  console.log('[DEBUG] isDualTankBusterAction check:', {
+    action,
+    isDualTankBusterProperty: action.isDualTankBuster,
+    result: !!action.isDualTankBuster
+  });
+  return !!action.isDualTankBuster;
+}

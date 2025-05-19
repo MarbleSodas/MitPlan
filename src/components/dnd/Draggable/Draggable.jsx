@@ -10,7 +10,8 @@ const DraggableItem = styled.div`
     // When dragging, make the original item invisible
     return props.$isDragging ? 0 : 1;
   }};
-  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  /* Reduced transition duration and removed transform transition for better performance */
+  transition: opacity 0.1s ease, box-shadow 0.1s ease;
   /* Only disable touch actions when actively dragging to allow scrolling otherwise */
   touch-action: ${props => props.$isDragging ? 'none' : 'auto'};
   position: relative;
@@ -53,7 +54,8 @@ const CooldownOverlay = styled.div`
   z-index: 2;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  /* Reduced transition duration for better performance */
+  transition: opacity 0.1s ease;
 
   ${DraggableItem}:hover & {
     opacity: 1;

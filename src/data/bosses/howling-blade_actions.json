@@ -108,7 +108,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "terrestrial_titans_1",
@@ -150,7 +151,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "ravenous_saber_1",
@@ -232,7 +234,8 @@
     "damageType": "physical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "beckon_moonlight_1",
@@ -304,7 +307,8 @@
     "damageType": "magical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
   {
     "id": "heros_blow_1",
@@ -366,7 +370,8 @@
     "damageType": "magical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
 
   {
@@ -419,7 +424,8 @@
     "damageType": "magical",
     "importance": "high",
     "icon": "🛡️",
-    "isTankBuster": true
+    "isTankBuster": true,
+    "isDualTankBuster": true
   },
 
   {
