@@ -10,7 +10,9 @@ import {
   useFilterContext,
   useChargeCountContext,
   useTankPositionContext,
-  useTankSelectionModalContext
+  useTankSelectionModalContext,
+  useAuth,
+  usePlan
 } from './contexts';
 import { TankSelectionModalProvider } from './contexts/TankSelectionModalContext';
 
@@ -35,24 +37,28 @@ import BossActionItem from './components/BossActionItem';
 import AssignedMitigations from './components/AssignedMitigations';
 import MitigationItem from './components/MitigationItem';
 import TankPositionSelector from './components/TankPositionSelector';
+import { AuthButton, UserProfile } from './features/auth';
+import PlanList from './features/plans/PlanList';
+import CreatePlanModal from './features/plans/CreatePlanModal';
+import PlanSharing from './features/plans/PlanSharing';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
-import { 
-  GlobalStyle, 
-  TimelineContainer, 
-  MitigationContainer, 
-  MainContent, 
-  BossActionsList, 
-  MitigationList 
+import {
+  GlobalStyle,
+  TimelineContainer,
+  MitigationContainer,
+  MainContent,
+  BossActionsList,
+  MitigationList
 } from './components/styled';
 
 // Import hooks
-import { 
-  useDragAndDrop, 
-  useMobileInteraction, 
-  useUrlHandler, 
-  useDeviceDetection 
+import {
+  useDragAndDrop,
+  useMobileInteraction,
+  useUrlHandler,
+  useDeviceDetection
 } from './hooks';
 
 // Import utility functions
@@ -101,12 +107,17 @@ function App() {
     tankPositions,
     selectedTankJobs
   } = useTankPositionContext();
+  const { user, isAuthenticated } = useAuth();
+  const { currentPlan } = usePlan();
 
   // Local state
   const [pendingAssignments, setPendingAssignments] = useState([]);
   const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false);
   const [selectedActionForMobile, setSelectedActionForMobile] = useState(null);
-  
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+  const [showPlanList, setShowPlanList] = useState(false);
+
   // Use custom hook for device detection
   const isMobile = useDeviceDetection();
 
@@ -139,14 +150,31 @@ function App() {
     currentBossId
   });
 
+  // Handle profile button click
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
+  };
+
+  // Handle create plan button click
+  const handleCreatePlanClick = () => {
+    setShowCreatePlanModal(true);
+  };
+
+  // Handle plan selection
+  const handleSelectPlan = (planId) => {
+    // TODO: Implement plan selection
+    console.log('Selected plan:', planId);
+    setShowPlanList(false);
+  };
+
   // Effect to clean up pending assignments - optimized with dependency on length
   useEffect(() => {
     if (pendingAssignments.length === 0) return;
-    
+
     const timeoutId = setTimeout(() => {
       setPendingAssignments([]);
     }, 1000);
-    
+
     return () => clearTimeout(timeoutId);
   }, [pendingAssignments.length]);
 
@@ -188,9 +216,9 @@ function App() {
   // Memoize filtered abilities to prevent unnecessary recalculations
   const filteredAbilities = useMemo(() => {
     return filterAbilitiesByLevel(mitigationAbilities, selectedJobs, currentBossLevel)
-      .filter(mitigation => 
-        showAllMitigations || 
-        !selectedBossAction || 
+      .filter(mitigation =>
+        showAllMitigations ||
+        !selectedBossAction ||
         filterMitigations([mitigation], selectedBossAction).length > 0
       );
   }, [mitigationAbilities, selectedJobs, currentBossLevel, showAllMitigations, selectedBossAction, filterMitigations]);
@@ -229,15 +257,15 @@ function App() {
       ))}
     </BossActionsList>
   ), [
-    sortedBossActions, 
-    selectedBossAction, 
-    assignments, 
-    getActiveMitigations, 
-    selectedJobs, 
-    currentBossLevel, 
-    memoizedHandleBossActionClick, 
-    isMobile, 
-    removeMitigation, 
+    sortedBossActions,
+    selectedBossAction,
+    assignments,
+    getActiveMitigations,
+    selectedJobs,
+    currentBossLevel,
+    memoizedHandleBossActionClick,
+    isMobile,
+    removeMitigation,
     removePendingAssignment
   ]);
 
@@ -388,68 +416,111 @@ function App() {
             description="Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled."
             topLeftContent={<QuizButton />}
             topRightContent={
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <KofiButton />
                 <DiscordButton />
                 <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+                <AuthButton onProfileClick={handleProfileClick} />
               </div>
             }
           />
 
-          <BossSelector
-            selectedBossId={currentBossId}
-            onSelectBoss={setCurrentBossId}
-          />
+          {showPlanList ? (
+            <PlanList
+              onCreatePlan={handleCreatePlanClick}
+              onSelectPlan={handleSelectPlan}
+            />
+          ) : (
+            <>
+              <BossSelector
+                selectedBossId={currentBossId}
+                onSelectBoss={setCurrentBossId}
+              />
 
-          <JobSelector
-            key={`job-selector-${JSON.stringify(selectedJobs)}`}
-            onJobsChange={setSelectedJobs}
-            initialJobs={selectedJobs}
-          />
+              <JobSelector
+                key={`job-selector-${JSON.stringify(selectedJobs)}`}
+                onJobsChange={setSelectedJobs}
+                initialJobs={selectedJobs}
+              />
 
-          {/* Only show tank position selector if exactly 2 tanks are selected */}
-          <TankPositionSelector />
+              {/* Only show tank position selector if exactly 2 tanks are selected */}
+              <TankPositionSelector />
 
-          <FilterToggle />
+              <FilterToggle />
 
-          <ImportExport
-            assignments={assignments}
-            bossId={currentBossId}
-            selectedJobs={selectedJobs}
-            onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
-              if (importedAssignments) {
-                importAssignments(importedAssignments);
-              }
-              if (importedBossId && importedBossId !== currentBossId) {
-                setCurrentBossId(importedBossId);
-              }
-              if (importedSelectedJobs) {
-                setSelectedJobs(importedSelectedJobs);
-              }
-            }}
-          />
+              <ImportExport
+                assignments={assignments}
+                bossId={currentBossId}
+                selectedJobs={selectedJobs}
+                onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
+                  if (importedAssignments) {
+                    importAssignments(importedAssignments);
+                  }
+                  if (importedBossId && importedBossId !== currentBossId) {
+                    setCurrentBossId(importedBossId);
+                  }
+                  if (importedSelectedJobs) {
+                    setSelectedJobs(importedSelectedJobs);
+                  }
+                }}
+              />
 
-          <MainContent>
-            <TimelineContainer>
-              {bossActionsList}
-            </TimelineContainer>
+              {isAuthenticated && currentPlan && (
+                <PlanSharing
+                  plan={currentPlan}
+                  isOwner={currentPlan.userId === user?.id}
+                />
+              )}
 
-            <MitigationContainer>
-              {mitigationsList}
-            </MitigationContainer>
-          </MainContent>
+              <MainContent>
+                <TimelineContainer>
+                  {bossActionsList}
+                </TimelineContainer>
+
+                <MitigationContainer>
+                  {mitigationsList}
+                </MitigationContainer>
+              </MainContent>
+            </>
+          )}
         </AppLayout>
 
         {/* Custom drag overlay for better visual feedback */}
         <DragOverlay>
           {activeMitigation && (
-            <DragPreview 
-              item={activeMitigation} 
-              currentBossLevel={currentBossLevel} 
+            <DragPreview
+              item={activeMitigation}
+              currentBossLevel={currentBossLevel}
             />
           )}
         </DragOverlay>
       </DndContext>
+
+      {/* Modals */}
+      {showProfileModal && (
+        <div className="modal-overlay" onClick={() => setShowProfileModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setShowProfileModal(false)}
+            >
+              &times;
+            </button>
+            <UserProfile />
+          </div>
+        </div>
+      )}
+
+      {showCreatePlanModal && (
+        <CreatePlanModal
+          isOpen={showCreatePlanModal}
+          onClose={() => setShowCreatePlanModal(false)}
+          onSuccess={(plan) => {
+            // TODO: Handle plan creation success
+            console.log('Plan created:', plan);
+          }}
+        />
+      )}
     </>
   );
 }

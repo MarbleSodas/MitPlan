@@ -7,6 +7,8 @@ import { ChargeCountProvider } from './ChargeCountContext.jsx';
 import { FilterProvider } from './FilterContext.jsx';
 import { AetherflowProvider } from './AetherflowContext.jsx';
 import { TankPositionProvider } from './TankPositionContext.jsx';
+import { AuthProvider } from './AuthContext.jsx';
+import { PlanProvider } from './PlanContext.jsx';
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
 import MitigationContext from './MitigationContext.jsx';
@@ -18,43 +20,47 @@ import MitigationContext from './MitigationContext.jsx';
 const AppProvider = ({ children }) => {
   return (
     <ThemeProvider>
-      <BossProvider>
-        <JobProvider>
-          {/* MitigationProvider needs access to boss actions, level, and selected jobs */}
-          <BossContext.Consumer>
-            {({ currentBossActions, currentBossLevel }) => (
-              <JobContext.Consumer>
-                {({ selectedJobs }) => (
-                  <MitigationProvider
-                    bossActions={currentBossActions}
-                    bossLevel={currentBossLevel}
-                    selectedJobs={selectedJobs}
-                  >
-                    <MitigationContext.Consumer>
-                      {({ assignments }) => (
-                        <ChargeCountProvider
-                          bossActions={currentBossActions}
-                          bossLevel={currentBossLevel}
-                          selectedJobs={selectedJobs}
-                          assignments={assignments}
-                        >
-                          <TankPositionProvider>
-                            <AetherflowProvider>
-                              <FilterProvider>
-                                {children}
-                              </FilterProvider>
-                            </AetherflowProvider>
-                          </TankPositionProvider>
-                        </ChargeCountProvider>
-                      )}
-                    </MitigationContext.Consumer>
-                  </MitigationProvider>
+      <AuthProvider>
+        <PlanProvider>
+          <BossProvider>
+            <JobProvider>
+              {/* MitigationProvider needs access to boss actions, level, and selected jobs */}
+              <BossContext.Consumer>
+                {({ currentBossActions, currentBossLevel }) => (
+                  <JobContext.Consumer>
+                    {({ selectedJobs }) => (
+                      <MitigationProvider
+                        bossActions={currentBossActions}
+                        bossLevel={currentBossLevel}
+                        selectedJobs={selectedJobs}
+                      >
+                        <MitigationContext.Consumer>
+                          {({ assignments }) => (
+                            <ChargeCountProvider
+                              bossActions={currentBossActions}
+                              bossLevel={currentBossLevel}
+                              selectedJobs={selectedJobs}
+                              assignments={assignments}
+                            >
+                              <TankPositionProvider>
+                                <AetherflowProvider>
+                                  <FilterProvider>
+                                    {children}
+                                  </FilterProvider>
+                                </AetherflowProvider>
+                              </TankPositionProvider>
+                            </ChargeCountProvider>
+                          )}
+                        </MitigationContext.Consumer>
+                      </MitigationProvider>
+                    )}
+                  </JobContext.Consumer>
                 )}
-              </JobContext.Consumer>
-            )}
-          </BossContext.Consumer>
-        </JobProvider>
-      </BossProvider>
+              </BossContext.Consumer>
+            </JobProvider>
+          </BossProvider>
+        </PlanProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };

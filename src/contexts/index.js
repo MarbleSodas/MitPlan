@@ -11,3 +11,5 @@ export { default as AetherflowContext, AetherflowProvider, useAetherflowContext 
 export { default as TankPositionContext, TankPositionProvider, useTankPositionContext } from './TankPositionContext.jsx';
 export { default as AppProvider } from './AppProvider.jsx';
 export { TankSelectionModalProvider, useTankSelectionModalContext } from './TankSelectionModalContext.jsx';
+export { useAuth } from './AuthContext.jsx';
+export { usePlan } from './PlanContext.jsx';
