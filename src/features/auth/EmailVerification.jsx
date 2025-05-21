@@ -4,75 +4,132 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const Container = styled.div`
   max-width: 400px;
+  width: 100%;
   margin: 0 auto;
-  padding: 20px;
-  background-color: ${props => props.theme.cardBackground};
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: ${props => props.theme.spacing.large};
+  background-color: ${props => props.theme.colors.cardBackground};
+  border-radius: ${props => props.theme.borderRadius.large};
+  box-shadow: ${props => props.theme.shadows.medium};
   text-align: center;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.medium};
+    max-width: 100%;
+  }
 `;
 
 const Title = styled.h2`
-  margin-bottom: 20px;
-  color: ${props => props.theme.textPrimary};
+  margin-bottom: ${props => props.theme.spacing.large};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.fontSizes.xlarge};
+  font-weight: 600;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: ${props => props.theme.fontSizes.large};
+    margin-bottom: ${props => props.theme.spacing.medium};
+  }
 `;
 
 const Message = styled.p`
-  margin-bottom: 20px;
-  color: ${props => props.theme.textPrimary};
+  margin-bottom: ${props => props.theme.spacing.medium};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.fontSizes.medium};
+  line-height: 1.5;
 `;
 
 const ErrorMessage = styled.div`
-  color: ${props => props.theme.error};
-  font-size: 14px;
-  margin-top: 10px;
-  padding: 10px;
-  background-color: ${props => props.theme.errorBackground};
-  border-radius: 4px;
+  color: ${props => props.theme.colors.error};
+  font-size: ${props => props.theme.fontSizes.small};
+  margin-top: ${props => props.theme.spacing.small};
+  padding: ${props => props.theme.spacing.small};
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 102, 0.1)' : 'rgba(255, 0, 0, 0.05)'};
+  border-radius: ${props => props.theme.borderRadius.small};
+  border-left: 3px solid ${props => props.theme.colors.error};
+  text-align: left;
 `;
 
 const SuccessMessage = styled.div`
-  color: ${props => props.theme.success};
-  font-size: 14px;
-  margin-top: 10px;
-  padding: 10px;
-  background-color: ${props => props.theme.successBackground};
-  border-radius: 4px;
+  color: ${props => props.theme.colors.success};
+  font-size: ${props => props.theme.fontSizes.medium};
+  margin-top: ${props => props.theme.spacing.medium};
+  padding: ${props => props.theme.spacing.medium};
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(102, 187, 102, 0.1)' : 'rgba(40, 167, 69, 0.05)'};
+  border-radius: ${props => props.theme.borderRadius.medium};
+  border-left: 3px solid ${props => props.theme.colors.success};
+  text-align: center;
 `;
 
 const Button = styled.button`
-  padding: 10px 20px;
-  background-color: ${props => props.theme.primary};
+  padding: ${props => props.theme.spacing.medium};
+  background-color: ${props => props.theme.colors.primary};
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: ${props => props.theme.borderRadius.medium};
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  
+  font-weight: 600;
+  font-size: ${props => props.theme.fontSizes.medium};
+  transition: background-color 0.2s ease, transform 0.1s ease;
+
   &:hover {
-    background-color: ${props => props.theme.primaryHover};
+    background-color: ${props => props.theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: ${props => props.theme.shadows.medium};
   }
-  
+
+  &:active {
+    transform: translateY(0);
+  }
+
   &:disabled {
-    background-color: ${props => props.theme.disabled};
+    background-color: ${props => props.theme.mode === 'dark' ? '#444444' : '#cccccc'};
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
 const LinkText = styled.p`
-  margin-top: 15px;
-  font-size: 14px;
-  color: ${props => props.theme.textSecondary};
+  text-align: center;
+  margin-top: ${props => props.theme.spacing.medium};
+  font-size: ${props => props.theme.fontSizes.medium};
+  color: ${props => props.theme.colors.lightText};
 `;
 
 const Link = styled.a`
-  color: ${props => props.theme.primary};
+  color: ${props => props.theme.colors.primary};
   text-decoration: none;
   cursor: pointer;
-  
+  font-weight: 500;
+  transition: color 0.2s ease;
+
   &:hover {
+    color: ${props => props.theme.mode === 'dark' ? '#5aafff' : '#2980b9'};
     text-decoration: underline;
+  }
+`;
+
+const Input = styled.input`
+  padding: ${props => props.theme.spacing.medium};
+  width: 100%;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.medium};
+  background-color: ${props => props.theme.mode === 'dark' ? '#2a2a2a' : props.theme.colors.cardBackground};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.fontSizes.medium};
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+  margin-bottom: ${props => props.theme.spacing.medium};
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: ${props => props.theme.shadows.focus};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.lightText};
+    opacity: 0.7;
   }
 `;
 
@@ -83,7 +140,7 @@ const EmailVerification = ({ token, onLoginClick }) => {
   const [success, setSuccess] = useState(false);
   const [verificationError, setVerificationError] = useState('');
   const [email, setEmail] = useState('');
-  
+
   // Verify email token if provided
   useEffect(() => {
     if (token) {
@@ -91,10 +148,10 @@ const EmailVerification = ({ token, onLoginClick }) => {
         try {
           setVerifying(true);
           setVerificationError('');
-          
+
           // Verify email
           await verifyEmail(token);
-          
+
           // Show success message
           setSuccess(true);
         } catch (error) {
@@ -103,29 +160,29 @@ const EmailVerification = ({ token, onLoginClick }) => {
           setVerifying(false);
         }
       };
-      
+
       verifyToken();
     }
   }, [token, verifyEmail]);
-  
+
   const handleResendVerification = async (e) => {
     e.preventDefault();
-    
+
     if (!email) {
       setVerificationError('Please enter your email');
       return;
     }
-    
+
     try {
       setLoading(true);
       setVerificationError('');
-      
+
       // Resend verification email
       await resendVerificationEmail(email);
-      
+
       // Show success message
       setSuccess(true);
-      
+
       // Clear form
       setEmail('');
     } catch (error) {
@@ -134,13 +191,13 @@ const EmailVerification = ({ token, onLoginClick }) => {
       setLoading(false);
     }
   };
-  
+
   if (token) {
     // Token verification view
     return (
       <Container>
         <Title>Email Verification</Title>
-        
+
         {verifying ? (
           <Message>Verifying your email...</Message>
         ) : success ? (
@@ -148,7 +205,7 @@ const EmailVerification = ({ token, onLoginClick }) => {
             <SuccessMessage>
               Your email has been verified successfully! You can now login to your account.
             </SuccessMessage>
-            
+
             <LinkText>
               <Link onClick={onLoginClick}>Back to Login</Link>
             </LinkText>
@@ -158,34 +215,27 @@ const EmailVerification = ({ token, onLoginClick }) => {
             <ErrorMessage>
               {verificationError || 'Invalid or expired verification token'}
             </ErrorMessage>
-            
+
             <Message>
               If your verification link has expired, you can request a new one below.
             </Message>
-            
+
             <form onSubmit={handleResendVerification}>
-              <div style={{ marginBottom: '15px' }}>
-                <input
+              <div>
+                <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  style={{
-                    padding: '10px',
-                    width: '100%',
-                    borderRadius: '4px',
-                    border: '1px solid #ccc',
-                    boxSizing: 'border-box'
-                  }}
                 />
               </div>
-              
+
               <Button type="submit" disabled={loading}>
                 {loading ? 'Sending...' : 'Resend Verification Email'}
               </Button>
             </form>
-            
+
             <LinkText>
               <Link onClick={onLoginClick}>Back to Login</Link>
             </LinkText>
@@ -194,18 +244,18 @@ const EmailVerification = ({ token, onLoginClick }) => {
       </Container>
     );
   }
-  
+
   // Resend verification view
   return (
     <Container>
       <Title>Resend Verification Email</Title>
-      
+
       {success ? (
         <>
           <SuccessMessage>
             Verification email sent successfully! Please check your email.
           </SuccessMessage>
-          
+
           <LinkText>
             <Link onClick={onLoginClick}>Back to Login</Link>
           </LinkText>
@@ -215,34 +265,27 @@ const EmailVerification = ({ token, onLoginClick }) => {
           <Message>
             Enter your email address below to receive a new verification link.
           </Message>
-          
+
           <form onSubmit={handleResendVerification}>
-            <div style={{ marginBottom: '15px' }}>
-              <input
+            <div>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                style={{
-                  padding: '10px',
-                  width: '100%',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  boxSizing: 'border-box'
-                }}
               />
             </div>
-            
+
             <Button type="submit" disabled={loading}>
               {loading ? 'Sending...' : 'Resend Verification Email'}
             </Button>
-            
+
             {(verificationError || error) && (
               <ErrorMessage>{verificationError || error}</ErrorMessage>
             )}
           </form>
-          
+
           <LinkText>
             <Link onClick={onLoginClick}>Back to Login</Link>
           </LinkText>
