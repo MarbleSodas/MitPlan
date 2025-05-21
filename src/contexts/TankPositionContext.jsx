@@ -43,44 +43,51 @@ export const TankPositionProvider = ({ children }) => {
     const isMainTankValid = tankPositions.mainTank && selectedTankIds.includes(tankPositions.mainTank);
     const isOffTankValid = tankPositions.offTank && selectedTankIds.includes(tankPositions.offTank);
 
-    // Update tank positions if needed
-    if (!isMainTankValid || !isOffTankValid) {
-      setTankPositions(prev => {
-        const newPositions = { ...prev };
+    // Prepare new positions if needed
+    let newPositions = { ...tankPositions };
+    let changed = false;
 
-        // Clear main tank if invalid
-        if (!isMainTankValid) {
-          newPositions.mainTank = null;
-        }
-
-        // Clear off tank if invalid
-        if (!isOffTankValid) {
-          newPositions.offTank = null;
-        }
-
-        // Auto-assign positions if we have exactly one or two tanks selected
-        if (selectedTankIds.length === 1 && !newPositions.mainTank && !newPositions.offTank) {
-          // If only one tank is selected, assign it as main tank
-          newPositions.mainTank = selectedTankIds[0];
-        } else if (selectedTankIds.length === 2) {
-          // If two tanks are selected and one position is empty, assign the unassigned tank
-          if (!newPositions.mainTank && !newPositions.offTank) {
-            // If both positions are empty, assign the first as MT and second as OT
-            newPositions.mainTank = selectedTankIds[0];
-            newPositions.offTank = selectedTankIds[1];
-          } else if (!newPositions.mainTank) {
-            // If main tank is empty, assign the tank that's not the off tank
-            newPositions.mainTank = selectedTankIds.find(id => id !== newPositions.offTank);
-          } else if (!newPositions.offTank) {
-            // If off tank is empty, assign the tank that's not the main tank
-            newPositions.offTank = selectedTankIds.find(id => id !== newPositions.mainTank);
-          }
-        }
-
-        return newPositions;
-      });
+    // Clear main tank if invalid
+    if (!isMainTankValid && newPositions.mainTank !== null) {
+      newPositions.mainTank = null;
+      changed = true;
     }
-  }, [selectedTankJobs, tankPositions]);
+
+    // Clear off tank if invalid
+    if (!isOffTankValid && newPositions.offTank !== null) {
+      newPositions.offTank = null;
+      changed = true;
+    }
+
+    // Auto-assign positions if we have exactly one or two tanks selected
+    if (selectedTankIds.length === 1 && !newPositions.mainTank && !newPositions.offTank) {
+      newPositions.mainTank = selectedTankIds[0];
+      changed = true;
+    } else if (selectedTankIds.length === 2) {
+      if (!newPositions.mainTank && !newPositions.offTank) {
+        newPositions.mainTank = selectedTankIds[0];
+        newPositions.offTank = selectedTankIds[1];
+        changed = true;
+      } else if (!newPositions.mainTank) {
+        const candidate = selectedTankIds.find(id => id !== newPositions.offTank);
+        if (candidate) {
+          newPositions.mainTank = candidate;
+          changed = true;
+        }
+      } else if (!newPositions.offTank) {
+        const candidate = selectedTankIds.find(id => id !== newPositions.mainTank);
+        if (candidate) {
+          newPositions.offTank = candidate;
+          changed = true;
+        }
+      }
+    }
+
+    // Only update state if there was a change
+    if (changed) {
+      setTankPositions(newPositions);
+    }
+  }, [selectedTankJobs]);
 
   // Assign a tank to a position
   const assignTankPosition = useCallback((tankJobId, position) => {

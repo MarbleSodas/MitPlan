@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor, DragOverlay } from '@dnd-kit/core';
 
 // Import contexts
@@ -41,6 +41,10 @@ import { AuthButton, UserProfile } from './features/auth';
 import PlanList from './features/plans/PlanList';
 import CreatePlanModal from './features/plans/CreatePlanModal';
 import PlanSharing from './features/plans/PlanSharing';
+import CollaborationPanel from './components/CollaborationPanel';
+import CursorOverlay from './components/CursorOverlay';
+import ConflictResolutionModal from './components/ConflictResolutionModal';
+import SyncStatusIndicator from './components/SyncStatusIndicator';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
@@ -58,7 +62,8 @@ import {
   useDragAndDrop,
   useMobileInteraction,
   useUrlHandler,
-  useDeviceDetection
+  useDeviceDetection,
+  useCursorTracking
 } from './hooks';
 
 // Import utility functions
@@ -108,7 +113,16 @@ function App() {
     selectedTankJobs
   } = useTankPositionContext();
   const { user, isAuthenticated } = useAuth();
-  const { currentPlan } = usePlan();
+  const {
+    currentPlan,
+    collaborators,
+    conflicts,
+    showConflictModal,
+    setShowConflictModal
+  } = usePlan();
+
+  // Reference for the timeline container
+  const timelineContainerRef = useRef(null);
 
   // Local state
   const [pendingAssignments, setPendingAssignments] = useState([]);
@@ -120,6 +134,9 @@ function App() {
 
   // Use custom hook for device detection
   const isMobile = useDeviceDetection();
+
+  // Use cursor tracking hook for real-time collaboration
+  useCursorTracking(timelineContainerRef);
 
   // Custom hooks
   const { handleDragStart, handleDragEnd } = useDragAndDrop({
@@ -473,14 +490,28 @@ function App() {
               )}
 
               <MainContent>
-                <TimelineContainer>
+                <TimelineContainer ref={timelineContainerRef}>
                   {bossActionsList}
+                  {/* Add cursor overlay for real-time collaboration */}
+                  {isAuthenticated && currentPlan && collaborators.length > 0 && (
+                    <CursorOverlay containerRef={timelineContainerRef} />
+                  )}
                 </TimelineContainer>
 
                 <MitigationContainer>
                   {mitigationsList}
                 </MitigationContainer>
               </MainContent>
+
+              {/* Show collaboration panel when viewing a plan with other users */}
+              {isAuthenticated && currentPlan && collaborators.length > 0 && (
+                <CollaborationPanel />
+              )}
+
+              {/* Show sync status indicator when viewing a plan */}
+              {isAuthenticated && currentPlan && (
+                <SyncStatusIndicator />
+              )}
             </>
           )}
         </AppLayout>
@@ -519,6 +550,14 @@ function App() {
             // TODO: Handle plan creation success
             console.log('Plan created:', plan);
           }}
+        />
+      )}
+
+      {/* Show conflict resolution modal when conflicts are detected */}
+      {showConflictModal && conflicts.length > 0 && (
+        <ConflictResolutionModal
+          conflicts={conflicts}
+          onClose={() => setShowConflictModal(false)}
         />
       )}
     </>

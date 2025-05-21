@@ -41,7 +41,7 @@ const Tab = styled.button`
   font-weight: ${props => props.active ? '600' : '400'};
   cursor: pointer;
   transition: all 0.2s;
-  
+
   &:hover {
     color: ${props => props.theme.primary};
   }
@@ -71,7 +71,7 @@ const Input = styled.input`
   border-radius: 4px;
   background-color: ${props => props.theme.inputBackground};
   color: ${props => props.theme.textPrimary};
-  
+
   &:focus {
     outline: none;
     border-color: ${props => props.theme.primary};
@@ -97,11 +97,11 @@ const Button = styled.button`
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
-  
+
   &:hover {
     background-color: ${props => props.theme.primaryHover};
   }
-  
+
   &:disabled {
     background-color: ${props => props.theme.disabled};
     cursor: not-allowed;
@@ -146,7 +146,7 @@ const ToggleDescription = styled.div`
 
 const PlanSharing = ({ plan, isOwner }) => {
   const { sharePlan, removeSharing, updatePlan, error: planError } = usePlan();
-  
+
   const [activeTab, setActiveTab] = useState('users');
   const [email, setEmail] = useState('');
   const [canEdit, setCanEdit] = useState(false);
@@ -154,29 +154,29 @@ const PlanSharing = ({ plan, isOwner }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isPublic, setIsPublic] = useState(plan?.isPublic || false);
-  
+
   const handleShareSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email) {
       setError('Please enter an email address');
       return;
     }
-    
+
     try {
       setLoading(true);
       setError('');
-      
+
       // Share plan
       await sharePlan(plan.id, email, { canEdit });
-      
+
       // Show success message
       setSuccess(`Plan shared successfully with ${email}`);
-      
+
       // Clear form
       setEmail('');
       setCanEdit(false);
-      
+
       // Hide success message after 3 seconds
       setTimeout(() => {
         setSuccess('');
@@ -187,18 +187,18 @@ const PlanSharing = ({ plan, isOwner }) => {
       setLoading(false);
     }
   };
-  
+
   const handleRemoveSharing = async (userId) => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Remove sharing
       await removeSharing(plan.id, userId);
-      
+
       // Show success message
       setSuccess('User removed from sharing');
-      
+
       // Hide success message after 3 seconds
       setTimeout(() => {
         setSuccess('');
@@ -209,24 +209,24 @@ const PlanSharing = ({ plan, isOwner }) => {
       setLoading(false);
     }
   };
-  
+
   const handlePublicToggle = async () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Update plan
       await updatePlan(plan.id, {
         ...plan,
         isPublic: !isPublic
       });
-      
+
       // Update local state
       setIsPublic(!isPublic);
-      
+
       // Show success message
       setSuccess(`Plan is now ${!isPublic ? 'public' : 'private'}`);
-      
+
       // Hide success message after 3 seconds
       setTimeout(() => {
         setSuccess('');
@@ -237,33 +237,33 @@ const PlanSharing = ({ plan, isOwner }) => {
       setLoading(false);
     }
   };
-  
+
   if (!plan) {
     return null;
   }
-  
+
   return (
     <Container>
       <Header>
         <Title>Share & Collaborate</Title>
       </Header>
-      
+
       <Body>
         {isOwner && (
           <PublicSharingToggle>
             <div>
               <ToggleLabel>Public Access</ToggleLabel>
               <ToggleDescription>
-                {isPublic 
-                  ? 'Anyone can view this plan' 
+                {isPublic
+                  ? 'Anyone can view this plan'
                   : 'Only you and people you share with can access this plan'}
               </ToggleDescription>
             </div>
-            
+
             <label className="switch">
-              <input 
-                type="checkbox" 
-                checked={isPublic} 
+              <input
+                type="checkbox"
+                checked={isPublic}
                 onChange={handlePublicToggle}
                 disabled={loading}
               />
@@ -271,22 +271,22 @@ const PlanSharing = ({ plan, isOwner }) => {
             </label>
           </PublicSharingToggle>
         )}
-        
+
         <TabsContainer>
-          <Tab 
-            active={activeTab === 'users'} 
+          <Tab
+            active={activeTab === 'users'}
             onClick={() => setActiveTab('users')}
           >
             Users
           </Tab>
-          <Tab 
-            active={activeTab === 'link'} 
+          <Tab
+            active={activeTab === 'link'}
             onClick={() => setActiveTab('link')}
           >
             Share Link
           </Tab>
         </TabsContainer>
-        
+
         {activeTab === 'users' ? (
           <>
             {isOwner && (
@@ -302,7 +302,7 @@ const PlanSharing = ({ plan, isOwner }) => {
                     required
                   />
                 </FormGroup>
-                
+
                 <CheckboxGroup>
                   <Checkbox
                     type="checkbox"
@@ -314,29 +314,25 @@ const PlanSharing = ({ plan, isOwner }) => {
                     Allow editing
                   </Label>
                 </CheckboxGroup>
-                
+
                 <Button type="submit" disabled={loading}>
                   {loading ? 'Sharing...' : 'Share'}
                 </Button>
               </ShareForm>
             )}
-            
-            <SharedUsersList 
-              plan={plan} 
-              isOwner={isOwner} 
-              onRemoveUser={handleRemoveSharing}
-            />
-            
+
+            <SharedUsersList planId={plan.id} />
+
             {(error || planError) && (
               <ErrorMessage>{error || planError}</ErrorMessage>
             )}
-            
+
             {success && (
               <SuccessMessage>{success}</SuccessMessage>
             )}
           </>
         ) : (
-          <ShareLinkGenerator plan={plan} isOwner={isOwner} />
+          <ShareLinkGenerator plan={plan} isOwner={isOwner} planTitle={plan.title} />
         )}
       </Body>
     </Container>

@@ -65,6 +65,12 @@ class User {
    */
   static async findById(id) {
     const connection = await getConnection();
+    // DEBUG: Log connection state after initialization
+    if (connection && typeof connection.isClosed === 'function') {
+      console.log('[User.findById] Connection open:', !connection.isClosed());
+    } else {
+      console.log('[User.findById] Connection object missing or invalid:', connection);
+    }
     try {
       const user = await r.table('users').get(id).run(connection);
       

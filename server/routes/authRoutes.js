@@ -94,4 +94,30 @@ router.put('/profile', authenticate, authController.updateProfile);
  */
 router.put('/preferences', authenticate, authController.updatePreferences);
 
+/**
+ * @route POST /api/auth/refresh-token
+ * @desc Refresh JWT token
+ * @access Private
+ */
+router.post('/refresh-token', authenticate, authController.refreshToken);
+
+/**
+ * @route POST /api/auth/change-password
+ * @desc Change password
+ * @access Private
+ */
+router.post(
+  '/change-password',
+  authenticate,
+  [
+    body('currentPassword').exists().withMessage('Current password is required'),
+    body('newPassword')
+      .isLength({ min: 8 })
+      .withMessage('New password must be at least 8 characters')
+      .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])/)
+      .withMessage('New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character')
+  ],
+  authController.changePassword
+);
+
 export default router;

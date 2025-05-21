@@ -5,7 +5,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 // Start the server
-const server = spawn('node', [path.join(__dirname, 'server', 'server.cjs')], {
+const server = spawn('node', [path.join(__dirname, 'server', 'server.js')], {
   stdio: 'inherit',
   shell: true
 });

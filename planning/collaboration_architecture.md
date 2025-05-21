@@ -73,7 +73,7 @@ Authorization: Bearer <JWT>
   "operations": [
     {
       "op": "insert",
-      "position": 15,
+      "actionId": "tidal_roar_1",
       "text": "new content",
       "clientId": "abc123"
     }
@@ -101,7 +101,7 @@ Authorization: Bearer <JWT>
 | 5     | Frontend Integration (React Hooks) | 6 days |
 
 ## Security Considerations
-- RethinkDB server: `rethinkdb.eugeneparkswe.dev`
+- RethinkDB server: `23.240.194.252`
 - All backend services (Auth, Document, Collaboration) must connect to this RethinkDB instance.
 - End-to-end encryption for WebSocket messages
 - Rate limiting on authentication endpoints

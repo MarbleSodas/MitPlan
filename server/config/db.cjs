@@ -3,12 +3,11 @@ require('dotenv').config();
 
 // RethinkDB connection configuration
 const config = {
-  host: process.env.RETHINK_HOST || '172.16.8.2',
-  port: process.env.RETHINK_PORT || 443,
+  host: process.env.RETHINK_HOST || '23.240.194.252',
+  port: process.env.RETHINK_PORT || 28015,
   db: process.env.RETHINK_DB || 'mitplan',
   user: process.env.RETHINK_USER || 'admin',
   password: process.env.RETHINK_PASSWORD || ''
-  // Removed SSL configuration to test connection without SSL
 };
 
 // Connection pool
@@ -77,6 +76,33 @@ async function initDb() {
       await r.table('password_reset_tokens').indexCreate('token').run(connection);
       await r.table('password_reset_tokens').indexCreate('userId').run(connection);
       await r.table('password_reset_tokens').indexWait('token', 'userId').run(connection);
+    }
+
+    // Active sessions table for real-time collaboration
+    if (!tables.includes('active_sessions')) {
+      console.log('Creating active_sessions table');
+      await r.tableCreate('active_sessions').run(connection);
+      await r.table('active_sessions').indexCreate('planId').run(connection);
+      await r.table('active_sessions').indexCreate('userId').run(connection);
+      await r.table('active_sessions').indexWait('planId', 'userId').run(connection);
+    }
+
+    // Cursor positions table for real-time collaboration
+    if (!tables.includes('cursor_positions')) {
+      console.log('Creating cursor_positions table');
+      await r.tableCreate('cursor_positions').run(connection);
+      await r.table('cursor_positions').indexCreate('planId').run(connection);
+      await r.table('cursor_positions').indexCreate('userId').run(connection);
+      await r.table('cursor_positions').indexWait('planId', 'userId').run(connection);
+    }
+
+    // Operation history table for conflict resolution
+    if (!tables.includes('operations')) {
+      console.log('Creating operations table');
+      await r.tableCreate('operations').run(connection);
+      await r.table('operations').indexCreate('planId').run(connection);
+      await r.table('operations').indexCreate('timestamp').run(connection);
+      await r.table('operations').indexWait('planId', 'timestamp').run(connection);
     }
 
     console.log('Database initialization complete');

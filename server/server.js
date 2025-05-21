@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import { initDb } from './config/db.cjs';
 import User from './models/User.js';
+import ActiveSession from './models/ActiveSession.js';
+import CursorPosition from './models/CursorPosition.js';
 import { handleOperation, joinSession, leaveSession } from './controllers/collabController.js';
 import dotenv from 'dotenv';
 
@@ -43,34 +45,34 @@ app.use('/api/plans', planRoutes);
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    
+
     if (!token) {
       return next(new Error('Authentication error: No token provided'));
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Check if user exists
     const user = await User.findById(decoded.id);
-    
+
     if (!user) {
       return next(new Error('Authentication error: User not found'));
     }
-    
+
     // Attach user to socket
     socket.user = user;
-    
+
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return next(new Error('Authentication error: Token expired'));
     }
-    
+
     if (error.name === 'JsonWebTokenError') {
       return next(new Error('Authentication error: Invalid token'));
     }
-    
+
     console.error('Socket authentication error:', error);
     next(new Error('Authentication error'));
   }
@@ -78,26 +80,53 @@ io.use(async (socket, next) => {
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.user.username} (${socket.user.id})`);
-  
+  // Connection event - logging removed to reduce noise
+
   // Join collaboration session
   socket.on('join_session', (data) => {
     joinSession(io, socket, data, socket.user);
   });
-  
+
   // Leave collaboration session
   socket.on('leave_session', (data) => {
     leaveSession(io, socket, data, socket.user);
   });
-  
+
   // Handle operation
   socket.on('operation', (data) => {
     handleOperation(io, socket, data, socket.user);
   });
-  
+
   // Disconnect
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.user.username} (${socket.user.id})`);
+  socket.on('disconnect', async () => {
+    try {
+      // Get all active sessions for this socket
+      const sessions = await ActiveSession.removeBySocketId(socket.id);
+
+      // For each session, notify other users in the room
+      if (socket.user) {
+        // Get all rooms this socket was in
+        const rooms = Array.from(socket.rooms).filter(room => room.startsWith('plan:'));
+
+        // For each room, notify other users and clean up
+        for (const room of rooms) {
+          const planId = room.replace('plan:', '');
+
+          // Remove cursor position
+          await CursorPosition.remove(socket.user.id, planId);
+
+          // Notify other users
+          socket.to(room).emit('user_left', {
+            user: {
+              id: socket.user.id,
+              username: socket.user.username
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error);
+    }
   });
 });
 

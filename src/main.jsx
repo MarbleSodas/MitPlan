@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/global.css';
-import App from './App.jsx';
+import Routes from './Routes.jsx';
 import { AppProvider } from './contexts';
 import { TankSelectionModalProvider } from './contexts/TankSelectionModalContext';
 import { Analytics } from '@vercel/analytics/react';
@@ -25,7 +25,7 @@ root.render(
   <React.StrictMode>
     <AppProvider>
       <TankSelectionModalProvider>
-        <App />
+        <Routes />
         <Analytics />
         <SpeedInsights />
       </TankSelectionModalProvider>

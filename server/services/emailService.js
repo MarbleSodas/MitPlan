@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
 const sendVerificationEmail = async (email, token) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const verificationUrl = `${clientUrl}/verify-email?token=${token}`;
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
@@ -41,7 +41,7 @@ const sendVerificationEmail = async (email, token) => {
       </div>
     `
   };
-  
+
   return transporter.sendMail(mailOptions);
 };
 
@@ -54,7 +54,7 @@ const sendVerificationEmail = async (email, token) => {
 const sendPasswordResetEmail = async (email, token) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const resetUrl = `${clientUrl}/reset-password?token=${token}`;
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
@@ -75,7 +75,7 @@ const sendPasswordResetEmail = async (email, token) => {
       </div>
     `
   };
-  
+
   return transporter.sendMail(mailOptions);
 };
 
@@ -89,7 +89,7 @@ const sendPasswordResetEmail = async (email, token) => {
 const sendPlanSharingEmail = async (email, plan, sharedBy) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const planUrl = `${clientUrl}/plans/${plan.id}`;
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
@@ -111,8 +111,40 @@ const sendPlanSharingEmail = async (email, plan, sharedBy) => {
       </div>
     `
   };
-  
+
   return transporter.sendMail(mailOptions);
 };
 
-export { sendVerificationEmail, sendPasswordResetEmail, sendPlanSharingEmail };
+/**
+ * Send notification email
+ * @param {string} email - User email
+ * @param {string} subject - Email subject
+ * @param {string} message - Email message
+ * @param {string} actionText - Action button text (optional)
+ * @param {string} actionUrl - Action button URL (optional)
+ * @returns {Promise} Nodemailer response
+ */
+const sendNotificationEmail = async (email, subject, message, actionText = null, actionUrl = null) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `${subject} - FFXIV Mitigation Planner`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>${subject}</h2>
+        <p>${message}</p>
+        ${actionText && actionUrl ? `
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${actionUrl}" style="background-color: #4a90e2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">${actionText}</a>
+          </div>
+        ` : ''}
+        <hr style="margin: 30px 0;">
+        <p style="font-size: 12px; color: #666;">FFXIV Mitigation Planner</p>
+      </div>
+    `
+  };
+
+  return transporter.sendMail(mailOptions);
+};
+
+export { sendVerificationEmail, sendPasswordResetEmail, sendPlanSharingEmail, sendNotificationEmail };

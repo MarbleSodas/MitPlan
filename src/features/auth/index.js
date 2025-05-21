@@ -3,6 +3,7 @@ export { default as RegisterForm } from './RegisterForm';
 export { default as ForgotPasswordForm } from './ForgotPasswordForm';
 export { default as ResetPasswordForm } from './ResetPasswordForm';
 export { default as EmailVerification } from './EmailVerification';
+export { default as PasswordReset } from './PasswordReset';
 export { default as UserProfile } from './UserProfile';
 export { default as AuthModal } from './AuthModal';
 export { default as AuthButton } from './AuthButton';
