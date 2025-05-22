@@ -19,6 +19,7 @@ import {
 } from '../../../contexts';
 import ChargeCounter from '../../../components/ChargeCounter';
 import HealthBar from '../../../components/common/HealthBar';
+import TankMitigationDisplay from '../../../components/common/TankMitigationDisplay';
 import { bosses, mitigationAbilities } from '../../../data';
 import { isDualTankBusterAction } from '../../../utils/boss/bossActionUtils';
 
@@ -1170,6 +1171,18 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
 
               return (
                 <>
+                  {/* For dual tank busters, show separate mitigation displays for each tank */}
+                  {bossAction.isTankBuster && bossAction.isDualTankBuster && (
+                    <TankMitigationDisplay
+                      mainTankMitigations={mainTankMitigations}
+                      offTankMitigations={offTankMitigations}
+                      damageType={bossAction.damageType}
+                      bossLevel={bossLevel}
+                      mainTankJob={tankPositions.mainTank}
+                      offTankJob={tankPositions.offTank}
+                    />
+                  )}
+
                   {/* Health bars for tank busters and non-tank busters */}
                   {bossAction.isTankBuster ? (
                     bossAction.isDualTankBuster ? (

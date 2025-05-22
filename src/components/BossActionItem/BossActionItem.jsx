@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
+import TankMitigationDisplay from '../common/TankMitigationDisplay';
 import AetherflowGauge from '../AetherflowGauge';
 import {
   calculateTotalMitigation,
@@ -761,13 +762,28 @@ const BossActionItem = memo(({
 
       {/* Display mitigation percentage if there are any mitigations */}
       {hasMitigations && (
-        <Tooltip
-          content={generateMitigationBreakdown(allMitigations, action.damageType, currentBossLevel)}
-        >
-          <MitigationPercentage>
-            Damage Mitigated: {formatMitigation(mitigationPercentage)}
-          </MitigationPercentage>
-        </Tooltip>
+        <>
+          {/* For dual tank busters, show separate mitigation displays for each tank */}
+          {action.isTankBuster && action.isDualTankBuster ? (
+            <TankMitigationDisplay
+              mainTankMitigations={mainTankMitigations}
+              offTankMitigations={offTankMitigations}
+              damageType={action.damageType}
+              bossLevel={currentBossLevel}
+              mainTankJob={tankPositions.mainTank}
+              offTankJob={tankPositions.offTank}
+            />
+          ) : (
+            /* For non-dual tank busters, show the standard mitigation display */
+            <Tooltip
+              content={generateMitigationBreakdown(allMitigations, action.damageType, currentBossLevel)}
+            >
+              <MitigationPercentage>
+                Damage Mitigated: {formatMitigation(mitigationPercentage)}
+              </MitigationPercentage>
+            </Tooltip>
+          )}
+        </>
       )}
       {/* Display health bars if we have unmitigated damage */}
       {unmitigatedDamage > 0 && (
