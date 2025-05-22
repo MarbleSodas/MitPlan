@@ -569,17 +569,26 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
 
   // Add a mitigation to a boss action
   const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
-    // Determine if this is a tank-specific mitigation
+    // Determine if this is a tank-specific mitigation (self-target)
     const isTankSpecific = mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide;
 
-    // For tank-specific mitigations, ensure a valid tank position is provided
+    // Determine if this is a single-target mitigation that can be cast on tanks
+    const isSingleTargetTankMitigation = mitigation.target === 'single' && mitigation.forTankBusters;
+
+    // For tank-specific self-targeting mitigations, ensure a valid tank position is provided
     if (isTankSpecific && !['mainTank', 'offTank'].includes(tankPosition)) {
       // Default to mainTank if not specified for tank-specific mitigations
       tankPosition = 'mainTank';
     }
 
+    // For single-target tank mitigations, ensure a valid tank position is provided
+    if (isSingleTargetTankMitigation && !['mainTank', 'offTank'].includes(tankPosition)) {
+      // Default to mainTank if not specified for single-target tank mitigations
+      tankPosition = 'mainTank';
+    }
+
     // For party-wide mitigations, always use 'shared'
-    if (!isTankSpecific) {
+    if (!isTankSpecific && !isSingleTargetTankMitigation) {
       tankPosition = 'shared';
     }
 

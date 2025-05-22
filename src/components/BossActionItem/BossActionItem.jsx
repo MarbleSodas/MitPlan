@@ -386,6 +386,7 @@ const BossActionItem = memo(({
       mitigationTarget: mitigation.target
     });
 
+    // For single-target abilities during dual tank busters, show the tank selection modal
     if (
       mitigation.target === 'single' &&
       isDualTankBusterAction(action)
@@ -581,9 +582,9 @@ const BossActionItem = memo(({
 
   // Calculate tank-specific mitigation percentages
   // Get the mitigation info for each tank position
-  const mainTankMitigationInfo = action.isTankBuster && tankPositions.mainTank ?
+  const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.mainTank ?
     calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
-  const offTankMitigationInfo = action.isTankBuster && tankPositions.offTank ?
+  const offTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.offTank ?
     calculateMitigationInfo('offTank') : { allMitigations: [], barrierMitigations: [] };
 
   // Extract the mitigations for each tank
@@ -764,7 +765,7 @@ const BossActionItem = memo(({
       {hasMitigations && (
         <>
           {/* For dual tank busters, show separate mitigation displays for each tank */}
-          {action.isTankBuster && action.isDualTankBuster ? (
+          {action.isDualTankBuster ? (
             <TankMitigationDisplay
               mainTankMitigations={mainTankMitigations}
               offTankMitigations={offTankMitigations}
@@ -790,7 +791,7 @@ const BossActionItem = memo(({
         <>
           {/* Show tank or party health bar, with AetherflowGauge adjacent if selected and Scholar */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {action.isTankBuster ? (
+            {action.isTankBuster || action.isDualTankBuster ? (
               <>
                 {/* For dual tank busters */}
                 {action.isDualTankBuster ? (
