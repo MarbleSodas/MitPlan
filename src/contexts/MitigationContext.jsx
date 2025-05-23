@@ -598,11 +598,20 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       } else if (canOffTankUse && !canMainTankUse) {
         // Only off tank can use this ability
         tankPosition = 'offTank';
+      } else if (canMainTankUse && canOffTankUse) {
+        // If both tanks can use it, respect the provided tankPosition
+        if (['mainTank', 'offTank'].includes(tankPosition)) {
+          // Keep the explicit tank position that was provided
+        } else {
+          // If no specific position was provided, default to mainTank
+          // Note: The modal should have handled this case in the UI layer
+          tankPosition = 'mainTank';
+        }
       } else if (!['mainTank', 'offTank'].includes(tankPosition)) {
-        // If tankPosition isn't set and both/neither can use, default to mainTank
+        // If tankPosition isn't set and neither can use, default to mainTank as fallback
         tankPosition = 'mainTank';
       }
-      // If tankPosition is already set to mainTank/offTank and both can use, keep it as is
+      // If tankPosition is already set to mainTank/offTank, keep it as is
     }
 
     // For single-target tank mitigations

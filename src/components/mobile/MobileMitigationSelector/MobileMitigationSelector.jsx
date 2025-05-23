@@ -730,8 +730,15 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
   isDualTankBusterAction: isDualTankBusterAction(bossAction),
   isDualTankBusterProperty: bossAction.isDualTankBuster
 });
-        if (isDualTankBusterAction(bossAction) && mitigation.target === 'single') {
-          // Always show the tank selection modal for dual tank busters with single-target mitigation
+        // Show modal if:
+        // 1. It's a dual tank buster with single-target mitigation OR
+        // 2. It's a dual tank buster with self-targeting tank mitigation that BOTH tanks can use
+        if (isDualTankBusterAction(bossAction) && 
+            ((mitigation.target === 'single') || 
+             (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide &&
+              tankPositions?.mainTank && tankPositions?.offTank && 
+              mitigation.jobs.includes(tankPositions.mainTank) && mitigation.jobs.includes(tankPositions.offTank)))) {
+          // Show the tank selection modal
           openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
             // Process the mitigation assignment with the selected tank position
             onAssignMitigation(bossAction.id, mitigation, selectedTankPosition);
@@ -767,8 +774,15 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
             // Only off tank can use this ability
             tankPosition = 'offTank';
           } else if (canMainTankUse && canOffTankUse) {
-            // Both tanks can use it - default to mainTank
-            tankPosition = 'mainTank';
+            // If both tanks can use it and a tank position isn't explicitly specified,
+            // leave tankPosition as null and it will trigger the modal for dual tank busters
+            // otherwise keep the specified tank position
+            if (['mainTank', 'offTank'].includes(tankPosition)) {
+              // Keep the explicit tank position that was specified
+            } else {
+              // For all other cases, if both can use it, set to null so a modal will appear
+              tankPosition = null;
+            }
           } else {
             // Neither tank can use it (shouldn't happen in normal usage)
             // Still specify a tank position to avoid using 'shared'

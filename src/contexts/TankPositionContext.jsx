@@ -9,7 +9,7 @@ const TankPositionContext = createContext();
  * Provider component for managing tank positions
  */
 export const TankPositionProvider = ({ children }) => {
-  const { selectedJobs, checkAndRemoveUnavailableMitigations } = useJobContext();
+  const { selectedJobs } = useJobContext();
 
   // Initialize tank positions from localStorage or default
   const [tankPositions, setTankPositions] = useState(() => {
@@ -26,8 +26,11 @@ export const TankPositionProvider = ({ children }) => {
     };
   });
 
-  // Get the currently selected tank jobs
+  // Get the currently selected tank jobs - memoize this to prevent unnecessary rerenders
   const selectedTankJobs = selectedJobs?.tank?.filter(job => job.selected) || [];
+  
+  // Get the IDs of selected tanks - we'll use this in multiple places
+  const selectedTankIds = selectedTankJobs.map(job => job.id);
 
   // Save tank positions to localStorage whenever they change
   useEffect(() => {
@@ -35,9 +38,8 @@ export const TankPositionProvider = ({ children }) => {
   }, [tankPositions]);
 
   // Ensure tank positions are valid when selected jobs change
+  // This effect should only run when selectedTankIds changes, not on every render
   useEffect(() => {
-    // Get the IDs of selected tank jobs
-    const selectedTankIds = selectedTankJobs.map(job => job.id);
 
     // Use the latest tankPositions inside the setter function to avoid dependency issues
     setTankPositions(prev => {
@@ -84,7 +86,9 @@ export const TankPositionProvider = ({ children }) => {
       // Return unchanged if no updates needed
       return prev;
     });
-  }, [selectedTankJobs]);
+    // Using a string representation of selectedTankIds as a dependency to avoid object reference issues
+    // This ensures the effect only runs when the actual IDs change
+  }, [selectedTankIds.join(',')]);
 
   // Assign a tank to a position
   const assignTankPosition = useCallback((tankJobId, position) => {

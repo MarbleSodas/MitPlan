@@ -373,6 +373,9 @@ const BossActionItem = memo(({
 
   // Tank selection modal context
   const { openTankSelectionModal } = useTankSelectionModalContext();
+  
+  // Tank position context
+  const { tankPositions } = useTankPositionContext();
 
   // Handler for assigning mitigation (single-target, dual tank buster)
   const handleAssignMitigation = useCallback((mitigation, assignCallback) => {
@@ -386,17 +389,25 @@ const BossActionItem = memo(({
       mitigationTarget: mitigation.target
     });
 
-    // For single-target abilities during dual tank busters, show the tank selection modal
-    if (
-      mitigation.target === 'single' &&
-      isDualTankBusterAction(action)
-    ) {
+    // Show tank selection modal for:
+    // 1. Single-target abilities in dual tank busters OR
+    // 2. Self-targeting tank abilities that both tanks can use in dual tank busters
+    const canBothTanksUse = tankPositions?.mainTank && 
+                            tankPositions?.offTank && 
+                            mitigation.jobs.includes(tankPositions.mainTank) && 
+                            mitigation.jobs.includes(tankPositions.offTank);
+                            
+    if (isDualTankBusterAction(action) && 
+        ((mitigation.target === 'single') || 
+         (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide && canBothTanksUse))) {
       // DEBUG: Log when modal logic is triggered for dual tank buster in BossActionItem
       console.log('[DEBUG] BossActionItem Dual Tank Buster Modal Trigger:', {
         action,
         mitigation,
         isDualTankBusterAction: isDualTankBusterAction(action),
-        isDualTankBusterProperty: action.isDualTankBuster
+        isDualTankBusterProperty: action.isDualTankBuster,
+        canBothTanksUse,
+        tankPositions
       });
 
       openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
@@ -406,7 +417,7 @@ const BossActionItem = memo(({
     }
     // Default assignment (no modal)
     assignCallback();
-  }, [action, openTankSelectionModal]);
+  }, [action, tankPositions, openTankSelectionModal]);
 
   // Touch event handlers
   const handleTouchStart = useCallback(() => {
@@ -557,9 +568,6 @@ const BossActionItem = memo(({
 
   // Get Aetherflow context
   const { isScholarSelected } = useAetherflowContext();
-
-  // Get tank position context
-  const { tankPositions } = useTankPositionContext();
 
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
