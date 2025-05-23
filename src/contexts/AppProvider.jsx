@@ -20,39 +20,39 @@ const AppProvider = ({ children }) => {
     <ThemeProvider>
       <BossProvider>
         <JobProvider>
-          {/* MitigationProvider needs access to boss actions, level, and selected jobs */}
-          <BossContext.Consumer>
-            {({ currentBossActions, currentBossLevel }) => (
-              <JobContext.Consumer>
-                {({ selectedJobs }) => (
-                  <MitigationProvider
-                    bossActions={currentBossActions}
-                    bossLevel={currentBossLevel}
-                    selectedJobs={selectedJobs}
-                  >
-                    <MitigationContext.Consumer>
-                      {({ assignments }) => (
-                        <ChargeCountProvider
-                          bossActions={currentBossActions}
-                          bossLevel={currentBossLevel}
-                          selectedJobs={selectedJobs}
-                          assignments={assignments}
-                        >
-                          <TankPositionProvider>
+          <TankPositionProvider>
+            {/* MitigationProvider needs access to boss actions, level, and selected jobs */}
+            <BossContext.Consumer>
+              {({ currentBossActions, currentBossLevel }) => (
+                <JobContext.Consumer>
+                  {({ selectedJobs }) => (
+                    <MitigationProvider
+                      bossActions={currentBossActions}
+                      bossLevel={currentBossLevel}
+                      selectedJobs={selectedJobs}
+                    >
+                      <MitigationContext.Consumer>
+                        {({ assignments }) => (
+                          <ChargeCountProvider
+                            bossActions={currentBossActions}
+                            bossLevel={currentBossLevel}
+                            selectedJobs={selectedJobs}
+                            assignments={assignments}
+                          >
                             <AetherflowProvider>
                               <FilterProvider>
                                 {children}
                               </FilterProvider>
                             </AetherflowProvider>
-                          </TankPositionProvider>
-                        </ChargeCountProvider>
-                      )}
-                    </MitigationContext.Consumer>
-                  </MitigationProvider>
-                )}
-              </JobContext.Consumer>
-            )}
-          </BossContext.Consumer>
+                          </ChargeCountProvider>
+                        )}
+                      </MitigationContext.Consumer>
+                    </MitigationProvider>
+                  )}
+                </JobContext.Consumer>
+              )}
+            </BossContext.Consumer>
+          </TankPositionProvider>
         </JobProvider>
       </BossProvider>
     </ThemeProvider>
