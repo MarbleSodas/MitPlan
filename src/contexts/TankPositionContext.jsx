@@ -39,13 +39,14 @@ export const TankPositionProvider = ({ children }) => {
     // Get the IDs of selected tank jobs
     const selectedTankIds = selectedTankJobs.map(job => job.id);
 
-    // Check if current tank positions are still valid
-    const isMainTankValid = tankPositions.mainTank && selectedTankIds.includes(tankPositions.mainTank);
-    const isOffTankValid = tankPositions.offTank && selectedTankIds.includes(tankPositions.offTank);
+    // Use the latest tankPositions inside the setter function to avoid dependency issues
+    setTankPositions(prev => {
+      // Check if current tank positions are still valid
+      const isMainTankValid = prev.mainTank && selectedTankIds.includes(prev.mainTank);
+      const isOffTankValid = prev.offTank && selectedTankIds.includes(prev.offTank);
 
-    // Update tank positions if needed
-    if (!isMainTankValid || !isOffTankValid) {
-      setTankPositions(prev => {
+      // Only update if something is invalid
+      if (!isMainTankValid || !isOffTankValid) {
         const newPositions = { ...prev };
 
         // Clear main tank if invalid
@@ -78,9 +79,12 @@ export const TankPositionProvider = ({ children }) => {
         }
 
         return newPositions;
-      });
-    }
-  }, [selectedTankJobs, tankPositions]);
+      }
+
+      // Return unchanged if no updates needed
+      return prev;
+    });
+  }, [selectedTankJobs]);
 
   // Assign a tank to a position
   const assignTankPosition = useCallback((tankJobId, position) => {
