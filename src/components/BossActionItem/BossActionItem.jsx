@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
+import TankMitigationDisplay from '../common/TankMitigationDisplay';
 import AetherflowGauge from '../AetherflowGauge';
 import {
   calculateTotalMitigation,
@@ -372,6 +373,9 @@ const BossActionItem = memo(({
 
   // Tank selection modal context
   const { openTankSelectionModal } = useTankSelectionModalContext();
+  
+  // Tank position context
+  const { tankPositions } = useTankPositionContext();
 
   // Handler for assigning mitigation (single-target, dual tank buster)
   const handleAssignMitigation = useCallback((mitigation, assignCallback) => {
@@ -385,16 +389,25 @@ const BossActionItem = memo(({
       mitigationTarget: mitigation.target
     });
 
-    if (
-      mitigation.target === 'single' &&
-      isDualTankBusterAction(action)
-    ) {
+    // Show tank selection modal for:
+    // 1. Single-target abilities in dual tank busters OR
+    // 2. Self-targeting tank abilities that both tanks can use in dual tank busters
+    const canBothTanksUse = tankPositions?.mainTank && 
+                            tankPositions?.offTank && 
+                            mitigation.jobs.includes(tankPositions.mainTank) && 
+                            mitigation.jobs.includes(tankPositions.offTank);
+                            
+    if (isDualTankBusterAction(action) && 
+        ((mitigation.target === 'single') || 
+         (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide && canBothTanksUse))) {
       // DEBUG: Log when modal logic is triggered for dual tank buster in BossActionItem
       console.log('[DEBUG] BossActionItem Dual Tank Buster Modal Trigger:', {
         action,
         mitigation,
         isDualTankBusterAction: isDualTankBusterAction(action),
-        isDualTankBusterProperty: action.isDualTankBuster
+        isDualTankBusterProperty: action.isDualTankBuster,
+        canBothTanksUse,
+        tankPositions
       });
 
       openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
@@ -404,7 +417,7 @@ const BossActionItem = memo(({
     }
     // Default assignment (no modal)
     assignCallback();
-  }, [action, openTankSelectionModal]);
+  }, [action, tankPositions, openTankSelectionModal]);
 
   // Touch event handlers
   const handleTouchStart = useCallback(() => {
@@ -556,9 +569,6 @@ const BossActionItem = memo(({
   // Get Aetherflow context
   const { isScholarSelected } = useAetherflowContext();
 
-  // Get tank position context
-  const { tankPositions } = useTankPositionContext();
-
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
   const baseHealth = currentBoss ? currentBoss.baseHealth : { party: 80000, tank: 120000 };
@@ -580,9 +590,9 @@ const BossActionItem = memo(({
 
   // Calculate tank-specific mitigation percentages
   // Get the mitigation info for each tank position
-  const mainTankMitigationInfo = action.isTankBuster && tankPositions.mainTank ?
+  const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.mainTank ?
     calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
-  const offTankMitigationInfo = action.isTankBuster && tankPositions.offTank ?
+  const offTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.offTank ?
     calculateMitigationInfo('offTank') : { allMitigations: [], barrierMitigations: [] };
 
   // Extract the mitigations for each tank
@@ -761,20 +771,35 @@ const BossActionItem = memo(({
 
       {/* Display mitigation percentage if there are any mitigations */}
       {hasMitigations && (
-        <Tooltip
-          content={generateMitigationBreakdown(allMitigations, action.damageType, currentBossLevel)}
-        >
-          <MitigationPercentage>
-            Damage Mitigated: {formatMitigation(mitigationPercentage)}
-          </MitigationPercentage>
-        </Tooltip>
+        <>
+          {/* For dual tank busters, show separate mitigation displays for each tank */}
+          {action.isDualTankBuster ? (
+            <TankMitigationDisplay
+              mainTankMitigations={mainTankMitigations}
+              offTankMitigations={offTankMitigations}
+              damageType={action.damageType}
+              bossLevel={currentBossLevel}
+              mainTankJob={tankPositions.mainTank}
+              offTankJob={tankPositions.offTank}
+            />
+          ) : (
+            /* For non-dual tank busters, show the standard mitigation display */
+            <Tooltip
+              content={generateMitigationBreakdown(allMitigations, action.damageType, currentBossLevel)}
+            >
+              <MitigationPercentage>
+                Damage Mitigated: {formatMitigation(mitigationPercentage)}
+              </MitigationPercentage>
+            </Tooltip>
+          )}
+        </>
       )}
       {/* Display health bars if we have unmitigated damage */}
       {unmitigatedDamage > 0 && (
         <>
           {/* Show tank or party health bar, with AetherflowGauge adjacent if selected and Scholar */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {action.isTankBuster ? (
+            {action.isTankBuster || action.isDualTankBuster ? (
               <>
                 {/* For dual tank busters */}
                 {action.isDualTankBuster ? (

@@ -9,7 +9,7 @@ const TankPositionContext = createContext();
  * Provider component for managing tank positions
  */
 export const TankPositionProvider = ({ children }) => {
-  const { selectedJobs, checkAndRemoveUnavailableMitigations } = useJobContext();
+  const { selectedJobs } = useJobContext();
 
   // Initialize tank positions from localStorage or default
   const [tankPositions, setTankPositions] = useState(() => {
@@ -26,8 +26,11 @@ export const TankPositionProvider = ({ children }) => {
     };
   });
 
-  // Get the currently selected tank jobs
+  // Get the currently selected tank jobs - memoize this to prevent unnecessary rerenders
   const selectedTankJobs = selectedJobs?.tank?.filter(job => job.selected) || [];
+
+  // Get the IDs of selected tanks - we'll use this in multiple places
+  const selectedTankIds = selectedTankJobs.map(job => job.id);
 
   // Save tank positions to localStorage whenever they change
   useEffect(() => {
@@ -35,59 +38,64 @@ export const TankPositionProvider = ({ children }) => {
   }, [tankPositions]);
 
   // Ensure tank positions are valid when selected jobs change
+  // This effect should only run when selectedTankIds changes, not on every render
   useEffect(() => {
-    // Get the IDs of selected tank jobs
-    const selectedTankIds = selectedTankJobs.map(job => job.id);
 
-    // Check if current tank positions are still valid
-    const isMainTankValid = tankPositions.mainTank && selectedTankIds.includes(tankPositions.mainTank);
-    const isOffTankValid = tankPositions.offTank && selectedTankIds.includes(tankPositions.offTank);
+    // Use the latest tankPositions inside the setter function to avoid dependency issues
+    setTankPositions(prev => {
+      // Check if current tank positions are still valid
+      const isMainTankValid = prev.mainTank && selectedTankIds.includes(prev.mainTank);
+      const isOffTankValid = prev.offTank && selectedTankIds.includes(prev.offTank);
 
-    // Prepare new positions if needed
-    let newPositions = { ...tankPositions };
-    let changed = false;
+      // If both positions are valid, no changes needed
+      if (isMainTankValid && isOffTankValid) {
+        return prev;
+      }
 
-    // Clear main tank if invalid
-    if (!isMainTankValid && newPositions.mainTank !== null) {
-      newPositions.mainTank = null;
-      changed = true;
-    }
+      const newPositions = { ...prev };
+      let changed = false;
 
-    // Clear off tank if invalid
-    if (!isOffTankValid && newPositions.offTank !== null) {
-      newPositions.offTank = null;
-      changed = true;
-    }
-
-    // Auto-assign positions if we have exactly one or two tanks selected
-    if (selectedTankIds.length === 1 && !newPositions.mainTank && !newPositions.offTank) {
-      newPositions.mainTank = selectedTankIds[0];
-      changed = true;
-    } else if (selectedTankIds.length === 2) {
-      if (!newPositions.mainTank && !newPositions.offTank) {
-        newPositions.mainTank = selectedTankIds[0];
-        newPositions.offTank = selectedTankIds[1];
+      // Clear main tank if invalid
+      if (!isMainTankValid && newPositions.mainTank !== null) {
+        newPositions.mainTank = null;
         changed = true;
-      } else if (!newPositions.mainTank) {
-        const candidate = selectedTankIds.find(id => id !== newPositions.offTank);
-        if (candidate) {
-          newPositions.mainTank = candidate;
+      }
+
+      // Clear off tank if invalid
+      if (!isOffTankValid && newPositions.offTank !== null) {
+        newPositions.offTank = null;
+        changed = true;
+      }
+
+      // Auto-assign positions if we have exactly one or two tanks selected
+      if (selectedTankIds.length === 1 && !newPositions.mainTank && !newPositions.offTank) {
+        // If only one tank is selected, assign it as main tank
+        newPositions.mainTank = selectedTankIds[0];
+        changed = true;
+      } else if (selectedTankIds.length === 2) {
+        // If two tanks are selected and one position is empty, assign the unassigned tank
+        if (!newPositions.mainTank && !newPositions.offTank) {
+          // If both positions are empty, assign the first as MT and second as OT
+          newPositions.mainTank = selectedTankIds[0];
+          newPositions.offTank = selectedTankIds[1];
           changed = true;
-        }
-      } else if (!newPositions.offTank) {
-        const candidate = selectedTankIds.find(id => id !== newPositions.mainTank);
-        if (candidate) {
-          newPositions.offTank = candidate;
+        } else if (!newPositions.mainTank) {
+          // If main tank is empty, assign the tank that's not the off tank
+          newPositions.mainTank = selectedTankIds.find(id => id !== newPositions.offTank);
+          changed = true;
+        } else if (!newPositions.offTank) {
+          // If off tank is empty, assign the tank that's not the main tank
+          newPositions.offTank = selectedTankIds.find(id => id !== newPositions.mainTank);
           changed = true;
         }
       }
-    }
 
-    // Only update state if there was a change
-    if (changed) {
-      setTankPositions(newPositions);
-    }
-  }, [selectedTankJobs]);
+      // Return unchanged if no updates needed
+      return changed ? newPositions : prev;
+    });
+    // Using a string representation of selectedTankIds as a dependency to avoid object reference issues
+    // This ensures the effect only runs when the actual IDs change
+  }, [selectedTankIds.join(',')]);
 
   // Assign a tank to a position
   const assignTankPosition = useCallback((tankJobId, position) => {
