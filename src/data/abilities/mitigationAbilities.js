@@ -919,7 +919,7 @@ export const mitigationAbilities = [
     description: 'Increases healing potency by 10% and reduces magic damage taken by party members by 5% for 20s',
     levelRequirement: 40,
     levelDescriptions: {
-      40: 'Increases healing potency by 10% and reduces magic Fdamage taken by party members by 5% for 20s',
+      40: 'Increases healing potency by 10% and reduces magic damage taken by party members by 5% for 20s',
     },
     duration: 20,
     cooldown: 120,
