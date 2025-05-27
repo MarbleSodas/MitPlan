@@ -188,6 +188,7 @@ const SharedUsersList = ({ planId }) => {
   useEffect(() => {
     const fetchSharedUsers = async () => {
       try {
+        console.log('👥 [SHARED USERS] Fetching shared users for plan', planId);
         setLoading(true);
         setError('');
 
@@ -195,16 +196,21 @@ const SharedUsersList = ({ planId }) => {
 
         setUsers(response.data.users || []);
         setOwner(response.data.owner || null);
+        console.log('✅ [SHARED USERS] Shared users fetched successfully', { planId, userCount: response.data.users?.length || 0 });
       } catch (error) {
-        console.error('Fetch shared users error:', error);
+        console.error('❌ [SHARED USERS] Fetch shared users error:', { planId, error });
         setError('Failed to load shared users');
       } finally {
         setLoading(false);
       }
     };
 
-    if (planId) {
+    // Only fetch if planId exists and we haven't loaded users yet
+    if (planId && users.length === 0 && !loading) {
+      console.log('👥 [SHARED USERS] Need to fetch shared users for plan', planId);
       fetchSharedUsers();
+    } else if (planId && users.length > 0) {
+      console.log('⏭️ [SHARED USERS] Shared users already loaded for plan', planId, 'count:', users.length);
     }
   }, [planId]);
 

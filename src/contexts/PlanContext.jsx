@@ -28,7 +28,6 @@ export const PlanProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [socket, setSocket] = useState(null);
   const [collaborators, setCollaborators] = useState([]);
-  const [cursorPositions, setCursorPositions] = useState([]);
   const [userColor, setUserColor] = useState(null);
   const [canEdit, setCanEdit] = useState(false);
   const [conflicts, setConflicts] = useState([]);
@@ -36,6 +35,18 @@ export const PlanProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncStatus, setSyncStatus] = useState('online');
   const [syncError, setSyncError] = useState(null);
+
+  // Track if initial load has been completed
+  const [initialLoadCompleted, setInitialLoadCompleted] = useState(false);
+  const [lastAuthenticatedUser, setLastAuthenticatedUser] = useState(null);
+
+  // Debug: Log component mount
+  useEffect(() => {
+    console.log('🚀 [PLAN CONTEXT] PlanProvider mounted - restrictive fetching strategy enabled');
+    return () => {
+      console.log('🔚 [PLAN CONTEXT] PlanProvider unmounted');
+    };
+  }, []);
 
   // Handle online/offline status
   useEffect(() => {
@@ -94,7 +105,6 @@ export const PlanProvider = ({ children }) => {
         console.log('Socket disconnected');
         // Clear collaborators on disconnect
         setCollaborators([]);
-        setCursorPositions([]);
       });
 
       newSocket.on('error', (error) => {
@@ -116,7 +126,6 @@ export const PlanProvider = ({ children }) => {
       newSocket.on('user_left', (data) => {
         console.log('User left:', data.user);
         setCollaborators(prev => prev.filter(user => user.id !== data.user.id));
-        setCursorPositions(prev => prev.filter(pos => pos.userId !== data.user.id));
       });
 
       newSocket.on('operation', (transmissionData) => {
@@ -148,22 +157,7 @@ export const PlanProvider = ({ children }) => {
         }
       });
 
-      newSocket.on('cursor_update', (data) => {
-        // Handle cursor position updates
-        if (currentPlan) {
-          setCursorPositions(prev => {
-            // Update existing position or add new one
-            const existingIndex = prev.findIndex(pos => pos.userId === data.userId);
-            if (existingIndex >= 0) {
-              const updated = [...prev];
-              updated[existingIndex] = data;
-              return updated;
-            } else {
-              return [...prev, data];
-            }
-          });
-        }
-      });
+
 
       newSocket.on('version_update', (data) => {
         // Handle version update notification
@@ -192,14 +186,29 @@ export const PlanProvider = ({ children }) => {
 
       newSocket.on('session_joined', (data) => {
         console.log('Session joined:', data);
-        setCollaborators(data.activeUsers || []);
-        setCursorPositions(data.cursorPositions || []);
-        setUserColor(data.userColor);
+
+        // Only set collaboration data if collaboration is enabled
+        if (data.collaborationEnabled) {
+          setCollaborators(data.activeUsers || []);
+          setUserColor(data.userColor);
+        } else {
+          setCollaborators([]);
+          setUserColor(null);
+        }
+
         setCanEdit(data.canEdit);
 
         // Update current plan with latest version if needed
         if (currentPlan && data.plan && currentPlan.version !== data.plan.version) {
           setCurrentPlan(data.plan);
+        }
+      });
+
+      newSocket.on('selection_update', (data) => {
+        // Handle user selection updates for collaborative highlighting
+        if (currentPlan && shouldEnableCollaboration(currentPlan)) {
+          console.log('Selection update:', data);
+          // TODO: Implement selection highlighting UI
         }
       });
 
@@ -217,31 +226,80 @@ export const PlanProvider = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
-  // Fetch user plans when authenticated
+  // RESTRICTIVE PLAN FETCHING: Only on initial page load
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchUserPlans();
-      fetchSharedPlans();
+    if (!initialLoadCompleted) {
+      console.log('🔄 [PLAN FETCH] Initial page load - fetching public plans');
+      fetchPublicPlans(true, 'INITIAL_PAGE_LOAD');
+      setInitialLoadCompleted(true);
+    }
+  }, []);
+
+  // RESTRICTIVE PLAN FETCHING: Only on user login (not on every auth state change)
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Check if this is a new login (different user or first time authenticated)
+      const isNewLogin = !lastAuthenticatedUser || lastAuthenticatedUser.id !== user.id;
+
+      if (isNewLogin) {
+        console.log('🔄 [PLAN FETCH] User login detected - fetching user and shared plans', user.username);
+        fetchUserPlans(true, 'USER_LOGIN');
+        fetchSharedPlans(true, 'USER_LOGIN');
+        setLastAuthenticatedUser(user);
+      } else {
+        console.log('✅ [PLAN FETCH] User already authenticated - skipping fetch', user.username);
+      }
+    }
+  }, [isAuthenticated, user]);
+
+  /**
+   * Check if collaboration should be enabled for a plan
+   * @param {Object} plan - Plan object
+   * @returns {boolean} Whether collaboration should be enabled
+   */
+  const shouldEnableCollaboration = (plan) => {
+    if (!plan) return false;
+
+    // Enable collaboration if:
+    // 1. Plan is shared with other users (has sharedWith array with users)
+    // 2. Plan is public
+    // 3. Plan has a shareable link
+    return (
+      (plan.sharedWith && plan.sharedWith.length > 0) ||
+      plan.isPublic ||
+      (plan.shareableLink && plan.shareableLink.token)
+    );
+  };
+
+  // Clear plan data when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      clearAllPlans();
     }
   }, [isAuthenticated]);
 
-  // Fetch public plans
-  useEffect(() => {
-    fetchPublicPlans();
-  }, []);
-
   /**
    * Fetch user plans
+   * @param {boolean} force - Force refresh even if plans already exist
+   * @param {string} reason - Reason for fetching (for debugging)
    */
-  const fetchUserPlans = async () => {
+  const fetchUserPlans = async (force = false, reason = 'UNKNOWN') => {
+    // Skip if plans already loaded and not forcing refresh
+    if (!force && userPlans.length > 0) {
+      console.log('⏭️ [PLAN FETCH] Skipping user plans fetch - already loaded', { reason, count: userPlans.length });
+      return;
+    }
+
     try {
+      console.log('🔄 [PLAN FETCH] Fetching user plans', { reason, force });
       setLoading(true);
       setError(null);
 
       const response = await axios.get(`${API_URL}/plans/user`);
       setUserPlans(response.data.plans);
+      console.log('✅ [PLAN FETCH] User plans fetched successfully', { reason, count: response.data.plans.length });
     } catch (error) {
-      console.error('Fetch user plans error:', error);
+      console.error('❌ [PLAN FETCH] User plans fetch error:', { reason, error });
       setError(error.response?.data?.message || 'Failed to fetch user plans');
     } finally {
       setLoading(false);
@@ -250,16 +308,26 @@ export const PlanProvider = ({ children }) => {
 
   /**
    * Fetch shared plans
+   * @param {boolean} force - Force refresh even if plans already exist
+   * @param {string} reason - Reason for fetching (for debugging)
    */
-  const fetchSharedPlans = async () => {
+  const fetchSharedPlans = async (force = false, reason = 'UNKNOWN') => {
+    // Skip if plans already loaded and not forcing refresh
+    if (!force && sharedPlans.length > 0) {
+      console.log('⏭️ [PLAN FETCH] Skipping shared plans fetch - already loaded', { reason, count: sharedPlans.length });
+      return;
+    }
+
     try {
+      console.log('🔄 [PLAN FETCH] Fetching shared plans', { reason, force });
       setLoading(true);
       setError(null);
 
       const response = await axios.get(`${API_URL}/plans/shared`);
       setSharedPlans(response.data.plans);
+      console.log('✅ [PLAN FETCH] Shared plans fetched successfully', { reason, count: response.data.plans.length });
     } catch (error) {
-      console.error('Fetch shared plans error:', error);
+      console.error('❌ [PLAN FETCH] Shared plans fetch error:', { reason, error });
       setError(error.response?.data?.message || 'Failed to fetch shared plans');
     } finally {
       setLoading(false);
@@ -268,20 +336,66 @@ export const PlanProvider = ({ children }) => {
 
   /**
    * Fetch public plans
+   * @param {boolean} force - Force refresh even if plans already exist
+   * @param {string} reason - Reason for fetching (for debugging)
    */
-  const fetchPublicPlans = async () => {
+  const fetchPublicPlans = async (force = false, reason = 'UNKNOWN') => {
+    // Skip if plans already loaded and not forcing refresh
+    if (!force && publicPlans.length > 0) {
+      console.log('⏭️ [PLAN FETCH] Skipping public plans fetch - already loaded', { reason, count: publicPlans.length });
+      return;
+    }
+
     try {
+      console.log('🔄 [PLAN FETCH] Fetching public plans', { reason, force });
       setLoading(true);
       setError(null);
 
       const response = await axios.get(`${API_URL}/plans/public`);
       setPublicPlans(response.data.plans);
+      console.log('✅ [PLAN FETCH] Public plans fetched successfully', { reason, count: response.data.plans.length });
     } catch (error) {
-      console.error('Fetch public plans error:', error);
+      console.error('❌ [PLAN FETCH] Public plans fetch error:', { reason, error });
       setError(error.response?.data?.message || 'Failed to fetch public plans');
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Clear all plan data (used on logout)
+   */
+  const clearAllPlans = () => {
+    console.log('🧹 [PLAN FETCH] Clearing all plan data on logout');
+    setUserPlans([]);
+    setSharedPlans([]);
+    setPublicPlans([]);
+    setCurrentPlan(null);
+    setCollaborators([]);
+    setUserColor(null);
+    setCanEdit(false);
+    setConflicts([]);
+    setShowConflictModal(false);
+    setError(null);
+    setLastAuthenticatedUser(null);
+    // Note: Don't reset initialLoadCompleted as public plans should persist
+  };
+
+  /**
+   * Refresh all plans manually
+   */
+  const refreshAllPlans = async () => {
+    console.log('🔄 [PLAN FETCH] Manual refresh triggered by user');
+    if (isAuthenticated) {
+      await Promise.all([
+        fetchUserPlans(true, 'MANUAL_REFRESH'),
+        fetchSharedPlans(true, 'MANUAL_REFRESH'),
+        fetchPublicPlans(true, 'MANUAL_REFRESH')
+      ]);
+    } else {
+      await fetchPublicPlans(true, 'MANUAL_REFRESH');
+    }
+    console.log('✅ [PLAN FETCH] Manual refresh completed');
   };
 
   /**
@@ -291,17 +405,19 @@ export const PlanProvider = ({ children }) => {
    */
   const createPlan = async (planData) => {
     try {
+      console.log('🔄 [PLAN FETCH] Creating new plan - will update local state');
       setLoading(true);
       setError(null);
 
       const response = await axios.post(`${API_URL}/plans`, planData);
 
-      // Add to user plans
+      // Add to user plans (update local state instead of refetching)
       setUserPlans(prev => [response.data.plan, ...prev]);
+      console.log('✅ [PLAN FETCH] Plan created and added to local state', response.data.plan.title);
 
       return response.data;
     } catch (error) {
-      console.error('Create plan error:', error);
+      console.error('❌ [PLAN FETCH] Create plan error:', error);
       setError(error.response?.data?.message || 'Failed to create plan');
       throw error;
     } finally {
@@ -335,8 +451,8 @@ export const PlanProvider = ({ children }) => {
           // Save to offline storage
           await savePlanOffline(plan);
 
-          // Join collaboration session if socket is connected
-          if (socket && socket.connected) {
+          // Join collaboration session if socket is connected and collaboration should be enabled
+          if (socket && socket.connected && shouldEnableCollaboration(plan)) {
             // Generate a unique client ID
             const clientId = `${socket.id}-${Date.now()}`;
 
@@ -580,6 +696,11 @@ export const PlanProvider = ({ children }) => {
       return;
     }
 
+    // Skip selection operations if collaboration is not enabled
+    if (operation.type === 'user_selection' && !shouldEnableCollaboration(currentPlan)) {
+      return;
+    }
+
     const operationData = {
       docId: currentPlan.id,
       version: currentPlan.version,
@@ -587,22 +708,26 @@ export const PlanProvider = ({ children }) => {
       clientId: socket?.id || `offline-${Date.now()}`
     };
 
-    // Apply operation locally first
-    applyOperation({
-      ...operationData,
-      userId: user?.id,
-      username: user?.username
-    });
+    // Apply operation locally first (except for selection operations)
+    if (operation.type !== 'user_selection') {
+      applyOperation({
+        ...operationData,
+        userId: user?.id,
+        username: user?.username
+      });
 
-    // Save plan to offline storage
-    await savePlanOffline(currentPlan);
+      // Save plan to offline storage
+      await savePlanOffline(currentPlan);
+    }
 
     // If online, send to server
     if (isOnline && socket && socket.connected) {
       socket.emit('operation', operationData);
-      setSyncStatus('synced');
-    } else {
-      // If offline, queue for later sync
+      if (operation.type !== 'user_selection') {
+        setSyncStatus('synced');
+      }
+    } else if (operation.type !== 'user_selection') {
+      // If offline, queue for later sync (but not selection operations)
       console.log('Offline mode: queueing operation for later sync');
       await savePendingOperation(currentPlan.id, operation);
       syncManager.queueOperation(currentPlan.id, operation, currentPlan);
@@ -693,10 +818,7 @@ export const PlanProvider = ({ children }) => {
           updatedPlan.assignments = op.assignments;
           break;
 
-        case 'cursor_move':
-        case 'cursor_selection':
-          // Cursor operations are handled separately
-          break;
+
 
         default:
           // Unknown operation type
@@ -718,7 +840,6 @@ export const PlanProvider = ({ children }) => {
     if (socket && socket.connected && currentPlan) {
       socket.emit('leave_session', { docId: currentPlan.id });
       setCollaborators([]);
-      setCursorPositions([]);
       setUserColor(null);
       setCanEdit(false);
     }
@@ -768,39 +889,7 @@ export const PlanProvider = ({ children }) => {
     }
   };
 
-  /**
-   * Send cursor position update
-   * @param {Object} position - Cursor position data
-   */
-  const sendCursorPosition = (position) => {
-    if (!socket || !socket.connected || !currentPlan || !canEdit) {
-      return;
-    }
 
-    const operation = {
-      type: 'cursor_move',
-      position
-    };
-
-    sendOperation(operation);
-  };
-
-  /**
-   * Send cursor selection update
-   * @param {Object} selection - Selection range data
-   */
-  const sendCursorSelection = (selection) => {
-    if (!socket || !socket.connected || !currentPlan || !canEdit) {
-      return;
-    }
-
-    const operation = {
-      type: 'cursor_selection',
-      selection
-    };
-
-    sendOperation(operation);
-  };
 
   // Context value
   const value = {
@@ -811,7 +900,6 @@ export const PlanProvider = ({ children }) => {
     loading,
     error,
     collaborators,
-    cursorPositions,
     userColor,
     canEdit,
     conflicts,
@@ -823,6 +911,8 @@ export const PlanProvider = ({ children }) => {
     fetchUserPlans,
     fetchSharedPlans,
     fetchPublicPlans,
+    refreshAllPlans,
+    clearAllPlans,
     createPlan,
     getPlan,
     updatePlan,
@@ -832,8 +922,6 @@ export const PlanProvider = ({ children }) => {
     createShareableLink,
     getPlanByShareableLink,
     sendOperation,
-    sendCursorPosition,
-    sendCursorSelection,
     resolveConflict,
     leaveCollaborationSession
   };

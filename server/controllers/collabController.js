@@ -2,7 +2,7 @@ import Plan from '../models/Plan.js';
 import Version from '../models/Version.js';
 import User from '../models/User.js';
 import ActiveSession from '../models/ActiveSession.js';
-import CursorPosition from '../models/CursorPosition.js';
+import UserSelection from '../models/UserSelection.js';
 import Operation from '../models/Operation.js';
 import { r, getConnection, releaseConnection } from '../config/db.cjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,6 +13,44 @@ import {
   generateDelta,
   applyDelta
 } from '../utils/deltaUtils.js';
+
+/**
+ * Check if collaboration should be enabled for a plan
+ * @param {Object} plan - Plan object
+ * @returns {boolean} Whether collaboration should be enabled
+ */
+const shouldEnableCollaboration = (plan) => {
+  // Enable collaboration if:
+  // 1. Plan is shared with other users (has sharedWith array with users)
+  // 2. Plan is public
+  // 3. Plan has a shareable link
+  return (
+    (plan.sharedWith && plan.sharedWith.length > 0) ||
+    plan.isPublic ||
+    (plan.shareableLink && plan.shareableLink.token)
+  );
+};
+
+/**
+ * Check if user has edit permissions for collaborative features
+ * @param {Object} plan - Plan object
+ * @param {string} userId - User ID
+ * @returns {boolean} Whether user can participate in collaborative editing
+ */
+const hasCollaborativeEditAccess = (plan, userId) => {
+  // Owner always has edit access
+  if (plan.userId === userId) {
+    return true;
+  }
+
+  // Check if user is shared with edit permissions
+  if (plan.sharedWith && plan.sharedWith.includes(userId)) {
+    return plan.permissions && plan.permissions[userId] && plan.permissions[userId].canEdit;
+  }
+
+  // Public plans are view-only by default unless explicitly shared with edit access
+  return false;
+};
 
 /**
  * Handle real-time collaboration operations
@@ -29,49 +67,68 @@ export const handleOperation = async (io, socket, data, user) => {
       return socket.emit('error', { message: 'Invalid operation data' });
     }
 
-    // Handle cursor position updates separately (don't need version check or persistence)
-    const cursorOps = operations.filter(op => op.type === 'cursor_move' || op.type === 'cursor_selection');
-    const nonCursorOps = operations.filter(op => op.type !== 'cursor_move' && op.type !== 'cursor_selection');
+    // Handle selection updates separately (don't need version check or persistence)
+    const selectionOps = operations.filter(op => op.type === 'user_selection');
+    const nonSelectionOps = operations.filter(op => op.type !== 'user_selection');
 
-    // Process cursor operations immediately
-    if (cursorOps.length > 0) {
-      for (const op of cursorOps) {
-        if (op.type === 'cursor_move' || op.type === 'cursor_selection') {
+    // Get plan first to check collaboration status
+    const connection = await getConnection();
+    let plan;
+    try {
+      plan = await r.table('plans').get(docId).run(connection);
+      if (!plan) {
+        return socket.emit('error', { message: 'Plan not found' });
+      }
+    } finally {
+      releaseConnection(connection);
+    }
+
+    // Check if collaboration should be enabled for this plan
+    const collaborationEnabled = shouldEnableCollaboration(plan);
+    const userHasEditAccess = hasCollaborativeEditAccess(plan, user.id);
+
+    // Process selection operations only if collaboration is enabled and user has edit access
+    if (collaborationEnabled && userHasEditAccess && selectionOps.length > 0) {
+      for (const op of selectionOps) {
+        if (op.type === 'user_selection') {
           // Get user color from active session
           const session = await ActiveSession.findByUserAndPlan(user.id, docId);
           const userColor = session?.userColor || ActiveSession.generateRandomColor();
 
-          // Update cursor position
-          await CursorPosition.upsert({
+          // Update user selection
+          await UserSelection.upsert({
             planId: docId,
             userId: user.id,
             username: user.username,
-            position: op.position,
-            selection: op.selection,
+            elementId: op.elementId,
+            elementType: op.elementType,
+            selectedText: op.selectedText,
+            selectionRange: op.selectionRange,
             userColor
           });
 
-          // Broadcast cursor position to other users
-          socket.to(`plan:${docId}`).emit('cursor_update', {
+          // Broadcast selection to other users
+          socket.to(`plan:${docId}`).emit('selection_update', {
             userId: user.id,
             username: user.username,
-            position: op.position,
-            selection: op.selection,
+            elementId: op.elementId,
+            elementType: op.elementType,
+            selectedText: op.selectedText,
+            selectionRange: op.selectionRange,
             color: userColor
           });
         }
       }
     }
 
-    // If there are no non-cursor operations, we're done
-    if (nonCursorOps.length === 0) {
+    // If there are no non-selection operations, we're done
+    if (nonSelectionOps.length === 0) {
       return;
     }
 
-    const connection = await getConnection();
+    const connection2 = await getConnection();
     try {
-      // Get plan
-      const plan = await r.table('plans').get(docId).run(connection);
+      // Plan already retrieved above, use it for further operations
 
       if (!plan) {
         return socket.emit('error', { message: 'Plan not found' });
@@ -96,7 +153,7 @@ export const handleOperation = async (io, socket, data, user) => {
         const serverOps = await Operation.getOperationsSince(docId, version);
 
         // Transform client operations with enhanced OT algorithm
-        const transformResult = transformOperations(nonCursorOps, serverOps);
+        const transformResult = transformOperations(nonSelectionOps, serverOps);
         const transformedOps = transformResult.operations;
 
         // If all operations were filtered out during transformation, we're done
@@ -127,7 +184,7 @@ export const handleOperation = async (io, socket, data, user) => {
             version: plan.version + 1,
             updatedAt: new Date()
           })
-          .run(connection);
+          .run(connection2);
 
         // Create new version
         await r.table('versions').insert({
@@ -139,7 +196,7 @@ export const handleOperation = async (io, socket, data, user) => {
           userId: user.id,
           clientId,
           createdAt: new Date()
-        }).run(connection);
+        }).run(connection2);
 
         // Store operations for conflict resolution
         for (const op of transformedOps) {
@@ -175,7 +232,7 @@ export const handleOperation = async (io, socket, data, user) => {
         await ActiveSession.updateActivity(socket.id);
       } else {
         // Version matches, apply operations directly
-        const updatedPlan = applyOperations(plan, nonCursorOps);
+        const updatedPlan = applyOperations(plan, nonSelectionOps);
 
         // Update plan
         await r.table('plans')
@@ -185,7 +242,7 @@ export const handleOperation = async (io, socket, data, user) => {
             version: plan.version + 1,
             updatedAt: new Date()
           })
-          .run(connection);
+          .run(connection2);
 
         // Create new version
         await r.table('versions').insert({
@@ -193,14 +250,14 @@ export const handleOperation = async (io, socket, data, user) => {
           planId: docId,
           version: plan.version + 1,
           data: updatedPlan,
-          operations: nonCursorOps,
+          operations: nonSelectionOps,
           userId: user.id,
           clientId,
           createdAt: new Date()
-        }).run(connection);
+        }).run(connection2);
 
         // Store operations for conflict resolution
-        for (const op of nonCursorOps) {
+        for (const op of nonSelectionOps) {
           await Operation.create({
             planId: docId,
             userId: user.id,
@@ -218,7 +275,7 @@ export const handleOperation = async (io, socket, data, user) => {
           {
             docId,
             version: plan.version + 1,
-            operations: nonCursorOps,
+            operations: nonSelectionOps,
             userId: user.id,
             username: user.username,
             clientId
@@ -233,7 +290,7 @@ export const handleOperation = async (io, socket, data, user) => {
         await ActiveSession.updateActivity(socket.id);
       }
     } finally {
-      releaseConnection(connection);
+      releaseConnection(connection2);
     }
   } catch (error) {
     console.error('Handle operation error:', error);
@@ -322,9 +379,8 @@ const applyOperations = (plan, operations) => {
         updatedPlan.assignments = op.assignments;
         break;
 
-      case 'cursor_move':
-      case 'cursor_selection':
-        // Cursor operations don't modify the plan state
+      case 'user_selection':
+        // Selection operations don't modify the plan state
         break;
 
       default:
@@ -369,6 +425,10 @@ export const joinSession = async (io, socket, data, user) => {
         return socket.emit('error', { message: 'You do not have access to this plan' });
       }
 
+      // Check if collaboration should be enabled for this plan
+      const collaborationEnabled = shouldEnableCollaboration(plan);
+      const userHasEditAccess = hasCollaborativeEditAccess(plan, user.id);
+
       // Join room
       socket.join(`plan:${docId}`);
 
@@ -385,37 +445,47 @@ export const joinSession = async (io, socket, data, user) => {
         userColor
       });
 
-      // Get all active sessions for this plan
-      const activeSessions = await ActiveSession.findByPlanId(docId);
-      const activeUsers = activeSessions
-        .filter(session => session.userId !== user.id)
-        .map(session => ({
-          id: session.userId,
-          username: session.username,
-          color: session.userColor,
-          lastActive: session.lastActiveAt
-        }));
+      // Only set up collaboration features if collaboration is enabled
+      let activeUsers = [];
+      let userSelections = [];
 
-      // Get cursor positions for all active users
-      const cursorPositions = await CursorPosition.findByPlanId(docId);
+      if (collaborationEnabled) {
+        // Get all active sessions for this plan
+        const activeSessions = await ActiveSession.findByPlanId(docId);
+        activeUsers = activeSessions
+          .filter(session => session.userId !== user.id)
+          .map(session => ({
+            id: session.userId,
+            username: session.username,
+            color: session.userColor,
+            lastActive: session.lastActiveAt,
+            canEdit: hasCollaborativeEditAccess(plan, session.userId)
+          }));
 
-      // Notify other users that a new user joined
-      socket.to(`plan:${docId}`).emit('user_joined', {
-        user: {
-          id: user.id,
-          username: user.username,
-          color: userColor
+        // Get user selections for all active users (only if user has edit access)
+        if (userHasEditAccess) {
+          userSelections = await UserSelection.findByPlanId(docId);
         }
-      });
+
+        // Notify other users that a new user joined (only if collaboration is enabled)
+        socket.to(`plan:${docId}`).emit('user_joined', {
+          user: {
+            id: user.id,
+            username: user.username,
+            color: userColor,
+            canEdit: userHasEditAccess
+          }
+        });
+      }
 
       // Send initial state to the user
       socket.emit('session_joined', {
         plan,
         activeUsers,
-        cursorPositions,
-        canEdit: plan.userId === user.id ||
-                (plan.sharedWith.includes(user.id) && plan.permissions[user.id]?.canEdit),
-        userColor
+        userSelections,
+        collaborationEnabled,
+        canEdit: userHasEditAccess,
+        userColor: collaborationEnabled ? userColor : null
       });
 
       // Get recent operations for context
@@ -455,8 +525,8 @@ export const leaveSession = async (io, socket, data, user) => {
     // Remove active session
     await ActiveSession.removeBySocketId(socket.id);
 
-    // Remove cursor position
-    await CursorPosition.remove(user.id, docId);
+    // Remove user selection
+    await UserSelection.remove(user.id, docId);
 
     // Notify other users that a user left
     socket.to(`plan:${docId}`).emit('user_left', {

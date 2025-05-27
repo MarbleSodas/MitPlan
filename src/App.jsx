@@ -42,9 +42,9 @@ import PlanList from './features/plans/PlanList';
 import CreatePlanModal from './features/plans/CreatePlanModal';
 import PlanSharing from './features/plans/PlanSharing';
 import CollaborationPanel from './components/CollaborationPanel';
-import CursorOverlay from './components/CursorOverlay';
 import ConflictResolutionModal from './components/ConflictResolutionModal';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
+import MigrationHandler from './components/MigrationHandler';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
@@ -62,8 +62,7 @@ import {
   useDragAndDrop,
   useMobileInteraction,
   useUrlHandler,
-  useDeviceDetection,
-  useCursorTracking
+  useDeviceDetection
 } from './hooks';
 
 // Import utility functions
@@ -135,8 +134,7 @@ function App() {
   // Use custom hook for device detection
   const isMobile = useDeviceDetection();
 
-  // Use cursor tracking hook for real-time collaboration
-  useCursorTracking(timelineContainerRef);
+
 
   // Custom hooks
   const { handleDragStart, handleDragEnd } = useDragAndDrop({
@@ -421,6 +419,8 @@ function App() {
   return (
     <>
       <GlobalStyle />
+      {/* Handle localStorage plan migration when user is authenticated */}
+      <MigrationHandler />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -492,10 +492,6 @@ function App() {
               <MainContent>
                 <TimelineContainer ref={timelineContainerRef}>
                   {bossActionsList}
-                  {/* Add cursor overlay for real-time collaboration */}
-                  {isAuthenticated && currentPlan && collaborators.length > 0 && (
-                    <CursorOverlay containerRef={timelineContainerRef} />
-                  )}
                 </TimelineContainer>
 
                 <MitigationContainer>

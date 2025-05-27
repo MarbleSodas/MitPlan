@@ -32,7 +32,7 @@ const Tab = styled.button`
   font-weight: ${props => props.active ? '600' : '400'};
   cursor: pointer;
   transition: all 0.2s;
-  
+
   &:hover {
     color: ${props => props.theme.primary};
   }
@@ -56,7 +56,7 @@ const CreateButton = styled.button`
   font-weight: 500;
   transition: background-color 0.2s;
   margin-left: auto;
-  
+
   &:hover {
     background-color: ${props => props.theme.primaryHover};
   }
@@ -76,36 +76,30 @@ const Grid = styled.div`
 
 const PlanList = ({ onCreatePlan, onSelectPlan }) => {
   const { isAuthenticated } = useAuth();
-  const { 
-    userPlans, 
-    sharedPlans, 
-    publicPlans, 
-    loading, 
-    fetchUserPlans, 
-    fetchSharedPlans, 
-    fetchPublicPlans 
+  const {
+    userPlans,
+    sharedPlans,
+    publicPlans,
+    loading,
+    refreshAllPlans
   } = usePlan();
-  
+
   const [activeTab, setActiveTab] = useState('my-plans');
-  
+
   useEffect(() => {
+    console.log('📋 [PLAN LIST] Setting default tab based on authentication status');
     // Set default tab based on authentication status
     if (!isAuthenticated) {
       setActiveTab('public');
     }
   }, [isAuthenticated]);
-  
-  useEffect(() => {
-    // Fetch plans based on active tab
-    if (activeTab === 'my-plans' && isAuthenticated) {
-      fetchUserPlans();
-    } else if (activeTab === 'shared' && isAuthenticated) {
-      fetchSharedPlans();
-    } else if (activeTab === 'public') {
-      fetchPublicPlans();
-    }
-  }, [activeTab, isAuthenticated, fetchUserPlans, fetchSharedPlans, fetchPublicPlans]);
-  
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    console.log('🔄 [PLAN LIST] User clicked refresh button');
+    refreshAllPlans();
+  };
+
   const getPlansToDisplay = () => {
     switch (activeTab) {
       case 'my-plans':
@@ -118,7 +112,7 @@ const PlanList = ({ onCreatePlan, onSelectPlan }) => {
         return [];
     }
   };
-  
+
   const renderEmptyState = () => {
     switch (activeTab) {
       case 'my-plans':
@@ -126,9 +120,9 @@ const PlanList = ({ onCreatePlan, onSelectPlan }) => {
           <EmptyState>
             <h3>No plans yet</h3>
             <p>Create your first mitigation plan to get started.</p>
-            <button 
+            <button
               onClick={onCreatePlan}
-              style={{ 
+              style={{
                 marginTop: '15px',
                 padding: '8px 16px',
                 backgroundColor: '#4a90e2',
@@ -160,43 +154,60 @@ const PlanList = ({ onCreatePlan, onSelectPlan }) => {
         return null;
     }
   };
-  
+
   return (
     <Container>
       <Title>
         Mitigation Plans
-        {isAuthenticated && (
-          <CreateButton onClick={onCreatePlan}>
-            Create Plan
-          </CreateButton>
-        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={handleRefresh}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+          {isAuthenticated && (
+            <CreateButton onClick={onCreatePlan}>
+              Create Plan
+            </CreateButton>
+          )}
+        </div>
       </Title>
-      
+
       <TabsContainer>
         {isAuthenticated && (
           <>
-            <Tab 
-              active={activeTab === 'my-plans'} 
+            <Tab
+              active={activeTab === 'my-plans'}
               onClick={() => setActiveTab('my-plans')}
             >
               My Plans
             </Tab>
-            <Tab 
-              active={activeTab === 'shared'} 
+            <Tab
+              active={activeTab === 'shared'}
               onClick={() => setActiveTab('shared')}
             >
               Shared With Me
             </Tab>
           </>
         )}
-        <Tab 
-          active={activeTab === 'public'} 
+        <Tab
+          active={activeTab === 'public'}
           onClick={() => setActiveTab('public')}
         >
           Public Plans
         </Tab>
       </TabsContainer>
-      
+
       {loading ? (
         <LoadingIndicator>Loading plans...</LoadingIndicator>
       ) : (
@@ -206,9 +217,9 @@ const PlanList = ({ onCreatePlan, onSelectPlan }) => {
           ) : (
             <Grid>
               {getPlansToDisplay().map(plan => (
-                <PlanItem 
-                  key={plan.id} 
-                  plan={plan} 
+                <PlanItem
+                  key={plan.id}
+                  plan={plan}
                   onSelect={() => onSelectPlan(plan.id)}
                 />
               ))}

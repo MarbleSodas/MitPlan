@@ -87,13 +87,13 @@ async function initDb() {
       await r.table('active_sessions').indexWait('planId', 'userId').run(connection);
     }
 
-    // Cursor positions table for real-time collaboration
-    if (!tables.includes('cursor_positions')) {
-      console.log('Creating cursor_positions table');
-      await r.tableCreate('cursor_positions').run(connection);
-      await r.table('cursor_positions').indexCreate('planId').run(connection);
-      await r.table('cursor_positions').indexCreate('userId').run(connection);
-      await r.table('cursor_positions').indexWait('planId', 'userId').run(connection);
+    // User selections table for collaborative selection highlighting
+    if (!tables.includes('user_selections')) {
+      console.log('Creating user_selections table');
+      await r.tableCreate('user_selections').run(connection);
+      await r.table('user_selections').indexCreate('planId').run(connection);
+      await r.table('user_selections').indexCreate('userId').run(connection);
+      await r.table('user_selections').indexWait('planId', 'userId').run(connection);
     }
 
     // Operation history table for conflict resolution

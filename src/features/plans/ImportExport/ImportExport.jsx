@@ -6,6 +6,8 @@ import {
   loadFromLocalStorage,
   generateShareableUrl
 } from '../../../utils';
+import { useAuth } from '../../../contexts/AuthContext';
+import { usePlan } from '../../../contexts/PlanContext';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -284,70 +286,135 @@ const ActionButton = styled.button`
   }
 `;
 
+const AuthStatusBanner = styled.div`
+  background-color: ${props => props.$isAuthenticated ? '#e8f5e8' : '#fff3cd'};
+  border: 1px solid ${props => props.$isAuthenticated ? '#d4edda' : '#ffeaa7'};
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 20px;
+  color: ${props => props.$isAuthenticated ? '#155724' : '#856404'};
+  font-size: 14px;
+
+  strong {
+    font-weight: 600;
+  }
+`;
+
 function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
+  const { isAuthenticated, user } = useAuth();
+  const {
+    userPlans,
+    createPlan,
+    deletePlan: deleteDatabasePlan,
+    loading: planLoading
+  } = usePlan();
+
   const [planName, setPlanName] = useState('');
   const [exportData, setExportData] = useState('');
   const [importData, setImportData] = useState('');
   const [savedPlans, setSavedPlans] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   // Load saved plans on component mount
   useEffect(() => {
-    loadSavedPlans();
-  }, []);
+    console.log('📥 [IMPORT/EXPORT] Component mounted');
+    if (!isAuthenticated) {
+      console.log('📥 [IMPORT/EXPORT] Loading plans from localStorage for non-authenticated user');
+      // Load plans from localStorage for non-authenticated users
+      loadSavedPlans();
+    } else {
+      console.log('📥 [IMPORT/EXPORT] User authenticated - using plans from PlanContext (no fetch needed)');
+    }
+    // For authenticated users, plans are already loaded by PlanContext
+  }, [isAuthenticated]);
 
-  // Load saved plans from localStorage
+  // Update savedPlans when userPlans changes (for authenticated users)
+  useEffect(() => {
+    if (isAuthenticated && userPlans) {
+      setSavedPlans(userPlans);
+    }
+  }, [isAuthenticated, userPlans]);
+
+  // Load saved plans from localStorage (for unauthenticated users)
   const loadSavedPlans = () => {
     const plans = loadFromLocalStorage('mitPlanSavedPlans', []);
     setSavedPlans(plans);
   };
 
   // Handle saving the current plan
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!planName.trim()) {
       alert('Please enter a plan name');
       return;
     }
 
-    // Create optimized assignments object with only the necessary data
-    const optimizedAssignments = {};
+    setSaving(true);
 
-    Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
-      // Store only the mitigation IDs instead of the full objects
-      optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
-    });
+    try {
+      // Create optimized assignments object with only the necessary data
+      const optimizedAssignments = {};
 
-    // Create optimized selectedJobs object with only the selected job IDs
-    const optimizedSelectedJobs = {};
+      Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
+        // Store only the mitigation IDs instead of the full objects
+        optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
+      });
 
-    Object.entries(selectedJobs).forEach(([roleKey, jobs]) => {
-      // Filter to only include selected jobs and store only their IDs
-      const selectedJobIds = jobs
-        .filter(job => job.selected)
-        .map(job => job.id);
+      // Create optimized selectedJobs object with only the selected job IDs
+      const optimizedSelectedJobs = {};
 
-      // Only include the role if it has selected jobs
-      if (selectedJobIds.length > 0) {
-        optimizedSelectedJobs[roleKey] = selectedJobIds;
+      Object.entries(selectedJobs).forEach(([roleKey, jobs]) => {
+        // Filter to only include selected jobs and store only their IDs
+        const selectedJobIds = jobs
+          .filter(job => job.selected)
+          .map(job => job.id);
+
+        // Only include the role if it has selected jobs
+        if (selectedJobIds.length > 0) {
+          optimizedSelectedJobs[roleKey] = selectedJobIds;
+        }
+      });
+
+      if (isAuthenticated) {
+        // Save to database
+        const planData = {
+          title: planName,
+          description: `Created on ${new Date().toLocaleDateString()}`,
+          bossId,
+          assignments: optimizedAssignments,
+          selectedJobs: optimizedSelectedJobs,
+          isPublic: false
+        };
+
+        await createPlan(planData);
+        alert(`Plan "${planName}" saved to your account!`);
+
+        // Note: createPlan automatically updates local state, no need to refetch
+        console.log('✅ [IMPORT/EXPORT] Plan created and automatically added to local state');
+      } else {
+        // Save to localStorage
+        const planData = {
+          id: Date.now().toString(),
+          name: planName,
+          date: new Date().toISOString(),
+          version: '1.2',
+          bossId,
+          assignments: optimizedAssignments,
+          selectedJobs: optimizedSelectedJobs
+        };
+
+        const updatedPlans = [...savedPlans, planData];
+        saveToLocalStorage('mitPlanSavedPlans', updatedPlans);
+        setSavedPlans(updatedPlans);
+        alert(`Plan "${planName}" saved locally!`);
       }
-    });
 
-    // Create the plan data
-    const planData = {
-      id: Date.now().toString(),
-      name: planName,
-      date: new Date().toISOString(),
-      version: '1.2',
-      bossId,
-      assignments: optimizedAssignments,
-      selectedJobs: optimizedSelectedJobs
-    };
-
-    // Add to saved plans
-    const updatedPlans = [...savedPlans, planData];
-    saveToLocalStorage('mitPlanSavedPlans', updatedPlans);
-    setSavedPlans(updatedPlans);
-    setPlanName('');
-    alert(`Plan "${planName}" saved successfully!`);
+      setPlanName('');
+    } catch (error) {
+      console.error('Save error:', error);
+      alert(`Failed to save plan: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Handle exporting the current plan
@@ -536,7 +603,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
       // Reconstruct the full mitigation objects from IDs
       const reconstructedAssignments = {};
 
-      Object.entries(plan.assignments).forEach(([bossActionId, mitigationIds]) => {
+      Object.entries(plan.assignments || {}).forEach(([bossActionId, mitigationIds]) => {
         reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
           const mitigation = mitigationAbilities.find(m => m.id === id);
           if (!mitigation) {
@@ -573,8 +640,9 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
       }
 
       // Call the onImport callback with the reconstructed data
+      const planName = plan.title || plan.name || 'Untitled Plan';
       onImport(reconstructedAssignments, plan.bossId, reconstructedJobs);
-      alert(`Plan "${plan.name}" loaded successfully!`);
+      alert(`Plan "${planName}" loaded successfully!`);
     } catch (error) {
       console.error('Load error:', error);
       alert(`Load failed: ${error.message}`);
@@ -582,11 +650,25 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   };
 
   // Handle deleting a saved plan
-  const handleDeletePlan = (planId) => {
+  const handleDeletePlan = async (planId) => {
     if (window.confirm('Are you sure you want to delete this plan?')) {
-      const updatedPlans = savedPlans.filter(plan => plan.id !== planId);
-      saveToLocalStorage('mitPlanSavedPlans', updatedPlans);
-      setSavedPlans(updatedPlans);
+      try {
+        if (isAuthenticated) {
+          // Delete from database
+          await deleteDatabasePlan(planId);
+          alert('Plan deleted successfully!');
+          // Note: deleteDatabasePlan automatically updates local state, no need to refetch
+          console.log('✅ [IMPORT/EXPORT] Plan deleted and automatically removed from local state');
+        } else {
+          // Delete from localStorage
+          const updatedPlans = savedPlans.filter(plan => plan.id !== planId);
+          saveToLocalStorage('mitPlanSavedPlans', updatedPlans);
+          setSavedPlans(updatedPlans);
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert(`Failed to delete plan: ${error.message}`);
+      }
     }
   };
 
@@ -617,10 +699,23 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
   return (
     <Container>
+      {/* Authentication Status Banner */}
+      <AuthStatusBanner $isAuthenticated={isAuthenticated}>
+        {isAuthenticated ? (
+          <div>
+            <strong>✅ Logged in as {user?.username}</strong> - Your plans are saved to your account and accessible across all devices.
+          </div>
+        ) : (
+          <div>
+            <strong>⚠️ Not logged in</strong> - Plans are saved locally only. Log in to save plans to your account and access them from any device.
+          </div>
+        )}
+      </AuthStatusBanner>
+
       <TwoColumnLayout>
         {/* Left Column - Save & Export */}
         <Column>
-          <Title>Save Plan</Title>
+          <Title>{isAuthenticated ? 'Save Plan to Account' : 'Save Plan Locally'}</Title>
 
           <Section>
             <FormGroup>
@@ -634,8 +729,8 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
             </FormGroup>
 
             <ButtonGroup>
-              <SaveButton onClick={handleSave}>
-                💾 Save Current Plan
+              <SaveButton onClick={handleSave} disabled={saving || planLoading}>
+                {saving ? '💾 Saving...' : `💾 Save ${isAuthenticated ? 'to Account' : 'Locally'}`}
               </SaveButton>
               <Button onClick={handleExport}>
                 📤 Export to File
@@ -662,28 +757,34 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
           </Section>
 
           <Section>
-            <Label>Saved Plans</Label>
-            {savedPlans.length === 0 ? (
-              <p>No saved plans yet.</p>
+            <Label>{isAuthenticated ? 'Your Saved Plans' : 'Locally Saved Plans'}</Label>
+            {planLoading ? (
+              <p>Loading plans...</p>
+            ) : savedPlans.length === 0 ? (
+              <p>{isAuthenticated ? 'No plans saved to your account yet.' : 'No locally saved plans yet.'}</p>
             ) : (
               <SavedPlansList>
-                {savedPlans.map(plan => (
-                  <SavedPlanItem key={plan.id}>
-                    <PlanName>{plan.name}</PlanName>
-                    <PlanDate>{new Date(plan.date).toLocaleDateString()}</PlanDate>
-                    <PlanActions>
-                      <ActionButton onClick={() => handleLoadPlan(plan)} title="Load Plan">
-                        📂
-                      </ActionButton>
-                      <ActionButton onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
-                        📋
-                      </ActionButton>
-                      <ActionButton onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
-                        🗑️
-                      </ActionButton>
-                    </PlanActions>
-                  </SavedPlanItem>
-                ))}
+                {savedPlans.map(plan => {
+                  const planName = plan.title || plan.name || 'Untitled Plan';
+                  const planDate = plan.createdAt || plan.date;
+                  return (
+                    <SavedPlanItem key={plan.id}>
+                      <PlanName>{planName}</PlanName>
+                      <PlanDate>{new Date(planDate).toLocaleDateString()}</PlanDate>
+                      <PlanActions>
+                        <ActionButton onClick={() => handleLoadPlan(plan)} title="Load Plan">
+                          📂
+                        </ActionButton>
+                        <ActionButton onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
+                          📋
+                        </ActionButton>
+                        <ActionButton onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
+                          🗑️
+                        </ActionButton>
+                      </PlanActions>
+                    </SavedPlanItem>
+                  );
+                })}
               </SavedPlansList>
             )}
           </Section>

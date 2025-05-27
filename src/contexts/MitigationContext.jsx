@@ -10,15 +10,19 @@ import {
 } from '../utils';
 import { useBossContext } from './BossContext';
 import { useTankPositionContext } from './TankPositionContext';
+import { useAuth } from './AuthContext';
 
 // Create the context
 const MitigationContext = createContext();
 
 // Create a provider component
 export const MitigationProvider = ({ children, bossActions, bossLevel = 90, selectedJobs }) => {
+  // Get authentication status
+  const { isAuthenticated } = useAuth();
+
   // Get tank position context
   const { tankPositions } = useTankPositionContext();
-  
+
   // Initialize assignments from localStorage or empty object
   const [assignments, setAssignments] = useState(() => {
     // Try to load from localStorage
@@ -587,10 +591,10 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       // Check which tank has access to this ability
       const mainTankJob = tankPositions?.mainTank;
       const offTankJob = tankPositions?.offTank;
-      
+
       const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
       const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-      
+
       // Override tankPosition if job compatibility doesn't match provided position
       if (canMainTankUse && !canOffTankUse) {
         // Only main tank can use this ability
@@ -621,12 +625,12 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
         // Check which tank has access to this ability (for single-target abilities that can be cast on tanks)
         const mainTankJob = tankPositions?.mainTank;
         const offTankJob = tankPositions?.offTank;
-        
+
         // For single-target abilities, what matters is which job can CAST the ability
         // not which job will receive it (since these can generally be cast on any tank)
         const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
         const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-        
+
         if (canMainTankUse && !canOffTankUse) {
           // Only main tank can cast this ability, but can target either tank
           // In this case, target defaults to main tank
@@ -864,9 +868,19 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       assignments: optimizedAssignments
     };
 
-    // Save to localStorage
-    saveToLocalStorage('mitPlanAutosave', autosaveData);
-  }, [assignments]);
+    // Save based on authentication status
+    if (isAuthenticated) {
+      // For authenticated users, save to localStorage as backup
+      // The main plan saving will be handled by the database through PlanContext
+      saveToLocalStorage('mitPlanAutosave', autosaveData);
+
+      // TODO: In the future, we could implement real-time database autosave here
+      // For now, we rely on manual saves to database and localStorage for autosave
+    } else {
+      // For unauthenticated users, save to localStorage
+      saveToLocalStorage('mitPlanAutosave', autosaveData);
+    }
+  }, [assignments, isAuthenticated]);
 
   // Reference to the Aetherflow context
   const aetherflowContextRef = useRef(null);

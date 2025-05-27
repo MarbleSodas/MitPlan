@@ -1,6 +1,13 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { 
+  migratePlansToDatabase, 
+  migrateAutosaveToDatabase,
+  getLocalStoragePlans,
+  getLocalStorageAutosave,
+  isMigrationComplete
+} from '../utils/planMigration';
 
 // Create context
 const AuthContext = createContext();
@@ -127,6 +134,8 @@ export const AuthProvider = ({ children }) => {
 
           // Set up token refresh timer
           setupRefreshTimer();
+
+          // Note: Migration will be handled by components that have access to both AuthContext and PlanContext
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -196,6 +205,60 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Migrate localStorage plans to database
+   * @param {string} userId - User ID
+   * @param {Function} createPlanFunction - Function to create plans in database
+   */
+  const migratePlans = useCallback(async (userId, createPlanFunction) => {
+    try {
+      if (createPlanFunction) {
+        // Migrate saved plans
+        const migrationResult = await migratePlansToDatabase(
+          userId,
+          createPlanFunction,
+          (progress) => {
+            console.log(`Migration progress: ${progress.current}/${progress.total} - ${progress.planName}`);
+          }
+        );
+
+        if (migrationResult.success && migrationResult.migrated > 0) {
+          console.log(`Successfully migrated ${migrationResult.migrated} plans`);
+        }
+
+        // Migrate autosave data
+        const autosaveMigrated = await migrateAutosaveToDatabase(userId, createPlanFunction);
+        if (autosaveMigrated) {
+          console.log('Autosave data migrated successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Plan migration failed:', error);
+      // Don't throw error - migration failure shouldn't prevent login
+    }
+  }, []);
+
+  /**
+   * Check if user needs migration
+   * @param {string} userId - User ID
+   * @returns {boolean} Whether migration is needed
+   */
+  const needsMigration = useCallback((userId) => {
+    try {
+      if (isMigrationComplete(userId)) {
+        return false;
+      }
+
+      const localPlans = getLocalStoragePlans();
+      const autosaveData = getLocalStorageAutosave();
+      
+      return localPlans.length > 0 || (autosaveData && autosaveData.assignments);
+    } catch (error) {
+      console.error('Error checking migration status:', error);
+      return false;
+    }
+  }, []);
+
+  /**
    * Login user
    * @param {Object} credentials - User credentials
    * @returns {Promise} Login result
@@ -216,6 +279,8 @@ export const AuthProvider = ({ children }) => {
 
       // Set up token refresh timer
       setupRefreshTimer();
+
+      // Note: Migration will be handled by components that have access to both AuthContext and PlanContext
 
       return response.data;
     } catch (error) {
@@ -354,6 +419,8 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     updatePreferences,
     changePassword,
+    migratePlans,
+    needsMigration,
     isAuthenticated: !!user,
     isVerified: user?.isVerified || false
   };

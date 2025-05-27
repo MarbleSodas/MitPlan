@@ -7,7 +7,6 @@ import jwt from 'jsonwebtoken';
 import { initDb } from './config/db.cjs';
 import User from './models/User.js';
 import ActiveSession from './models/ActiveSession.js';
-import CursorPosition from './models/CursorPosition.js';
 import { handleOperation, joinSession, leaveSession } from './controllers/collabController.js';
 import dotenv from 'dotenv';
 
