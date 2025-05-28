@@ -23,11 +23,12 @@ import Droppable from './components/dnd/Droppable/Droppable';
 import DragPreview from './components/dnd/DragPreview';
 import BossSelector from './features/bosses/BossSelector/BossSelector';
 import JobSelector from './features/jobs/JobSelector/JobSelector';
-import ImportExport from './features/plans/ImportExport/ImportExport';
+import EnhancedImportExport from './features/plans/ImportExport/EnhancedImportExport';
 import ThemeToggle from './components/common/ThemeToggle/ThemeToggle';
 import KofiButton from './components/common/KofiButton/KofiButton';
 import DiscordButton from './components/common/DiscordButton/DiscordButton';
 import QuizButton from './components/common/QuizButton/QuizButton';
+import { AuthButton } from './components/auth';
 import FilterToggle from './components/common/FilterToggle/FilterToggle';
 import MobileBottomSheet from './components/mobile/MobileBottomSheet/MobileBottomSheet';
 import MobileMitigationSelector from './components/mobile/MobileMitigationSelector/MobileMitigationSelector';
@@ -38,22 +39,22 @@ import TankPositionSelector from './components/TankPositionSelector';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
-import { 
-  GlobalStyle, 
-  TimelineContainer, 
-  MitigationContainer, 
-  MainContent, 
-  BossActionsList, 
-  MitigationList 
+import {
+  GlobalStyle,
+  TimelineContainer,
+  MitigationContainer,
+  MainContent,
+  BossActionsList,
+  MitigationList
 } from './components/styled';
 
 // Import hooks
-import { 
-  useDragAndDrop, 
-  useMobileInteraction, 
-  useUrlHandler, 
-  useDeviceDetection 
+import {
+  useDragAndDrop,
+  useMobileInteraction,
+  useDeviceDetection
 } from './hooks';
+import useEnhancedUrlHandler from './hooks/useEnhancedUrlHandler';
 
 // Import utility functions
 import {
@@ -106,7 +107,7 @@ function App() {
   const [pendingAssignments, setPendingAssignments] = useState([]);
   const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false);
   const [selectedActionForMobile, setSelectedActionForMobile] = useState(null);
-  
+
   // Use custom hook for device detection
   const isMobile = useDeviceDetection();
 
@@ -132,7 +133,7 @@ function App() {
   });
 
   // Handle URL parameters
-  useUrlHandler({
+  useEnhancedUrlHandler({
     importAssignments,
     setCurrentBossId,
     setSelectedJobs,
@@ -142,11 +143,11 @@ function App() {
   // Effect to clean up pending assignments - optimized with dependency on length
   useEffect(() => {
     if (pendingAssignments.length === 0) return;
-    
+
     const timeoutId = setTimeout(() => {
       setPendingAssignments([]);
     }, 1000);
-    
+
     return () => clearTimeout(timeoutId);
   }, [pendingAssignments.length]);
 
@@ -188,9 +189,9 @@ function App() {
   // Memoize filtered abilities to prevent unnecessary recalculations
   const filteredAbilities = useMemo(() => {
     return filterAbilitiesByLevel(mitigationAbilities, selectedJobs, currentBossLevel)
-      .filter(mitigation => 
-        showAllMitigations || 
-        !selectedBossAction || 
+      .filter(mitigation =>
+        showAllMitigations ||
+        !selectedBossAction ||
         filterMitigations([mitigation], selectedBossAction).length > 0
       );
   }, [mitigationAbilities, selectedJobs, currentBossLevel, showAllMitigations, selectedBossAction, filterMitigations]);
@@ -229,15 +230,15 @@ function App() {
       ))}
     </BossActionsList>
   ), [
-    sortedBossActions, 
-    selectedBossAction, 
-    assignments, 
-    getActiveMitigations, 
-    selectedJobs, 
-    currentBossLevel, 
-    memoizedHandleBossActionClick, 
-    isMobile, 
-    removeMitigation, 
+    sortedBossActions,
+    selectedBossAction,
+    assignments,
+    getActiveMitigations,
+    selectedJobs,
+    currentBossLevel,
+    memoizedHandleBossActionClick,
+    isMobile,
+    removeMitigation,
     removePendingAssignment
   ]);
 
@@ -388,7 +389,8 @@ function App() {
             description="Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled."
             topLeftContent={<QuizButton />}
             topRightContent={
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <AuthButton />
                 <KofiButton />
                 <DiscordButton />
                 <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
@@ -412,7 +414,7 @@ function App() {
 
           <FilterToggle />
 
-          <ImportExport
+          <EnhancedImportExport
             assignments={assignments}
             bossId={currentBossId}
             selectedJobs={selectedJobs}
@@ -443,9 +445,9 @@ function App() {
         {/* Custom drag overlay for better visual feedback */}
         <DragOverlay>
           {activeMitigation && (
-            <DragPreview 
-              item={activeMitigation} 
-              currentBossLevel={currentBossLevel} 
+            <DragPreview
+              item={activeMitigation}
+              currentBossLevel={currentBossLevel}
             />
           )}
         </DragOverlay>

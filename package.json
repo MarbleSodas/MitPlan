@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "cd server && npm run dev",
+    "server:start": "cd server && npm start",
+    "server:install": "cd server && npm install",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -16,17 +20,24 @@
     "@vercel/speed-insights": "^1.2.0",
     "csv-parse": "^5.6.0",
     "dotenv": "^16.5.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.503.0",
     "node-fetch": "^3.3.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "styled-components": "^6.1.17"
+    "styled-components": "^6.1.17",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
     "eslint": "^9.22.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
