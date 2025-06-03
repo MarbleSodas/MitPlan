@@ -4,6 +4,9 @@ import './styles/global.css';
 import App from './App.jsx';
 import { AppProvider } from './contexts';
 import { TankSelectionModalProvider } from './contexts/TankSelectionModalContext';
+import { ReadOnlyProvider } from './contexts/ReadOnlyContext';
+import { DisplayNameProvider } from './contexts/DisplayNameContext';
+import { CollaborationProvider } from './contexts/CollaborationContext';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { checkForUpdates } from './utils';
@@ -24,11 +27,17 @@ checkForUpdates()
 root.render(
   <React.StrictMode>
     <AppProvider>
-      <TankSelectionModalProvider>
-        <App />
-        <Analytics />
-        <SpeedInsights />
-      </TankSelectionModalProvider>
+      <DisplayNameProvider>
+        <CollaborationProvider>
+          <ReadOnlyProvider>
+            <TankSelectionModalProvider>
+              <App />
+              <Analytics />
+              <SpeedInsights />
+            </TankSelectionModalProvider>
+          </ReadOnlyProvider>
+        </CollaborationProvider>
+      </DisplayNameProvider>
     </AppProvider>
   </React.StrictMode>
 )

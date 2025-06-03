@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and update their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Plans collection - users can manage their own plans
+    match /plans/{planId} {
+      allow read, write: if request.auth != null &&
+        (request.auth.uid == resource.data.userId || request.auth.uid == request.resource.data.userId);
+    }
+
+    // Shared plans - allow read access for shared plans
+    match /sharedPlans/{planId} {
+      allow read: if true; // Public read access for shared plans
+      allow write: if request.auth != null &&
+        (request.auth.uid == resource.data.userId || request.auth.uid == request.resource.data.userId);
+    }
+
+    // Collaboration data
+    match /collaboration/{planId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Default deny all other documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

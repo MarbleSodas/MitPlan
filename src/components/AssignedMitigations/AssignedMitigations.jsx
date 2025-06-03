@@ -11,6 +11,7 @@ import {
 } from '../../utils';
 import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
 import { useTankPositionContext } from '../../contexts';
+import { useReadOnly } from '../../contexts/ReadOnlyContext';
 
 const AssignedMitigationsContainer = styled.div`
   position: absolute;
@@ -237,6 +238,8 @@ const AssignedMitigations = memo(({
 }) => {
   // Get tank position context
   const { tankPositions } = useTankPositionContext();
+  // Get read-only state
+  const { canRemoveMitigations } = useReadOnly();
   // Get directly assigned mitigations
   const directMitigations = assignments[action.id] || [];
 
@@ -304,27 +307,29 @@ const AssignedMitigations = memo(({
                   </TankPositionBadge>
                 )}
               </span>
-              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
-                <RemoveButton
-                  onClick={(e) => {
-                    // Prevent event bubbling
-                    e.stopPropagation();
-                    e.preventDefault();
+              {canRemoveMitigations && (
+                <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <RemoveButton
+                    onClick={(e) => {
+                      // Prevent event bubbling
+                      e.stopPropagation();
+                      e.preventDefault();
 
-                    // Add a small delay to ensure the click is processed
-                    setTimeout(() => {
-                      // Remove pending assignment
-                      removePendingAssignment(action.id, mitigation.id);
+                      // Add a small delay to ensure the click is processed
+                      setTimeout(() => {
+                        // Remove pending assignment
+                        removePendingAssignment(action.id, mitigation.id);
 
-                      // Remove the mitigation with its tank position
-                      onRemoveMitigation(action.id, mitigation.id, mitigation.tankPosition);
-                    }, 10);
-                  }}
-                  aria-label={`Remove ${mitigation.name}`}
-                >
-                  ×
-                </RemoveButton>
-              </div>
+                        // Remove the mitigation with its tank position
+                        onRemoveMitigation(action.id, mitigation.id, mitigation.tankPosition);
+                      }, 10);
+                    }}
+                    aria-label={`Remove ${mitigation.name}`}
+                  >
+                    ×
+                  </RemoveButton>
+                </div>
+              )}
             </AssignedMitigationItem>
           </Tooltip>
         );

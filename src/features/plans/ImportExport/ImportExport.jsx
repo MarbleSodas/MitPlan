@@ -6,6 +6,7 @@ import {
   loadFromLocalStorage,
   generateShareableUrl
 } from '../../../utils';
+import { reconstructMitigations } from '../../../utils/url/urlUtils';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -469,19 +470,8 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
         throw new Error('Invalid import data: missing required fields');
       }
 
-      // Reconstruct the full mitigation objects from IDs
-      const reconstructedAssignments = {};
-
-      Object.entries(importObj.assignments).forEach(([bossActionId, mitigationIds]) => {
-        reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-          const mitigation = mitigationAbilities.find(m => m.id === id);
-          if (!mitigation) {
-            console.warn(`Mitigation with ID ${id} not found`);
-            return null;
-          }
-          return mitigation;
-        }).filter(Boolean); // Remove null values
-      });
+      // Use the reconstructMitigations utility to handle both old and new formats
+      const reconstructedAssignments = reconstructMitigations(importObj.assignments || {});
 
       // Reconstruct the full job objects if selectedJobs is included
       let reconstructedJobs = null;
@@ -533,19 +523,8 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   // Handle loading a saved plan
   const handleLoadPlan = (plan) => {
     try {
-      // Reconstruct the full mitigation objects from IDs
-      const reconstructedAssignments = {};
-
-      Object.entries(plan.assignments).forEach(([bossActionId, mitigationIds]) => {
-        reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-          const mitigation = mitigationAbilities.find(m => m.id === id);
-          if (!mitigation) {
-            console.warn(`Mitigation with ID ${id} not found`);
-            return null;
-          }
-          return mitigation;
-        }).filter(Boolean); // Remove null values
-      });
+      // Use the reconstructMitigations utility to handle both old and new formats
+      const reconstructedAssignments = reconstructMitigations(plan.assignments || {});
 
       // Reconstruct the full job objects if selectedJobs is included
       let reconstructedJobs = null;

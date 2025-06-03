@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import AuthModal from './AuthModal';
 import UserProfile from './UserProfile';
 import AccountSettings from './AccountSettings';
+import ProfileService from '../../services/ProfileService';
 
 const AuthContainer = styled.div`
   position: relative;
@@ -17,7 +18,7 @@ const AuthButton = styled.button`
   color: white;
   border: none;
   padding: ${props => props.theme.spacing.medium} ${props => props.theme.spacing.large};
-  border-radius: ${props => props.theme.borderRadius.large};
+  border-radius: 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: ${props => props.theme.fontSizes.responsive.medium};
   font-weight: 600;
@@ -31,7 +32,7 @@ const AuthButton = styled.button`
   justify-content: center;
   position: relative;
   overflow: hidden;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -42,38 +43,38 @@ const AuthButton = styled.button`
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     transition: left 0.5s ease;
   }
-  
+
   &:hover {
     background: linear-gradient(135deg, ${props => props.theme.colors.primary}, ${props => props.theme.colors.primary}dd);
     box-shadow: ${props => props.theme.shadows.medium};
     transform: translateY(-1px);
-    
+
     &::before {
       left: 100%;
     }
   }
-  
+
   &:focus {
     outline: none;
     box-shadow: 0 0 0 3px ${props => props.theme.colors.primary}40;
   }
-  
+
   &:active {
     transform: translateY(0);
     box-shadow: ${props => props.theme.shadows.small};
   }
-  
+
   &:disabled {
     background: ${props => props.theme.colors.border};
     color: ${props => props.theme.colors.lightText};
     cursor: not-allowed;
     transform: none;
-    
+
     &::before {
       display: none;
     }
   }
-  
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.small} ${props => props.theme.spacing.medium};
     font-size: ${props => props.theme.fontSizes.responsive.small};
@@ -84,7 +85,7 @@ const AuthButton = styled.button`
 const UserMenuButton = styled.button`
   background: none;
   border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.medium};
+  border-radius: 16px;
   padding: ${props => props.theme.spacing.small};
   cursor: pointer;
   transition: all 0.2s ease;
@@ -92,17 +93,17 @@ const UserMenuButton = styled.button`
   align-items: center;
   gap: ${props => props.theme.spacing.small};
   color: ${props => props.theme.colors.text};
-  
+
   &:hover {
     background-color: ${props => props.theme.colors.border};
     box-shadow: ${props => props.theme.shadows.hover};
   }
-  
+
   &:focus {
     outline: none;
     box-shadow: ${props => props.theme.shadows.focus};
   }
-  
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.xsmall};
   }
@@ -119,14 +120,14 @@ const UserAvatar = styled.div`
   font-size: ${props => props.theme.fontSizes.xsmall};
   font-weight: bold;
   color: white;
-  
+
   img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
   }
-  
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     width: 20px;
     height: 20px;
@@ -137,7 +138,7 @@ const UserAvatar = styled.div`
 const UserName = styled.span`
   font-size: ${props => props.theme.fontSizes.responsive.small};
   font-weight: 500;
-  
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     display: none;
   }
@@ -167,11 +168,11 @@ const DropdownItem = styled.button`
   font-size: ${props => props.theme.fontSizes.responsive.small};
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: ${props => props.theme.colors.border};
   }
-  
+
   &:focus {
     outline: none;
     background-color: ${props => props.theme.colors.border};
@@ -211,13 +212,25 @@ const AuthButtonComponent = () => {
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!user?.display_name) return '?';
-    return user.display_name
-      .split(' ')
-      .map(name => name.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    const displayName = user?.displayName || user?.display_name || user?.email;
+    if (!displayName) return '?';
+    return ProfileService.getInitials(displayName);
+  };
+
+  // Get profile picture URL with fallback chain
+  const getProfilePictureUrl = () => {
+    // 1. Custom uploaded image (base64)
+    if (user?.profilePictureBase64) {
+      return user.profilePictureBase64;
+    }
+
+    // 2. Legacy profile picture URL (Google photos, etc.)
+    if (user?.profilePictureUrl || user?.avatar_url) {
+      return user.profilePictureUrl || user.avatar_url;
+    }
+
+    // 3. Return null to show initials
+    return null;
   };
 
   // Handle logout
@@ -252,21 +265,31 @@ const AuthButtonComponent = () => {
       <AuthContainer ref={menuRef}>
         <UserMenuButton onClick={() => setShowUserMenu(!showUserMenu)}>
           <UserAvatar>
-            {user.avatar_url ? (
-              <img 
-                src={user.avatar_url} 
-                alt="Profile" 
+            {getProfilePictureUrl() ? (
+              <img
+                src={getProfilePictureUrl()}
+                alt="Profile"
                 onError={(e) => {
+                  // Silently handle image load errors and show initials instead
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  if (e.target.nextSibling) {
+                    e.target.nextSibling.style.display = 'flex';
+                  }
+                }}
+                onLoad={(e) => {
+                  // Ensure the image is visible when it loads successfully
+                  e.target.style.display = 'block';
+                  if (e.target.nextSibling) {
+                    e.target.nextSibling.style.display = 'none';
+                  }
                 }}
               />
             ) : null}
-            <span style={{ display: user.avatar_url ? 'none' : 'flex' }}>
+            <span style={{ display: getProfilePictureUrl() ? 'none' : 'flex' }}>
               {getUserInitials()}
             </span>
           </UserAvatar>
-          <UserName>{user.display_name}</UserName>
+          <UserName>{user.displayName || user.display_name}</UserName>
           <span style={{ fontSize: '12px', color: 'inherit' }}>▼</span>
         </UserMenuButton>
 

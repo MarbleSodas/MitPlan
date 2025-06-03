@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { mitigationAbilities } from '../data';
 import { useTankSelectionModalContext } from '../contexts/TankSelectionModalContext';
+import { useReadOnly } from '../contexts/ReadOnlyContext';
 import { isDualTankBusterAction } from '../utils/boss/bossActionUtils';
 
 /**
@@ -26,6 +27,8 @@ const useDragAndDrop = ({
 }) => {
   // Get the tank selection modal context
   const { openTankSelectionModal } = useTankSelectionModalContext();
+  // Get read-only state
+  const { canDragAndDrop } = useReadOnly();
 
   // Process mitigation assignment after all checks
   const processMitigationAssignment = useCallback((selectedBossAction, mitigation, tankPosition = 'shared') => {
@@ -66,6 +69,13 @@ const useDragAndDrop = ({
   // Handle drag end
   const handleDragEnd = useCallback((event, selectedBossAction, assignments) => {
     const { active, over } = event;
+
+    // If in read-only mode, prevent all drag operations
+    if (!canDragAndDrop) {
+      console.log('%c[DRAG] Drag operation blocked - read-only mode', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
+      setActiveMitigation(null);
+      return;
+    }
 
     // If no drop target or no selected boss action, do nothing
     if (!over || !selectedBossAction) {
@@ -163,7 +173,7 @@ const useDragAndDrop = ({
     }
 
     setActiveMitigation(null);
-  }, [setActiveMitigation, checkAbilityCooldown, canAssignMitigationToBossAction, tankPositions, openTankSelectionModal, processMitigationAssignment]);
+  }, [setActiveMitigation, checkAbilityCooldown, canAssignMitigationToBossAction, tankPositions, openTankSelectionModal, processMitigationAssignment, canDragAndDrop]);
 
   return {
     handleDragStart,

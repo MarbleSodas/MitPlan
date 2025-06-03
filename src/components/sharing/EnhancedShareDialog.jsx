@@ -51,7 +51,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  
+
   &:hover {
     background-color: ${props => props.theme.colors.secondary};
     color: ${props => props.theme.colors.text};
@@ -65,7 +65,7 @@ const ShareOption = styled.div`
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     border-color: ${props => props.theme.colors.accent};
   }
@@ -116,7 +116,7 @@ const UrlInput = styled.input`
   color: ${props => props.theme.colors.text};
   font-family: monospace;
   font-size: 0.875rem;
-  
+
   &:focus {
     outline: none;
     border-color: ${props => props.theme.colors.accent};
@@ -136,7 +136,7 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -146,7 +146,7 @@ const Button = styled.button`
 const SecondaryButton = styled(Button)`
   background-color: ${props => props.theme.colors.secondary};
   color: ${props => props.theme.colors.text};
-  
+
   &:hover:not(:disabled) {
     background-color: ${props => props.theme.colors.border};
   }
@@ -155,7 +155,7 @@ const SecondaryButton = styled(Button)`
 const PrimaryButton = styled(Button)`
   background-color: ${props => props.theme.colors.accent};
   color: white;
-  
+
   &:hover:not(:disabled) {
     background-color: ${props => props.theme.colors.accentHover};
   }
@@ -181,7 +181,7 @@ const VisibilityOption = styled.label`
   margin-bottom: 8px;
   color: ${props => props.theme.colors.text};
   cursor: pointer;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -197,19 +197,19 @@ const StatusMessage = styled.div`
   border-radius: 6px;
   margin-bottom: 16px;
   font-size: 0.875rem;
-  
+
   ${props => props.type === 'success' && `
     background-color: #E8F5E8;
     color: #2E7D32;
     border: 1px solid #4CAF50;
   `}
-  
+
   ${props => props.type === 'error' && `
     background-color: #FFEBEE;
     color: #C62828;
     border: 1px solid #F44336;
   `}
-  
+
   ${props => props.type === 'info' && `
     background-color: #E3F2FD;
     color: #1565C0;
@@ -221,7 +221,6 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
   const { isAuthenticated, apiRequest } = useAuth();
   const { savePlan, storageState } = usePlanStorage();
   const [shareType, setShareType] = useState('database');
-  const [visibility, setVisibility] = useState('private');
   const [shareUrl, setShareUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState(null);
@@ -249,40 +248,41 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
       if (shareType === 'database') {
         // Save plan to database first if not already saved
         let planToShare = savedPlan;
-        
+
         if (!planToShare || planToShare.source !== 'database') {
+          // Always make shared plans public for collaboration
           const planWithVisibility = {
             ...planData,
-            isPublic: visibility === 'public'
+            isPublic: true
           };
           planToShare = await savePlan(planWithVisibility);
           setSavedPlan(planToShare);
-        } else if (planToShare.isPublic !== (visibility === 'public')) {
-          // Update visibility if changed
+        } else if (!planToShare.isPublic) {
+          // Update existing plan to be public for sharing
           const updatedPlan = await apiRequest(`/plans/${planToShare.id}`, {
             method: 'PUT',
             body: JSON.stringify({
-              is_public: visibility === 'public'
+              is_public: true
             })
           });
-          planToShare = { ...planToShare, isPublic: visibility === 'public' };
+          planToShare = { ...planToShare, isPublic: true };
           setSavedPlan(planToShare);
         }
 
-        // Generate database-based URL
+        // Generate shared URL for real-time collaboration
         const baseUrl = window.location.origin;
-        const url = `${baseUrl}/plan/${planToShare.id}`;
+        const url = `${baseUrl}/plan/shared/${planToShare.id}`;
         setShareUrl(url);
-        
+
         setMessage({
           type: 'success',
-          text: `Plan saved and share link generated! ${visibility === 'public' ? 'Anyone with the link can view this plan.' : 'Only you can access this plan.'}`
+          text: 'Plan shared successfully! Anyone with this link can view and edit the plan in real-time.'
         });
       } else {
         // Generate anonymous compressed URL
         const url = generateShareableUrl(planData);
         setShareUrl(url);
-        
+
         setMessage({
           type: 'info',
           text: 'Anonymous share link generated. This link contains the plan data and works without an account.'
@@ -332,7 +332,7 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
 
         {/* Share Type Selection */}
         {canUseDatabase && (
-          <ShareOption 
+          <ShareOption
             selected={shareType === 'database'}
             onClick={() => setShareType('database')}
           >
@@ -347,13 +347,13 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
               <OptionTitle>Share with Account</OptionTitle>
             </OptionHeader>
             <OptionDescription>
-              Save the plan to your account and create a persistent share link. 
-              The plan will be accessible across all your devices.
+              Save the plan to your account and create a collaborative share link.
+              Anyone with the link can view and edit the plan in real-time.
             </OptionDescription>
           </ShareOption>
         )}
 
-        <ShareOption 
+        <ShareOption
           selected={shareType === 'anonymous'}
           onClick={() => setShareType('anonymous')}
         >
@@ -368,37 +368,12 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
             <OptionTitle>Share Anonymously</OptionTitle>
           </OptionHeader>
           <OptionDescription>
-            Create a share link that contains the plan data. Works without an account 
+            Create a share link that contains the plan data. Works without an account
             but the link will be longer.
           </OptionDescription>
         </ShareOption>
 
-        {/* Visibility Settings for Database Sharing */}
-        {shareType === 'database' && (
-          <VisibilitySection>
-            <VisibilityLabel>Plan Visibility</VisibilityLabel>
-            <VisibilityOption>
-              <VisibilityRadio
-                type="radio"
-                name="visibility"
-                value="private"
-                checked={visibility === 'private'}
-                onChange={() => setVisibility('private')}
-              />
-              Private - Only you can access this plan
-            </VisibilityOption>
-            <VisibilityOption>
-              <VisibilityRadio
-                type="radio"
-                name="visibility"
-                value="public"
-                checked={visibility === 'public'}
-                onChange={() => setVisibility('public')}
-              />
-              Public - Anyone with the link can view this plan
-            </VisibilityOption>
-          </VisibilitySection>
-        )}
+
 
         {/* Generated URL */}
         {shareUrl && (
@@ -416,9 +391,9 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
           <SecondaryButton onClick={onClose}>
             Close
           </SecondaryButton>
-          
+
           {!shareUrl ? (
-            <PrimaryButton 
+            <PrimaryButton
               onClick={generateUrl}
               disabled={isGenerating}
             >

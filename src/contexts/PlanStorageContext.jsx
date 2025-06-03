@@ -25,25 +25,40 @@ export const PlanStorageProvider = ({ children }) => {
   // Initialize storage service
   useEffect(() => {
     const initializeService = async () => {
-      if (!apiRequest) {
-        console.log('PlanStorageProvider: apiRequest not available yet');
-        return;
-      }
-
       try {
         console.log('PlanStorageProvider: Initializing storage service');
-        const service = new PlanStorageService({ isAuthenticated }, apiRequest);
+        const service = new PlanStorageService({ isAuthenticated });
         serviceRef.current = service;
         setStorageService(service);
 
-        // Update storage state
-        await service.updateStorageState();
+        // Update storage state with timeout
+        const updatePromise = service.updateStorageState();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Storage initialization timeout')), 10000)
+        );
+
+        try {
+          await Promise.race([updatePromise, timeoutPromise]);
+        } catch (timeoutError) {
+          console.warn('PlanStorageProvider: Storage state update timed out, using fallback');
+          // Continue with offline state as fallback
+        }
+
         setStorageState(service.getStorageState());
         updateSyncStatus(service);
 
-        // Check for migration needs
+        // Check for migration needs (with timeout)
         if (isAuthenticated) {
-          await checkMigrationNeeded(service);
+          try {
+            const migrationPromise = checkMigrationNeeded(service);
+            const migrationTimeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Migration check timeout')), 5000)
+            );
+            await Promise.race([migrationPromise, migrationTimeoutPromise]);
+          } catch (migrationError) {
+            console.warn('PlanStorageProvider: Migration check timed out or failed:', migrationError);
+            // Continue without migration check
+          }
         }
 
         setIsInitialized(true);
@@ -51,11 +66,13 @@ export const PlanStorageProvider = ({ children }) => {
       } catch (error) {
         console.error('PlanStorageProvider: Failed to initialize service:', error);
         setError(error.message);
+        // Set initialized to true even on error to prevent infinite loading
+        setIsInitialized(true);
       }
     };
 
     initializeService();
-  }, [isAuthenticated, apiRequest]);
+  }, [isAuthenticated]);
 
   // Update sync status
   const updateSyncStatus = useCallback((service) => {
@@ -252,6 +269,27 @@ export const PlanStorageProvider = ({ children }) => {
     }
   }, [storageService, isAuthenticated, updateSyncStatus]);
 
+  // Share plan
+  const sharePlan = useCallback(async (plan) => {
+    if (!isInitialized || !storageService) {
+      throw new Error('Storage service not initialized. Please wait for initialization to complete.');
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await storageService.sharePlan(plan);
+      updateSyncStatus(storageService);
+      return result;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [storageService, isInitialized, updateSyncStatus]);
+
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
@@ -284,6 +322,7 @@ export const PlanStorageProvider = ({ children }) => {
     loadPlan,
     loadAllPlans,
     deletePlan,
+    sharePlan,
 
     // Sync operations
     syncPlans,

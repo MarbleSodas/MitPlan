@@ -706,30 +706,11 @@ const MobileMitigationSelector = ({
       // If this is a tank buster and either:
       // 1. A self-targeting ability for tank busters, or
       // 2. A single-target ability for tank busters that can target tanks
-// DEBUG: Log all relevant values before modal condition
-console.log('[DEBUG] Modal Condition Check', {
-  bossAction,
-  mitigation,
-  isTankBuster: bossAction.isTankBuster,
-  isDualTankBuster: isDualTankBusterAction(bossAction),
-  isDualTankBusterProperty: bossAction.isDualTankBuster,
-  mitigationTarget: mitigation.target,
-  forTankBusters: mitigation.forTankBusters,
-  forRaidWide: mitigation.forRaidWide,
-  targetsTank: mitigation.targetsTank
-});
       if (bossAction.isTankBuster &&
           ((mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) ||
            (mitigation.target === 'single' && mitigation.forTankBusters && mitigation.targetsTank))) {
 
         // For dual tank busters, we need to ask which tank to apply the mitigation to
-// DEBUG: Log when modal logic is triggered for dual tank buster
-console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
-  bossAction,
-  mitigation,
-  isDualTankBusterAction: isDualTankBusterAction(bossAction),
-  isDualTankBusterProperty: bossAction.isDualTankBuster
-});
         // Show modal if:
         // 1. It's a dual tank buster with single-target mitigation OR
         // 2. It's a dual tank buster with self-targeting tank mitigation that BOTH tanks can use
@@ -798,18 +779,7 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
         }
       }
 
-      // Debug log for tank-specific mitigations
-      if (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) {
-        console.log('[DEBUG] Tank-specific self-targeting mitigation being assigned (MobileMitigationSelector):', {
-          mitigationName: mitigation.name,
-          tankPosition,
-          mitigationJobs: mitigation.jobs,
-          mainTankJob: tankPositions.mainTank,
-          offTankJob: tankPositions.offTank,
-          canMainTankUse: tankPositions.mainTank && mitigation.jobs.includes(tankPositions.mainTank),
-          canOffTankUse: tankPositions.offTank && mitigation.jobs.includes(tankPositions.offTank)
-        });
-      }
+
 
       // Set default tank position if none has been set
       if (tankPosition === null) {
@@ -830,19 +800,7 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
         }
       }
 
-      // Log the final tank position before calling onAssignMitigation
-      console.log(`[DEBUG] Final tank position for ${mitigation.name}: ${tankPosition}`);
-      console.log('[DEBUG] Calling onAssignMitigation with:', {
-        bossActionId: bossAction.id,
-        mitigationName: mitigation.name,
-        tankPosition: tankPosition,
-        isTankSpecific: mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide,
-        jobs: mitigation.jobs,
-        mainTankJob: tankPositions?.mainTank,
-        offTankJob: tankPositions?.offTank,
-        canMainTankUse: tankPositions?.mainTank && mitigation.jobs.includes(tankPositions.mainTank),
-        canOffTankUse: tankPositions?.offTank && mitigation.jobs.includes(tankPositions.offTank)
-      });
+
 
       // Then assign the mitigation to the boss action with the appropriate tank position
       // This ensures the UI updates immediately before the assignment is processed

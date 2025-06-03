@@ -18,7 +18,7 @@ const MitigationContext = createContext();
 export const MitigationProvider = ({ children, bossActions, bossLevel = 90, selectedJobs }) => {
   // Get tank position context
   const { tankPositions } = useTankPositionContext();
-  
+
   // Initialize assignments from localStorage or empty object
   const [assignments, setAssignments] = useState(() => {
     // Try to load from localStorage
@@ -587,10 +587,10 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       // Check which tank has access to this ability
       const mainTankJob = tankPositions?.mainTank;
       const offTankJob = tankPositions?.offTank;
-      
+
       const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
       const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-      
+
       // Override tankPosition if job compatibility doesn't match provided position
       if (canMainTankUse && !canOffTankUse) {
         // Only main tank can use this ability
@@ -621,12 +621,12 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
         // Check which tank has access to this ability (for single-target abilities that can be cast on tanks)
         const mainTankJob = tankPositions?.mainTank;
         const offTankJob = tankPositions?.offTank;
-        
+
         // For single-target abilities, what matters is which job can CAST the ability
         // not which job will receive it (since these can generally be cast on any tank)
         const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
         const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-        
+
         if (canMainTankUse && !canOffTankUse) {
           // Only main tank can cast this ability, but can target either tank
           // In this case, target defaults to main tank

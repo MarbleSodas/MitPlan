@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useAuth } from '../../contexts/AuthContext';
 
 const GoogleButton = styled.button`
   display: flex;
@@ -62,21 +63,35 @@ const GoogleLoginButton = ({
   disabled = false,
   text = "Continue with Google"
 }) => {
-  const handleClick = () => {
-    // TODO: Implement Google OAuth integration
-    // For now, show a placeholder message
-    alert('Google OAuth integration will be implemented in a future update. Please use email/password authentication for now.');
+  const { signInWithGoogle } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleClick = async () => {
+    if (disabled || isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const result = await signInWithGoogle();
+
+      if (result.success && onSuccess) {
+        onSuccess(result);
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <GoogleButton
       type="button"
       onClick={handleClick}
-      disabled={disabled}
+      disabled={disabled || isLoading}
       aria-label={text}
     >
       <GoogleIcon />
-      {text}
+      {isLoading ? 'Signing in...' : text}
     </GoogleButton>
   );
 };

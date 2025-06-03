@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   FormContainer,
   FormGroup,
@@ -13,6 +14,7 @@ import {
 } from '../styled/AuthComponents';
 
 const ForgotPasswordForm = ({ onSuccess, onBackToLogin }) => {
+  const { resetPassword } = useAuth();
   const [formData, setFormData] = useState({
     email: ''
   });
@@ -27,7 +29,7 @@ const ForgotPasswordForm = ({ onSuccess, onBackToLogin }) => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear field error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({
@@ -35,7 +37,7 @@ const ForgotPasswordForm = ({ onSuccess, onBackToLogin }) => {
         [name]: ''
       }));
     }
-    
+
     // Clear messages when user starts typing
     if (message) {
       setMessage(null);
@@ -60,7 +62,7 @@ const ForgotPasswordForm = ({ onSuccess, onBackToLogin }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -69,21 +71,27 @@ const ForgotPasswordForm = ({ onSuccess, onBackToLogin }) => {
     setMessage(null);
 
     try {
-      // TODO: Implement password reset API call
-      // For now, simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate success
-      setMessage({
-        type: 'success',
-        text: 'If an account with this email exists, you will receive password reset instructions shortly.'
-      });
-      
-      // Call success callback after a delay
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
-      
+      const result = await resetPassword(formData.email);
+
+      if (result.success) {
+        setMessage({
+          type: 'success',
+          text: 'If an account with this email exists, you will receive password reset instructions shortly.'
+        });
+
+        // Call success callback after a delay
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess();
+          }
+        }, 2000);
+      } else {
+        setMessage({
+          type: 'error',
+          text: result.message || 'Failed to send password reset email. Please try again.'
+        });
+      }
+
     } catch (error) {
       console.error('Password reset error:', error);
       setMessage({
@@ -98,11 +106,11 @@ const ForgotPasswordForm = ({ onSuccess, onBackToLogin }) => {
   return (
     <FormContainer onSubmit={handleSubmit}>
       <div style={{ marginBottom: '24px' }}>
-        <p style={{ 
-          margin: 0, 
-          color: 'var(--text-color)', 
-          fontSize: '14px', 
-          lineHeight: '1.5' 
+        <p style={{
+          margin: 0,
+          color: 'var(--text-color)',
+          fontSize: '14px',
+          lineHeight: '1.5'
         }}>
           Enter your email address and we'll send you instructions to reset your password.
         </p>

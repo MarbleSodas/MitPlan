@@ -3,14 +3,17 @@ import styled from 'styled-components';
 import { mitigationAbilities, ffxivJobs } from '../../../data';
 import { usePlanStorage } from '../../../contexts/PlanStorageContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useCollaboration } from '../../../contexts/CollaborationContext';
 import StorageStatusIndicator from '../../../components/storage/StorageStatusIndicator';
-import EnhancedShareDialog from '../../../components/sharing/EnhancedShareDialog';
 import PlanMigrationDialog from '../../../components/migration/PlanMigrationDialog';
+import SessionControlPanel from '../../../components/collaboration/SessionControlPanel';
+import SessionStatusIndicator from '../../../components/collaboration/SessionStatusIndicator';
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
   generateShareableUrl
 } from '../../../utils';
+import { reconstructMitigations } from '../../../utils/url/urlUtils';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -208,31 +211,111 @@ const StatusMessage = styled.div`
   `}
 `;
 
+// Additional styled components for legacy import functionality
+const ImportFormGroup = styled.div`
+  margin-bottom: 16px;
+`;
+
+const ImportTextArea = styled.textarea`
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  resize: vertical;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-color);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const FileInputLabel = styled.label`
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--accent-color);
+  }
+`;
+
+const ImportButton = styled.button`
+  padding: 8px 16px;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--accent-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
   const { isAuthenticated } = useAuth();
   const {
     savePlan,
     loadAllPlans,
     deletePlan,
+    sharePlan,
     isLoading,
     error,
     migrationNeeded,
-    isInitialized
+    isInitialized,
+    storageState
   } = usePlanStorage();
+
+  const {
+    isCollaborating,
+    currentSession,
+    sessionStatus,
+    isSessionOwner
+  } = useCollaboration();
 
   const [planName, setPlanName] = useState('');
   const [savedPlans, setSavedPlans] = useState([]);
   const [message, setMessage] = useState(null);
-  const [showShareDialog, setShowShareDialog] = useState(false);
   const [showMigrationDialog, setShowMigrationDialog] = useState(false);
-  const [currentPlanData, setCurrentPlanData] = useState(null);
+  const [importData, setImportData] = useState('');
+  const [sharingPlanId, setSharingPlanId] = useState(null);
 
-  // Load saved plans when service is initialized
+  // Load saved plans when service is initialized or storage state changes
   useEffect(() => {
     if (isInitialized) {
+      console.log('EnhancedImportExport: Loading plans due to initialization or storage state change');
       loadSavedPlans();
     }
-  }, [isInitialized]);
+  }, [isInitialized, storageState, isAuthenticated]);
 
   // Show migration dialog when needed
   useEffect(() => {
@@ -251,16 +334,23 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
   const loadSavedPlans = async () => {
     if (!isInitialized) {
-      console.log('Storage service not initialized yet, skipping plan load');
+      console.log('EnhancedImportExport: Storage service not initialized yet, skipping plan load');
       return;
     }
 
     try {
+      console.log('EnhancedImportExport: Loading plans from storage, authenticated:', isAuthenticated, 'storageState:', storageState);
       const plans = await loadAllPlans();
+      console.log('EnhancedImportExport: Loaded plans:', plans.length, 'plans');
       setSavedPlans(plans);
+
+      // Clear any previous error messages when plans load successfully
+      if (error) {
+        setMessage(null);
+      }
     } catch (error) {
-      console.error('Failed to load plans:', error);
-      setMessage({ type: 'error', text: 'Failed to load saved plans' });
+      console.error('EnhancedImportExport: Failed to load plans:', error);
+      setMessage({ type: 'error', text: `Failed to load saved plans: ${error.message}` });
     }
   };
 
@@ -283,11 +373,15 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
       }
     });
 
+    // Get tank positions from localStorage
+    const tankPositions = JSON.parse(localStorage.getItem('tankPositions') || '{}');
+
     return {
       name: planName.trim() || 'Untitled Plan',
       bossId,
       assignments: optimizedAssignments,
-      selectedJobs: optimizedSelectedJobs
+      selectedJobs: optimizedSelectedJobs,
+      tankPositions
     };
   };
 
@@ -312,26 +406,49 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
     }
   };
 
-  const handleShare = () => {
-    const planData = createPlanData();
-    setCurrentPlanData(planData);
-    setShowShareDialog(true);
+  const handleSharePlan = async (plan) => {
+    if (!isAuthenticated) {
+      setMessage({ type: 'error', text: 'Please sign in to share plans' });
+      return;
+    }
+
+    setSharingPlanId(plan.id);
+
+    try {
+      const result = await sharePlan(plan);
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(result.shareUrl);
+
+      const collaborationStatus = result.collaborationEnabled
+        ? ' Real-time collaboration is now active!'
+        : '';
+
+      setMessage({
+        type: 'success',
+        text: `Plan "${plan.name}" shared successfully! Link copied to clipboard.${collaborationStatus} Anyone with the link can ${result.collaborationEnabled ? 'collaborate in real-time' : 'view the plan'}.`
+      });
+
+      // Reload plans to update the shared status
+      await loadSavedPlans();
+    } catch (error) {
+      console.error('Share failed:', error);
+      setMessage({
+        type: 'error',
+        text: `Failed to share plan: ${error.message}`
+      });
+    } finally {
+      setSharingPlanId(null);
+    }
   };
 
   const handleLoadPlan = async (plan) => {
     try {
-      // Reconstruct the full mitigation objects from IDs
-      const reconstructedAssignments = {};
-      Object.entries(plan.assignments || {}).forEach(([bossActionId, mitigationIds]) => {
-        reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-          const mitigation = mitigationAbilities.find(m => m.id === id);
-          if (!mitigation) {
-            console.warn(`Mitigation with ID ${id} not found`);
-            return null;
-          }
-          return mitigation;
-        }).filter(Boolean);
-      });
+      console.log('Loading plan with assignments:', plan.assignments);
+
+      // Use the reconstructMitigations utility to handle both old and new formats
+      const reconstructedAssignments = reconstructMitigations(plan.assignments || {});
+      console.log('Reconstructed assignments:', reconstructedAssignments);
 
       // Reconstruct the full job objects if selectedJobs is included
       let reconstructedJobs = null;
@@ -356,6 +473,18 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
             });
           }
         });
+      }
+
+      // Restore tank positions if available
+      if (plan.tankPositions && Object.keys(plan.tankPositions).length > 0) {
+        console.log('Restoring tank positions from plan:', plan.tankPositions);
+        localStorage.setItem('tankPositions', JSON.stringify(plan.tankPositions));
+
+        // Trigger a storage event to notify TankPositionContext
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'tankPositions',
+          newValue: JSON.stringify(plan.tankPositions)
+        }));
       }
 
       // Call the onImport callback with the reconstructed data
@@ -399,6 +528,83 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
     }
   };
 
+  // Handle importing legacy plan data
+  const handleLegacyImport = () => {
+    if (!importData.trim()) {
+      setMessage({ type: 'error', text: 'Please enter import data or select a file' });
+      return;
+    }
+
+    try {
+      const importObj = JSON.parse(importData);
+
+      // Validate the import data
+      if (!importObj.assignments || !importObj.bossId) {
+        throw new Error('Invalid import data: missing required fields');
+      }
+
+      // Use the reconstructMitigations utility to handle both old and new formats
+      const reconstructedAssignments = reconstructMitigations(importObj.assignments || {});
+
+      // Reconstruct the full job objects if selectedJobs is included
+      let reconstructedJobs = null;
+      if (importObj.selectedJobs) {
+        reconstructedJobs = JSON.parse(JSON.stringify(ffxivJobs)); // Deep clone
+
+        // Reset all jobs to unselected
+        Object.keys(reconstructedJobs).forEach(roleKey => {
+          reconstructedJobs[roleKey].forEach(job => {
+            job.selected = false;
+          });
+        });
+
+        // Set selected jobs based on import data
+        Object.entries(importObj.selectedJobs).forEach(([roleKey, jobIds]) => {
+          if (reconstructedJobs[roleKey]) {
+            jobIds.forEach(jobId => {
+              const job = reconstructedJobs[roleKey].find(j => j.id === jobId);
+              if (job) {
+                job.selected = true;
+              }
+            });
+          }
+        });
+      }
+
+      // Restore tank positions if available
+      if (importObj.tankPositions && Object.keys(importObj.tankPositions).length > 0) {
+        console.log('Restoring tank positions from import:', importObj.tankPositions);
+        localStorage.setItem('tankPositions', JSON.stringify(importObj.tankPositions));
+
+        // Trigger a storage event to notify TankPositionContext
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'tankPositions',
+          newValue: JSON.stringify(importObj.tankPositions)
+        }));
+      }
+
+      // Call the onImport callback with the reconstructed data
+      onImport(reconstructedAssignments, importObj.bossId, reconstructedJobs);
+      setImportData('');
+      setMessage({ type: 'success', text: 'Legacy plan imported successfully!' });
+    } catch (error) {
+      console.error('Import error:', error);
+      setMessage({ type: 'error', text: `Import failed: ${error.message}` });
+    }
+  };
+
+  // Handle file import
+  const handleFileImport = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImportData(e.target.result);
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <>
       <Container>
@@ -419,6 +625,25 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
           </StatusMessage>
         )}
 
+        {/* Session Status and Control */}
+        {(isCollaborating || currentSession) && (
+          <SessionStatusIndicator />
+        )}
+
+        {(isSessionOwner || currentSession) && (
+          <SessionControlPanel
+            planData={createPlanData()}
+            onSessionEnd={(finalPlanData) => {
+              setMessage({
+                type: 'success',
+                text: 'Collaboration session ended and changes saved!'
+              });
+              // Reload plans to reflect any changes
+              loadSavedPlans();
+            }}
+          />
+        )}
+
         <TwoColumnLayout>
           {/* Left Column - Save & Share */}
           <Column>
@@ -431,18 +656,13 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
                   value={planName}
                   onChange={(e) => setPlanName(e.target.value)}
                 />
-                <ButtonGroup>
-                  <PrimaryButton
-                    onClick={handleSave}
-                    disabled={isLoading || !isInitialized}
-                    title={!isInitialized ? 'Initializing storage service...' : ''}
-                  >
-                    💾 Save Plan
-                  </PrimaryButton>
-                  <Button onClick={handleShare}>
-                    📋 Share Plan
-                  </Button>
-                </ButtonGroup>
+                <PrimaryButton
+                  onClick={handleSave}
+                  disabled={isLoading || !isInitialized}
+                  title={!isInitialized ? 'Initializing storage service...' : ''}
+                >
+                  💾 Save Plan
+                </PrimaryButton>
               </FormGroup>
             </Section>
 
@@ -471,6 +691,13 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
                           📂
                         </ActionButton>
                         <ActionButton
+                          onClick={() => handleSharePlan(plan)}
+                          title="Share Plan"
+                          disabled={sharingPlanId === plan.id || !isAuthenticated}
+                        >
+                          {sharingPlanId === plan.id ? '⏳' : '📤'}
+                        </ActionButton>
+                        <ActionButton
                           onClick={() => handleDeletePlan(plan.id, plan.name)}
                           title="Delete Plan"
                         >
@@ -495,18 +722,36 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
               }}>
                 Import plans from JSON files or compressed URLs for backward compatibility.
               </p>
-              {/* Legacy import functionality can be added here if needed */}
+
+              <ImportFormGroup>
+                <ButtonGroup>
+                  <FileInputLabel>
+                    📂 Choose File
+                    <FileInput
+                      type="file"
+                      accept=".json"
+                      onChange={handleFileImport}
+                    />
+                  </FileInputLabel>
+
+                  <ImportButton
+                    onClick={handleLegacyImport}
+                    disabled={!importData.trim()}
+                  >
+                    📥 Import Data
+                  </ImportButton>
+                </ButtonGroup>
+
+                <ImportTextArea
+                  value={importData}
+                  onChange={(e) => setImportData(e.target.value)}
+                  placeholder="Paste JSON data here or use the file chooser above"
+                />
+              </ImportFormGroup>
             </Section>
           </Column>
         </TwoColumnLayout>
       </Container>
-
-      {/* Share Dialog */}
-      <EnhancedShareDialog
-        isOpen={showShareDialog}
-        onClose={() => setShowShareDialog(false)}
-        planData={currentPlanData}
-      />
 
       {/* Migration Dialog */}
       <PlanMigrationDialog

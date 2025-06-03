@@ -52,7 +52,8 @@ export const generateShareableUrl = (planData, baseUrl = window.location.origin)
       v: planData.version || '1.2', // Version
       b: planData.bossId, // Boss ID
       a: planData.assignments, // Assignments
-      j: planData.selectedJobs // Selected jobs
+      j: planData.selectedJobs, // Selected jobs
+      t: planData.tankPositions // Tank positions
     };
 
     // Log the minimal plan data
@@ -135,6 +136,7 @@ export const parseShareableUrl = (url) => {
       bossId: minimalPlanData.b,
       assignments: minimalPlanData.a,
       selectedJobs: minimalPlanData.j,
+      tankPositions: minimalPlanData.t || {},
       importDate: new Date().toISOString()
     };
 
@@ -168,23 +170,60 @@ export const checkUrlForPlanData = () => {
 /**
  * Reconstruct full mitigation objects from IDs
  *
- * @param {Object} assignments - The assignments object with mitigation IDs
+ * @param {Object} assignments - The assignments object with mitigation IDs (supports both old and new formats)
  * @returns {Object} - The reconstructed assignments with full mitigation objects
  */
 export const reconstructMitigations = (assignments) => {
+  console.log('%c[RECONSTRUCT] Starting mitigation reconstruction', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', assignments);
+
   const reconstructedAssignments = {};
 
-  Object.entries(assignments).forEach(([bossActionId, mitigationIds]) => {
-    reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-      const mitigation = mitigationAbilities.find(m => m.id === id);
-      if (!mitigation) {
-        console.warn(`Mitigation with ID ${id} not found`);
-        return null;
-      }
-      return mitigation;
-    }).filter(Boolean); // Remove null values
+  Object.entries(assignments).forEach(([bossActionId, mitigationData]) => {
+    console.log(`%c[RECONSTRUCT] Processing boss action ${bossActionId}`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', mitigationData);
+
+    // Check if the data is in the new format (with tankPosition) or old format (array of IDs)
+    if (Array.isArray(mitigationData)) {
+      // Old format - just an array of mitigation IDs
+      console.log(`%c[RECONSTRUCT] Using old format (array) for ${bossActionId}`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;');
+      reconstructedAssignments[bossActionId] = mitigationData.map(id => {
+        const mitigation = mitigationAbilities.find(m => m.id === id);
+        if (!mitigation) {
+          console.warn(`Mitigation with ID ${id} not found`);
+          return null;
+        }
+        return mitigation;
+      }).filter(Boolean); // Remove null values
+    } else if (typeof mitigationData === 'object' && mitigationData !== null) {
+      // New format - object with tankPosition keys
+      console.log(`%c[RECONSTRUCT] Using new format (tank positions) for ${bossActionId}`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;');
+      reconstructedAssignments[bossActionId] = [];
+
+      // Process each tank position's mitigations
+      Object.entries(mitigationData).forEach(([position, mitigationIds]) => {
+        if (!Array.isArray(mitigationIds)) {
+          console.warn(`Expected array of mitigation IDs for position ${position}, got:`, mitigationIds);
+          return;
+        }
+
+        mitigationIds.forEach(id => {
+          const mitigation = mitigationAbilities.find(m => m.id === id);
+          if (mitigation) {
+            reconstructedAssignments[bossActionId].push({
+              ...mitigation,
+              tankPosition: position
+            });
+          } else {
+            console.warn(`Mitigation with ID ${id} not found for position ${position}`);
+          }
+        });
+      });
+    } else {
+      console.warn(`Unknown mitigation data format for boss action ${bossActionId}:`, mitigationData);
+      reconstructedAssignments[bossActionId] = [];
+    }
   });
 
+  console.log('%c[RECONSTRUCT] Reconstruction completed', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', reconstructedAssignments);
   return reconstructedAssignments;
 };
 

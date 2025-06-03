@@ -1,7 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import Tooltip from '../Tooltip/Tooltip';
-import { formatMitigation, generateMitigationBreakdown, calculateTotalMitigation } from '../../../utils';
+import { calculateTotalMitigation } from '../../../utils';
+import { formatMitigation, generateMitigationBreakdown } from '../../../utils/mitigation/mitigationUtils';
 
 // Container for the tank mitigation display
 const MitigationDisplayContainer = styled.div`

@@ -6,13 +6,12 @@ import TankMitigationDisplay from '../common/TankMitigationDisplay';
 import AetherflowGauge from '../AetherflowGauge';
 import {
   calculateTotalMitigation,
-  formatMitigation,
-  generateMitigationBreakdown,
   isMitigationAvailable,
   calculateMitigatedDamage,
-  calculateBarrierAmount,
-  isTouchDevice
+  calculateBarrierAmount
 } from '../../utils';
+import { formatMitigation, generateMitigationBreakdown } from '../../utils/mitigation/mitigationUtils';
+import { isTouchDevice } from '../../utils/device/deviceUtils';
 import { isDualTankBusterAction } from '../../utils/boss/bossActionUtils';
 import { mitigationAbilities, bosses } from '../../data';
 import { useAetherflowContext, useTankPositionContext, useTankSelectionModalContext } from '../../contexts';

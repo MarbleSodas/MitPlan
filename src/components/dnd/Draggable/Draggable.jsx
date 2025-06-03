@@ -3,6 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import styled from 'styled-components';
 // Import CSS utilities for transform handling
 import { CSS } from '@dnd-kit/utilities';
+import { useReadOnly } from '../../../contexts/ReadOnlyContext';
 
 const DraggableItem = styled.div`
   opacity: ${props => {
@@ -63,6 +64,11 @@ const CooldownOverlay = styled.div`
 `;
 
 const Draggable = forwardRef(({ id, children, data, isDisabled = false, cooldownReason = null }, ref) => {
+  const { canDragAndDrop } = useReadOnly();
+
+  // Combine read-only state with existing disabled state
+  const finalDisabled = isDisabled || !canDragAndDrop;
+
   const {
     attributes,
     listeners,
@@ -73,7 +79,7 @@ const Draggable = forwardRef(({ id, children, data, isDisabled = false, cooldown
   } = useDraggable({
     id,
     data,
-    disabled: isDisabled
+    disabled: finalDisabled
   });
 
   // Only apply transform when not dragging to avoid duplicate dragging visuals
@@ -91,23 +97,28 @@ const Draggable = forwardRef(({ id, children, data, isDisabled = false, cooldown
     }
   };
 
+  // Create read-only reason if needed
+  const finalCooldownReason = !canDragAndDrop && !isDisabled ?
+    'Plan is in read-only mode. Sign in to edit.' :
+    cooldownReason;
+
   return (
     <DraggableItem
       ref={handleRef}
       style={style}
-      {...(isDisabled ? {} : listeners)}
-      {...(isDisabled ? {} : attributes)}
+      {...(finalDisabled ? {} : listeners)}
+      {...(finalDisabled ? {} : attributes)}
       $isDragging={isDragging}
-      $isDisabled={isDisabled}
-      tabIndex={isDisabled ? -1 : 0} // Make draggable items focusable for accessibility unless disabled
+      $isDisabled={finalDisabled}
+      tabIndex={finalDisabled ? -1 : 0} // Make draggable items focusable for accessibility unless disabled
       role="button"
       aria-pressed={isDragging}
-      aria-disabled={isDisabled}
+      aria-disabled={finalDisabled}
     >
       {children}
-      {isDisabled && cooldownReason && (
+      {finalDisabled && finalCooldownReason && (
         <CooldownOverlay className="cooldown-reason">
-          {cooldownReason}
+          {finalCooldownReason}
         </CooldownOverlay>
       )}
     </DraggableItem>

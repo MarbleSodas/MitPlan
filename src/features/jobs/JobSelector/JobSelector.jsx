@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ffxivJobs } from '../../../data';
+import { useReadOnly } from '../../../contexts/ReadOnlyContext';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -155,15 +156,23 @@ const JobGrid = styled.div`
 
 const JobCard = styled.div`
   background-color: ${props => {
+    if (props.$isDisabled) {
+      return props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.5)';
+    }
     if (props.theme.mode === 'dark') {
       return props.$isSelected ? 'rgba(51, 153, 255, 0.2)' : props.theme.colors.cardBackground;
     }
     return props.$isSelected ? '#e6f7ff' : 'white';
   }};
-  border: 2px solid ${props => props.$isSelected ? props.theme.colors.primary : props.theme.colors.border};
+  border: 2px solid ${props => {
+    if (props.$isDisabled) {
+      return props.theme.mode === 'dark' ? 'rgba(100, 100, 100, 0.3)' : 'rgba(200, 200, 200, 0.5)';
+    }
+    return props.$isSelected ? props.theme.colors.primary : props.theme.colors.border;
+  }};
   border-radius: 8px;
   padding: 8px 10px;
-  cursor: pointer;
+  cursor: ${props => props.$isDisabled ? 'not-allowed' : 'pointer'};
   transition: all 0.2s;
   text-align: center;
   display: flex;
@@ -172,21 +181,41 @@ const JobCard = styled.div`
   justify-content: center;
   min-height: 90px;
   width: 100%;
+  opacity: ${props => props.$isDisabled ? 0.6 : 1};
+  position: relative;
 
-  &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.medium};
-  }
+  ${props => !props.$isDisabled && `
+    &:hover {
+      border-color: ${props.theme.colors.primary};
+      transform: translateY(-2px);
+      box-shadow: ${props.theme.shadows.medium};
+    }
+  `}
+
+  ${props => props.$isDisabled && `
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+  `}
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     min-height: 80px;
     padding: 6px 8px;
 
-    &:active {
-      transform: translateY(-1px);
-      box-shadow: ${props => props.theme.shadows.small};
-    }
+    ${props => !props.$isDisabled && `
+      &:active {
+        transform: translateY(-1px);
+        box-shadow: ${props.theme.shadows.small};
+      }
+    `}
   }
 `;
 
@@ -206,6 +235,8 @@ const JobName = styled.div`
 `;
 
 function JobSelector({ onJobsChange, initialJobs }) {
+  const { canSelectJobs } = useReadOnly();
+
   // Use initialJobs directly if provided, otherwise fallback to localStorage
   const [jobs, setJobs] = useState(() => {
     if (initialJobs) {
@@ -246,6 +277,12 @@ function JobSelector({ onJobsChange, initialJobs }) {
 
   // Toggle job selection
   const toggleJobSelection = (roleKey, jobId) => {
+    // Prevent job selection changes in read-only mode
+    if (!canSelectJobs) {
+      console.log('%c[JOB SELECTOR] Job selection blocked - read-only mode', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
+      return;
+    }
+
     console.log(`%c[JOB SELECTOR] Toggling job ${jobId} in role ${roleKey}`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;');
 
     const updatedJobs = {
@@ -311,7 +348,9 @@ function JobSelector({ onJobsChange, initialJobs }) {
                 <JobCard
                   key={job.id}
                   $isSelected={job.selected}
+                  $isDisabled={!canSelectJobs}
                   onClick={() => toggleJobSelection(roleKey, job.id)}
+                  title={!canSelectJobs ? 'Job selection is disabled in read-only mode' : ''}
                 >
                   <JobIcon>
                     {typeof job.icon === 'string' && job.icon.startsWith('/') ?

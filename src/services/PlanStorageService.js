@@ -1,12 +1,13 @@
 /**
  * Plan Storage Service
  *
- * Manages plan persistence with automatic fallback between database and localStorage.
+ * Manages plan persistence with automatic fallback between Firestore and localStorage.
  * Handles migration, synchronization, and conflict resolution.
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
+import FirestoreService from './FirestoreService';
 
 // Storage states
 export const STORAGE_STATES = {
@@ -23,9 +24,9 @@ export const OPERATION_TYPES = {
 };
 
 class PlanStorageService {
-  constructor(authContext, apiRequest) {
+  constructor(authContext) {
     this.authContext = authContext;
-    this.apiRequest = apiRequest;
+    this.firestoreService = FirestoreService;
     this.storageState = STORAGE_STATES.OFFLINE;
     this.pendingOperations = this.loadPendingOperations();
     this.isOnlineState = navigator.onLine;
@@ -35,8 +36,8 @@ class PlanStorageService {
     // Set up connectivity listeners
     this.setupConnectivityListeners();
 
-    // Initialize storage state
-    this.updateStorageState();
+    // Note: updateStorageState() is called explicitly from the context
+    // to handle async initialization properly
   }
 
   /**
@@ -80,16 +81,27 @@ class PlanStorageService {
    * Check if database is available
    */
   async checkDatabaseAvailability() {
+    if (!this.authContext.isAuthenticated) {
+      this.dbAvailable = false;
+      return false;
+    }
+
     // Cache check for 30 seconds
     if (this.lastDbCheck && Date.now() - this.lastDbCheck < 30000) {
       return this.dbAvailable;
     }
 
     try {
-      await this.apiRequest('/plans?limit=1');
-      this.dbAvailable = true;
+      // Test Firestore connectivity with timeout
+      const connectivityPromise = this.firestoreService.getUserPlans();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database connectivity check timeout')), 5000)
+      );
+
+      const result = await Promise.race([connectivityPromise, timeoutPromise]);
+      this.dbAvailable = result.success;
       this.lastDbCheck = Date.now();
-      return true;
+      return this.dbAvailable;
     } catch (error) {
       console.warn('Database unavailable, falling back to localStorage:', error);
       this.dbAvailable = false;
@@ -148,18 +160,36 @@ class PlanStorageService {
 
   /**
    * Load a specific plan by ID
+   * Supports loading public/shared plans for both authenticated and unauthenticated users
    */
   async loadPlan(planId) {
     if (this.isOnline()) {
       try {
-        const response = await this.apiRequest(`/plans/${planId}`);
-        return this.normalizePlanFromDatabase(response.plan);
+        const result = await this.firestoreService.getPlan(planId);
+        if (result.success) {
+          const normalizedPlan = this.normalizePlanFromDatabase(result.plan);
+          return normalizedPlan;
+        } else {
+          console.warn('PlanStorageService: Database load failed:', result.message);
+          throw new Error(result.message);
+        }
       } catch (error) {
-        console.error('Database load failed, checking localStorage:', error);
+        console.error('PlanStorageService: Database load failed, checking localStorage:', error);
+
+        // For shared plans, don't fall back to localStorage since they should be in the database
+        if (error.message === 'Plan not found' || error.message === 'Access denied') {
+          throw error; // Re-throw these specific errors
+        }
       }
     }
 
-    return this.loadPlanFromLocalStorage(planId);
+    // Fallback to localStorage for offline mode or network errors
+    const localPlan = this.loadPlanFromLocalStorage(planId);
+    if (localPlan) {
+      return localPlan;
+    }
+
+    throw new Error('Plan not found in any storage location');
   }
 
   /**
@@ -168,14 +198,22 @@ class PlanStorageService {
   async loadAllPlans() {
     if (this.isOnline()) {
       try {
-        const response = await this.apiRequest('/plans');
-        return response.plans.map(plan => this.normalizePlanFromDatabase(plan));
+        const result = await this.firestoreService.getUserPlans();
+
+        if (result.success && result.plans) {
+          const normalizedPlans = result.plans.map(plan => this.normalizePlanFromDatabase(plan));
+          return normalizedPlans;
+        } else {
+          console.warn('PlanStorageService: Failed to load plans from Firestore:', result.message);
+          throw new Error(result.message || 'Failed to load plans from Firestore');
+        }
       } catch (error) {
-        console.error('Database load failed, falling back to localStorage:', error);
+        console.error('PlanStorageService: Firestore load failed, falling back to localStorage:', error);
       }
     }
 
-    return this.loadPlansFromLocalStorage();
+    const localPlans = this.loadPlansFromLocalStorage();
+    return localPlans;
   }
 
   /**
@@ -184,10 +222,14 @@ class PlanStorageService {
   async deletePlan(planId) {
     if (this.isOnline()) {
       try {
-        await this.apiRequest(`/plans/${planId}`, { method: 'DELETE' });
-        // Also remove from localStorage if it exists
-        this.deletePlanFromLocalStorage(planId);
-        return true;
+        const result = await this.firestoreService.deletePlan(planId);
+        if (result.success) {
+          // Also remove from localStorage if it exists
+          this.deletePlanFromLocalStorage(planId);
+          return true;
+        } else {
+          throw new Error(result.message);
+        }
       } catch (error) {
         console.error('Database delete failed, queueing operation:', error);
         this.queueOperation(OPERATION_TYPES.DELETE, { id: planId });
@@ -204,37 +246,87 @@ class PlanStorageService {
    * Create plan in database
    */
   async createPlanInDatabase(plan) {
-    const response = await this.apiRequest('/plans', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: plan.name,
-        description: plan.description || '',
-        boss_id: plan.bossId,
-        assignments: plan.assignments,
-        selected_jobs: plan.selectedJobs,
-        tank_positions: plan.tankPositions || {}
-      })
-    });
+    const planData = {
+      name: plan.name,
+      description: plan.description || '',
+      bossId: plan.bossId,
+      assignments: plan.assignments,
+      selectedJobs: plan.selectedJobs,
+      tankPositions: plan.tankPositions || {}
+    };
 
-    return this.normalizePlanFromDatabase(response.plan);
+    const result = await this.firestoreService.createPlan(planData);
+    if (result.success) {
+      return this.normalizePlanFromDatabase(result.plan);
+    } else {
+      throw new Error(result.message);
+    }
   }
 
   /**
    * Update plan in database
    */
   async updatePlanInDatabase(plan) {
-    const response = await this.apiRequest(`/plans/${plan.id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        name: plan.name,
-        description: plan.description || '',
-        assignments: plan.assignments,
-        selected_jobs: plan.selectedJobs,
-        tank_positions: plan.tankPositions || {}
-      })
-    });
+    const updateData = {
+      name: plan.name,
+      description: plan.description || '',
+      assignments: plan.assignments,
+      selectedJobs: plan.selectedJobs,
+      tankPositions: plan.tankPositions || {}
+    };
 
-    return this.normalizePlanFromDatabase(response.plan);
+    const result = await this.firestoreService.updatePlan(plan.id, updateData);
+    if (result.success) {
+      return this.normalizePlanFromDatabase(result.plan);
+    } else {
+      throw new Error(result.message);
+    }
+  }
+
+  /**
+   * Update plan visibility (make public/private)
+   */
+  async updatePlanVisibility(planId, isPublic) {
+    if (!this.isOnline()) {
+      throw new Error('Cannot update plan visibility while offline');
+    }
+
+    const result = await this.firestoreService.updatePlan(planId, { isPublic });
+    if (result.success) {
+      return this.normalizePlanFromDatabase(result.plan);
+    } else {
+      throw new Error(result.message);
+    }
+  }
+
+  /**
+   * Share an existing plan (make it public and return shareable URL)
+   */
+  async sharePlan(plan) {
+    // If plan is only in localStorage, save it to database first
+    if (plan.source !== 'database') {
+      if (!this.authContext.isAuthenticated) {
+        throw new Error('Please sign in to share plans');
+      }
+
+      // Save to database first
+      const savedPlan = await this.savePlan(plan);
+      plan = savedPlan;
+    }
+
+    // Use Firestore service to share the plan
+    const result = await this.firestoreService.sharePlan(plan.id);
+    if (result.success) {
+      return {
+        plan: this.normalizePlanFromDatabase({ ...plan, isPublic: true, isShared: true }),
+        shareUrl: result.shareUrl,
+        sessionId: result.sessionId,
+        collaborationEnabled: result.collaborationEnabled,
+        message: result.message
+      };
+    } else {
+      throw new Error(result.message);
+    }
   }
 
   /**
@@ -301,20 +393,26 @@ class PlanStorageService {
    * Normalize plan from database format
    */
   normalizePlanFromDatabase(dbPlan) {
-    return {
+    if (!dbPlan) {
+      throw new Error('Invalid plan data: plan is null or undefined');
+    }
+
+    const normalized = {
       id: dbPlan.id,
-      name: dbPlan.name,
+      name: dbPlan.name || 'Untitled Plan',
       description: dbPlan.description || '',
-      bossId: dbPlan.boss_id,
+      bossId: dbPlan.bossId || 'ketuduke',
       assignments: dbPlan.assignments || {},
-      selectedJobs: dbPlan.selected_jobs || {},
-      tankPositions: dbPlan.tank_positions || {},
-      date: dbPlan.created_at,
-      lastModified: dbPlan.updated_at,
-      isPublic: dbPlan.is_public,
-      version: dbPlan.version,
+      selectedJobs: dbPlan.selectedJobs || {},
+      tankPositions: dbPlan.tankPositions || {},
+      date: dbPlan.createdAt ? dbPlan.createdAt.toISOString() : new Date().toISOString(),
+      lastModified: dbPlan.updatedAt ? dbPlan.updatedAt.toISOString() : new Date().toISOString(),
+      isPublic: dbPlan.isPublic || false,
+      version: dbPlan.version || 1,
       source: 'database'
     };
+
+    return normalized;
   }
 
   /**
@@ -355,8 +453,6 @@ class PlanStorageService {
       return;
     }
 
-    console.log(`Syncing ${this.pendingOperations.length} pending operations...`);
-
     const successfulOperations = [];
     const failedOperations = [];
 
@@ -377,10 +473,6 @@ class PlanStorageService {
 
     this.pendingOperations = failedOperations;
     this.savePendingOperations();
-
-    if (successfulOperations.length > 0) {
-      console.log(`Successfully synced ${successfulOperations.length} operations`);
-    }
   }
 
   /**
@@ -397,7 +489,10 @@ class PlanStorageService {
         await this.updatePlanInDatabase(planData);
         break;
       case OPERATION_TYPES.DELETE:
-        await this.apiRequest(`/plans/${planData.id}`, { method: 'DELETE' });
+        const result = await this.firestoreService.deletePlan(planData.id);
+        if (!result.success) {
+          throw new Error(result.message);
+        }
         break;
       default:
         throw new Error(`Unknown operation type: ${type}`);

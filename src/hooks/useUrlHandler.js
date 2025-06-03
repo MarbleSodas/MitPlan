@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { checkUrlForPlanData, reconstructMitigations, reconstructJobs } from '../utils';
+import { reconstructMitigations } from '../utils';
+import { checkUrlForPlanData, reconstructJobs } from '../utils/url/urlUtils';
 
 /**
  * Custom hook for handling URL parameters for plan sharing

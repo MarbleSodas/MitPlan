@@ -12,7 +12,6 @@ import {
   useTankPositionContext,
   useTankSelectionModalContext
 } from './contexts';
-import { TankSelectionModalProvider } from './contexts/TankSelectionModalContext';
 
 // Import data from centralized data module
 import { mitigationAbilities } from './data';
@@ -30,12 +29,14 @@ import DiscordButton from './components/common/DiscordButton/DiscordButton';
 import QuizButton from './components/common/QuizButton/QuizButton';
 import { AuthButton } from './components/auth';
 import FilterToggle from './components/common/FilterToggle/FilterToggle';
-import MobileBottomSheet from './components/mobile/MobileBottomSheet/MobileBottomSheet';
-import MobileMitigationSelector from './components/mobile/MobileMitigationSelector/MobileMitigationSelector';
 import BossActionItem from './components/BossActionItem';
 import AssignedMitigations from './components/AssignedMitigations';
 import MitigationItem from './components/MitigationItem';
 import TankPositionSelector from './components/TankPositionSelector';
+import CollaborationIndicator from './components/collaboration/CollaborationIndicator';
+import UserPresenceIndicator from './components/collaboration/UserPresenceIndicator';
+import CollaborationOnboarding from './components/collaboration/CollaborationOnboarding';
+import ReadOnlyBanner from './components/ReadOnlyBanner/ReadOnlyBanner';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
@@ -55,12 +56,11 @@ import {
   useDeviceDetection
 } from './hooks';
 import useEnhancedUrlHandler from './hooks/useEnhancedUrlHandler';
+import useCollaboration from './hooks/useCollaboration';
 
 // Import utility functions
 import {
-  filterAbilitiesByLevel,
-  isMitigationAvailable,
-  getAbilityDescriptionForLevel
+  filterAbilitiesByLevel
 } from './utils';
 
 function App() {
@@ -99,14 +99,25 @@ function App() {
     showAllMitigations
   } = useFilterContext();
   const {
-    tankPositions,
-    selectedTankJobs
+    tankPositions
   } = useTankPositionContext();
+
+  // Handlers for read-only banner actions
+  const handleSignInClick = () => {
+    // This will trigger the AuthButton modal
+    const authButton = document.querySelector('[data-auth-button]');
+    if (authButton) {
+      authButton.click();
+    }
+  };
+
+  const handleCreatePlanClick = () => {
+    // Clear current plan and start fresh
+    window.location.href = '/';
+  };
 
   // Local state
   const [pendingAssignments, setPendingAssignments] = useState([]);
-  const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false);
-  const [selectedActionForMobile, setSelectedActionForMobile] = useState(null);
 
   // Use custom hook for device detection
   const isMobile = useDeviceDetection();
@@ -122,7 +133,7 @@ function App() {
     tankPositions
   });
 
-  const { handleMobileAssignMitigation, handleBossActionClick } = useMobileInteraction({
+  const { handleBossActionClick } = useMobileInteraction({
     checkAbilityCooldown,
     addMitigation,
     addPendingAssignment,
@@ -139,6 +150,27 @@ function App() {
     setSelectedJobs,
     currentBossId
   });
+
+  // Handle real-time collaboration for shared plans
+  const {
+    isCollaborating,
+    roomUsers,
+    currentUserId
+  } = useCollaboration(
+    {
+      assignments,
+      selectedJobs,
+      tankPositions
+    },
+    {
+      onAssignmentsUpdate: importAssignments,
+      onJobsUpdate: setSelectedJobs,
+      onTankPositionsUpdate: (positions) => {
+        // Update tank positions through context
+        console.log('🤝 Received tank positions update:', positions);
+      }
+    }
+  );
 
   // Effect to clean up pending assignments - optimized with dependency on length
   useEffect(() => {
@@ -180,9 +212,7 @@ function App() {
     handleBossActionClick(
       action,
       isMobile,
-      toggleBossActionSelection,
-      setSelectedActionForMobile,
-      setIsMobileBottomSheetOpen
+      toggleBossActionSelection
     );
   }, [handleBossActionClick, isMobile, toggleBossActionSelection]);
 
@@ -398,6 +428,15 @@ function App() {
             }
           />
 
+          {/* Read-only banner for unauthenticated users */}
+          <ReadOnlyBanner
+            onSignInClick={handleSignInClick}
+            onCreatePlanClick={handleCreatePlanClick}
+          />
+
+          {/* Collaboration onboarding for shared plans */}
+          <CollaborationOnboarding />
+
           <BossSelector
             selectedBossId={currentBossId}
             onSelectBoss={setCurrentBossId}
@@ -414,17 +453,32 @@ function App() {
 
           <FilterToggle />
 
+          {/* Show collaboration features when in shared mode */}
+          <UserPresenceIndicator
+            users={roomUsers}
+            currentUserId={currentUserId}
+            isCollaborating={isCollaborating}
+          />
+
+          <CollaborationIndicator
+            isCollaborating={isCollaborating}
+            roomUsers={roomUsers}
+          />
+
           <EnhancedImportExport
             assignments={assignments}
             bossId={currentBossId}
             selectedJobs={selectedJobs}
             onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
+              // Apply changes to contexts - let each context handle its own localStorage
               if (importedAssignments) {
                 importAssignments(importedAssignments);
               }
+
               if (importedBossId && importedBossId !== currentBossId) {
                 setCurrentBossId(importedBossId);
               }
+
               if (importedSelectedJobs) {
                 setSelectedJobs(importedSelectedJobs);
               }

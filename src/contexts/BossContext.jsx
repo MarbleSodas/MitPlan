@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { bossActionsMap, bosses } from '../data';
-import { loadFromLocalStorage, saveToLocalStorage, processMultiHitTankBusters } from '../utils';
+import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
+import { processMultiHitTankBusters } from '../utils/boss/bossActionUtils';
 
 // Create the context
 const BossContext = createContext();
@@ -32,8 +33,6 @@ export const BossProvider = ({ children }) => {
     const processedActions = processMultiHitTankBusters(rawBossActions);
 
     // Update the state with processed actions
-// DEBUG: Log boss action selection
-console.log('[BossContext] currentBossId:', currentBossId, 'First action:', processedActions[0]?.name);
     setCurrentBossActions(processedActions);
 
     // Deselect any selected action when changing bosses

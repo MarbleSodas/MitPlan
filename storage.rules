@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for MitPlan
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidImageFile() {
+      return request.resource.contentType != null &&
+             request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidFileSize() {
+      return request.resource.size < 8 * 1024 * 1024; // 8MB limit
+    }
+
+    // User profile pictures
+    match /users/{userId}/profile-pictures/{fileName} {
+      // Allow read access to profile pictures for authenticated users
+      allow read: if isAuthenticated();
+
+      // Allow write access only to the owner of the profile
+      allow write: if isOwner(userId) &&
+                      isValidImageFile() &&
+                      isValidFileSize();
+
+      // Allow delete access only to the owner
+      allow delete: if isOwner(userId);
+    }
+
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

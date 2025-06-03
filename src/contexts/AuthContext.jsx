@@ -1,12 +1,9 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import FirebaseAuthService from '../services/FirebaseAuthService';
+import { normalizeUserFromFirestore } from '../utils/firebaseHelpers';
 
 // Create the context
 const AuthContext = createContext();
-
-// API base URL
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://your-production-api.com/api'
-  : 'http://localhost:3002/api';
 
 // Create a provider component
 export const AuthProvider = ({ children }) => {
@@ -26,69 +23,26 @@ export const AuthProvider = ({ children }) => {
     setTimeout(clearError, 5000); // Clear error after 5 seconds
   }, [clearError]);
 
-  // Get stored token
-  const getStoredToken = useCallback(() => {
-    return localStorage.getItem('auth_token');
-  }, []);
-
-  // Store token
-  const storeToken = useCallback((token) => {
-    localStorage.setItem('auth_token', token);
-  }, []);
-
-  // Remove token
-  const removeToken = useCallback(() => {
-    localStorage.removeItem('auth_token');
-  }, []);
-
-  // API request helper with authentication
-  const apiRequest = useCallback(async (endpoint, options = {}) => {
-    const token = getStoredToken();
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
-  }, [getStoredToken]);
-
   // Register function
   const register = useCallback(async (email, password, displayName) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await apiRequest('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          password,
-          display_name: displayName,
-        }),
-      });
+      const result = await FirebaseAuthService.register(email, password, displayName);
 
-      return {
-        success: true,
-        message: data.message,
-        user: data.user,
-        verification_required: data.verification_required,
-      };
+      if (result.success) {
+        // Don't automatically log in after registration - user needs to verify email
+        return {
+          success: true,
+          message: result.message,
+          user: result.user,
+          verification_required: true,
+        };
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
     } catch (error) {
       const errorMessage = error.message || 'Registration failed';
       setErrorWithTimeout(errorMessage);
@@ -99,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [apiRequest, setErrorWithTimeout]);
+  }, [setErrorWithTimeout]);
 
   // Login function
   const login = useCallback(async (email, password) => {
@@ -107,26 +61,14 @@ export const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
-      const data = await apiRequest('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const result = await FirebaseAuthService.login(email, password);
 
-      if (data.tokens && data.tokens.access_token) {
-        storeToken(data.tokens.access_token);
-        setUser(data.user);
-        setIsAuthenticated(true);
-
-        return {
-          success: true,
-          message: data.message,
-          user: data.user,
-        };
+      if (result.success) {
+        // User state will be updated by the auth state listener
+        return result;
       } else {
-        throw new Error('No access token received');
+        setErrorWithTimeout(result.message);
+        return result;
       }
     } catch (error) {
       const errorMessage = error.message || 'Login failed';
@@ -138,43 +80,56 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [apiRequest, storeToken, setErrorWithTimeout]);
+  }, [setErrorWithTimeout]);
 
   // Logout function
   const logout = useCallback(async () => {
     setIsLoading(true);
 
     try {
-      // Call logout endpoint to invalidate session
-      await apiRequest('/auth/logout', {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-      // Continue with local logout even if API call fails
-    }
+      const result = await FirebaseAuthService.logout();
 
-    // Clear local state regardless of API call result
-    removeToken();
-    setUser(null);
-    setIsAuthenticated(false);
-    setError(null);
-    setIsLoading(false);
-  }, [apiRequest, removeToken]);
+      // Clear local state
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+
+      return result;
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Clear local state even if logout fails
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+
+      return {
+        success: false,
+        message: error.message || 'Logout failed'
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Get user profile
   const getUserProfile = useCallback(async () => {
     try {
-      const data = await apiRequest('/user/profile');
-      setUser(data.user);
-      return data.user;
+      const result = await FirebaseAuthService.getUserProfile();
+
+      if (result.success) {
+        const normalizedUser = normalizeUserFromFirestore(result.user);
+        setUser(normalizedUser);
+        return normalizedUser;
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error) {
       console.error('Failed to get user profile:', error);
       // If profile fetch fails, user might be logged out
       await logout();
       throw error;
     }
-  }, [apiRequest, logout]);
+  }, [logout]);
 
   // Update user profile
   const updateProfile = useCallback(async (profileData) => {
@@ -182,17 +137,20 @@ export const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
-      const data = await apiRequest('/user/profile', {
-        method: 'PUT',
-        body: JSON.stringify(profileData),
-      });
+      const result = await FirebaseAuthService.updateProfile(profileData);
 
-      setUser(data.user);
-      return {
-        success: true,
-        message: data.message,
-        user: data.user,
-      };
+      if (result.success) {
+        // Refresh user profile to get updated data
+        const updatedUser = await getUserProfile();
+        return {
+          success: true,
+          message: result.message,
+          user: updatedUser,
+        };
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
     } catch (error) {
       const errorMessage = error.message || 'Profile update failed';
       setErrorWithTimeout(errorMessage);
@@ -203,7 +161,72 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [apiRequest, setErrorWithTimeout]);
+  }, [setErrorWithTimeout, getUserProfile]);
+
+  // Update user profile picture
+  const updateProfilePicture = useCallback(async (imageUrl, imagePath) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await FirebaseAuthService.updateProfilePicture(imageUrl, imagePath);
+
+      if (result.success) {
+        // Refresh user profile to get updated data
+        const updatedUser = await getUserProfile();
+        return {
+          success: true,
+          message: result.message,
+          user: updatedUser,
+          imageUrl: result.imageUrl
+        };
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Profile picture update failed';
+      setErrorWithTimeout(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setErrorWithTimeout, getUserProfile]);
+
+  // Remove user profile picture
+  const removeProfilePicture = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await FirebaseAuthService.removeProfilePicture();
+
+      if (result.success) {
+        // Refresh user profile to get updated data
+        const updatedUser = await getUserProfile();
+        return {
+          success: true,
+          message: result.message,
+          user: updatedUser,
+        };
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Profile picture removal failed';
+      setErrorWithTimeout(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setErrorWithTimeout, getUserProfile]);
 
   // Change password
   const changePassword = useCallback(async (currentPassword, newPassword) => {
@@ -211,18 +234,16 @@ export const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
-      const data = await apiRequest('/user/change-password', {
-        method: 'POST',
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword,
-        }),
-      });
+      // Firebase Auth doesn't need current password for password change
+      // It uses re-authentication if needed
+      const result = await FirebaseAuthService.changePassword(newPassword);
 
-      return {
-        success: true,
-        message: data.message,
-      };
+      if (result.success) {
+        return result;
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
     } catch (error) {
       const errorMessage = error.message || 'Password change failed';
       setErrorWithTimeout(errorMessage);
@@ -233,32 +254,45 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [apiRequest, setErrorWithTimeout]);
+  }, [setErrorWithTimeout]);
 
   // Get user preferences
   const getUserPreferences = useCallback(async () => {
     try {
-      const data = await apiRequest('/user/preferences');
-      return data.preferences;
+      const result = await FirebaseAuthService.getUserProfile();
+
+      if (result.success) {
+        return result.user.preferences || {
+          theme: 'dark',
+          defaultBoss: 'ketuduke',
+          notifications: true
+        };
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error) {
       console.error('Failed to get user preferences:', error);
       throw error;
     }
-  }, [apiRequest]);
+  }, []);
 
   // Update user preferences
   const updatePreferences = useCallback(async (preferences) => {
     try {
-      const data = await apiRequest('/user/preferences', {
-        method: 'PUT',
-        body: JSON.stringify(preferences),
-      });
+      const result = await FirebaseAuthService.updateProfile({ preferences });
 
-      return {
-        success: true,
-        message: data.message,
-        preferences: data.preferences,
-      };
+      if (result.success) {
+        // Refresh user profile to get updated preferences
+        await getUserProfile();
+        return {
+          success: true,
+          message: result.message,
+          preferences: preferences,
+        };
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
     } catch (error) {
       const errorMessage = error.message || 'Preferences update failed';
       setErrorWithTimeout(errorMessage);
@@ -267,35 +301,128 @@ export const AuthProvider = ({ children }) => {
         message: errorMessage,
       };
     }
-  }, [apiRequest, setErrorWithTimeout]);
+  }, [setErrorWithTimeout, getUserProfile]);
 
-  // Check authentication status on mount
+  // Password reset function
+  const resetPassword = useCallback(async (email) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await FirebaseAuthService.resetPassword(email);
+
+      if (result.success) {
+        return result;
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Password reset failed';
+      setErrorWithTimeout(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setErrorWithTimeout]);
+
+  // Google sign-in function
+  const signInWithGoogle = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await FirebaseAuthService.signInWithGoogle();
+
+      if (result.success) {
+        // User state will be updated by the auth state listener
+        return result;
+      } else {
+        setErrorWithTimeout(result.message);
+        return result;
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Google sign-in failed';
+      setErrorWithTimeout(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setErrorWithTimeout]);
+
+  // Set up Firebase Auth state listener
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      const token = getStoredToken();
+    const unsubscribe = FirebaseAuthService.onAuthStateChanged(async (firebaseUser) => {
+      setIsLoading(true);
 
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+      if (firebaseUser) {
+        try {
+          // Get user profile from Firestore
+          const result = await FirebaseAuthService.getUserProfile(firebaseUser.uid);
 
-      try {
-        const userProfile = await getUserProfile();
-        setIsAuthenticated(true);
-        setUser(userProfile);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        // Token might be invalid, clear it
-        removeToken();
-        setIsAuthenticated(false);
+          if (result.success) {
+            const normalizedUser = normalizeUserFromFirestore(result.user);
+            setUser(normalizedUser);
+            setIsAuthenticated(true);
+          } else {
+            // If no profile exists, create one (this can happen if Firestore document creation failed during registration)
+            console.warn('User profile not found in Firestore, creating missing profile...');
+
+            try {
+              // Create the missing user profile in Firestore
+              await FirebaseAuthService.createUserProfile(firebaseUser.uid, {
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                emailVerified: firebaseUser.emailVerified
+              });
+
+              // Now try to get the profile again
+              const retryResult = await FirebaseAuthService.getUserProfile(firebaseUser.uid);
+              if (retryResult.success) {
+                const normalizedUser = normalizeUserFromFirestore(retryResult.user);
+                setUser(normalizedUser);
+                setIsAuthenticated(true);
+              } else {
+                throw new Error('Failed to create user profile');
+              }
+            } catch (createError) {
+              console.error('Failed to create missing user profile:', createError);
+              // Fallback to temporary user object
+              setUser({
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                emailVerified: firebaseUser.emailVerified,
+                preferences: {
+                  theme: 'dark',
+                  defaultBoss: 'ketuduke',
+                  notifications: true
+                }
+              });
+              setIsAuthenticated(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } else {
         setUser(null);
-      } finally {
-        setIsLoading(false);
+        setIsAuthenticated(false);
       }
-    };
 
-    checkAuthStatus();
-  }, [getStoredToken, getUserProfile, removeToken]);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Context value
   const contextValue = {
@@ -311,13 +438,14 @@ export const AuthProvider = ({ children }) => {
     logout,
     getUserProfile,
     updateProfile,
+    updateProfilePicture,
+    removeProfilePicture,
     changePassword,
     getUserPreferences,
     updatePreferences,
+    resetPassword,
+    signInWithGoogle,
     clearError,
-
-    // API helper
-    apiRequest,
   };
 
   return (

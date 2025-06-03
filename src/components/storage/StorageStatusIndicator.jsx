@@ -19,7 +19,7 @@ const StatusContainer = styled.div`
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  
+
   &:hover {
     background-color: ${props => props.theme.colors.border};
   }
@@ -32,8 +32,8 @@ const StatusIcon = styled.div`
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  
-  ${props => props.spinning && `
+
+  ${props => props.$spinning && `
     animation: ${spin} 1s linear infinite;
   `}
 `;
@@ -42,7 +42,7 @@ const StatusText = styled.span`
   font-size: 0.875rem;
   font-weight: 500;
   color: ${props => props.theme.colors.text};
-  
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     display: none;
   }
@@ -53,7 +53,7 @@ const StatusDot = styled.div`
   height: 8px;
   border-radius: 50%;
   background-color: ${props => {
-    switch (props.status) {
+    switch (props.$status) {
       case 'online': return '#4CAF50';
       case 'offline': return '#FF9800';
       case 'syncing': return '#2196F3';
@@ -79,10 +79,10 @@ const Tooltip = styled.div`
   color: ${props => props.theme.colors.text};
   white-space: nowrap;
   z-index: 1000;
-  opacity: ${props => props.visible ? 1 : 0};
-  visibility: ${props => props.visible ? 'visible' : 'hidden'};
+  opacity: ${props => props.$visible ? 1 : 0};
+  visibility: ${props => props.$visible ? 'visible' : 'hidden'};
   transition: opacity 0.2s ease, visibility 0.2s ease;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -102,12 +102,12 @@ const SyncButton = styled.button`
   padding: 2px;
   border-radius: 3px;
   font-size: 12px;
-  
+
   &:hover {
     color: ${props => props.theme.colors.text};
     background-color: ${props => props.theme.colors.border};
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -115,18 +115,18 @@ const SyncButton = styled.button`
 `;
 
 const StorageStatusIndicator = () => {
-  const { 
-    storageState, 
-    syncStatus, 
-    syncPlans, 
+  const {
+    storageState,
+    syncStatus,
+    syncPlans,
     getStorageInfo,
-    error 
+    error
   } = usePlanStorage();
   const [showTooltip, setShowTooltip] = useState(false);
 
   const getStatusInfo = () => {
     const info = getStorageInfo();
-    
+
     if (error) {
       return {
         status: 'error',
@@ -136,7 +136,7 @@ const StorageStatusIndicator = () => {
         spinning: false
       };
     }
-    
+
     if (syncStatus.isSyncing) {
       return {
         status: 'syncing',
@@ -146,7 +146,7 @@ const StorageStatusIndicator = () => {
         spinning: true
       };
     }
-    
+
     if (syncStatus.pendingCount > 0) {
       return {
         status: 'pending',
@@ -156,7 +156,7 @@ const StorageStatusIndicator = () => {
         spinning: false
       };
     }
-    
+
     switch (storageState) {
       case STORAGE_STATES.ONLINE_DB:
         return {
@@ -166,7 +166,7 @@ const StorageStatusIndicator = () => {
           tooltip: 'Plans are synced with your account',
           spinning: false
         };
-      
+
       case STORAGE_STATES.ONLINE_LOCAL:
         return {
           status: 'offline',
@@ -175,7 +175,7 @@ const StorageStatusIndicator = () => {
           tooltip: 'Database unavailable - using local storage',
           spinning: false
         };
-      
+
       case STORAGE_STATES.OFFLINE:
         return {
           status: 'offline',
@@ -184,7 +184,7 @@ const StorageStatusIndicator = () => {
           tooltip: 'Plans saved locally - sign in to sync across devices',
           spinning: false
         };
-      
+
       default:
         return {
           status: 'unknown',
@@ -219,14 +219,14 @@ const StorageStatusIndicator = () => {
       onClick={handleClick}
       style={{ cursor: canSync ? 'pointer' : 'default' }}
     >
-      <StatusDot status={statusInfo.status} />
-      
-      <StatusIcon spinning={statusInfo.spinning}>
+      <StatusDot $status={statusInfo.status} />
+
+      <StatusIcon $spinning={statusInfo.spinning}>
         {statusInfo.icon}
       </StatusIcon>
-      
+
       <StatusText>{statusInfo.text}</StatusText>
-      
+
       {canSync && (
         <SyncButton
           onClick={handleSyncClick}
@@ -236,8 +236,8 @@ const StorageStatusIndicator = () => {
           🔄
         </SyncButton>
       )}
-      
-      <Tooltip visible={showTooltip}>
+
+      <Tooltip $visible={showTooltip}>
         {statusInfo.tooltip}
         {syncStatus.lastSync && (
           <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '4px' }}>

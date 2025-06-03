@@ -9,6 +9,7 @@ import { ChargeCountProvider } from './ChargeCountContext.jsx';
 import { FilterProvider } from './FilterContext.jsx';
 import { AetherflowProvider } from './AetherflowContext.jsx';
 import { TankPositionProvider } from './TankPositionContext.jsx';
+// Import contexts for Consumer pattern
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
 import MitigationContext from './MitigationContext.jsx';

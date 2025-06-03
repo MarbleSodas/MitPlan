@@ -35,10 +35,23 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
 - Visual indicators for abilities on cooldown
 - Stacking mitigation calculation
 
+### Authentication & Cloud Storage
+- Sign in with email/password or Google account
+- Cloud-based plan storage with Firebase Firestore
+- Cross-device synchronization of your mitigation plans
+- Secure user authentication with Firebase Auth
+
+### Real-time Collaboration
+- Share plans with your raid team via shareable links
+- Real-time collaborative editing with Firebase Realtime Database
+- See who else is viewing/editing the plan
+- Visual indicators for other users' selections
+
 ### Import/Export
-- Save and load mitigation plans
+- Save and load mitigation plans to the cloud
 - Export plans to share with your raid team
 - Import plans from other players
+- Automatic backup and synchronization
 
 ### Dark Mode
 - Toggle between light and dark themes
@@ -49,6 +62,10 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
 - **Styling**: Styled Components
 - **Drag and Drop**: @dnd-kit library
 - **Build Tool**: Vite
+- **Backend**: Firebase (Serverless)
+  - **Authentication**: Firebase Auth
+  - **Database**: Firestore (plan storage)
+  - **Real-time**: Firebase Realtime Database (collaboration)
 - **Deployment**: Vercel
 
 ## 🚀 Getting Started
@@ -71,12 +88,18 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
    npm install
    ```
 
-3. Start the development server
+3. Set up Firebase (optional for local development)
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+   - Enable Authentication, Firestore, and Realtime Database
+   - Copy your Firebase config to `src/config/firebase.js`
+   - Note: The app will work in offline mode without Firebase setup
+
+4. Start the development server
    ```bash
    npm run dev
    ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+5. Open your browser and navigate to `http://localhost:5173`
 
 ### Building for Production
 
@@ -94,9 +117,25 @@ The built files will be in the `dist` directory.
 4. **Review**: Check the total mitigation percentage for each boss action
 5. **Save/Export**: Save your plan or export it to share with others
 
-## 🔄 Data Persistence
+## 🔄 Data Persistence & Collaboration
 
-MitPlan uses local storage to automatically save your mitigation plans between sessions. You can also manually export plans as JSON files for backup or sharing.
+MitPlan offers multiple data storage options:
+
+### Cloud Storage (Authenticated Users)
+- **Firebase Firestore**: Secure cloud storage for your mitigation plans
+- **Cross-device sync**: Access your plans from any device
+- **Real-time collaboration**: Share plans with your raid team for live editing
+- **Automatic backup**: Your plans are safely stored in the cloud
+
+### Local Storage (Offline Mode)
+- **Local browser storage**: Plans saved locally when not signed in
+- **Migration support**: Easily migrate local plans to cloud storage
+- **Offline functionality**: Full app functionality without internet connection
+
+### Export/Import
+- **JSON export**: Download plans as JSON files for backup
+- **Plan sharing**: Share exported plans with other users
+- **Cross-platform compatibility**: Import plans from any MitPlan instance
 
 ## 🤝 Contributing
 

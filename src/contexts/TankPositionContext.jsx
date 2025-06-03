@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
 import { useJobContext } from './JobContext';
 
@@ -28,7 +28,7 @@ export const TankPositionProvider = ({ children }) => {
 
   // Get the currently selected tank jobs - memoize this to prevent unnecessary rerenders
   const selectedTankJobs = selectedJobs?.tank?.filter(job => job.selected) || [];
-  
+
   // Get the IDs of selected tanks - we'll use this in multiple places
   const selectedTankIds = selectedTankJobs.map(job => job.id);
 
@@ -36,6 +36,24 @@ export const TankPositionProvider = ({ children }) => {
   useEffect(() => {
     saveToLocalStorage('tankPositions', tankPositions);
   }, [tankPositions]);
+
+  // Listen for storage events to sync tank positions when loaded from plans
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'tankPositions' && e.newValue) {
+        try {
+          const newTankPositions = JSON.parse(e.newValue);
+          console.log('TankPositionContext: Received tank positions from storage event:', newTankPositions);
+          setTankPositions(newTankPositions);
+        } catch (error) {
+          console.error('TankPositionContext: Failed to parse tank positions from storage event:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Ensure tank positions are valid when selected jobs change
   // This effect should only run when selectedTankIds changes, not on every render

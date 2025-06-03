@@ -1,0 +1,57 @@
+{
+  "rules": {
+    "collaboration": {
+      "$planId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "activeUsers": {
+          "$userId": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.uid == $userId",
+            ".validate": "newData.hasChildren(['name', 'color', 'joinedAt', 'lastSeen'])"
+          }
+        },
+        "selections": {
+          "$userId": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.uid == $userId",
+            ".validate": "newData.hasChildren(['elementId', 'timestamp'])"
+          }
+        },
+        "planUpdates": {
+          "$updateId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['type', 'data', 'userId', 'timestamp']) && newData.child('userId').val() == auth.uid"
+          }
+        },
+        "session": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['id', 'ownerId', 'status', 'createdAt', 'updatedAt'])"
+        },
+        "sessionParticipants": {
+          "$userId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['joinedAt', 'role'])"
+          }
+        },
+        "sessionChanges": {
+          "$changeId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['type', 'data', 'version', 'author', 'timestamp']) && newData.child('author').val() == auth.uid"
+          }
+        },
+        "sessionVersions": {
+          "$versionId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['version', 'data', 'author', 'timestamp'])"
+          }
+        }
+      }
+    }
+  }
+}

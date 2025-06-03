@@ -15,48 +15,30 @@ export {
 export {
   findActiveMitigationsAtTime,
   calculateTotalMitigation,
-  formatMitigation,
-  generateMitigationBreakdown,
-  isMitigationAvailable,
-  calculateOptimalMitigationPlan
+  isMitigationAvailable
 } from './mitigation/mitigationUtils';
 
 export {
-  calculateDamagePercentage,
   calculateMitigatedDamage,
   calculateBarrierAmount,
-  calculateRemainingHealth,
   formatHealth,
   formatPercentage
 } from './health/healthBarUtils';
 
 export {
   saveToLocalStorage,
-  loadFromLocalStorage,
-  removeFromLocalStorage,
-  clearLocalStorage
+  loadFromLocalStorage
 } from './storage/storageUtils';
 
 export {
-  isMobileDevice,
-  isTouchDevice
+  isMobileDevice
 } from './device/deviceUtils';
 
 export {
-  compressString,
-  decompressString,
   generateShareableUrl,
-  parseShareableUrl,
-  checkUrlForPlanData,
-  reconstructMitigations,
-  reconstructJobs
+  reconstructMitigations
 } from './url/urlUtils';
 
 export {
-  BUILD_TIMESTAMP,
   checkForUpdates
 } from './version/versionUtils';
-
-export {
-  processMultiHitTankBusters
-} from './boss/bossActionUtils';
