@@ -62,6 +62,7 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
 - **Styling**: Styled Components
 - **Drag and Drop**: @dnd-kit library
 - **Build Tool**: Vite
+- **Package Manager**: Bun (with npm fallback support)
 - **Backend**: Firebase (Serverless)
   - **Authentication**: Firebase Auth
   - **Database**: Firestore (plan storage)
@@ -72,8 +73,8 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
 
 ### Prerequisites
 
-- Node.js (v18.0.0 or higher)
-- npm (v8.0.0 or higher)
+- [Bun](https://bun.sh/) (v1.0.0 or higher) - Fast JavaScript runtime and package manager
+- Alternatively: Node.js (v18.0.0 or higher) with npm (v8.0.0 or higher)
 
 ### Installation
 
@@ -85,16 +86,30 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
 
 2. Install dependencies
    ```bash
+   bun install
+   ```
+
+   Or with npm:
+   ```bash
    npm install
    ```
 
-3. Set up Firebase (optional for local development)
+3. Set up Firebase configuration
    - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
    - Enable Authentication, Firestore, and Realtime Database
-   - Copy your Firebase config to `src/config/firebase.js`
+   - Copy `.env.example` to `.env.local` and fill in your Firebase configuration
+   - **NEVER commit `.env.local` or any files containing API keys**
+   - Deploy required Firestore indexes: `firebase deploy --only firestore:indexes`
+   - See [Firestore Indexes Documentation](docs/FIRESTORE_INDEXES.md) for details
+   - See [Security Documentation](docs/SECURITY.md) for security best practices
    - Note: The app will work in offline mode without Firebase setup
 
 4. Start the development server
+   ```bash
+   bun run dev
+   ```
+
+   Or with npm:
    ```bash
    npm run dev
    ```
@@ -104,10 +119,53 @@ MitPlan is a web application designed to help Final Fantasy XIV players plan and
 ### Building for Production
 
 ```bash
+bun run build
+```
+
+Or with npm:
+```bash
 npm run build
 ```
 
 The built files will be in the `dist` directory.
+
+### Package Manager Performance
+
+MitPlan uses [Bun](https://bun.sh/) as the primary package manager for improved performance:
+
+- **Faster installs**: Bun installs dependencies significantly faster than npm
+- **Better caching**: More efficient dependency caching and resolution
+- **Drop-in replacement**: All npm commands work with `bun run` instead of `npm run`
+- **Compatibility**: Full compatibility with existing npm packages and scripts
+
+If you prefer to use npm, all commands work with both package managers:
+- `bun install` ↔ `npm install`
+- `bun run dev` ↔ `npm run dev`
+- `bun run build` ↔ `npm run build`
+
+## 🔧 Troubleshooting
+
+### Firestore Index Errors
+If you see "The query requires an index" errors:
+1. Deploy Firestore indexes: `firebase deploy --only firestore:indexes --project YOUR_PROJECT_ID`
+2. Wait for indexes to build (check Firebase Console)
+3. See [Firestore Indexes Documentation](docs/FIRESTORE_INDEXES.md) for detailed instructions
+
+### Common Issues
+- **Plans not loading**: Check Firebase configuration and network connection
+- **Authentication errors**: Verify Firebase Auth is enabled in your project
+- **Collaboration not working**: Ensure Realtime Database is enabled and configured
+- **Firebase configuration errors**: Ensure all environment variables are set in `.env.local`
+
+## 🔐 Security
+
+MitPlan takes security seriously. Please review our [Security Documentation](docs/SECURITY.md) for:
+- Secure configuration setup
+- Environment variable management
+- Firebase security best practices
+- Incident response procedures
+
+**Important**: Never commit API keys, credentials, or `.env` files to the repository.
 
 ## 📝 Usage Guide
 
