@@ -6,16 +6,17 @@ import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
-// Firebase configuration - using environment variables for security
+// Firebase configuration - REPLACE WITH YOUR ACTUAL CONFIG
+// Get your config from: https://console.firebase.google.com/project/YOUR_PROJECT/settings/general
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBSfsBbrunA3aejnWlsMe0z1NiwJUvRNPU",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "xivmit.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://xivmit-default-rtdb.firebaseio.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "xivmit",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "xivmit.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1056456049686",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1056456049686:web:a269ab0a6d59da09462137",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-834J53ZVFF"
+  apiKey: "YOUR_API_KEY_HERE",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
 // Initialize Firebase
