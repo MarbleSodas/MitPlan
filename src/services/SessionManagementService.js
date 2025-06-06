@@ -3,6 +3,7 @@ import {
   set,
   get,
   push,
+  remove,
   onValue,
   off,
   serverTimestamp,
@@ -152,6 +153,9 @@ class SessionManagementService {
 
       // Clean up listeners
       this.cleanupSessionListeners(planId);
+
+      // Clean up all collaboration data
+      await this.cleanupAllCollaborationData(planId);
 
       this.currentSession = null;
 
@@ -517,6 +521,133 @@ class SessionManagementService {
     } catch (error) {
       console.error('Get session stats error:', error);
       return null;
+    }
+  }
+
+  /**
+   * Clean up all collaboration data for a plan
+   */
+  async cleanupAllCollaborationData(planId) {
+    try {
+      console.log(`🧹 Cleaning up all collaboration data for plan: ${planId}`);
+
+      // Remove all collaboration data
+      const collaborationRef = ref(this.realtimeDb, `collaboration/${planId}`);
+      await remove(collaborationRef);
+
+      console.log(`✅ All collaboration data cleaned up for plan: ${planId}`);
+      return { success: true };
+
+    } catch (error) {
+      console.error(`❌ Failed to cleanup collaboration data for plan ${planId}:`, error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Get session health status
+   */
+  async getSessionHealth(planId) {
+    try {
+      const session = await this.getSession(planId);
+      if (!session) {
+        return { healthy: false, message: 'No session found' };
+      }
+
+      // Check if session is active
+      if (session.status !== 'active') {
+        return {
+          healthy: false,
+          message: `Session is ${session.status}`,
+          session
+        };
+      }
+
+      // Check for active participants
+      const participantsRef = ref(this.realtimeDb, `collaboration/${planId}/sessionParticipants`);
+      const participantsSnapshot = await get(participantsRef);
+
+      const participantCount = participantsSnapshot.exists()
+        ? Object.keys(participantsSnapshot.val()).length
+        : 0;
+
+      // Check for active users
+      const activeUsersRef = ref(this.realtimeDb, `collaboration/${planId}/activeUsers`);
+      const activeUsersSnapshot = await get(activeUsersRef);
+
+      const activeUserCount = activeUsersSnapshot.exists()
+        ? Object.keys(activeUsersSnapshot.val()).length
+        : 0;
+
+      const now = Date.now();
+      const sessionAge = now - (session.createdAt?.seconds ? session.createdAt.seconds * 1000 : now);
+
+      return {
+        healthy: true,
+        session,
+        participantCount,
+        activeUserCount,
+        sessionAge,
+        message: `Session healthy with ${activeUserCount} active users`
+      };
+
+    } catch (error) {
+      console.error('Session health check failed:', error);
+      return {
+        healthy: false,
+        message: error.message,
+        error
+      };
+    }
+  }
+
+  /**
+   * Force end a session (for cleanup purposes)
+   */
+  async forceEndSession(planId, reason = 'forced_cleanup') {
+    try {
+      console.log(`🧹 Force ending session for plan ${planId} (reason: ${reason})`);
+
+      const session = await this.getSession(planId);
+      if (!session) {
+        return { success: true, message: 'No session to end' };
+      }
+
+      // Get latest plan data
+      const finalPlanData = session.initialPlanData || {};
+
+      // Update session status to ended
+      const sessionRef = ref(this.realtimeDb, `collaboration/${planId}/session`);
+      await set(sessionRef, {
+        ...session,
+        status: 'ended',
+        endedAt: serverTimestamp(),
+        endReason: reason,
+        forcedEnd: true
+      });
+
+      // Try to save to Firestore if possible
+      let saveResult = { success: false };
+      try {
+        const { default: FirestoreService } = await import('./FirestoreService');
+        saveResult = await FirestoreService.savePlan(finalPlanData, planId);
+      } catch (saveError) {
+        console.warn('Failed to save plan during force end:', saveError);
+      }
+
+      // Clean up all data
+      await this.cleanupAllCollaborationData(planId);
+
+      console.log(`✅ Session force ended for plan: ${planId}`);
+      return {
+        success: true,
+        savedToFirestore: saveResult.success,
+        message: `Session force ended (${reason})`
+      };
+
+    } catch (error) {
+      console.error(`❌ Failed to force end session for plan ${planId}:`, error);
+      return { success: false, message: error.message };
     }
   }
 }

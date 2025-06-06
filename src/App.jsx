@@ -37,6 +37,7 @@ import CollaborationIndicator from './components/collaboration/CollaborationIndi
 import UserPresenceIndicator from './components/collaboration/UserPresenceIndicator';
 import CollaborationOnboarding from './components/collaboration/CollaborationOnboarding';
 import ReadOnlyBanner from './components/ReadOnlyBanner/ReadOnlyBanner';
+import ConnectionStatus from './components/common/ConnectionStatus';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
@@ -407,6 +408,7 @@ function App() {
   return (
     <>
       <GlobalStyle />
+      <ConnectionStatus />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

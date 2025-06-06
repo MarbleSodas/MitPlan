@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { useDisplayName } from './DisplayNameContext';
 import DisplayNameContext from './DisplayNameContext';
 import RealtimeCollaborationService from '../services/RealtimeCollaborationService';
+import SessionCleanupService from '../services/SessionCleanupService';
 
 // Custom hook to safely use DisplayName context with fallback
 const useSafeDisplayName = () => {
@@ -61,6 +62,10 @@ export const CollaborationProvider = ({ children }) => {
   const [isSessionOwner, setIsSessionOwner] = useState(false);
   const [sessionStatus, setSessionStatus] = useState(null); // 'active', 'paused', 'ended', null
 
+  // Session cleanup and health monitoring
+  const [sessionHealth, setSessionHealth] = useState(null);
+  const [cleanupStatus, setCleanupStatus] = useState(null);
+
   // Refs for callbacks to avoid stale closures
   const onPlanUpdateRef = useRef(null);
   const onUserJoinedRef = useRef(null);
@@ -84,8 +89,14 @@ export const CollaborationProvider = ({ children }) => {
         }
       });
       unsubscribersRef.current = [];
+
+      // Clean up session monitoring
+      if (currentPlanId) {
+        SessionCleanupService.stopMonitoring(currentPlanId, 'component_unmount')
+          .catch(error => console.warn('Failed to stop session monitoring on unmount:', error));
+      }
     };
-  }, []);
+  }, [currentPlanId]);
 
   // Join a plan room for collaboration
   const joinPlan = async (planId) => {
@@ -398,6 +409,71 @@ export const CollaborationProvider = ({ children }) => {
     }
   };
 
+  // Session health monitoring
+  const checkSessionHealth = async () => {
+    if (!currentPlanId) {
+      return { healthy: false, message: 'No active plan' };
+    }
+
+    try {
+      const health = await RealtimeCollaborationService.getCollaborationStatus(currentPlanId);
+      setSessionHealth(health);
+      return health;
+    } catch (error) {
+      console.error('❌ Error checking session health:', error);
+      const errorHealth = { healthy: false, message: error.message };
+      setSessionHealth(errorHealth);
+      return errorHealth;
+    }
+  };
+
+  // Get cleanup monitoring status
+  const getCleanupStatus = () => {
+    const status = SessionCleanupService.getMonitoringStatus();
+    setCleanupStatus(status);
+    return status;
+  };
+
+  // Manual session cleanup trigger
+  const triggerManualCleanup = async () => {
+    if (!currentPlanId) {
+      return { success: false, message: 'No active plan' };
+    }
+
+    try {
+      const result = await SessionCleanupService.manualCleanup(currentPlanId);
+
+      if (result.success) {
+        // Update local state after successful cleanup
+        setCurrentSession(null);
+        setSessionStatus('ended');
+        setIsSessionOwner(false);
+        setSessionParticipants([]);
+        setIsCollaborating(false);
+        setCurrentPlanId(null);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('❌ Error triggering manual cleanup:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  // Connection health check
+  const checkConnectionHealth = async () => {
+    if (!currentPlanId) {
+      return { healthy: false, message: 'No active plan' };
+    }
+
+    try {
+      return await RealtimeCollaborationService.checkConnectionHealth(currentPlanId);
+    } catch (error) {
+      console.error('❌ Error checking connection health:', error);
+      return { healthy: false, message: error.message };
+    }
+  };
+
   const value = {
     isConnected,
     isCollaborating,
@@ -425,7 +501,15 @@ export const CollaborationProvider = ({ children }) => {
     startCollaborationSession,
     endCollaborationSession,
     pauseCollaborationSession,
-    resumeCollaborationSession
+    resumeCollaborationSession,
+
+    // Health monitoring and cleanup
+    sessionHealth,
+    cleanupStatus,
+    checkSessionHealth,
+    getCleanupStatus,
+    triggerManualCleanup,
+    checkConnectionHealth
   };
 
   return (

@@ -44,16 +44,91 @@ class PlanStorageService {
    * Set up network connectivity listeners
    */
   setupConnectivityListeners() {
+    // Enhanced online/offline detection
     window.addEventListener('online', () => {
+      console.log('🌐 Network connection restored');
       this.isOnlineState = true;
       this.updateStorageState();
       this.attemptSync();
+      this.notifyConnectionStateChange('online');
     });
 
     window.addEventListener('offline', () => {
+      console.log('🌐 Network connection lost');
       this.isOnlineState = false;
       this.updateStorageState();
+      this.notifyConnectionStateChange('offline');
     });
+
+    // Additional connection monitoring
+    this.startConnectionMonitoring();
+  }
+
+  /**
+   * Start periodic connection monitoring
+   */
+  startConnectionMonitoring() {
+    // Check connection every 30 seconds
+    this.connectionMonitorInterval = setInterval(async () => {
+      const wasOnline = this.isOnlineState;
+      const isCurrentlyOnline = navigator.onLine;
+
+      // If navigator.onLine changed, update our state
+      if (wasOnline !== isCurrentlyOnline) {
+        this.isOnlineState = isCurrentlyOnline;
+        console.log(`🌐 Connection state changed: ${isCurrentlyOnline ? 'online' : 'offline'}`);
+        this.updateStorageState();
+
+        if (isCurrentlyOnline) {
+          this.attemptSync();
+        }
+
+        this.notifyConnectionStateChange(isCurrentlyOnline ? 'online' : 'offline');
+      }
+
+      // Additional check: try to reach Firebase if we think we're online
+      if (isCurrentlyOnline && this.authContext.isAuthenticated) {
+        try {
+          const dbAvailable = await this.checkDatabaseAvailability();
+          if (!dbAvailable && this.dbAvailable) {
+            console.log('🌐 Database became unavailable despite network connection');
+            this.notifyConnectionStateChange('database-unavailable');
+          } else if (dbAvailable && !this.dbAvailable) {
+            console.log('🌐 Database connection restored');
+            this.notifyConnectionStateChange('database-available');
+            this.attemptSync();
+          }
+        } catch (error) {
+          // Ignore errors in monitoring - don't want to spam logs
+        }
+      }
+    }, 30000);
+  }
+
+  /**
+   * Notify about connection state changes
+   */
+  notifyConnectionStateChange(state) {
+    // Emit custom event for UI components to listen to
+    const event = new CustomEvent('connectionStateChange', {
+      detail: {
+        state,
+        isOnline: this.isOnlineState,
+        dbAvailable: this.dbAvailable,
+        storageState: this.storageState
+      }
+    });
+    window.dispatchEvent(event);
+  }
+
+  /**
+   * Cleanup connection monitoring
+   */
+  cleanup() {
+    if (this.connectionMonitorInterval) {
+      clearInterval(this.connectionMonitorInterval);
+      this.connectionMonitorInterval = null;
+    }
   }
 
   /**
@@ -104,10 +179,39 @@ class PlanStorageService {
       return this.dbAvailable;
     } catch (error) {
       console.warn('Database unavailable, falling back to localStorage:', error);
+
+      // Log specific connection error types for debugging
+      if (this.isConnectionError(error)) {
+        console.warn('Connection error detected during database availability check');
+      }
+
       this.dbAvailable = false;
       this.lastDbCheck = Date.now();
       return false;
     }
+  }
+
+  /**
+   * Check if an error is related to connection issues
+   */
+  isConnectionError(error) {
+    const connectionErrorPatterns = [
+      'runtime.lastError',
+      'Could not establish connection',
+      'Failed to fetch',
+      'Network request failed',
+      'Connection timeout',
+      'NETWORK_ERROR',
+      'ERR_NETWORK',
+      'ERR_INTERNET_DISCONNECTED',
+      'offline',
+      'No internet connection'
+    ];
+
+    const errorMessage = error.message || error.toString();
+    return connectionErrorPatterns.some(pattern =>
+      errorMessage.toLowerCase().includes(pattern.toLowerCase())
+    );
   }
 
   /**
@@ -139,13 +243,26 @@ class PlanStorageService {
 
     if (this.isOnline()) {
       try {
-        if (isUpdate && plan.id) {
-          return await this.updatePlanInDatabase(plan);
-        } else {
-          return await this.createPlanInDatabase(plan);
-        }
+        // Add timeout wrapper for database operations
+        const savePromise = isUpdate && plan.id
+          ? this.updatePlanInDatabase(plan)
+          : this.createPlanInDatabase(plan);
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Plan save operation timeout')), 30000)
+        );
+
+        return await Promise.race([savePromise, timeoutPromise]);
       } catch (error) {
         console.error('Database save failed, falling back to localStorage:', error);
+
+        // Handle specific connection errors
+        if (this.isConnectionError(error)) {
+          console.warn('Connection error detected during save, using fallback storage');
+        } else if (error.message.includes('timeout')) {
+          console.warn('Save operation timed out, using fallback storage');
+        }
+
         this.queueOperation(isUpdate ? OPERATION_TYPES.UPDATE : OPERATION_TYPES.CREATE, plan);
         return this.savePlanToLocalStorage(plan);
       }
@@ -223,6 +340,7 @@ class PlanStorageService {
     if (this.isOnline()) {
       try {
         const result = await this.firestoreService.deletePlan(planId);
+
         if (result.success) {
           // Also remove from localStorage if it exists
           this.deletePlanFromLocalStorage(planId);
@@ -231,8 +349,15 @@ class PlanStorageService {
           throw new Error(result.message);
         }
       } catch (error) {
-        console.error('Database delete failed, queueing operation:', error);
-        this.queueOperation(OPERATION_TYPES.DELETE, { id: planId });
+        console.error('Database delete failed:', error.message);
+
+        // If authenticated, queue the operation for later
+        if (this.authContext.isAuthenticated) {
+          this.queueOperation(OPERATION_TYPES.DELETE, { id: planId });
+        }
+
+        // Re-throw the error so the UI can handle it appropriately
+        throw error;
       }
     } else if (this.authContext.isAuthenticated) {
       // Queue delete operation
@@ -453,6 +578,10 @@ class PlanStorageService {
       return;
     }
 
+    // Notify that syncing is starting
+    this.notifyConnectionStateChange('syncing');
+    console.log(`🔄 Starting sync of ${this.pendingOperations.length} pending operations`);
+
     const successfulOperations = [];
     const failedOperations = [];
 
@@ -460,6 +589,7 @@ class PlanStorageService {
       try {
         await this.executeOperation(operation);
         successfulOperations.push(operation);
+        console.log(`✅ Synced operation: ${operation.type} for plan ${operation.planData.id || 'new'}`);
       } catch (error) {
         console.error('Sync operation failed:', error);
         operation.retries = (operation.retries || 0) + 1;
@@ -467,12 +597,21 @@ class PlanStorageService {
         // Remove operations that have failed too many times
         if (operation.retries < 3) {
           failedOperations.push(operation);
+          console.warn(`⚠️ Sync failed, will retry (attempt ${operation.retries}/3)`);
+        } else {
+          console.error(`❌ Sync failed permanently after 3 attempts, discarding operation`);
         }
       }
     }
 
     this.pendingOperations = failedOperations;
     this.savePendingOperations();
+
+    // Notify sync completion
+    if (successfulOperations.length > 0) {
+      console.log(`✅ Sync completed: ${successfulOperations.length} operations synced`);
+      this.notifyConnectionStateChange('online');
+    }
   }
 
   /**

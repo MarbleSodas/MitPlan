@@ -16,6 +16,7 @@ import {
 } from 'firebase/database';
 import { realtimeDb, auth } from '../config/firebase';
 import SessionManagementService from './SessionManagementService';
+import SessionCleanupService from './SessionCleanupService';
 
 class RealtimeCollaborationService {
   constructor() {
@@ -108,19 +109,45 @@ class RealtimeCollaborationService {
         });
       }
 
-      // Set up periodic heartbeat to update lastSeen
+      // Set up periodic heartbeat to update lastSeen with enhanced error handling
       const heartbeatInterval = setInterval(async () => {
         try {
           await set(ref(this.realtimeDb, `collaboration/${planId}/activeUsers/${userId}/lastSeen`),
                    serverTimestamp());
+
+          // Update connection status
+          await set(ref(this.realtimeDb, `collaboration/${planId}/activeUsers/${userId}/connectionStatus`), {
+            status: 'connected',
+            lastHeartbeat: serverTimestamp()
+          });
         } catch (error) {
           console.error('Heartbeat error:', error);
+
+          // Mark connection as unstable
+          try {
+            await set(ref(this.realtimeDb, `collaboration/${planId}/activeUsers/${userId}/connectionStatus`), {
+              status: 'unstable',
+              lastError: error.message,
+              timestamp: serverTimestamp()
+            });
+          } catch (statusError) {
+            console.error('Failed to update connection status:', statusError);
+          }
+
           clearInterval(heartbeatInterval);
+          this.listeners.delete(`heartbeat_${planId}`);
         }
       }, 30000); // Update every 30 seconds
 
       // Store interval for cleanup
       this.listeners.set(`heartbeat_${planId}`, heartbeatInterval);
+
+      // Start session cleanup monitoring if this is the first user
+      try {
+        await SessionCleanupService.startMonitoring(planId);
+      } catch (cleanupError) {
+        console.warn('⚠️ Failed to start session cleanup monitoring:', cleanupError);
+      }
 
       return {
         success: true,
@@ -166,6 +193,18 @@ class RealtimeCollaborationService {
       if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
         this.listeners.delete(`heartbeat_${planId}`);
+      }
+
+      // Check if this was the last user and stop cleanup monitoring if needed
+      try {
+        const activeUsersRef = ref(this.realtimeDb, `collaboration/${planId}/activeUsers`);
+        const snapshot = await get(activeUsersRef);
+
+        if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+          console.log(`🧹 Last user left plan ${planId}, cleanup monitoring will handle session termination`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to check remaining users for cleanup:', error);
       }
 
       // Remove all listeners for this plan
@@ -617,16 +656,24 @@ class RealtimeCollaborationService {
   }
 
   /**
-   * Remove all listeners for a plan
+   * Remove all listeners for a plan with enhanced cleanup
    */
   removeAllListeners(planId) {
+    console.log(`🧹 Removing all listeners for plan: ${planId}`);
+
     const keysToRemove = [];
     this.listeners.forEach((listener, key) => {
       if (key.includes(planId)) {
-        if (typeof listener === 'function') {
-          listener(); // Call unsubscribe function
-        } else if (typeof listener === 'number') {
-          clearInterval(listener); // Clear interval
+        try {
+          if (typeof listener === 'function') {
+            listener(); // Call unsubscribe function
+            console.log(`✅ Unsubscribed listener: ${key}`);
+          } else if (typeof listener === 'number') {
+            clearInterval(listener); // Clear interval
+            console.log(`✅ Cleared interval: ${key}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error cleaning up listener ${key}:`, error);
         }
         keysToRemove.push(key);
       }
@@ -638,6 +685,98 @@ class RealtimeCollaborationService {
 
     // Clean up session listeners
     SessionManagementService.cleanupSessionListeners(planId);
+
+    // Stop session cleanup monitoring
+    try {
+      SessionCleanupService.stopMonitoring(planId, 'listeners_removed');
+    } catch (error) {
+      console.warn('⚠️ Failed to stop cleanup monitoring:', error);
+    }
+
+    console.log(`✅ All listeners removed for plan: ${planId}`);
+  }
+
+  /**
+   * Enhanced connection health monitoring
+   */
+  async checkConnectionHealth(planId) {
+    try {
+      const testRef = ref(this.realtimeDb, `collaboration/${planId}/connectionTest`);
+      const testData = {
+        timestamp: serverTimestamp(),
+        test: true
+      };
+
+      await set(testRef, testData);
+      await remove(testRef);
+
+      return { healthy: true, message: 'Connection is healthy' };
+    } catch (error) {
+      console.error('Connection health check failed:', error);
+      return { healthy: false, message: error.message };
+    }
+  }
+
+  /**
+   * Get detailed collaboration status for a plan
+   */
+  async getCollaborationStatus(planId) {
+    try {
+      const collaborationRef = ref(this.realtimeDb, `collaboration/${planId}`);
+      const snapshot = await get(collaborationRef);
+
+      if (!snapshot.exists()) {
+        return {
+          exists: false,
+          message: 'No collaboration data found'
+        };
+      }
+
+      const data = snapshot.val();
+      const activeUsers = data.activeUsers || {};
+      const session = data.session || null;
+      const planUpdates = data.planUpdates || {};
+
+      const now = Date.now();
+      const userStats = Object.entries(activeUsers).map(([userId, userData]) => {
+        const lastSeen = userData.lastSeen;
+        const lastSeenTime = typeof lastSeen === 'object' && lastSeen.seconds
+          ? lastSeen.seconds * 1000
+          : (typeof lastSeen === 'number' ? lastSeen : now);
+
+        return {
+          userId,
+          name: userData.name,
+          isActive: (now - lastSeenTime) < (2 * 60 * 1000), // 2 minutes
+          lastSeenTime,
+          timeSinceLastSeen: now - lastSeenTime,
+          connectionStatus: userData.connectionStatus || { status: 'unknown' }
+        };
+      });
+
+      return {
+        exists: true,
+        activeUsers: userStats,
+        session: session ? {
+          id: session.id,
+          status: session.status,
+          ownerId: session.ownerId,
+          currentVersion: session.currentVersion
+        } : null,
+        totalUpdates: Object.keys(planUpdates).length,
+        lastUpdate: Object.values(planUpdates).reduce((latest, update) => {
+          const updateTime = update.timestamp?.seconds ? update.timestamp.seconds * 1000 : 0;
+          return updateTime > latest ? updateTime : latest;
+        }, 0)
+      };
+
+    } catch (error) {
+      console.error('Failed to get collaboration status:', error);
+      return {
+        exists: false,
+        error: error.message
+      };
+    }
   }
 
   /**

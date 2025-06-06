@@ -9,10 +9,6 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "isDeleted",
-          "order": "ASCENDING"
-        },
-        {
           "fieldPath": "updatedAt",
           "order": "DESCENDING"
         }
@@ -24,10 +20,6 @@
       "fields": [
         {
           "fieldPath": "isPublic",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "isDeleted",
           "order": "ASCENDING"
         },
         {

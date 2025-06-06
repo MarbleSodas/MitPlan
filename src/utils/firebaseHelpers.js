@@ -73,7 +73,6 @@ export const normalizePlanFromFirestore = (planData) => {
     selectedJobs: planData.selectedJobs || [],
     tankPositions: planData.tankPositions || {},
     isPublic: planData.isPublic || false,
-    isDeleted: planData.isDeleted || false,
     version: planData.version || 1
   };
 };

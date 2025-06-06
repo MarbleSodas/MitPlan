@@ -12,6 +12,7 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -26,6 +27,76 @@ class FirestoreService {
   constructor() {
     this.db = db;
     this.auth = auth;
+  }
+
+  /**
+   * Check if an error is related to connection issues
+   */
+  isConnectionError(error) {
+    const connectionErrorPatterns = [
+      'runtime.lastError',
+      'Could not establish connection',
+      'Failed to fetch',
+      'Network request failed',
+      'Connection timeout',
+      'NETWORK_ERROR',
+      'ERR_NETWORK',
+      'ERR_INTERNET_DISCONNECTED',
+      'offline',
+      'No internet connection',
+      'unavailable',
+      'deadline-exceeded'
+    ];
+
+    const errorMessage = error.message || error.toString();
+    const errorCode = error.code || '';
+
+    return connectionErrorPatterns.some(pattern =>
+      errorMessage.toLowerCase().includes(pattern.toLowerCase()) ||
+      errorCode.toLowerCase().includes(pattern.toLowerCase())
+    );
+  }
+
+  /**
+   * Check if an error is related to missing Firestore indexes
+   */
+  isIndexError(error) {
+    const indexErrorPatterns = [
+      'requires an index',
+      'index not found',
+      'index is not ready',
+      'index building',
+      'composite index',
+      'create it here',
+      'firebase.google.com/v1/r/project'
+    ];
+
+    const errorMessage = error.message || error.toString();
+    const errorCode = error.code || '';
+
+    return indexErrorPatterns.some(pattern =>
+      errorMessage.toLowerCase().includes(pattern.toLowerCase()) ||
+      errorCode.toLowerCase().includes(pattern.toLowerCase())
+    );
+  }
+
+  /**
+   * Handle index-related errors with fallback strategies
+   */
+  async handleIndexError(error, fallbackFn = null) {
+    console.warn('Firestore index error detected:', error.message);
+
+    if (fallbackFn && typeof fallbackFn === 'function') {
+      console.log('Attempting fallback strategy...');
+      try {
+        return await fallbackFn();
+      } catch (fallbackError) {
+        console.error('Fallback strategy also failed:', fallbackError);
+        throw error; // Re-throw original error
+      }
+    }
+
+    throw error;
   }
 
   /**
@@ -47,7 +118,6 @@ class FirestoreService {
         assignments: planData.assignments || {},
         tankPositions: planData.tankPositions || {},
         isPublic: false,
-        isDeleted: false,
         folderId: planData.folderId || null,
         version: 1,
         createdAt: serverTimestamp(),
@@ -69,9 +139,20 @@ class FirestoreService {
       };
     } catch (error) {
       console.error('Create plan error:', error);
+
+      // Handle specific connection errors
+      let errorMessage = error.message;
+      if (this.isConnectionError(error)) {
+        errorMessage = 'Connection error while saving plan. Please check your internet connection and try again.';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Permission denied. Please make sure you are signed in and try again.';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
+      }
+
       return {
         success: false,
-        message: error.message
+        message: errorMessage
       };
     }
   }
@@ -144,7 +225,6 @@ class FirestoreService {
       const q = query(
         collection(this.db, 'plans'),
         where('userId', '==', user.uid),
-        where('isDeleted', '==', false),
         orderBy('updatedAt', 'desc')
       );
 
@@ -168,9 +248,68 @@ class FirestoreService {
       };
     } catch (error) {
       console.error('Get user plans error:', error);
+
+      // Handle index-related errors with fallback
+      if (this.isIndexError(error)) {
+        console.warn('Index not ready, attempting fallback query...');
+        try {
+          // Fallback: Get all user plans without ordering (less efficient but works)
+          const user = this.auth.currentUser;
+          const fallbackQuery = query(
+            collection(this.db, 'plans'),
+            where('userId', '==', user.uid)
+          );
+
+          const querySnapshot = await getDocs(fallbackQuery);
+          const plans = [];
+
+          querySnapshot.forEach((doc) => {
+            const planData = doc.data();
+            plans.push({
+              id: doc.id,
+              ...planData,
+              createdAt: planData.createdAt?.toDate(),
+              updatedAt: planData.updatedAt?.toDate(),
+              accessedAt: planData.accessedAt?.toDate()
+            });
+          });
+
+          // Sort manually since we can't use orderBy
+          plans.sort((a, b) => {
+            const dateA = a.updatedAt || a.createdAt || new Date(0);
+            const dateB = b.updatedAt || b.createdAt || new Date(0);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+          console.log('Fallback query successful, returning manually sorted plans');
+          return {
+            success: true,
+            plans,
+            fallbackUsed: true,
+            message: 'Plans loaded using fallback method. Indexes are building - full functionality will be available shortly.'
+          };
+        } catch (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+          return {
+            success: false,
+            message: 'Unable to load plans. Please try again in a few moments while indexes are building.'
+          };
+        }
+      }
+
+      // Handle specific connection errors
+      let errorMessage = error.message;
+      if (this.isConnectionError(error)) {
+        errorMessage = 'Connection error while loading plans. Please check your internet connection and try again.';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Permission denied. Please make sure you are signed in and try again.';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
+      }
+
       return {
         success: false,
-        message: error.message
+        message: errorMessage
       };
     }
   }
@@ -225,45 +364,60 @@ class FirestoreService {
       };
     } catch (error) {
       console.error('Update plan error:', error);
+
+      // Handle specific connection errors
+      let errorMessage = error.message;
+      if (this.isConnectionError(error)) {
+        errorMessage = 'Connection error while updating plan. Please check your internet connection and try again.';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Permission denied. Please make sure you are signed in and try again.';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
+      } else if (error.message.includes('Plan not found')) {
+        errorMessage = 'Plan not found. It may have been deleted or you may not have access to it.';
+      }
+
       return {
         success: false,
-        message: error.message
+        message: errorMessage
       };
     }
   }
 
   /**
-   * Delete a plan (soft delete)
+   * Delete a plan (hard delete)
    */
   async deletePlan(planId) {
     try {
       const user = this.auth.currentUser;
+
       if (!user) {
         throw new Error('User must be authenticated to delete plans');
       }
 
       // Get current plan to check ownership
       const planDoc = await getDoc(doc(this.db, 'plans', planId));
+
       if (!planDoc.exists()) {
         throw new Error('Plan not found');
       }
 
       const planData = planDoc.data();
+
       if (planData.userId !== user.uid) {
         throw new Error('Access denied');
       }
 
-      await updateDoc(doc(this.db, 'plans', planId), {
-        isDeleted: true,
-        updatedAt: serverTimestamp()
-      });
+      // Permanently delete the plan document from Firestore
+      await deleteDoc(doc(this.db, 'plans', planId));
 
       return {
         success: true,
         message: 'Plan deleted successfully'
       };
     } catch (error) {
-      console.error('Delete plan error:', error);
+      console.error('FirestoreService.deletePlan error:', error.message);
+
       return {
         success: false,
         message: error.message
@@ -334,7 +488,6 @@ class FirestoreService {
       const q = query(
         collection(this.db, 'plans'),
         where('isPublic', '==', true),
-        where('isDeleted', '==', false),
         orderBy('updatedAt', 'desc'),
         limit(limitCount)
       );
@@ -359,6 +512,55 @@ class FirestoreService {
       };
     } catch (error) {
       console.error('Get public plans error:', error);
+
+      // Handle index-related errors with fallback
+      if (this.isIndexError(error)) {
+        console.warn('Index not ready for public plans, attempting fallback query...');
+        try {
+          // Fallback: Get all public plans without ordering
+          const fallbackQuery = query(
+            collection(this.db, 'plans'),
+            where('isPublic', '==', true),
+            limit(limitCount)
+          );
+
+          const querySnapshot = await getDocs(fallbackQuery);
+          const plans = [];
+
+          querySnapshot.forEach((doc) => {
+            const planData = doc.data();
+            plans.push({
+              id: doc.id,
+              ...planData,
+              createdAt: planData.createdAt?.toDate(),
+              updatedAt: planData.updatedAt?.toDate(),
+              accessedAt: planData.accessedAt?.toDate()
+            });
+          });
+
+          // Sort manually since we can't use orderBy
+          plans.sort((a, b) => {
+            const dateA = a.updatedAt || a.createdAt || new Date(0);
+            const dateB = b.updatedAt || b.createdAt || new Date(0);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+          console.log('Fallback query successful for public plans');
+          return {
+            success: true,
+            plans,
+            fallbackUsed: true,
+            message: 'Public plans loaded using fallback method. Indexes are building - full functionality will be available shortly.'
+          };
+        } catch (fallbackError) {
+          console.error('Fallback query for public plans also failed:', fallbackError);
+          return {
+            success: false,
+            message: 'Unable to load public plans. Please try again in a few moments while indexes are building.'
+          };
+        }
+      }
+
       return {
         success: false,
         message: error.message
@@ -420,7 +622,6 @@ class FirestoreService {
     const q = query(
       collection(this.db, 'plans'),
       where('userId', '==', user.uid),
-      where('isDeleted', '==', false),
       orderBy('updatedAt', 'desc')
     );
 
@@ -563,10 +764,7 @@ class FirestoreService {
             });
             break;
           case 'delete':
-            batch.update(planRef, {
-              isDeleted: true,
-              updatedAt: serverTimestamp()
-            });
+            batch.delete(planRef);
             break;
           default:
             throw new Error(`Unknown operation type: ${type}`);

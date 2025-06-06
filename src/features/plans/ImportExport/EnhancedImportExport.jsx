@@ -282,7 +282,7 @@ const ImportButton = styled.button`
 `;
 
 function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const {
     savePlan,
     loadAllPlans,
@@ -503,8 +503,22 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
         setMessage({ type: 'success', text: `Plan "${planName}" deleted successfully` });
         await loadSavedPlans();
       } catch (error) {
-        console.error('Delete failed:', error);
-        setMessage({ type: 'error', text: `Failed to delete plan: ${error.message}` });
+        console.error('Error deleting plan:', error);
+
+        // Provide more specific error messages based on the error type
+        let errorMessage = `Failed to delete plan: ${error.message}`;
+
+        if (error.message.includes('authenticated')) {
+          errorMessage = 'Please sign in to delete saved plans from your account.';
+        } else if (error.message.includes('Access denied')) {
+          errorMessage = 'You do not have permission to delete this plan.';
+        } else if (error.message.includes('Plan not found')) {
+          errorMessage = 'This plan no longer exists or has already been deleted.';
+        } else if (error.message.includes('network') || error.message.includes('offline')) {
+          errorMessage = 'Network error: Plan will be deleted when you\'re back online.';
+        }
+
+        setMessage({ type: 'error', text: errorMessage });
       }
     }
   };

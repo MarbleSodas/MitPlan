@@ -16,7 +16,7 @@ class ImageUploadService {
     this.compressionOptions = {
       maxSizeMB: 8,
       maxWidthOrHeight: 1024,
-      useWebWorker: true,
+      useWebWorker: false, // Disabled to prevent browser extension conflicts
       fileType: 'image/jpeg',
       quality: 0.8
     };
@@ -61,8 +61,13 @@ class ImageUploadService {
         processedFile = await this.cropImage(file, cropData);
       }
 
-      // Compress the image
-      const compressedFile = await imageCompression(processedFile, this.compressionOptions);
+      // Add timeout wrapper for compression to prevent hanging
+      const compressionPromise = imageCompression(processedFile, this.compressionOptions);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Image compression timeout')), 30000)
+      );
+
+      const compressedFile = await Promise.race([compressionPromise, timeoutPromise]);
 
       // Ensure the compressed file is under the size limit
       if (compressedFile.size > this.maxFileSize) {
@@ -72,7 +77,13 @@ class ImageUploadService {
           maxSizeMB: 4,
           quality: 0.6
         };
-        const recompressedFile = await imageCompression(processedFile, aggressiveOptions);
+
+        const aggressiveCompressionPromise = imageCompression(processedFile, aggressiveOptions);
+        const aggressiveTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Aggressive compression timeout')), 30000)
+        );
+
+        const recompressedFile = await Promise.race([aggressiveCompressionPromise, aggressiveTimeoutPromise]);
 
         if (recompressedFile.size > this.maxFileSize) {
           throw new Error('Unable to compress image to required size. Please try a smaller image.');
@@ -84,7 +95,17 @@ class ImageUploadService {
       return compressedFile;
     } catch (error) {
       console.error('Image processing error:', error);
-      throw new Error(`Image processing failed: ${error.message}`);
+
+      // Handle specific error types
+      if (error.message.includes('timeout')) {
+        throw new Error('Image processing timed out. Please try a smaller image or try again.');
+      } else if (error.message.includes('worker')) {
+        throw new Error('Image processing failed due to browser limitations. Please try again.');
+      } else if (error.message.includes('memory')) {
+        throw new Error('Not enough memory to process this image. Please try a smaller image.');
+      } else {
+        throw new Error(`Image processing failed: ${error.message}`);
+      }
     }
   }
 
@@ -173,9 +194,14 @@ class ImageUploadService {
         onProgress(50);
       }
 
-      // Upload file
+      // Upload file with timeout
       console.log('Uploading file to Firebase Storage...');
-      const snapshot = await uploadBytes(storageRef, file);
+      const uploadPromise = uploadBytes(storageRef, file);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Upload timeout')), 60000)
+      );
+
+      const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
       console.log('Upload completed, getting download URL...');
 
       // Set progress to 75% when upload completes
@@ -183,7 +209,13 @@ class ImageUploadService {
         onProgress(75);
       }
 
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      // Get download URL with timeout
+      const urlPromise = getDownloadURL(snapshot.ref);
+      const urlTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Download URL timeout')), 30000)
+      );
+
+      const downloadURL = await Promise.race([urlPromise, urlTimeoutPromise]);
       console.log('Download URL obtained:', downloadURL);
 
       // Set progress to 100% when everything is done
@@ -204,8 +236,15 @@ class ImageUploadService {
         stack: error.stack
       });
 
+      // Reset progress on error
+      if (onProgress) {
+        onProgress(0);
+      }
+
       // Provide more specific error messages
-      if (error.code === 'storage/unauthorized') {
+      if (error.message && error.message.includes('timeout')) {
+        throw new Error('Upload timed out. Please check your internet connection and try again.');
+      } else if (error.code === 'storage/unauthorized') {
         throw new Error('You do not have permission to upload files. Please make sure you are signed in and try again.');
       } else if (error.code === 'storage/canceled') {
         throw new Error('Upload was canceled. Please try again.');
@@ -219,6 +258,10 @@ class ImageUploadService {
         throw new Error('CORS error: The storage service is not properly configured. Please contact support.');
       } else if (error.message && error.message.includes('Failed to fetch')) {
         throw new Error('Network error: Please check your internet connection and try again.');
+      } else if (error.message && error.message.includes('runtime.lastError')) {
+        throw new Error('Browser extension conflict detected. Please try again or disable browser extensions.');
+      } else if (error.message && error.message.includes('Could not establish connection')) {
+        throw new Error('Connection error detected. Please try again.');
       } else {
         throw new Error(`Upload failed: ${error.message || 'Unknown error occurred'}`);
       }
