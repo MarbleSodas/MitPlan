@@ -1354,6 +1354,26 @@ export const mitigationAbilities = [
     isRoleShared: true // Functionally equivalent to Troubadour and Shield Samba
   },
   {
+    id: 'dismantle',
+    name: 'Dismantle',
+    description: 'Lowers target\'s damage dealt by 10%',
+    levelRequirement: 62,
+    levelDescriptions: {
+      62: 'Lowers target\'s damage dealt by 10% for 10s'
+    },
+    duration: 10,
+    cooldown: 120,
+    jobs: ['MCH'],
+    icon: '/abilities-gamerescape/dismantle.png',
+    type: 'mitigation',
+    mitigationValue: 0.10,
+    damageType: 'both',
+    target: 'area', // Targets enemy to reduce their damage output
+    forTankBusters: true,
+    forRaidWide: true,
+    count: 1
+  },
+  {
     id: 'shield_samba',
     name: 'Shield Samba',
     description: 'Reduces damage taken by party members by 15%',
