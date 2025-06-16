@@ -119,14 +119,14 @@ const PresetButton = styled.button`
   padding: 8px 16px;
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: 6px;
-  background: ${props => props.active ? props.theme.colors.primary : props.theme.colors.surface};
-  color: ${props => props.active ? props.theme.colors.white : props.theme.colors.text};
+  background: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.surface};
+  color: ${props => props.$active ? props.theme.colors.white : props.theme.colors.text};
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${props => props.active ? props.theme.colors.primaryHover : props.theme.colors.surfaceHover};
+    background: ${props => props.$active ? props.theme.colors.primaryHover : props.theme.colors.surfaceHover};
   }
 
   &:disabled {

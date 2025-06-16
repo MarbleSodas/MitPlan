@@ -7,6 +7,7 @@ import { TankSelectionModalProvider } from './contexts/TankSelectionModalContext
 import { ReadOnlyProvider } from './contexts/ReadOnlyContext';
 import { DisplayNameProvider } from './contexts/DisplayNameContext';
 import { CollaborationProvider } from './contexts/CollaborationContext';
+import { SharedPlanErrorProvider } from './contexts/SharedPlanErrorContext';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { checkForUpdates } from './utils';
@@ -28,15 +29,17 @@ root.render(
   <React.StrictMode>
     <AppProvider>
       <DisplayNameProvider>
-        <CollaborationProvider>
-          <ReadOnlyProvider>
-            <TankSelectionModalProvider>
-              <App />
-              <Analytics />
-              <SpeedInsights />
-            </TankSelectionModalProvider>
-          </ReadOnlyProvider>
-        </CollaborationProvider>
+        <ReadOnlyProvider>
+          <SharedPlanErrorProvider>
+            <CollaborationProvider>
+              <TankSelectionModalProvider>
+                <App />
+                <Analytics />
+                <SpeedInsights />
+              </TankSelectionModalProvider>
+            </CollaborationProvider>
+          </SharedPlanErrorProvider>
+        </ReadOnlyProvider>
       </DisplayNameProvider>
     </AppProvider>
   </React.StrictMode>

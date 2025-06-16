@@ -2,54 +2,136 @@
   "rules": {
     "collaboration": {
       "$planId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        // Allow read access for all users (authenticated and unauthenticated)
+        // This enables shared plan collaboration
+        ".read": "true",
+
+        // Allow write access for all users, but with validation
+        ".write": "true",
+
         "activeUsers": {
           "$userId": {
-            ".read": "auth != null",
-            ".write": "auth != null && auth.uid == $userId",
-            ".validate": "newData.hasChildren(['name', 'color', 'joinedAt', 'lastSeen'])"
+            // Allow read access for all users to see who's online
+            ".read": "true",
+
+            // Allow users to write their own presence data
+            // For authenticated users: auth.uid == $userId
+            // For unauthenticated users: allow if userId matches pattern and has required fields
+            ".write": "(auth != null && auth.uid == $userId) || (auth == null && $userId.matches(/^anon_[a-zA-Z0-9_-]+$/))",
+
+            // Validate required fields for user presence
+            ".validate": "newData.hasChildren(['name', 'color', 'joinedAt', 'lastSeen']) && newData.child('name').isString() && newData.child('color').isString()"
           }
         },
+
         "selections": {
           "$userId": {
-            ".read": "auth != null",
-            ".write": "auth != null && auth.uid == $userId",
-            ".validate": "newData.hasChildren(['elementId', 'timestamp'])"
+            // Allow read access for all users to see selections
+            ".read": "true",
+
+            // Allow users to write their own selections
+            ".write": "(auth != null && auth.uid == $userId) || (auth == null && $userId.matches(/^anon_[a-zA-Z0-9_-]+$/))",
+
+            // Validate selection data structure
+            ".validate": "newData.hasChildren(['elementId', 'timestamp']) && newData.child('elementId').isString()"
           }
         },
+
         "planUpdates": {
           "$updateId": {
-            ".read": "auth != null",
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['type', 'data', 'userId', 'timestamp']) && newData.child('userId').val() == auth.uid"
+            // Allow read access for all users to receive updates
+            ".read": "true",
+
+            // Allow write access for all users
+            ".write": "true",
+
+            // Validate update structure and ensure userId matches the author
+            ".validate": "newData.hasChildren(['type', 'data', 'userId', 'timestamp']) && ((auth != null && newData.child('userId').val() == auth.uid) || (auth == null && newData.child('userId').val().matches(/^anon_[a-zA-Z0-9_-]+$/)))"
           }
         },
+
         "session": {
-          ".read": "auth != null",
-          ".write": "auth != null",
-          ".validate": "newData.hasChildren(['id', 'ownerId', 'status', 'createdAt', 'updatedAt'])"
+          // Allow read access for all users to see session status
+          ".read": "true",
+
+          // Allow write access for session management
+          ".write": "true",
+
+          // Validate session structure
+          ".validate": "newData.hasChildren(['id', 'ownerId', 'status', 'createdAt', 'updatedAt']) && newData.child('status').val().matches(/^(active|paused|ended)$/)"
         },
+
         "sessionParticipants": {
           "$userId": {
-            ".read": "auth != null",
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['joinedAt', 'role'])"
+            // Allow read access for all users to see participants
+            ".read": "true",
+
+            // Allow write access for participant management
+            ".write": "true",
+
+            // Validate participant data
+            ".validate": "newData.hasChildren(['joinedAt', 'role']) && newData.child('role').val().matches(/^(owner|editor|viewer)$/)"
           }
         },
+
         "sessionChanges": {
           "$changeId": {
-            ".read": "auth != null",
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['type', 'data', 'version', 'author', 'timestamp']) && newData.child('author').val() == auth.uid"
+            // Allow read access for all users to see changes
+            ".read": "true",
+
+            // Allow write access for change tracking
+            ".write": "true",
+
+            // Validate change structure and author
+            ".validate": "newData.hasChildren(['type', 'data', 'version', 'author', 'timestamp']) && ((auth != null && newData.child('author').val() == auth.uid) || (auth == null && newData.child('author').val().matches(/^anon_[a-zA-Z0-9_-]+$/)))"
           }
         },
+
         "sessionVersions": {
           "$versionId": {
-            ".read": "auth != null",
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['version', 'data', 'author', 'timestamp'])"
+            // Allow read access for all users to see versions
+            ".read": "true",
+
+            // Allow write access for version tracking
+            ".write": "true",
+
+            // Validate version structure
+            ".validate": "newData.hasChildren(['version', 'data', 'author', 'timestamp']) && newData.child('version').isNumber()"
           }
+        },
+
+        // Additional collaboration data structures
+        "assignments": {
+          // Allow read/write for mitigation assignments
+          ".read": "true",
+          ".write": "true",
+          ".validate": "newData.hasChild('assignments')"
+        },
+
+        "jobSelections": {
+          // Allow read/write for job selections
+          ".read": "true",
+          ".write": "true",
+          ".validate": "newData.hasChild('selectedJobs')"
+        },
+
+        "bossSelection": {
+          // Allow read/write for boss selection
+          ".read": "true",
+          ".write": "true",
+          ".validate": "newData.hasChild('bossId')"
+        },
+
+        "tankPositions": {
+          // Allow read/write for tank positions
+          ".read": "true",
+          ".write": "true"
+        },
+
+        "connectionTest": {
+          // Allow connection health checks
+          ".read": "true",
+          ".write": "true"
         }
       }
     }

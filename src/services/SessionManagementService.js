@@ -26,6 +26,7 @@ class SessionManagementService {
   /**
    * Start a new collaboration session for a plan
    * Supports both authenticated and anonymous session creators
+   * Auto-creates sessions when users access shared plans
    */
   async startSession(planId, planData, initiatorUserId = null) {
     try {
@@ -49,6 +50,12 @@ class SessionManagementService {
       // Check if session already exists
       const existingSession = await this.getSession(planId);
       if (existingSession && existingSession.status === 'active') {
+        console.log('%c[SESSION MANAGEMENT] Joining existing active session', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          sessionId: existingSession.id,
+          planId,
+          ownerId
+        });
+
         return {
           success: true,
           sessionId: existingSession.id,
@@ -70,9 +77,24 @@ class SessionManagementService {
         planSnapshot: planData // Store initial plan state
       };
 
+      console.log('%c[SESSION MANAGEMENT] Creating new collaboration session', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        sessionId,
+        ownerId,
+        ownerName,
+        isAuthenticated,
+        timestamp: new Date().toISOString()
+      });
+
       // Create session
       const sessionRef = ref(this.realtimeDb, `collaboration/${planId}/session`);
       await set(sessionRef, sessionData);
+
+      console.log('%c[SESSION MANAGEMENT] Session data written to Firebase', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        sessionId,
+        path: `collaboration/${planId}/session`
+      });
 
       // Add owner as participant
       await this.addParticipant(planId, ownerId, 'owner', {
@@ -86,6 +108,13 @@ class SessionManagementService {
 
       this.currentSession = { planId, sessionId, ...sessionData };
 
+      console.log('%c[SESSION MANAGEMENT] Collaboration session started successfully', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        sessionId,
+        participantCount: 1,
+        initialVersion: 1
+      });
+
       return {
         success: true,
         sessionId,
@@ -93,6 +122,53 @@ class SessionManagementService {
       };
     } catch (error) {
       console.error('Start session error:', error);
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  }
+
+  /**
+   * Auto-create session when users access shared plans
+   * This ensures collaboration is available even if no session exists
+   */
+  async ensureSessionForSharedPlan(planId, planData, userInfo) {
+    try {
+      console.log('%c[SESSION MANAGEMENT] Ensuring session exists for shared plan', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        userInfo
+      });
+
+      // Check if session already exists
+      const existingSession = await this.getSession(planId);
+      if (existingSession && existingSession.status === 'active') {
+        console.log('%c[SESSION MANAGEMENT] Active session already exists', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', existingSession.id);
+        return {
+          success: true,
+          sessionId: existingSession.id,
+          isNewSession: false,
+          message: 'Joined existing session'
+        };
+      }
+
+      // Create new session for shared plan access
+      const sessionResult = await this.startSession(planId, planData, userInfo.userId);
+
+      if (sessionResult.success) {
+        console.log('%c[SESSION MANAGEMENT] Created new session for shared plan', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', sessionResult.sessionId);
+        return {
+          success: true,
+          sessionId: sessionResult.sessionId,
+          isNewSession: true,
+          message: 'Created new collaboration session'
+        };
+      } else {
+        console.warn('%c[SESSION MANAGEMENT] Failed to create session for shared plan', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', sessionResult.message);
+        return sessionResult;
+      }
+    } catch (error) {
+      console.error('%c[SESSION MANAGEMENT] Error ensuring session for shared plan', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
       return {
         success: false,
         message: error.message

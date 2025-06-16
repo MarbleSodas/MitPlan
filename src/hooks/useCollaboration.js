@@ -1,16 +1,30 @@
 import { useEffect, useRef } from 'react';
 import { useCollaboration as useCollaborationContext } from '../contexts/CollaborationContext';
+import { useReadOnly } from '../contexts/ReadOnlyContext';
+import PlanValidationService from '../services/PlanValidationService';
+import ErrorHandlingService from '../services/ErrorHandlingService';
 
 /**
  * Hook for plan-specific collaboration features
  * Handles real-time synchronization of plan changes
+ *
+ * OPTIMIZED DATA FLOW:
+ * 1. URL handler loads and validates plan data from database once
+ * 2. Plan data is stored in ReadOnlyContext via setPlanContext()
+ * 3. Collaboration system works independently of plan data to prevent infinite loops
+ * 4. Only collaborative state (assignments, selections, presence) is synchronized
+ * 5. Plan data is cached and not re-fetched during collaboration
  */
-export const useCollaboration = (planData, updateCallbacks) => {
+export const useCollaboration = () => {
   // Extract plan ID from URL
   const planId = (() => {
     const pathMatch = window.location.pathname.match(/^\/plan\/(?:shared\/)?([a-f0-9-]{36})$/i);
     return pathMatch ? pathMatch[1] : null;
   })();
+
+  // Get the current plan data from ReadOnlyContext (loaded by URL handler)
+  const { currentPlan } = useReadOnly();
+
   const {
     isConnected,
     isCollaborating,
@@ -25,27 +39,11 @@ export const useCollaboration = (planData, updateCallbacks) => {
   const lastUpdateRef = useRef(null);
   const isUpdatingRef = useRef(false);
 
-  // Join plan room when planId changes and it's a shared plan
-  useEffect(() => {
-    if (planId && isConnected) {
-      // Check if this is a shared plan URL
-      const isSharedPlan = window.location.pathname.includes('/plan/shared/');
+  // NOTE: Auto-join logic removed from this hook to prevent infinite loops
+  // Auto-joining is now handled exclusively by useAutoJoinCollaboration hook
+  // This hook only manages collaboration state and event handlers
 
-      if (isSharedPlan) {
-        console.log('🤝 Joining collaboration for shared plan:', planId);
-        joinPlan(planId);
-      }
-    }
-
-    return () => {
-      if (isCollaborating) {
-        console.log('🤝 Leaving collaboration for plan:', planId);
-        leavePlan();
-      }
-    };
-  }, [planId, isConnected, joinPlan, leavePlan, isCollaborating]);
-
-  // Handle incoming plan updates
+  // Handle incoming plan updates through collaboration context
   useEffect(() => {
     const handlePlanUpdate = (updateData) => {
       // Prevent infinite loops by checking if we're currently updating
@@ -67,18 +65,15 @@ export const useCollaboration = (planData, updateCallbacks) => {
       isUpdatingRef.current = true;
 
       try {
-        // Apply updates based on what changed
-        if (updateData.changes.assignments && updateCallbacks.onAssignmentsUpdate) {
-          updateCallbacks.onAssignmentsUpdate(updateData.changes.assignments);
-        }
-
-        if (updateData.changes.selected_jobs && updateCallbacks.onJobsUpdate) {
-          updateCallbacks.onJobsUpdate(updateData.changes.selected_jobs);
-        }
-
-        if (updateData.changes.tank_positions && updateCallbacks.onTankPositionsUpdate) {
-          updateCallbacks.onTankPositionsUpdate(updateData.changes.tank_positions);
-        }
+        // Log the update for debugging - actual plan updates will be handled by the UI components
+        // that subscribe to the collaboration context directly
+        console.log('📡 Collaboration update received:', {
+          type: updateData.type,
+          hasAssignments: !!updateData.changes?.assignments,
+          hasJobs: !!updateData.changes?.selected_jobs,
+          hasTankPositions: !!updateData.changes?.tank_positions,
+          version: updateData.version
+        });
 
         // Store update info to prevent loops
         lastUpdateRef.current = {
@@ -86,9 +81,9 @@ export const useCollaboration = (planData, updateCallbacks) => {
           timestamp: Date.now()
         };
 
-        console.log('✅ Applied remote plan update');
+        console.log('✅ Processed remote plan update');
       } catch (error) {
-        console.error('❌ Error applying remote update:', error);
+        console.error('❌ Error processing remote update:', error);
       } finally {
         // Reset updating flag after a short delay
         setTimeout(() => {
@@ -98,18 +93,27 @@ export const useCollaboration = (planData, updateCallbacks) => {
     };
 
     onPlanUpdate(handlePlanUpdate);
-  }, [updateCallbacks, onPlanUpdate]);
+  }, [onPlanUpdate]);
 
-  // Handle user presence events
+  // Handle user presence events - optimized to prevent spam
+  const previousUsersRef = useRef(new Set());
+
   useEffect(() => {
     const handleUserJoined = (userData) => {
-      console.log('👥 User joined collaboration:', userData);
-      // Could show a notification here
+      // Only log if this is actually a new user joining
+      if (!previousUsersRef.current.has(userData.id)) {
+        console.log('👥 User joined collaboration:', userData);
+        previousUsersRef.current.add(userData.id);
+        // Could show a notification here
+      }
     };
 
     const handleUserLeft = (userData) => {
-      console.log('👋 User left collaboration:', userData);
-      // Could show a notification here
+      if (previousUsersRef.current.has(userData.id)) {
+        console.log('👋 User left collaboration:', userData);
+        previousUsersRef.current.delete(userData.id);
+        // Could show a notification here
+      }
     };
 
     onUserJoined(handleUserJoined);

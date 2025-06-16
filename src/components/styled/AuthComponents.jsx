@@ -561,14 +561,14 @@ export const TabNavigation = styled.div`
 export const TabButton = styled.button`
   flex: 1;
   padding: ${props => props.theme.spacing.medium} ${props => props.theme.spacing.large};
-  background: ${props => props.active ? 
-    `linear-gradient(135deg, ${props.theme.colors.primary}08, ${props.theme.colors.primary}05)` : 
+  background: ${props => props.$active ?
+    `linear-gradient(135deg, ${props.theme.colors.primary}08, ${props.theme.colors.primary}05)` :
     'none'};
   border: none;
-  color: ${props => props.active ? props.theme.colors.primary : props.theme.colors.lightText};
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.lightText};
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: ${props => props.theme.fontSizes.responsive.small};
-  font-weight: ${props => props.active ? '700' : '600'};
+  font-weight: ${props => props.$active ? '700' : '600'};
   letter-spacing: 0.025em;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -593,11 +593,11 @@ export const TabButton = styled.button`
   }
 
   &:hover:not(:disabled) {
-    color: ${props => props.active ? props.theme.colors.primary : props.theme.colors.text};
-    border-bottom-color: ${props => props.active ? props.theme.colors.primary : props.theme.colors.primary}60;
-    
+    color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text};
+    border-bottom-color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.primary}60;
+
     &::before {
-      opacity: ${props => props.active ? 0 : 1};
+      opacity: ${props => props.$active ? 0 : 1};
     }
   }
 

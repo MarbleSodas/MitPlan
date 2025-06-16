@@ -9,7 +9,12 @@ service cloud.firestore {
 
     // Plans collection - users can manage their own plans
     match /plans/{planId} {
-      allow read, write: if request.auth != null &&
+      // Allow read access for shared/public plans without authentication
+      allow read: if resource.data.isPublic == true || resource.data.isShared == true ||
+        (request.auth != null && request.auth.uid == resource.data.userId);
+
+      // Allow write access only for authenticated plan owners
+      allow write: if request.auth != null &&
         (request.auth.uid == resource.data.userId || request.auth.uid == request.resource.data.userId);
     }
 

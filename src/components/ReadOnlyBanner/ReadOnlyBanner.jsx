@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Eye, Lock, X } from 'lucide-react';
+import { Eye, Lock, X, Users } from 'lucide-react';
 import { useReadOnly } from '../../contexts/ReadOnlyContext';
+import { useDisplayName } from '../../contexts/DisplayNameContext';
 
 const BannerContainer = styled.div`
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
@@ -117,8 +118,9 @@ const DismissButton = styled.button`
   }
 `;
 
-const ReadOnlyBanner = ({ onSignInClick, onCreatePlanClick }) => {
-  const { isReadOnly, getReadOnlyMessage } = useReadOnly();
+const ReadOnlyBanner = ({ onSignInClick, onCreatePlanClick, onJoinCollaboration }) => {
+  const { isReadOnly, getReadOnlyMessage, isSharedPlan } = useReadOnly();
+  const { needsDisplayName, setDisplayName, generateAnonymousName } = useDisplayName();
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Don't render if not in read-only mode or if dismissed
@@ -136,6 +138,18 @@ const ReadOnlyBanner = ({ onSignInClick, onCreatePlanClick }) => {
       onSignInClick();
     } else if (readOnlyInfo.actionText === 'Create Your Own Plan' && onCreatePlanClick) {
       onCreatePlanClick();
+    } else if (readOnlyInfo.actionText === 'Join Collaboration' && onJoinCollaboration) {
+      onJoinCollaboration();
+    }
+  };
+
+  const handleQuickJoin = () => {
+    // Generate anonymous name and join collaboration
+    const anonymousName = generateAnonymousName();
+    setDisplayName(anonymousName);
+
+    if (onJoinCollaboration) {
+      onJoinCollaboration();
     }
   };
 
@@ -149,19 +163,38 @@ const ReadOnlyBanner = ({ onSignInClick, onCreatePlanClick }) => {
         <BannerIcon>
           {readOnlyInfo.actionText === 'Sign In to Edit' ? (
             <Lock size={20} />
+          ) : readOnlyInfo.actionText === 'Join Collaboration' ? (
+            <Users size={20} />
           ) : (
             <Eye size={20} />
           )}
         </BannerIcon>
         <BannerText>
-          <BannerTitle>{readOnlyInfo.title}</BannerTitle>
-          <BannerMessage>{readOnlyInfo.message}</BannerMessage>
+          <BannerTitle>
+            {isSharedPlan() ? '🎭 ' : ''}{readOnlyInfo.title}
+          </BannerTitle>
+          <BannerMessage>
+            {readOnlyInfo.message}
+            {isSharedPlan() && needsDisplayName && (
+              <span style={{ display: 'block', marginTop: '4px', fontWeight: '600' }}>
+                💡 Tip: Enter your name below to start editing and collaborating!
+              </span>
+            )}
+          </BannerMessage>
         </BannerText>
       </BannerContent>
       <BannerActions>
         <ActionButton onClick={handleActionClick}>
           {readOnlyInfo.actionText}
         </ActionButton>
+
+        {/* Show quick join option for shared plans */}
+        {isSharedPlan() && needsDisplayName && (
+          <ActionButton onClick={handleQuickJoin} style={{ opacity: 0.8 }}>
+            Quick Join
+          </ActionButton>
+        )}
+
         <DismissButton onClick={handleDismiss} aria-label="Dismiss banner">
           <X size={16} />
         </DismissButton>

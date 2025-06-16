@@ -12,6 +12,8 @@ import {
   useTankPositionContext,
   useTankSelectionModalContext
 } from './contexts';
+import { useReadOnly } from './contexts/ReadOnlyContext';
+import { useSharedPlanError } from './contexts/SharedPlanErrorContext';
 
 // Import data from centralized data module
 import { mitigationAbilities } from './data';
@@ -36,8 +38,10 @@ import TankPositionSelector from './components/TankPositionSelector';
 import CollaborationIndicator from './components/collaboration/CollaborationIndicator';
 import UserPresenceIndicator from './components/collaboration/UserPresenceIndicator';
 import CollaborationOnboarding from './components/collaboration/CollaborationOnboarding';
+import SharedPlanLoader from './components/collaboration/SharedPlanLoader';
 import ReadOnlyBanner from './components/ReadOnlyBanner/ReadOnlyBanner';
 import ConnectionStatus from './components/common/ConnectionStatus';
+import NotificationBanner from './components/common/NotificationBanner/NotificationBanner';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
@@ -58,6 +62,7 @@ import {
 } from './hooks';
 import useEnhancedUrlHandler from './hooks/useEnhancedUrlHandler';
 import useCollaboration from './hooks/useCollaboration';
+import useAutoJoinCollaboration from './hooks/useAutoJoinCollaboration';
 
 // Import utility functions
 import {
@@ -103,6 +108,10 @@ function App() {
     tankPositions
   } = useTankPositionContext();
 
+  // Error handling and loading state
+  const { urlError, isLoading, hasError } = useReadOnly();
+  const { retryOperation, getRetryCount } = useSharedPlanError();
+
   // Handlers for read-only banner actions
   const handleSignInClick = () => {
     // This will trigger the AuthButton modal
@@ -115,6 +124,29 @@ function App() {
   const handleCreatePlanClick = () => {
     // Clear current plan and start fresh
     window.location.href = '/';
+  };
+
+  const handleJoinCollaboration = () => {
+    // This will trigger the CollaborationOnboarding component
+    console.log('🤝 User requested to join collaboration from banner');
+  };
+
+  // Handle retry for shared plan loading
+  const handleRetryPlanLoad = async () => {
+    if (!urlError) return;
+
+    console.log('%c[APP] Retrying plan load', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', urlError);
+
+    try {
+      // Create a retry operation that reloads the page
+      await retryOperation(async () => {
+        // For plan loading errors, the best retry is to reload the page
+        window.location.reload();
+        return true;
+      }, urlError.id || 'plan_load_retry');
+    } catch (error) {
+      console.error('%c[APP] Retry failed', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
+    }
   };
 
   // Local state
@@ -153,25 +185,15 @@ function App() {
   });
 
   // Handle real-time collaboration for shared plans
+  // Removed live plan data dependency to prevent infinite re-renders
   const {
     isCollaborating,
     roomUsers,
     currentUserId
-  } = useCollaboration(
-    {
-      assignments,
-      selectedJobs,
-      tankPositions
-    },
-    {
-      onAssignmentsUpdate: importAssignments,
-      onJobsUpdate: setSelectedJobs,
-      onTankPositionsUpdate: (positions) => {
-        // Update tank positions through context
-        console.log('🤝 Received tank positions update:', positions);
-      }
-    }
-  );
+  } = useCollaboration();
+
+  // Auto-join collaboration for shared plans
+  useAutoJoinCollaboration();
 
   // Effect to clean up pending assignments - optimized with dependency on length
   useEffect(() => {
@@ -405,17 +427,35 @@ function App() {
     selectedJobs
   ]);
 
+  // Check if we should show the shared plan loader
+  const shouldShowLoader = isLoading || hasError;
+  const isSharedPlan = window.location.pathname.includes('/plan/shared/');
+
   return (
     <>
       <GlobalStyle />
       <ConnectionStatus />
-      <DndContext
+
+      {/* Show shared plan loader for loading states and errors */}
+      {shouldShowLoader && isSharedPlan && (
+        <SharedPlanLoader
+          isLoading={isLoading}
+          error={urlError}
+          onRetry={handleRetryPlanLoad}
+          planId={urlError?.planId}
+          showSkeleton={isLoading}
+        />
+      )}
+
+      {/* Only show main app content if not in error/loading state */}
+      {!shouldShowLoader && (
+        <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={memoizedHandleDragEnd}
       >
-        <AppLayout>
+        <AppLayout data-testid="app-container">
           <HeaderLayout
             title="FFXIV Boss Timeline & Mitigation Planner"
             description="Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled."
@@ -434,6 +474,7 @@ function App() {
           <ReadOnlyBanner
             onSignInClick={handleSignInClick}
             onCreatePlanClick={handleCreatePlanClick}
+            onJoinCollaboration={handleJoinCollaboration}
           />
 
           {/* Collaboration onboarding for shared plans */}
@@ -507,7 +548,11 @@ function App() {
             />
           )}
         </DragOverlay>
-      </DndContext>
+        </DndContext>
+      )}
+
+      {/* Global notification banner for errors, warnings, and success messages */}
+      <NotificationBanner />
     </>
   );
 }

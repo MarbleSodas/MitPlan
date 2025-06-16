@@ -205,14 +205,31 @@ class SessionCleanupService {
       const activeUsers = Array.from(monitoringData.activeUsers.values()).filter(user => user.isActive);
       const timeSinceLastCheck = now - monitoringData.lastUserCheck;
 
-      console.log(`🧹 Cleanup check for plan ${planId}: ${activeUsers.length} active users, last check ${Math.round(timeSinceLastCheck / 1000)}s ago`);
+      console.log('%c[SESSION CLEANUP] Performing cleanup check', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        activeUserCount: activeUsers.length,
+        totalUsers: monitoringData.activeUsers.size,
+        timeSinceLastCheck: Math.round(timeSinceLastCheck / 1000),
+        sessionTimeout: this.config.sessionTimeout / 1000,
+        timestamp: new Date().toISOString()
+      });
 
       // Check if session should be cleaned up
       const shouldCleanup = this.shouldCleanupSession(monitoringData, now);
 
       if (shouldCleanup) {
-        console.log(`🧹 Session cleanup triggered for plan: ${planId}`);
+        console.log('%c[SESSION CLEANUP] Session cleanup triggered', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          reason: activeUsers.length === 0 ? 'no_active_users' : 'timeout',
+          inactiveTime: Math.round((now - monitoringData.lastUserActivity) / 1000)
+        });
         await this.cleanupSession(planId, monitoringData);
+      } else {
+        console.log('%c[SESSION CLEANUP] Session still active', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          activeUsers: activeUsers.length,
+          nextCheckIn: Math.round(this.config.cleanupCheckInterval / 1000)
+        });
       }
 
     } catch (error) {

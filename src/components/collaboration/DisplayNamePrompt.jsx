@@ -242,16 +242,16 @@ const DisplayNamePrompt = ({
       <PromptBanner>
         <Users size={20} />
         <div style={{ flex: 1 }}>
-          <BannerTitle>Join the collaboration</BannerTitle>
-          <BannerText>Enter your name to edit this plan with others</BannerText>
+          <BannerTitle>🎭 Join "{planName}" Collaboration</BannerTitle>
+          <BannerText>You're viewing in read-only mode. Enter your name or sign in to edit this plan with others in real-time!</BannerText>
         </div>
         <ButtonGroup>
           <Button variant="primary" onClick={() => setDisplayName('') || document.querySelector('[data-display-name-input]')?.focus()}>
             <Edit3 size={16} />
-            Enter Name
+            Enter Name to Edit
           </Button>
           <Button variant="ghost" onClick={onSignIn}>
-            Sign In
+            Sign In Instead
           </Button>
         </ButtonGroup>
         <CloseButton onClick={onClose}>
@@ -268,9 +268,9 @@ const DisplayNamePrompt = ({
           <X size={20} />
         </CloseButton>
         
-        <Title>Join "{planName}" Collaboration</Title>
+        <Title>🎭 Join "{planName}" Collaboration</Title>
         <Subtitle>
-          You're viewing a shared mitigation plan. Choose how you'd like to participate:
+          You're currently viewing this shared mitigation plan in <strong>read-only mode</strong>. To edit mitigation assignments, job selections, and collaborate in real-time with other users, please choose an option below:
         </Subtitle>
 
         <form onSubmit={handleSubmit}>

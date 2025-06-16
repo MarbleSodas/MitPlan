@@ -393,7 +393,7 @@ const ProfileManagement = ({ onClose }) => {
             userId={user?.id}
           />
         )}
-        */
+        */}
       </FormSection>
 
       <ButtonGroup>

@@ -259,13 +259,13 @@ const AccountSettings = ({ onClose }) => {
 
       <TabNavigation>
         <TabButton
-          active={activeTab === 'preferences'}
+          $active={activeTab === 'preferences'}
           onClick={() => setActiveTab('preferences')}
         >
           Preferences
         </TabButton>
         <TabButton
-          active={activeTab === 'security'}
+          $active={activeTab === 'security'}
           onClick={() => setActiveTab('security')}
         >
           Security

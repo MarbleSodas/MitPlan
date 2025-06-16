@@ -61,7 +61,7 @@ const CloseButton = styled.button`
 const ShareOption = styled.div`
   margin-bottom: 20px;
   padding: 16px;
-  border: 2px solid ${props => props.selected ? props.theme.colors.accent : props.theme.colors.border};
+  border: 2px solid ${props => props.$selected ? props.theme.colors.accent : props.theme.colors.border};
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -333,7 +333,7 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
         {/* Share Type Selection */}
         {canUseDatabase && (
           <ShareOption
-            selected={shareType === 'database'}
+            $selected={shareType === 'database'}
             onClick={() => setShareType('database')}
           >
             <OptionHeader>
@@ -354,7 +354,7 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
         )}
 
         <ShareOption
-          selected={shareType === 'anonymous'}
+          $selected={shareType === 'anonymous'}
           onClick={() => setShareType('anonymous')}
         >
           <OptionHeader>

@@ -176,3 +176,42 @@ local-config.js
 
 # Docker files (if sensitive)
 docker-compose.override.yml
+
+# Test artifacts and reports
+tests/reports/
+tests/artifacts/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Test screenshots and videos
+tests/screenshots/
+tests/videos/
+tests/traces/
+
+# Test data and fixtures
+tests/fixtures/downloads/
+tests/fixtures/uploads/
+
+# Playwright browsers
+.playwright/
+
+# Test environment files
+.env.test
+.env.testing
+test.env
+
+# Test databases and mock data
+test.db
+test.sqlite
+mock-data/
+
+# Coverage reports
+coverage/
+.nyc_output/
+lcov.info
+
+# Test logs
+test.log
+playwright.log
+test-debug.log

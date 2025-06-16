@@ -135,14 +135,14 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
           {activeTab !== 'forgot' && (
             <TabNavigation>
               <TabButton
-                active={activeTab === 'login'}
+                $active={activeTab === 'login'}
                 onClick={() => setActiveTab('login')}
                 disabled={isLoading}
               >
                 Sign In
               </TabButton>
               <TabButton
-                active={activeTab === 'register'}
+                $active={activeTab === 'register'}
                 onClick={() => setActiveTab('register')}
                 disabled={isLoading}
               >

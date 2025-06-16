@@ -4,6 +4,7 @@ import { useDisplayName } from './DisplayNameContext';
 import DisplayNameContext from './DisplayNameContext';
 import RealtimeCollaborationService from '../services/RealtimeCollaborationService';
 import SessionCleanupService from '../services/SessionCleanupService';
+import ErrorHandlingService from '../services/ErrorHandlingService';
 
 // Custom hook to safely use DisplayName context with fallback
 const useSafeDisplayName = () => {
@@ -49,6 +50,10 @@ export const useCollaboration = () => {
 export const CollaborationProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { displayName, userId, canEdit, updateActivity } = useSafeDisplayName();
+
+  // Remove ReadOnly context dependency to avoid circular dependency
+  // Auto-join logic will be handled in App.jsx where all contexts are available
+
   const [isConnected, setIsConnected] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState(null);
   const [roomUsers, setRoomUsers] = useState([]);
@@ -74,15 +79,27 @@ export const CollaborationProvider = ({ children }) => {
 
   // Initialize Firebase connection state
   useEffect(() => {
-    console.log('🔌 Firebase Realtime Database available for collaboration');
+    console.log('%c[COLLABORATION CONTEXT] Initializing Firebase Realtime Database connection', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+      timestamp: new Date().toISOString(),
+      realtimeDbAvailable: !!RealtimeCollaborationService.realtimeDb,
+      authState: isAuthenticated ? 'authenticated' : 'unauthenticated'
+    });
     setIsConnected(true);
     setConnectionError(null);
-  }, []);
+  }, [isAuthenticated]);
+
+  // Auto-join logic moved to App.jsx to avoid circular dependency issues
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('🔌 Cleaning up collaboration listeners');
+      console.log('%c[COLLABORATION CONTEXT] Component unmounting - cleaning up collaboration resources', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+        currentPlanId,
+        activeListeners: unsubscribersRef.current.length,
+        isCollaborating,
+        timestamp: new Date().toISOString()
+      });
+
       unsubscribersRef.current.forEach(unsubscribe => {
         if (typeof unsubscribe === 'function') {
           unsubscribe();
@@ -92,39 +109,56 @@ export const CollaborationProvider = ({ children }) => {
 
       // Clean up session monitoring
       if (currentPlanId) {
+        console.log('%c[COLLABORATION CONTEXT] Stopping session monitoring for plan', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', currentPlanId);
         SessionCleanupService.stopMonitoring(currentPlanId, 'component_unmount')
           .catch(error => console.warn('Failed to stop session monitoring on unmount:', error));
       }
     };
-  }, [currentPlanId]);
+  }, [currentPlanId, isCollaborating]);
 
   // Join a plan room for collaboration
-  const joinPlan = async (planId) => {
+  const joinPlan = async (planId, planData = null) => {
     if (!isConnected) {
       console.warn('⚠️ Cannot join plan: not connected');
       setConnectionError('Connection not available');
       return false;
     }
 
-    if (!canEdit) {
-      console.warn('⚠️ Cannot join plan: user cannot edit (needs display name)');
-      setConnectionError('Display name required for collaboration');
-      return false;
+    // Prevent joining if already collaborating on the same plan
+    if (isCollaborating && currentPlanId === planId) {
+      console.log('%c[COLLABORATION CONTEXT] Already collaborating on this plan', 'background: #9E9E9E; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        currentPlanId,
+        isCollaborating
+      });
+      return true; // Return true since we're already joined
+    }
+
+    // Allow unauthenticated users to join as viewers even without display name
+    // They can provide a display name later to enable editing
+    if (!canEdit && !isAuthenticated) {
+      console.log('ℹ️ Unauthenticated user joining as viewer (can provide display name later for editing)');
     }
 
     try {
-      console.log('🚪 Joining plan room:', planId, 'displayName:', displayName, 'userId:', userId);
+      console.log(`%c[COLLABORATION CONTEXT] Joining plan room`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        displayName,
+        userId,
+        hasPlanData: !!planData,
+        planDataFields: planData ? Object.keys(planData) : []
+      });
 
       // Update activity when joining
       updateActivity();
 
-      // Prepare user info
+      // Prepare user info for both authenticated and unauthenticated users
       const userInfo = {
-        displayName: displayName || 'Anonymous User',
-        userId: userId // Pass the userId from DisplayNameContext
+        displayName: displayName || (isAuthenticated ? 'Authenticated User' : 'Anonymous Viewer'),
+        userId: userId || `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` // Generate fallback ID if needed
       };
 
-      // Join the collaboration room
+      // Join the collaboration room - let the service handle plan data fetching if needed
       const result = await RealtimeCollaborationService.joinPlan(planId, userInfo);
 
       if (result.success) {
@@ -138,16 +172,22 @@ export const CollaborationProvider = ({ children }) => {
         // Set up session listeners
         setupSessionListeners(planId);
 
-        console.log('✅ Successfully joined plan collaboration:', planId);
+        console.log(`%c[COLLABORATION CONTEXT] Successfully joined plan collaboration`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          sessionActive: result.sessionActive,
+          isSessionOwner: result.isSessionOwner
+        });
         return true;
       } else {
-        console.error('❌ Failed to join plan collaboration:', result.message);
+        console.error(`%c[COLLABORATION CONTEXT] Failed to join plan collaboration`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', result.message);
         setConnectionError(result.message);
+        ErrorHandlingService.handleCollaborationError(new Error(result.message), planId, 'collaboration_context');
         return false;
       }
     } catch (error) {
-      console.error('❌ Error joining plan collaboration:', error);
+      console.error(`%c[COLLABORATION CONTEXT] Error joining plan collaboration`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
       setConnectionError(error.message);
+      ErrorHandlingService.handleCollaborationError(error, planId, 'collaboration_context');
       return false;
     }
   };
@@ -155,11 +195,19 @@ export const CollaborationProvider = ({ children }) => {
   // Leave current plan room
   const leavePlan = async () => {
     if (!currentPlanId) {
+      console.log('%c[COLLABORATION CONTEXT] Skipping leave - no current plan', 'background: #9E9E9E; color: white; padding: 2px 5px; border-radius: 3px;');
       return;
     }
 
     try {
-      console.log('🚪 Leaving plan room:', currentPlanId);
+      console.log('%c[COLLABORATION CONTEXT] Leaving plan room', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        userId,
+        displayName,
+        roomUserCount: roomUsers.length,
+        isCollaborating,
+        timestamp: new Date().toISOString()
+      });
 
       // Leave the collaboration room
       await RealtimeCollaborationService.leavePlan(currentPlanId, userId);
@@ -172,9 +220,16 @@ export const CollaborationProvider = ({ children }) => {
       setRoomUsers([]);
       setUserSelections({});
 
-      console.log('✅ Successfully left plan collaboration');
+      console.log('%c[COLLABORATION CONTEXT] Successfully left plan collaboration', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        userId,
+        displayName
+      });
     } catch (error) {
-      console.error('❌ Error leaving plan collaboration:', error);
+      console.error('%c[COLLABORATION CONTEXT] Error leaving plan collaboration', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        userId,
+        error: error.message
+      });
     }
   };
 
@@ -185,7 +240,12 @@ export const CollaborationProvider = ({ children }) => {
 
     // Listen to active users
     const unsubscribeUsers = RealtimeCollaborationService.subscribeToActiveUsers(planId, (users) => {
-      console.log('👥 Active users updated:', users);
+      console.log('%c[COLLABORATION CONTEXT] Active users updated', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        userCount: users.length,
+        users: users.map(u => ({ id: u.id, name: u.name, isAuthenticated: u.isAuthenticated })),
+        timestamp: new Date().toISOString()
+      });
       setRoomUsers(users);
 
       if (onUserJoinedRef.current || onUserLeftRef.current) {
@@ -261,10 +321,23 @@ export const CollaborationProvider = ({ children }) => {
   // Broadcast plan update to other users
   const broadcastPlanUpdate = async (updateData) => {
     if (!currentPlanId || !isCollaborating) {
+      console.log('%c[COLLABORATION CONTEXT] Skipping broadcast - not collaborating', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+        currentPlanId,
+        isCollaborating,
+        updateType: updateData?.type
+      });
       return;
     }
 
     try {
+      console.log('%c[COLLABORATION CONTEXT] Broadcasting plan update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        updateType: updateData?.type,
+        userId,
+        displayName,
+        timestamp: new Date().toISOString()
+      });
+
       // Update activity when broadcasting changes
       updateActivity();
 
@@ -274,8 +347,17 @@ export const CollaborationProvider = ({ children }) => {
         userId,
         displayName
       );
+
+      console.log('%c[COLLABORATION CONTEXT] Plan update broadcast successful', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        updateType: updateData?.type
+      });
     } catch (error) {
-      console.error('❌ Error broadcasting plan update:', error);
+      console.error('%c[COLLABORATION CONTEXT] Error broadcasting plan update', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        updateType: updateData?.type,
+        error: error.message
+      });
     }
   };
 
@@ -462,14 +544,35 @@ export const CollaborationProvider = ({ children }) => {
 
   // Connection health check
   const checkConnectionHealth = async () => {
+    console.log('%c[COLLABORATION CONTEXT] Checking connection health', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+      currentPlanId,
+      isCollaborating,
+      isConnected,
+      timestamp: new Date().toISOString()
+    });
+
     if (!currentPlanId) {
+      console.warn('%c[COLLABORATION CONTEXT] No active plan for health check', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
       return { healthy: false, message: 'No active plan' };
     }
 
     try {
-      return await RealtimeCollaborationService.checkConnectionHealth(currentPlanId);
+      const healthResult = await RealtimeCollaborationService.checkConnectionHealth(currentPlanId);
+
+      console.log('%c[COLLABORATION CONTEXT] Connection health check result', 'background: healthResult.healthy ? "#4CAF50" : "#f44336"; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        healthy: healthResult.healthy,
+        message: healthResult.message,
+        timestamp: new Date().toISOString()
+      });
+
+      return healthResult;
     } catch (error) {
-      console.error('❌ Error checking connection health:', error);
+      console.error('%c[COLLABORATION CONTEXT] Error checking connection health', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId: currentPlanId,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
       return { healthy: false, message: error.message };
     }
   };

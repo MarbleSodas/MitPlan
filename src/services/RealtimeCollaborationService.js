@@ -17,12 +17,14 @@ import {
 import { realtimeDb, auth } from '../config/firebase';
 import SessionManagementService from './SessionManagementService';
 import SessionCleanupService from './SessionCleanupService';
+import ErrorHandlingService from './ErrorHandlingService';
 
 class RealtimeCollaborationService {
   constructor() {
     this.realtimeDb = realtimeDb;
     this.auth = auth;
     this.listeners = new Map();
+    this.planCache = new Map(); // Cache for plan data to prevent repeated fetches
     this.userColors = [
       '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
       '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
@@ -32,6 +34,8 @@ class RealtimeCollaborationService {
   /**
    * Join a plan collaboration room
    * Supports both authenticated and anonymous users for shared plans
+   * @param {string} planId - The plan ID to join
+   * @param {Object} userInfo - User information (displayName, userId for anonymous users)
    */
   async joinPlan(planId, userInfo = {}) {
     try {
@@ -61,40 +65,118 @@ class RealtimeCollaborationService {
 
       const userColor = this.getUserColor(userId);
 
-      console.log('🚪 Joining plan collaboration:', { planId, userId, userName, isAuthenticated });
+      console.log(`%c[COLLABORATION] Joining plan collaboration`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        userId,
+        userName,
+        isAuthenticated,
+        userIdPattern: userId ? (userId.match(/^anon_[a-zA-Z0-9_-]+$/) ? 'valid_anon' : userId.match(/^[a-zA-Z0-9]+$/) ? 'valid_auth' : 'invalid') : 'missing',
+        timestamp: new Date().toISOString()
+      });
 
       // Check if there's an existing session, or create one if this is a shared plan
       let session = await SessionManagementService.getSession(planId);
 
       // If no session exists and this is a shared plan, create one automatically
       if (!session) {
-        console.log('🚀 No session found, creating new session for shared plan:', planId);
+        console.log(`%c[COLLABORATION] No session found, creating new session`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', planId);
         try {
-          // Try to get the plan data to initialize the session
-          const FirestoreService = (await import('./FirestoreService.js')).default;
-          const planResult = await FirestoreService.getPlan(planId);
-          if (planResult.success && (planResult.plan.isPublic || planResult.plan.isShared)) {
-            const sessionResult = await SessionManagementService.startSession(planId, planResult.plan, userId);
+          // Check cache first to prevent duplicate fetches
+          let planToUse = this.planCache.get(planId);
+
+          if (!planToUse) {
+            console.log(`%c[COLLABORATION] Fetching plan data for session creation`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', planId);
+            const FirestoreService = (await import('./FirestoreService.js')).default;
+            const planResult = await FirestoreService.getPlan(planId);
+
+            if (planResult.success) {
+              planToUse = planResult.plan;
+              // Cache the plan data with a 5-minute expiry
+              this.planCache.set(planId, planToUse);
+              setTimeout(() => this.planCache.delete(planId), 5 * 60 * 1000);
+
+              console.log(`%c[COLLABORATION] Plan data loaded and cached`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+                planId: planToUse.id,
+                isShared: planToUse.isShared,
+                isPublic: planToUse.isPublic
+              });
+            }
+          } else {
+            console.log(`%c[COLLABORATION] Using cached plan data`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+              planId: planToUse.id,
+              cached: true
+            });
+          }
+
+          // Validate plan data before creating session
+          if (planToUse && (planToUse.isPublic || planToUse.isShared)) {
+            // Validate plan data structure
+            const requiredFields = ['id', 'assignments', 'selectedJobs', 'bossId'];
+            const missingFields = requiredFields.filter(field => !planToUse.hasOwnProperty(field));
+
+            if (missingFields.length > 0) {
+              console.warn(`%c[COLLABORATION] Plan data missing required fields:`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', missingFields);
+            }
+
+            const sessionResult = await SessionManagementService.startSession(planId, planToUse, userId);
             if (sessionResult.success) {
               session = await SessionManagementService.getSession(planId);
-              console.log('✅ Created new collaboration session:', session);
+              console.log(`%c[COLLABORATION] Created new collaboration session`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+                sessionId: session.id,
+                planId: planToUse.id,
+                dataIntegrity: {
+                  hasAssignments: !!planToUse.assignments,
+                  hasSelectedJobs: !!planToUse.selectedJobs,
+                  hasTankPositions: !!planToUse.tankPositions,
+                  bossId: planToUse.bossId
+                }
+              });
             }
+          } else {
+            console.warn(`%c[COLLABORATION] Plan not suitable for collaboration`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+              planId,
+              isPublic: planToUse?.isPublic,
+              isShared: planToUse?.isShared,
+              planExists: !!planToUse
+            });
           }
         } catch (sessionError) {
-          console.warn('⚠️ Failed to create session, continuing without:', sessionError);
+          console.error(`%c[COLLABORATION] Failed to create session`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', sessionError);
+          ErrorHandlingService.handleCollaborationError(sessionError, planId, 'session_creation');
         }
+      } else {
+        console.log(`%c[COLLABORATION] Joining existing session`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          sessionId: session.id,
+          status: session.status,
+          owner: session.ownerId
+        });
       }
 
       // Set user presence in the collaboration room
       const userRef = ref(this.realtimeDb, `collaboration/${planId}/activeUsers/${userId}`);
 
-      await set(userRef, {
+      const presenceData = {
         id: userId,
         name: userName,
         color: userColor,
         joinedAt: serverTimestamp(),
         lastSeen: serverTimestamp(),
         isAuthenticated
+      };
+
+      console.log(`%c[COLLABORATION] Setting user presence`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        userId,
+        userName,
+        presenceData,
+        path: `collaboration/${planId}/activeUsers/${userId}`
+      });
+
+      await set(userRef, presenceData);
+
+      console.log(`%c[COLLABORATION] User presence set successfully`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        userId
       });
 
       // Set up disconnect handler to remove user when they leave
@@ -158,10 +240,32 @@ class RealtimeCollaborationService {
         message: 'Joined collaboration successfully'
       };
     } catch (error) {
-      console.error('Join plan error:', error);
+      console.error('%c[COLLABORATION] Join plan error', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        userId,
+        isAuthenticated,
+        error: error.message,
+        stack: error.stack
+      });
+
+      // Provide more specific error messages for common issues
+      let userFriendlyMessage = error.message;
+
+      if (error.message.includes('permission') || error.message.includes('access')) {
+        userFriendlyMessage = 'Unable to join collaboration session. Please check your permissions.';
+      } else if (error.message.includes('network') || error.message.includes('connection')) {
+        userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message.includes('validation')) {
+        userFriendlyMessage = 'Invalid user data. Please refresh the page and try again.';
+      } else if (error.message.includes('not found')) {
+        userFriendlyMessage = 'Collaboration session not found. The plan may no longer be available.';
+      }
+
+      ErrorHandlingService.handleCollaborationError(error, planId, 'join_plan');
       return {
         success: false,
-        message: error.message
+        message: userFriendlyMessage,
+        originalError: error.message
       };
     }
   }
@@ -343,6 +447,9 @@ class RealtimeCollaborationService {
         });
       }
 
+      // Broadcast specific update types for real-time sync
+      await this.broadcastSpecificUpdate(planId, updateData, updateRecord);
+
       return {
         success: true,
         version: updateRecord.version,
@@ -356,6 +463,201 @@ class RealtimeCollaborationService {
         message: error.message
       };
     }
+  }
+
+  /**
+   * Broadcast specific update types for real-time synchronization
+   */
+  async broadcastSpecificUpdate(planId, updateData, updateRecord) {
+    try {
+      const { type, data } = updateData;
+
+      console.log('%c[COLLABORATION] Broadcasting specific update', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        updateType: type,
+        userId: updateRecord?.userId,
+        timestamp: new Date().toISOString()
+      });
+
+      switch (type) {
+        case 'job_selection':
+          console.log('%c[COLLABORATION] Broadcasting job selection update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', data);
+          await this.broadcastJobSelection(planId, data, updateRecord);
+          break;
+        case 'mitigation_assignment':
+          console.log('%c[COLLABORATION] Broadcasting mitigation assignment update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', data);
+          await this.broadcastMitigationAssignment(planId, data, updateRecord);
+          break;
+        case 'boss_selection':
+          console.log('%c[COLLABORATION] Broadcasting boss selection update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', data);
+          await this.broadcastBossSelection(planId, data, updateRecord);
+          break;
+        case 'tank_position':
+          console.log('%c[COLLABORATION] Broadcasting tank position update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', data);
+          await this.broadcastTankPosition(planId, data, updateRecord);
+          break;
+        case 'user_selection':
+          console.log('%c[COLLABORATION] Broadcasting user selection update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', data);
+          await this.broadcastUserSelection(planId, data, updateRecord);
+          break;
+        default:
+          console.log('%c[COLLABORATION] Broadcasting generic plan update', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', { type, data });
+          // Generic plan update
+          break;
+      }
+    } catch (error) {
+      console.error('Broadcast specific update error:', error);
+    }
+  }
+
+  /**
+   * Broadcast job selection changes
+   */
+  async broadcastJobSelection(planId, data, updateRecord) {
+    const jobSelectionRef = ref(this.realtimeDb, `collaboration/${planId}/jobSelections`);
+    await set(jobSelectionRef, {
+      selectedJobs: data.selectedJobs || {},
+      updatedBy: updateRecord.userId,
+      updatedAt: updateRecord.timestamp,
+      version: updateRecord.version
+    });
+  }
+
+  /**
+   * Broadcast mitigation assignment changes
+   */
+  async broadcastMitigationAssignment(planId, data, updateRecord) {
+    const assignmentRef = ref(this.realtimeDb, `collaboration/${planId}/assignments`);
+    await set(assignmentRef, {
+      assignments: data.assignments || {},
+      updatedBy: updateRecord.userId,
+      updatedAt: updateRecord.timestamp,
+      version: updateRecord.version
+    });
+  }
+
+  /**
+   * Broadcast boss selection changes
+   */
+  async broadcastBossSelection(planId, data, updateRecord) {
+    const bossRef = ref(this.realtimeDb, `collaboration/${planId}/bossSelection`);
+    await set(bossRef, {
+      bossId: data.bossId,
+      updatedBy: updateRecord.userId,
+      updatedAt: updateRecord.timestamp,
+      version: updateRecord.version
+    });
+  }
+
+  /**
+   * Broadcast tank position changes
+   */
+  async broadcastTankPosition(planId, data, updateRecord) {
+    const tankRef = ref(this.realtimeDb, `collaboration/${planId}/tankPositions`);
+    await set(tankRef, {
+      tankPositions: data.tankPositions || {},
+      updatedBy: updateRecord.userId,
+      updatedAt: updateRecord.timestamp,
+      version: updateRecord.version
+    });
+  }
+
+  /**
+   * Broadcast user selection/cursor position
+   */
+  async broadcastUserSelection(planId, data, updateRecord) {
+    const selectionRef = ref(this.realtimeDb, `collaboration/${planId}/selections/${updateRecord.userId}`);
+    await set(selectionRef, {
+      elementId: data.elementId,
+      elementType: data.elementType,
+      position: data.position || null,
+      timestamp: updateRecord.timestamp,
+      userName: updateRecord.userName
+    });
+  }
+
+  /**
+   * Subscribe to job selection changes
+   */
+  subscribeToJobSelections(planId, callback) {
+    const jobSelectionRef = ref(this.realtimeDb, `collaboration/${planId}/jobSelections`);
+
+    const unsubscribe = onValue(jobSelectionRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        callback({
+          selectedJobs: data.selectedJobs || {},
+          updatedBy: data.updatedBy,
+          updatedAt: data.updatedAt,
+          version: data.version
+        });
+      }
+    }, (error) => {
+      console.error('Job selections subscription error:', error);
+      callback({ selectedJobs: {} });
+    });
+
+    this.listeners.set(`jobSelections_${planId}`, unsubscribe);
+    return () => {
+      off(jobSelectionRef, 'value', unsubscribe);
+      this.listeners.delete(`jobSelections_${planId}`);
+    };
+  }
+
+  /**
+   * Subscribe to mitigation assignment changes
+   */
+  subscribeToAssignments(planId, callback) {
+    const assignmentRef = ref(this.realtimeDb, `collaboration/${planId}/assignments`);
+
+    const unsubscribe = onValue(assignmentRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        callback({
+          assignments: data.assignments || {},
+          updatedBy: data.updatedBy,
+          updatedAt: data.updatedAt,
+          version: data.version
+        });
+      }
+    }, (error) => {
+      console.error('Assignments subscription error:', error);
+      callback({ assignments: {} });
+    });
+
+    this.listeners.set(`assignments_${planId}`, unsubscribe);
+    return () => {
+      off(assignmentRef, 'value', unsubscribe);
+      this.listeners.delete(`assignments_${planId}`);
+    };
+  }
+
+  /**
+   * Subscribe to boss selection changes
+   */
+  subscribeToBossSelection(planId, callback) {
+    const bossRef = ref(this.realtimeDb, `collaboration/${planId}/bossSelection`);
+
+    const unsubscribe = onValue(bossRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        callback({
+          bossId: data.bossId,
+          updatedBy: data.updatedBy,
+          updatedAt: data.updatedAt,
+          version: data.version
+        });
+      }
+    }, (error) => {
+      console.error('Boss selection subscription error:', error);
+      callback({ bossId: null });
+    });
+
+    this.listeners.set(`bossSelection_${planId}`, unsubscribe);
+    return () => {
+      off(bossRef, 'value', unsubscribe);
+      this.listeners.delete(`bossSelection_${planId}`);
+    };
   }
 
   /**
@@ -637,9 +939,12 @@ class RealtimeCollaborationService {
 
   /**
    * Generate an anonymous user ID for unauthenticated users
+   * Must match Firebase rules pattern: anon_[a-zA-Z0-9_-]+
    */
   generateAnonymousUserId() {
-    return `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substr(2, 9);
+    return `anon_${timestamp}_${random}`;
   }
 
   /**

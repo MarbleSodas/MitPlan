@@ -156,11 +156,14 @@ export const DisplayNameProvider = ({ children }) => {
     if (isAuthenticated && user) {
       return user.uid;
     }
-    
+
     if (sessionId) {
-      return `anon_${sessionId}`;
+      // Generate Firebase-compatible anonymous user ID
+      // Remove 'session_' prefix and ensure it matches pattern: anon_[a-zA-Z0-9_-]+
+      const cleanSessionId = sessionId.replace(/^session_/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+      return `anon_${cleanSessionId}`;
     }
-    
+
     return null;
   };
 

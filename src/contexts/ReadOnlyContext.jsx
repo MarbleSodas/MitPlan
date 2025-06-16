@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useDisplayName } from './DisplayNameContext';
 
@@ -25,6 +25,10 @@ export const ReadOnlyProvider = ({ children }) => {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [readOnlyReason, setReadOnlyReason] = useState(null);
   const [currentPlan, setCurrentPlan] = useState(null);
+
+  // Error state management for URL/plan loading errors
+  const [urlError, setUrlError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check if current URL is a shared plan
   const isSharedPlan = () => {
@@ -99,6 +103,15 @@ export const ReadOnlyProvider = ({ children }) => {
     console.log('%c[READ-ONLY] Edit mode: User can modify plan', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
   }, [isAuthenticated, user, currentPlan, canEditWithDisplayName, needsDisplayName]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Function to set the current plan (called when a plan is loaded)
   const setPlanContext = (plan) => {
     console.log('%c[READ-ONLY] Setting plan context', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', plan);
@@ -109,6 +122,51 @@ export const ReadOnlyProvider = ({ children }) => {
   const clearPlanContext = () => {
     console.log('%c[READ-ONLY] Clearing plan context', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;');
     setCurrentPlan(null);
+    // Also clear any URL errors when clearing plan context
+    setUrlError(null);
+  };
+
+  // Function to set URL error state
+  const setUrlErrorState = (error) => {
+    console.log('%c[READ-ONLY] Setting URL error state', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
+    setUrlError(error);
+    // Clear plan context when there's a URL error
+    setCurrentPlan(null);
+  };
+
+  // Function to clear URL error state
+  const clearUrlError = () => {
+    console.log('%c[READ-ONLY] Clearing URL error state', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+    setUrlError(null);
+  };
+
+  // Timeout ref for loading state
+  const loadingTimeoutRef = useRef(null);
+
+  // Function to set loading state with timeout
+  const setLoadingState = (loading) => {
+    console.log('%c[READ-ONLY] Setting loading state', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', loading);
+    setIsLoading(loading);
+
+    // Clear any existing timeout
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+
+    // Set a timeout to automatically clear loading state after 30 seconds
+    if (loading) {
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('%c[READ-ONLY] Loading timeout reached, clearing loading state', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;');
+        setIsLoading(false);
+        // Set a timeout error if still loading after 30 seconds
+        setUrlError({
+          type: 'network_error',
+          message: 'Loading timeout - the plan may be taking too long to load',
+          canRetry: true
+        });
+      }, 30000); // 30 second timeout
+    }
   };
 
   // Get user-friendly reason for read-only mode
@@ -143,10 +201,15 @@ export const ReadOnlyProvider = ({ children }) => {
     isReadOnly,
     readOnlyReason,
     currentPlan,
+    urlError,
+    isLoading,
 
     // Actions
     setPlanContext,
     clearPlanContext,
+    setUrlErrorState,
+    clearUrlError,
+    setLoadingState,
 
     // Helpers
     getReadOnlyMessage,
@@ -159,7 +222,8 @@ export const ReadOnlyProvider = ({ children }) => {
     canRemoveMitigations: !isReadOnly,
     canSavePlan: !isReadOnly && isAuthenticated,
     isCollaborativeMode: isSharedPlan(), // Enable collaborative mode for all users on shared plans
-    showCollaborationFeatures: isSharedPlan()
+    showCollaborationFeatures: isSharedPlan(),
+    hasError: !!urlError
   };
 
   return (

@@ -280,11 +280,33 @@ class PlanStorageService {
    * Supports loading public/shared plans for both authenticated and unauthenticated users
    */
   async loadPlan(planId) {
+    console.log(`%c[PLAN STORAGE] Loading plan: ${planId}`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+      isOnline: this.isOnline(),
+      storageState: this.storageState,
+      isAuthenticated: this.authContext.isAuthenticated
+    });
+
     if (this.isOnline()) {
       try {
         const result = await this.firestoreService.getPlan(planId);
         if (result.success) {
+          console.log(`%c[PLAN STORAGE] Plan loaded from database`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+            planId: result.plan.id,
+            isPublic: result.plan.isPublic,
+            isShared: result.plan.isShared,
+            hasAssignments: !!result.plan.assignments,
+            hasSelectedJobs: !!result.plan.selectedJobs,
+            hasTankPositions: !!result.plan.tankPositions
+          });
+
           const normalizedPlan = this.normalizePlanFromDatabase(result.plan);
+
+          // Validate plan data for collaboration readiness
+          const validation = this.validatePlanData(normalizedPlan, 'collaboration');
+          if (!validation.isValid) {
+            console.error(`%c[PLAN STORAGE] Plan validation failed`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', validation.errors);
+          }
+
           return normalizedPlan;
         } else {
           console.warn('PlanStorageService: Database load failed:', result.message);
@@ -301,12 +323,117 @@ class PlanStorageService {
     }
 
     // Fallback to localStorage for offline mode or network errors
+    console.log(`%c[PLAN STORAGE] Falling back to localStorage`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', planId);
     const localPlan = this.loadPlanFromLocalStorage(planId);
     if (localPlan) {
+      // Validate local plan data
+      const validation = this.validatePlanData(localPlan, 'local');
+      if (!validation.isValid) {
+        console.warn(`%c[PLAN STORAGE] Local plan validation failed`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', validation.errors);
+      }
       return localPlan;
     }
 
     throw new Error('Plan not found in any storage location');
+  }
+
+  /**
+   * Load a shared plan specifically from Firestore
+   * Shared plans should always be loaded from the database, never from localStorage
+   */
+  async loadSharedPlan(planId) {
+    console.log(`%c[PLAN STORAGE] Loading shared plan: ${planId}`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+      planId,
+      hasFirestore: !!this.firestoreService
+    });
+
+    // Validate plan ID format (basic UUID check)
+    if (!this.isValidPlanId(planId)) {
+      throw new Error('Invalid plan ID format');
+    }
+
+    // Shared plans must be loaded from Firestore, regardless of online status
+    if (!this.firestoreService) {
+      throw new Error('Database service not available');
+    }
+
+    try {
+      // Try to load as a public/shared plan using the standard getPlan method
+      // This method already handles public and shared plan access permissions
+      const result = await this.firestoreService.getPlan(planId);
+
+      if (result.success && result.plan) {
+        console.log(`%c[PLAN STORAGE] Shared plan loaded successfully`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          planName: result.plan.name,
+          isShared: result.plan.isShared,
+          isPublic: result.plan.isPublic
+        });
+
+        const normalizedPlan = this.normalizePlanFromDatabase(result.plan);
+
+        // Validate plan data for collaboration readiness
+        const validation = this.validatePlanData(normalizedPlan, 'collaboration');
+        if (!validation.isValid) {
+          console.error(`%c[PLAN STORAGE] Shared plan validation failed`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', validation.errors);
+        }
+
+        return normalizedPlan;
+      } else {
+        console.warn(`%c[PLAN STORAGE] Shared plan not found`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          message: result.message
+        });
+        throw new Error(result.message || 'Shared plan not found');
+      }
+    } catch (error) {
+      console.error(`%c[PLAN STORAGE] Failed to load shared plan`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        error: error.message
+      });
+
+      // Provide more specific error messages
+      if (error.message.includes('not found')) {
+        throw new Error('Plan not found or no longer available');
+      } else if (error.message.includes('permission') || error.message.includes('access')) {
+        throw new Error('Access denied to this plan');
+      } else if (error.message.includes('network') || error.message.includes('offline')) {
+        throw new Error('Network error - please check your connection');
+      } else {
+        throw new Error(`Failed to load shared plan: ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Validate plan ID format (supports both UUID and Firestore ID formats)
+   */
+  isValidPlanId(planId) {
+    if (!planId || typeof planId !== 'string') {
+      console.log('%c[PLAN STORAGE] Plan ID validation failed: invalid input', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        type: typeof planId
+      });
+      return false;
+    }
+
+    // Support both UUID format (36 chars with dashes) and Firestore ID format (20 chars alphanumeric)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const firestoreIdRegex = /^[a-zA-Z0-9]{20}$/;
+
+    const isUuid = uuidRegex.test(planId);
+    const isFirestoreId = firestoreIdRegex.test(planId);
+    const isValid = isUuid || isFirestoreId;
+
+    console.log('%c[PLAN STORAGE] Plan ID validation', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+      planId,
+      length: planId.length,
+      isUuid,
+      isFirestoreId,
+      isValid
+    });
+
+    return isValid;
   }
 
   /**
@@ -515,6 +642,269 @@ class PlanStorageService {
   }
 
   /**
+   * Validate plan data structure for completeness
+   */
+  validatePlanData(planData, context = 'general') {
+    const errors = [];
+    const warnings = [];
+    const info = [];
+
+    // Basic existence check
+    if (!planData) {
+      errors.push('Plan data is null or undefined');
+      return { isValid: false, errors, warnings, info };
+    }
+
+    // Required fields
+    if (!planData.id) errors.push('Plan ID is missing');
+    if (!planData.bossId) errors.push('Boss ID is missing');
+
+    // Data structure validation
+    if (planData.assignments !== undefined) {
+      if (typeof planData.assignments !== 'object' || planData.assignments === null) {
+        errors.push('Assignments must be an object');
+      } else if (Array.isArray(planData.assignments)) {
+        errors.push('Assignments must be an object, not an array');
+      } else {
+        // Validate assignments structure
+        const assignmentCount = Object.keys(planData.assignments).length;
+        info.push(`Plan has ${assignmentCount} boss action assignments`);
+
+        // Check for valid assignment structure
+        for (const [bossActionId, assignments] of Object.entries(planData.assignments)) {
+          if (!Array.isArray(assignments)) {
+            warnings.push(`Assignment for boss action ${bossActionId} is not an array`);
+          }
+        }
+      }
+    } else {
+      warnings.push('Assignments field is undefined');
+    }
+
+    if (planData.selectedJobs !== undefined) {
+      if (typeof planData.selectedJobs !== 'object' || planData.selectedJobs === null) {
+        errors.push('Selected jobs must be an object');
+      } else if (Array.isArray(planData.selectedJobs)) {
+        errors.push('Selected jobs must be an object, not an array');
+      } else {
+        const jobCount = Object.keys(planData.selectedJobs).filter(job => planData.selectedJobs[job]).length;
+        info.push(`Plan has ${jobCount} selected jobs`);
+      }
+    } else {
+      warnings.push('Selected jobs field is undefined');
+    }
+
+    if (planData.tankPositions !== undefined) {
+      if (typeof planData.tankPositions !== 'object' || planData.tankPositions === null) {
+        errors.push('Tank positions must be an object');
+      } else if (Array.isArray(planData.tankPositions)) {
+        errors.push('Tank positions must be an object, not an array');
+      } else {
+        const tankCount = Object.keys(planData.tankPositions).length;
+        info.push(`Plan has ${tankCount} tank position assignments`);
+      }
+    }
+
+    // Collaboration-specific validation
+    if (context === 'collaboration') {
+      if (planData.isShared === undefined) {
+        warnings.push('isShared flag is missing - collaboration mode detection may fail');
+      }
+      if (planData.isPublic === undefined) {
+        warnings.push('isPublic flag is missing - access control may fail');
+      }
+
+      // Check if plan is suitable for collaboration
+      if (!planData.isShared && !planData.isPublic) {
+        warnings.push('Plan is neither shared nor public - collaboration may not work');
+      }
+    }
+
+    // Data integrity checks
+    if (planData.name && typeof planData.name !== 'string') {
+      warnings.push('Plan name should be a string');
+    }
+    if (planData.description && typeof planData.description !== 'string') {
+      warnings.push('Plan description should be a string');
+    }
+    if (planData.version && typeof planData.version !== 'number') {
+      warnings.push('Plan version should be a number');
+    }
+
+    // Boss ID validation
+    const validBossIds = ['ketuduke', 'lala', 'statice', 'sugar_riot', 'brute_abominator', 'm8s'];
+    if (planData.bossId && !validBossIds.includes(planData.bossId)) {
+      warnings.push(`Unknown boss ID: ${planData.bossId}. Valid IDs: ${validBossIds.join(', ')}`);
+    }
+
+    // Log validation results with appropriate styling
+    if (errors.length > 0) {
+      console.error(`%c[PLAN VALIDATION] Errors (${context})`, 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', errors);
+    }
+    if (warnings.length > 0) {
+      console.warn(`%c[PLAN VALIDATION] Warnings (${context})`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', warnings);
+    }
+    if (info.length > 0) {
+      console.log(`%c[PLAN VALIDATION] Info (${context})`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', info);
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      info
+    };
+  }
+
+  /**
+   * Comprehensive plan data integrity check for import/collaboration
+   */
+  validatePlanIntegrity(planData, context = 'import') {
+    console.log(`%c[PLAN INTEGRITY] Starting integrity check`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+      context,
+      planId: planData?.id,
+      hasData: !!planData
+    });
+
+    const validation = this.validatePlanData(planData, context);
+    const integrityIssues = [];
+    const recommendations = [];
+
+    if (!validation.isValid) {
+      integrityIssues.push('Basic validation failed');
+      return {
+        isValid: false,
+        canProceed: false,
+        errors: validation.errors,
+        warnings: validation.warnings,
+        integrityIssues,
+        recommendations: ['Fix validation errors before proceeding']
+      };
+    }
+
+    // Deep integrity checks
+    if (planData.assignments) {
+      let totalAssignments = 0;
+      for (const [bossActionId, assignments] of Object.entries(planData.assignments)) {
+        if (Array.isArray(assignments)) {
+          totalAssignments += assignments.length;
+
+          // Check for duplicate assignments
+          const assignmentIds = assignments.map(a => a.id || a.abilityId);
+          const uniqueIds = new Set(assignmentIds);
+          if (assignmentIds.length !== uniqueIds.size) {
+            integrityIssues.push(`Duplicate assignments found for boss action ${bossActionId}`);
+          }
+        }
+      }
+
+      if (totalAssignments === 0) {
+        recommendations.push('Plan has no mitigation assignments - consider adding some for better protection');
+      } else {
+        console.log(`%c[PLAN INTEGRITY] Found ${totalAssignments} total mitigation assignments`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+      }
+    }
+
+    // Check job selection integrity
+    if (planData.selectedJobs) {
+      const selectedJobsList = Object.entries(planData.selectedJobs)
+        .filter(([, selected]) => selected)
+        .map(([job]) => job);
+
+      if (selectedJobsList.length === 0) {
+        recommendations.push('No jobs selected - plan may not function properly');
+      } else if (selectedJobsList.length > 8) {
+        integrityIssues.push('More than 8 jobs selected - this exceeds party size limit');
+      }
+
+      // Check for tank jobs if tank positions exist
+      if (planData.tankPositions && Object.keys(planData.tankPositions).length > 0) {
+        const tankJobs = ['PLD', 'WAR', 'DRK', 'GNB'];
+        const selectedTanks = selectedJobsList.filter(job => tankJobs.includes(job));
+
+        if (selectedTanks.length === 0) {
+          integrityIssues.push('Tank positions defined but no tank jobs selected');
+        } else if (selectedTanks.length > 2) {
+          recommendations.push('More than 2 tank jobs selected - consider limiting to 2 for optimal planning');
+        }
+      }
+    }
+
+    // Collaboration readiness check
+    if (context === 'collaboration') {
+      if (!planData.isShared && !planData.isPublic) {
+        integrityIssues.push('Plan is not marked as shared or public - collaboration will fail');
+      }
+
+      if (!planData.userId && !planData.user_id) {
+        recommendations.push('Plan has no owner information - this may cause permission issues');
+      }
+    }
+
+    const canProceed = integrityIssues.length === 0;
+
+    console.log(`%c[PLAN INTEGRITY] Integrity check complete`, canProceed ? 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;' : 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+      isValid: validation.isValid,
+      canProceed,
+      issuesCount: integrityIssues.length,
+      warningsCount: validation.warnings.length,
+      recommendationsCount: recommendations.length
+    });
+
+    return {
+      isValid: validation.isValid,
+      canProceed,
+      errors: validation.errors,
+      warnings: validation.warnings,
+      info: validation.info,
+      integrityIssues,
+      recommendations
+    };
+  }
+
+  /**
+   * Safely convert timestamp to ISO string
+   */
+  timestampToISOString(timestamp) {
+    if (!timestamp) {
+      return null;
+    }
+
+    // Handle Firestore Timestamp objects
+    if (timestamp && typeof timestamp.toDate === 'function') {
+      return timestamp.toDate().toISOString();
+    }
+
+    // Handle Date objects
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString();
+    }
+
+    // Handle string timestamps
+    if (typeof timestamp === 'string') {
+      try {
+        return new Date(timestamp).toISOString();
+      } catch (error) {
+        console.warn('Invalid timestamp string:', timestamp);
+        return null;
+      }
+    }
+
+    // Handle numeric timestamps (milliseconds)
+    if (typeof timestamp === 'number') {
+      try {
+        return new Date(timestamp).toISOString();
+      } catch (error) {
+        console.warn('Invalid timestamp number:', timestamp);
+        return null;
+      }
+    }
+
+    console.warn('Unknown timestamp format:', timestamp);
+    return null;
+  }
+
+  /**
    * Normalize plan from database format
    */
   normalizePlanFromDatabase(dbPlan) {
@@ -530,12 +920,24 @@ class PlanStorageService {
       assignments: dbPlan.assignments || {},
       selectedJobs: dbPlan.selectedJobs || {},
       tankPositions: dbPlan.tankPositions || {},
-      date: dbPlan.createdAt ? dbPlan.createdAt.toISOString() : new Date().toISOString(),
-      lastModified: dbPlan.updatedAt ? dbPlan.updatedAt.toISOString() : new Date().toISOString(),
+      date: this.timestampToISOString(dbPlan.createdAt) || new Date().toISOString(),
+      lastModified: this.timestampToISOString(dbPlan.updatedAt) || new Date().toISOString(),
       isPublic: dbPlan.isPublic || false,
+      isShared: dbPlan.isShared || false, // Critical for collaboration mode detection
       version: dbPlan.version || 1,
-      source: 'database'
+      source: 'database',
+      // Preserve additional collaboration-related metadata
+      userId: dbPlan.userId,
+      user_id: dbPlan.user_id, // Legacy compatibility
+      sharedAt: this.timestampToISOString(dbPlan.sharedAt),
+      accessedAt: this.timestampToISOString(dbPlan.accessedAt)
     };
+
+    // Validate the normalized plan
+    const validation = this.validatePlanData(normalized, 'normalization');
+    if (!validation.isValid) {
+      console.error('Plan normalization produced invalid data:', validation.errors);
+    }
 
     return normalized;
   }
