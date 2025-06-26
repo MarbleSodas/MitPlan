@@ -215,3 +215,43 @@ lcov.info
 test.log
 playwright.log
 test-debug.log
+
+# Development and debugging files
+debug.log
+*.debug
+debug-*.json
+sync-debug-*.json
+
+# Temporary development files
+*.tmp
+*.temp
+.temp/
+.tmp/
+
+# IDE and editor files
+.vscode/settings.json.backup
+.idea/
+*.sublime-*
+*.code-workspace
+
+# Collaboration debugging and testing
+collaboration-debug-*.json
+sync-test-*.json
+performance-*.json
+
+# Local configuration overrides
+config.local.js
+config.local.json
+firebase.local.js
+
+# Backup and archive files
+*.backup.*
+*.bak.*
+*.old
+*.archive
+
+# System and process files
+.pid
+*.lock
+.cache/
+.temp/

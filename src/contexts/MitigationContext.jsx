@@ -821,6 +821,63 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     setAssignments(importedAssignments);
   }, []);
 
+  // Reference to the Aetherflow context
+  const aetherflowContextRef = useRef(null);
+
+  // Reference to the real-time sync functions from the App component
+  const realTimeSyncRef = useRef(null);
+
+  // Track last synced assignments to detect changes
+  const lastSyncedAssignmentsRef = useRef(null);
+  
+  // Debounced sync timeout
+  const syncTimeoutRef = useRef(null);
+
+  // Efficient async sync function that only syncs when there are actual changes
+  const debouncedSyncAssignments = useCallback(() => {
+    // Clear any existing timeout
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(async () => {
+      // Only sync if we're on a shared plan and have sync capabilities
+      const isSharedPlan = window.location.pathname.includes('/plan/shared/');
+      if (!isSharedPlan || !realTimeSyncRef.current?.syncMitigationAssignments) {
+        return;
+      }
+
+      try {
+        // Convert current assignments to a comparable format
+        const currentAssignmentsString = JSON.stringify(assignments);
+        const lastSyncedString = lastSyncedAssignmentsRef.current;
+
+        // Only sync if assignments have actually changed
+        if (currentAssignmentsString !== lastSyncedString) {
+          console.log('%c[MITIGATION CONTEXT] Syncing changed assignments to real-time database', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
+            assignmentCount: Object.keys(assignments).length,
+            hasChanges: true
+          });
+
+          // Sync the assignments (this will use debouncing in the real-time sync service)
+          const syncResult = await realTimeSyncRef.current.syncMitigationAssignments(assignments);
+          
+          if (syncResult.success) {
+            // Update our reference to the last synced state
+            lastSyncedAssignmentsRef.current = currentAssignmentsString;
+            console.log('%c[MITIGATION CONTEXT] Successfully synced assignments', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+          } else {
+            console.warn('%c[MITIGATION CONTEXT] Failed to sync assignments', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', syncResult.message);
+          }
+        } else {
+          console.log('%c[MITIGATION CONTEXT] No changes detected, skipping sync', 'background: #607D8B; color: white; padding: 2px 5px; border-radius: 3px;');
+        }
+      } catch (error) {
+        console.error('%c[MITIGATION CONTEXT] Error during async sync', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
+      }
+    }, 1000); // 1 second debounce to batch multiple rapid changes
+  }, [assignments]);
+
   // Autosave effect - save the current assignments whenever they change
   useEffect(() => {
     // Create optimized assignments object with only the necessary data
@@ -866,10 +923,11 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
 
     // Save to localStorage
     saveToLocalStorage('mitPlanAutosave', autosaveData);
-  }, [assignments]);
 
-  // Reference to the Aetherflow context
-  const aetherflowContextRef = useRef(null);
+    // Trigger efficient async sync for shared plans (only when assignments actually change)
+    debouncedSyncAssignments();
+  }, [assignments, debouncedSyncAssignments]);
+
 
   // Create the context value
   const contextValue = {
@@ -895,11 +953,17 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     tankPositionContextRef.current = context;
   };
 
+  // Set up a function to receive the real-time sync functions
+  const setRealTimeSyncContext = (context) => {
+    realTimeSyncRef.current = context;
+  };
+
   return (
     <MitigationContext.Provider value={{
       ...contextValue,
       setAetherflowContext,
-      setTankPositionContext
+      setTankPositionContext,
+      setRealTimeSyncContext
     }}>
       {children}
     </MitigationContext.Provider>

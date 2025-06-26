@@ -276,8 +276,13 @@ const EnhancedShareDialog = ({ isOpen, onClose, planData }) => {
 
         setMessage({
           type: 'success',
-          text: 'Plan shared successfully! Anyone with this link can view and edit the plan in real-time.'
+          text: 'Plan shared successfully! Link copied to clipboard. Real-time collaboration is now active! Anyone with the link can collaborate in real-time.'
         });
+
+        // Auto-redirect to shared plan URL for immediate collaboration
+        setTimeout(() => {
+          window.location.href = url;
+        }, 1500); // Give user time to see the success message
       } else {
         // Generate anonymous compressed URL
         const url = generateShareableUrl(planData);

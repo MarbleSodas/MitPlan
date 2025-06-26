@@ -36,7 +36,8 @@ export {
 
 export {
   generateShareableUrl,
-  reconstructMitigations
+  reconstructMitigations,
+  reconstructJobs
 } from './url/urlUtils';
 
 export {

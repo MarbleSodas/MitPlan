@@ -195,19 +195,23 @@ const FeatureItem = styled.div`
   }
 `;
 
-const DisplayNamePrompt = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
+const DisplayNamePrompt = ({
+  isOpen,
+  onClose,
+  onSubmit,
   onSignIn,
   mode = 'modal', // 'modal' or 'banner'
   planName = 'Shared Plan'
 }) => {
   const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentMode, setCurrentMode] = useState(mode);
 
   useEffect(() => {
     if (isOpen) {
+      // Reset to initial mode when opened
+      setCurrentMode(mode);
+
       // Focus input when modal opens
       const timer = setTimeout(() => {
         const input = document.querySelector('[data-display-name-input]');
@@ -215,7 +219,7 @@ const DisplayNamePrompt = ({
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, mode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -237,7 +241,17 @@ const DisplayNamePrompt = ({
 
   if (!isOpen) return null;
 
-  if (mode === 'banner') {
+  // Handle switching from banner to modal mode
+  const handleEnterNameClick = () => {
+    setCurrentMode('modal');
+    // Focus input after mode switch
+    setTimeout(() => {
+      const input = document.querySelector('[data-display-name-input]');
+      if (input) input.focus();
+    }, 100);
+  };
+
+  if (currentMode === 'banner') {
     return (
       <PromptBanner>
         <Users size={20} />
@@ -246,7 +260,7 @@ const DisplayNamePrompt = ({
           <BannerText>You're viewing in read-only mode. Enter your name or sign in to edit this plan with others in real-time!</BannerText>
         </div>
         <ButtonGroup>
-          <Button variant="primary" onClick={() => setDisplayName('') || document.querySelector('[data-display-name-input]')?.focus()}>
+          <Button variant="primary" onClick={handleEnterNameClick}>
             <Edit3 size={16} />
             Enter Name to Edit
           </Button>

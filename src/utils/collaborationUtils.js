@@ -1,6 +1,15 @@
 /**
- * Utility functions for collaboration features
+ * Collaboration Utilities
+ *
+ * Consolidated utilities for real-time collaboration features including
+ * user management, conflict resolution, data synchronization, debugging,
+ * and performance monitoring.
  */
+
+// Re-export debugging utilities for consolidated access
+export { default as collaborationDebugger } from './collaborationDebugger';
+export { default as syncDebugger } from './syncDebugger';
+export { default as collaborationPerformanceMonitor } from './collaborationPerformanceMonitor';
 
 /**
  * Generate a consistent color for a user based on their ID
@@ -194,6 +203,13 @@ export const generateSessionId = () => {
 };
 
 /**
+ * Generate a unique user ID for anonymous users
+ */
+export const generateUserId = () => {
+  return `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+/**
  * Check if a user is currently active (based on last seen timestamp)
  */
 export const isUserActive = (lastSeen, timeoutMs = 60000) => {
@@ -259,6 +275,7 @@ export default {
   debounce,
   throttle,
   generateSessionId,
+  generateUserId,
   isUserActive,
   formatUserPresence,
   validatePlanData

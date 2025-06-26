@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import { useCollaboration } from '../../contexts/CollaborationContext';
 
 const pulse = keyframes`
@@ -14,7 +14,9 @@ const pulse = keyframes`
   }
 `;
 
-const StatusContainer = styled.div`
+const StatusContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['isActive'].includes(prop)
+})`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -24,8 +26,8 @@ const StatusContainer = styled.div`
   border-radius: 6px;
   font-size: 14px;
   margin: 8px 0;
-  
-  ${props => props.isActive && `
+
+  ${props => props.isActive && css`
     animation: ${pulse} 2s infinite;
   `}
 `;
@@ -120,8 +122,9 @@ const SessionStatusIndicator = ({ compact = false }) => {
     isCollaborating
   } = useCollaboration();
 
-  // Don't show if not in a shared plan or no session
-  if (!isCollaborating && !currentSession) {
+  // Don't show if not actively collaborating or no session status
+  // This prevents showing "No active collaboration session" message
+  if (!isCollaborating || !currentSession || !sessionStatus) {
     return null;
   }
 

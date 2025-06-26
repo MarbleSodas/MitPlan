@@ -210,13 +210,60 @@ export const generateMitigationBreakdown = (mitigations, damageType = 'both', bo
  * @returns {boolean} - Whether the mitigation is available with current job selection
  */
 export const isMitigationAvailable = (mitigation, selectedJobs) => {
-  if (!mitigation || !selectedJobs) return false;
+  // Enhanced safety checks
+  if (!mitigation) {
+    console.warn('isMitigationAvailable: mitigation is null or undefined');
+    return false;
+  }
+
+  if (!selectedJobs) {
+    console.warn('isMitigationAvailable: selectedJobs is null or undefined');
+    return false;
+  }
+
+  // Check if mitigation has jobs array
+  if (!mitigation.jobs || !Array.isArray(mitigation.jobs)) {
+    console.warn('isMitigationAvailable: Mitigation missing or invalid jobs array:', {
+      mitigationId: mitigation.id,
+      mitigationName: mitigation.name,
+      jobs: mitigation.jobs,
+      hasJobs: !!mitigation.jobs,
+      isArray: Array.isArray(mitigation.jobs)
+    });
+    return false;
+  }
+
+  // Additional safety check for empty jobs array
+  if (mitigation.jobs.length === 0) {
+    console.warn('isMitigationAvailable: Mitigation has empty jobs array:', {
+      mitigationId: mitigation.id,
+      mitigationName: mitigation.name
+    });
+    return false;
+  }
 
   // Check if any of the jobs that can use this ability are selected
   return mitigation.jobs.some(jobId => {
+    // Safety check for jobId
+    if (!jobId) {
+      console.warn('isMitigationAvailable: Invalid jobId in mitigation.jobs:', {
+        mitigationId: mitigation.id,
+        jobId
+      });
+      return false;
+    }
+
     // Find which role this job belongs to
-    for (const [, jobs] of Object.entries(selectedJobs)) {
-      const job = jobs.find(j => j.id === jobId);
+    for (const [roleName, jobs] of Object.entries(selectedJobs)) {
+      if (!Array.isArray(jobs)) {
+        console.warn('isMitigationAvailable: Invalid jobs array for role:', {
+          roleName,
+          jobs
+        });
+        continue;
+      }
+
+      const job = jobs.find(j => j && j.id === jobId);
       if (job && job.selected) {
         return true;
       }

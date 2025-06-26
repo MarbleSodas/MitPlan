@@ -48,7 +48,9 @@ const StatusIndicator = styled.div`
   color: ${props => props.theme.colors.text};
 `;
 
-const StatusDot = styled.div`
+const StatusDot = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['isActive'].includes(prop)
+})`
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -133,27 +135,32 @@ const UserPresenceIndicator = ({
       </StatusIndicator>
 
       {displayUsers.length > 0 && (
-        <UserAvatarGroup>
+        <UserAvatarGroup key="user-avatar-group">
           {displayUsers.map((user, index) => (
             <UserAvatar
               key={user.userId}
               color={user.color}
               index={displayUsers.length - index}
             >
-              {getUserInitials(user.name)}
-              <UserTooltip>
+              <span key={`${user.userId}-initials`}>
+                {getUserInitials(user.name)}
+              </span>
+              <UserTooltip key={`${user.userId}-tooltip`}>
                 {user.name || 'Anonymous'}
               </UserTooltip>
             </UserAvatar>
           ))}
-          
+
           {hiddenCount > 0 && (
             <UserAvatar
+              key="hidden-count"
               color="#666"
               index={0}
             >
-              +{hiddenCount}
-              <UserTooltip>
+              <span key="hidden-count-text">
+                +{hiddenCount}
+              </span>
+              <UserTooltip key="hidden-count-tooltip">
                 {hiddenCount} more user{hiddenCount !== 1 ? 's' : ''}
               </UserTooltip>
             </UserAvatar>

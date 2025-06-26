@@ -49,13 +49,6 @@ export const ReadOnlyProvider = ({ children }) => {
       needsDisplayName
     });
 
-    // If no plan is loaded, default to editable (for new plans)
-    if (!currentPlan) {
-      setIsReadOnly(false);
-      setReadOnlyReason(null);
-      return;
-    }
-
     // For shared plans, handle differently based on display name availability
     if (isShared) {
       if (!isAuthenticated && needsDisplayName) {
@@ -78,6 +71,13 @@ export const ReadOnlyProvider = ({ children }) => {
         });
         return;
       }
+    }
+
+    // If no plan is loaded, default to editable (for new plans or shared plans that failed to load)
+    if (!currentPlan) {
+      setIsReadOnly(false);
+      setReadOnlyReason(null);
+      return;
     }
 
     // For non-shared plans, use original logic
@@ -219,6 +219,7 @@ export const ReadOnlyProvider = ({ children }) => {
     canEdit: !isReadOnly,
     canDragAndDrop: !isReadOnly,
     canSelectJobs: !isReadOnly,
+    canSelectBossActions: !isReadOnly,
     canRemoveMitigations: !isReadOnly,
     canSavePlan: !isReadOnly && isAuthenticated,
     isCollaborativeMode: isSharedPlan(), // Enable collaborative mode for all users on shared plans

@@ -43,7 +43,8 @@ const BossAction = styled.div`
   transition: all 0.2s ease;
   color: ${props => props.theme.colors.text};
   border: ${props => props.$isSelected ? `2px solid ${props.theme.colors.primary}` : '1px solid ${props.theme.colors.border}'};
-  cursor: pointer;
+  cursor: ${props => props.$canSelect ? 'pointer' : 'default'};
+  opacity: ${props => props.$canSelect ? 1 : 0.7};
   width: 100%; /* Full width */
   min-height: 140px; /* Minimum height for all boss action cards */
   height: auto; /* Allow height to grow based on content */
@@ -57,9 +58,9 @@ const BossAction = styled.div`
   /* Desktop hover effect */
   @media (hover: hover) and (pointer: fine) {
     &:hover {
-      box-shadow: ${props => props.theme.shadows.hover};
+      box-shadow: ${props => props.$canSelect ? props.theme.shadows.hover : props.theme.shadows.small};
       /* Removed transform animation for better performance */
-      border-color: ${props => props.theme.colors.primary};
+      border-color: ${props => props.$canSelect ? props.theme.colors.primary : props.theme.colors.border};
     }
   }
 
@@ -364,6 +365,8 @@ const BossActionItem = memo(({
   selectedJobs,
   currentBossLevel,
   onClick,
+  canSelect = true,
+  isReadOnly = false,
   children
 }) => {
   // State for touch feedback
@@ -444,10 +447,29 @@ const BossActionItem = memo(({
 
   // Calculate if this action has any assignments
   const hasAssignments =
-    (assignments[action.id] && assignments[action.id].filter(mitigation =>
-      isMitigationAvailable(mitigation, selectedJobs)
-    ).length > 0) ||
+    (assignments[action.id] && assignments[action.id].filter(mitigation => {
+      // Safety check: ensure mitigation is valid before checking availability
+      if (!mitigation || !mitigation.id) {
+        console.warn('BossActionItem: Invalid mitigation object in assignments:', mitigation);
+        return false;
+      }
+
+      // For assigned mitigations, we need to find the full mitigation data
+      const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+      if (!fullMitigation) {
+        console.warn('BossActionItem: Could not find full mitigation data for:', mitigation.id);
+        return false;
+      }
+
+      return isMitigationAvailable(fullMitigation, selectedJobs);
+    }).length > 0) ||
     getActiveMitigations(action.id, action.time).filter(mitigation => {
+      // Safety check for inherited mitigations
+      if (!mitigation || !mitigation.id) {
+        console.warn('BossActionItem: Invalid inherited mitigation object:', mitigation);
+        return false;
+      }
+
       const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
       return fullMitigation && isMitigationAvailable(fullMitigation, selectedJobs);
     }).length > 0;
@@ -457,9 +479,22 @@ const BossActionItem = memo(({
     const directMitigations = assignments[action.id] || [];
 
     // Filter out mitigations that don't have any corresponding selected jobs
-    let filteredDirectMitigations = directMitigations.filter(mitigation =>
-      isMitigationAvailable(mitigation, selectedJobs)
-    );
+    let filteredDirectMitigations = directMitigations.filter(mitigation => {
+      // Safety check: ensure mitigation is valid
+      if (!mitigation || !mitigation.id) {
+        console.warn('BossActionItem: Invalid mitigation in directMitigations:', mitigation);
+        return false;
+      }
+
+      // For assigned mitigations, we need to find the full mitigation data
+      const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
+      if (!fullMitigation) {
+        console.warn('BossActionItem: Could not find full mitigation data for:', mitigation.id);
+        return false;
+      }
+
+      return isMitigationAvailable(fullMitigation, selectedJobs);
+    });
 
     // If a tank position is specified, filter mitigations by tank position and targeting type
     if (tankPosition) {
@@ -506,9 +541,15 @@ const BossActionItem = memo(({
       }).filter(Boolean);
 
     // Filter out inherited mitigations that don't have any corresponding selected jobs
-    const filteredInheritedMitigations = inheritedMitigations.filter(mitigation =>
-      isMitigationAvailable(mitigation, selectedJobs)
-    );
+    const filteredInheritedMitigations = inheritedMitigations.filter(mitigation => {
+      // Safety check: ensure mitigation is valid
+      if (!mitigation || !mitigation.id) {
+        console.warn('BossActionItem: Invalid inherited mitigation:', mitigation);
+        return false;
+      }
+
+      return isMitigationAvailable(mitigation, selectedJobs);
+    });
 
     // If a tank position is specified, filter inherited mitigations by targeting type
     if (tankPosition) {
@@ -730,6 +771,7 @@ const BossActionItem = memo(({
       $isSelected={isSelected}
       $hasAssignments={hasAssignments}
       $isTouched={isTouched}
+      $canSelect={canSelect}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

@@ -86,20 +86,45 @@ class PlanStorageService {
         this.notifyConnectionStateChange(isCurrentlyOnline ? 'online' : 'offline');
       }
 
-      // Additional check: try to reach Firebase if we think we're online
-      if (isCurrentlyOnline && this.authContext.isAuthenticated) {
-        try {
-          const dbAvailable = await this.checkDatabaseAvailability();
-          if (!dbAvailable && this.dbAvailable) {
-            console.log('🌐 Database became unavailable despite network connection');
-            this.notifyConnectionStateChange('database-unavailable');
-          } else if (dbAvailable && !this.dbAvailable) {
-            console.log('🌐 Database connection restored');
-            this.notifyConnectionStateChange('database-available');
-            this.attemptSync();
+      // Additional check: try to reach appropriate database if we think we're online
+      if (isCurrentlyOnline) {
+        const isSharedPlan = this.isOnSharedPlanUrl();
+
+        if (isSharedPlan && !this.authContext.isAuthenticated) {
+          // For unauthenticated users on shared plans, check Realtime Database
+          try {
+            // Extract plan ID from URL for more accurate testing
+            const planIdMatch = window.location.pathname.match(/\/plan\/shared\/([^\/]+)/);
+            const planId = planIdMatch ? planIdMatch[1] : 'connectivity-test';
+
+            const realtimeDbAvailable = await this.checkRealtimeDatabaseConnectivity(planId);
+            const wasRealtimeDbAvailable = this.storageState !== STORAGE_STATES.OFFLINE;
+
+            if (!realtimeDbAvailable && wasRealtimeDbAvailable) {
+              console.log('🌐 Realtime Database became unavailable for shared plan:', planId);
+              this.notifyConnectionStateChange('database-unavailable');
+            } else if (realtimeDbAvailable && !wasRealtimeDbAvailable) {
+              console.log('🌐 Realtime Database connection restored for shared plan:', planId);
+              this.notifyConnectionStateChange('database-available');
+            }
+          } catch (error) {
+            console.warn('🌐 Error checking Realtime Database connectivity:', error.message);
           }
-        } catch (error) {
-          // Ignore errors in monitoring - don't want to spam logs
+        } else if (this.authContext.isAuthenticated) {
+          // For authenticated users, check Firestore
+          try {
+            const dbAvailable = await this.checkDatabaseAvailability();
+            if (!dbAvailable && this.dbAvailable) {
+              console.log('🌐 Database became unavailable despite network connection');
+              this.notifyConnectionStateChange('database-unavailable');
+            } else if (dbAvailable && !this.dbAvailable) {
+              console.log('🌐 Database connection restored');
+              this.notifyConnectionStateChange('database-available');
+              this.attemptSync();
+            }
+          } catch (error) {
+            // Ignore errors in monitoring - don't want to spam logs
+          }
         }
       }
     }, 30000);
@@ -132,11 +157,97 @@ class PlanStorageService {
   }
 
   /**
+   * Check if we're currently on a shared plan URL
+   */
+  isOnSharedPlanUrl() {
+    return window.location.pathname.includes('/plan/shared/');
+  }
+
+  /**
+   * Check Firebase Realtime Database connectivity for shared plans
+   */
+  async checkRealtimeDatabaseConnectivity(planId = 'connectivity-test') {
+    try {
+      // Use Firebase directly for connectivity test
+      const { ref, set, remove, serverTimestamp } = await import('firebase/database');
+      const { realtimeDb } = await import('../config/firebase');
+      const { getCollaborationPath } = await import('../utils/firebaseHelpers');
+
+      if (!realtimeDb) {
+        console.warn('Realtime Database instance not available');
+        return false;
+      }
+
+      const testRef = ref(realtimeDb, getCollaborationPath(planId, 'connectionTest'));
+
+      const testData = {
+        timestamp: serverTimestamp(),
+        test: true,
+        userId: `test-${Date.now()}`
+      };
+
+      // Use a timeout to avoid hanging
+      const connectivityPromise = (async () => {
+        await set(testRef, testData);
+        await remove(testRef);
+        return true;
+      })();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Realtime Database connectivity check timeout')), 8000)
+      );
+
+      await Promise.race([connectivityPromise, timeoutPromise]);
+
+      console.log('%c[PLAN STORAGE] Realtime Database connectivity check successful', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        timestamp: new Date().toISOString()
+      });
+
+      return true;
+    } catch (error) {
+      console.warn('%c[PLAN STORAGE] Realtime Database connectivity check failed', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', {
+        error: error.message,
+        planId,
+        timestamp: new Date().toISOString()
+      });
+      return false;
+    }
+  }
+
+  /**
    * Update storage state based on auth and connectivity
    */
   async updateStorageState() {
     const { isAuthenticated } = this.authContext;
+    const isSharedPlan = this.isOnSharedPlanUrl();
 
+    // For shared plans, prioritize Realtime Database connectivity over authentication
+    if (isSharedPlan && !isAuthenticated) {
+      if (!this.isOnlineState) {
+        this.storageState = STORAGE_STATES.OFFLINE;
+        return;
+      }
+
+      // Extract plan ID from URL for more accurate testing
+      const planIdMatch = window.location.pathname.match(/\/plan\/shared\/([^\/]+)/);
+      const planId = planIdMatch ? planIdMatch[1] : 'connectivity-test';
+
+      // Check Realtime Database connectivity for shared plan collaboration
+      const realtimeDbAvailable = await this.checkRealtimeDatabaseConnectivity(planId);
+      this.storageState = realtimeDbAvailable ? STORAGE_STATES.ONLINE_LOCAL : STORAGE_STATES.OFFLINE;
+
+      console.log('%c[PLAN STORAGE] Shared plan connectivity check', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        isOnline: this.isOnlineState,
+        realtimeDbAvailable,
+        storageState: this.storageState
+      });
+
+      return;
+    }
+
+    // Standard logic for authenticated users or non-shared plans
     if (!isAuthenticated) {
       this.storageState = STORAGE_STATES.OFFLINE;
       return;
@@ -338,12 +449,13 @@ class PlanStorageService {
   }
 
   /**
-   * Load a shared plan specifically from Firestore
-   * Shared plans should always be loaded from the database, never from localStorage
+   * Load a shared plan with intelligent coordination between Firestore and Firebase Realtime Database
+   * Uses Enhanced Plan State Coordinator to get the most current plan state
    */
-  async loadSharedPlan(planId) {
-    console.log(`%c[PLAN STORAGE] Loading shared plan: ${planId}`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
+  async loadSharedPlan(planId, userId = null) {
+    console.log(`%c[PLAN STORAGE] Loading shared plan with enhanced coordination: ${planId}`, 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
       planId,
+      userId,
       hasFirestore: !!this.firestoreService
     });
 
@@ -352,6 +464,51 @@ class PlanStorageService {
       throw new Error('Invalid plan ID format');
     }
 
+    // Import Enhanced Plan State Coordinator
+    const { default: enhancedPlanStateCoordinator } = await import('./EnhancedPlanStateCoordinator');
+
+    // Use enhanced coordinator to get the most current plan state
+    try {
+      const coordinatorResult = await enhancedPlanStateCoordinator.loadSharedPlanState(planId, userId);
+
+      if (coordinatorResult.success) {
+        console.log(`%c[PLAN STORAGE] Plan loaded via enhanced coordinator`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          source: coordinatorResult.source,
+          isCollaborative: coordinatorResult.isCollaborative,
+          message: coordinatorResult.message
+        });
+
+        // Normalize the plan data for the application
+        const normalizedPlan = this.normalizePlanFromDatabase(coordinatorResult.planState);
+
+        // Add collaboration metadata
+        normalizedPlan._collaborationInfo = {
+          source: coordinatorResult.source,
+          isCollaborative: coordinatorResult.isCollaborative,
+          sessionInfo: coordinatorResult.sessionInfo
+        };
+
+        return normalizedPlan;
+      } else {
+        throw new Error(coordinatorResult.message || 'Failed to load plan via enhanced coordinator');
+      }
+    } catch (coordinatorError) {
+      console.warn(`%c[PLAN STORAGE] Enhanced coordinator failed, falling back to direct Firestore`, 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+        planId,
+        error: coordinatorError.message
+      });
+
+      // Fallback to direct Firestore loading
+      return await this._loadSharedPlanFromFirestore(planId);
+    }
+  }
+
+  /**
+   * Fallback method to load shared plan directly from Firestore
+   * Used when Enhanced Plan State Coordinator fails
+   */
+  async _loadSharedPlanFromFirestore(planId) {
     // Shared plans must be loaded from Firestore, regardless of online status
     if (!this.firestoreService) {
       throw new Error('Database service not available');
@@ -363,7 +520,7 @@ class PlanStorageService {
       const result = await this.firestoreService.getPlan(planId);
 
       if (result.success && result.plan) {
-        console.log(`%c[PLAN STORAGE] Shared plan loaded successfully`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+        console.log(`%c[PLAN STORAGE] Shared plan loaded successfully (fallback)`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
           planId,
           planName: result.plan.name,
           isShared: result.plan.isShared,
@@ -371,6 +528,13 @@ class PlanStorageService {
         });
 
         const normalizedPlan = this.normalizePlanFromDatabase(result.plan);
+
+        // Mark as non-collaborative fallback
+        normalizedPlan._collaborationInfo = {
+          source: 'firestore_fallback',
+          isCollaborative: false,
+          sessionInfo: null
+        };
 
         // Validate plan data for collaboration readiness
         const validation = this.validatePlanData(normalizedPlan, 'collaboration');
@@ -417,19 +581,22 @@ class PlanStorageService {
       return false;
     }
 
-    // Support both UUID format (36 chars with dashes) and Firestore ID format (20 chars alphanumeric)
+    // Support UUID format (36 chars with dashes), Firestore ID format (20 chars alphanumeric), and test IDs (8+ chars alphanumeric with dashes)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const firestoreIdRegex = /^[a-zA-Z0-9]{20}$/;
+    const testIdRegex = /^[a-zA-Z0-9-]{8,36}$/;
 
     const isUuid = uuidRegex.test(planId);
     const isFirestoreId = firestoreIdRegex.test(planId);
-    const isValid = isUuid || isFirestoreId;
+    const isTestId = testIdRegex.test(planId);
+    const isValid = isUuid || isFirestoreId || isTestId;
 
     console.log('%c[PLAN STORAGE] Plan ID validation', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', {
       planId,
       length: planId.length,
       isUuid,
       isFirestoreId,
+      isTestId,
       isValid
     });
 

@@ -21,8 +21,8 @@ export const useAutoJoinCollaboration = () => {
 
   useEffect(() => {
     const autoJoinSharedPlan = async () => {
-      // Extract plan ID from URL first
-      const pathMatch = window.location.pathname.match(/^\/plan\/shared\/([a-f0-9-]{36})$/i);
+      // Extract plan ID from URL first - support both UUID (36 chars) and Firestore ID (20 chars) formats
+      const pathMatch = window.location.pathname.match(/^\/plan\/shared\/([a-zA-Z0-9-]{20,36})$/i);
       const planId = pathMatch ? pathMatch[1] : null;
 
       // Check if we're on a shared plan URL
@@ -50,13 +50,23 @@ export const useAutoJoinCollaboration = () => {
       // Only auto-join if:
       // 1. We're connected to Firebase
       // 2. We're not already collaborating on this plan
-      // Note: Removed currentPlan dependency to prevent infinite loops
+      // 3. User can edit (authenticated OR has provided display name)
       if (!isConnected || isCollaborating) {
         console.log('%c[AUTO-JOIN] Skipping auto-join', 'background: #9E9E9E; color: white; padding: 2px 5px; border-radius: 3px;', {
           isConnected,
           isCollaborating,
           planId,
           reason: !isConnected ? 'not connected' : 'already collaborating'
+        });
+        return;
+      }
+
+      // For unauthenticated users, wait for display name to be provided
+      if (!isAuthenticated && !canEdit) {
+        console.log('%c[AUTO-JOIN] Waiting for display name', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId,
+          isAuthenticated,
+          canEdit
         });
         return;
       }
@@ -90,11 +100,54 @@ export const useAutoJoinCollaboration = () => {
     };
 
     autoJoinSharedPlan();
-  }, [isConnected, isSharedPlan, isCollaborating, joinPlan, isAuthenticated]);
+
+    // Listen for manual trigger events
+    const handleTriggerAutoJoin = () => {
+      autoJoinSharedPlan();
+    };
+
+    window.addEventListener('triggerAutoJoin', handleTriggerAutoJoin);
+
+    return () => {
+      window.removeEventListener('triggerAutoJoin', handleTriggerAutoJoin);
+    };
+  }, [isConnected, isSharedPlan, isCollaborating, joinPlan, isAuthenticated, canEdit]);
+
+  // Listen for display name provided event to trigger collaboration join
+  useEffect(() => {
+    const handleDisplayNameProvided = (event) => {
+      const { planId: eventPlanId } = event.detail || {};
+      const pathMatch = window.location.pathname.match(/^\/plan\/shared\/([a-zA-Z0-9-]{20,36})$/i);
+      const currentPlanId = pathMatch ? pathMatch[1] : null;
+
+      // Only trigger if it's for the current plan
+      if (eventPlanId === currentPlanId && isSharedPlan()) {
+        console.log('%c[AUTO-JOIN] Display name provided, triggering collaboration join', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+          planId: currentPlanId
+        });
+
+        // Reset join flags and trigger auto-join
+        hasJoinedRef.current = false;
+        isJoiningRef.current = false;
+
+        // Small delay to ensure context updates are processed
+        setTimeout(() => {
+          // This will trigger the main auto-join effect
+          window.dispatchEvent(new CustomEvent('triggerAutoJoin'));
+        }, 200);
+      }
+    };
+
+    window.addEventListener('displayNameProvided', handleDisplayNameProvided);
+
+    return () => {
+      window.removeEventListener('displayNameProvided', handleDisplayNameProvided);
+    };
+  }, [isSharedPlan]);
 
   // Reset join flags when URL changes (different plan)
   useEffect(() => {
-    const pathMatch = window.location.pathname.match(/^\/plan\/shared\/([a-f0-9-]{36})$/i);
+    const pathMatch = window.location.pathname.match(/^\/plan\/shared\/([a-zA-Z0-9-]{20,36})$/i);
     const currentPlanId = pathMatch ? pathMatch[1] : null;
 
     if (currentPlanId !== lastPlanIdRef.current) {

@@ -108,13 +108,14 @@ const UserPresence = ({ planId, className = '' }) => {
               <span className="user-initials">
                 {getUserInitials(user.name)}
               </span>
-              {isActive && <div className="active-indicator" />}
+              {isActive && <div key={`active-${user.id}`} className="active-indicator" />}
             </div>
           );
         })}
         
         {otherUsers.length > 5 && (
-          <div 
+          <div
+            key="overflow-indicator"
             className="user-avatar overflow-indicator"
             onClick={() => setShowUserList(!showUserList)}
             title={`+${otherUsers.length - 5} more users`}
@@ -171,7 +172,7 @@ const UserPresence = ({ planId, className = '' }) => {
                     <span className="user-initials">
                       {getUserInitials(user.name)}
                     </span>
-                    {isActive && <div className="active-indicator small" />}
+                    {isActive && <div key={`active-small-${user.id}`} className="active-indicator small" />}
                   </div>
                   
                   <div className="user-info">

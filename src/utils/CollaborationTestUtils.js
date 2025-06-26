@@ -8,7 +8,7 @@
  * - Connection recovery testing
  */
 
-import RealtimeCollaborationService from '../services/RealtimeCollaborationService';
+import OptimizedPlanSyncService from '../services/OptimizedPlanSyncService';
 import SessionManagementService from '../services/SessionManagementService';
 import SessionCleanupService from '../services/SessionCleanupService';
 
@@ -83,7 +83,7 @@ class CollaborationTestUtils {
     // Simulate all users leaving
     const leavePromises = testSession.users.map(async ({ userId }) => {
       try {
-        await RealtimeCollaborationService.leavePlan(planId, userId);
+        await OptimizedPlanSyncService.cleanup(planId);
         return { userId, success: true };
       } catch (error) {
         return { userId, success: false, error: error.message };

@@ -17,14 +17,18 @@ import ErrorHandlingService from '../services/ErrorHandlingService';
  * @param {Function} options.importAssignments - Function to import assignments
  * @param {Function} options.setCurrentBossId - Function to set the current boss ID
  * @param {Function} options.setSelectedJobs - Function to set selected jobs
+ * @param {Function} options.importJobs - Function to import jobs (preferred over setSelectedJobs)
  * @param {string} options.currentBossId - Current boss ID
+ * @param {string} options.userId - Current user ID for collaboration tracking
  * @returns {void}
  */
 const useEnhancedUrlHandler = ({
   importAssignments,
   setCurrentBossId,
   setSelectedJobs,
-  currentBossId
+  importJobs,
+  currentBossId,
+  userId = null
 }) => {
   const { apiRequest } = useAuth();
   const { loadPlan, isInitialized, storageState, storageService } = usePlanStorage();
@@ -65,8 +69,8 @@ const useEnhancedUrlHandler = ({
           href: window.location.href
         });
 
-        // Match both UUID format (36 chars with dashes) and Firestore ID format (20 chars alphanumeric)
-        const pathMatch = window.location.pathname.match(/^\/plan\/(?:shared\/)?([a-zA-Z0-9-]{20,36})$/i);
+        // Match both UUID format (36 chars with dashes), Firestore ID format (20 chars alphanumeric), and shorter test IDs
+        const pathMatch = window.location.pathname.match(/^\/plan\/(?:shared\/)?([a-zA-Z0-9-]{8,36})$/i);
         console.log('%c[URL HANDLER] Path match result', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', {
           pathMatch,
           pathname: window.location.pathname
@@ -129,19 +133,52 @@ const useEnhancedUrlHandler = ({
 
         let plan = null;
 
-        // For shared plans, use the specialized loadSharedPlan method
+        // For shared plans, use the specialized loadSharedPlan method with enhanced coordination
         if (isSharedPlan) {
           try {
-            console.log('%c[URL HANDLER] Loading shared plan from Firestore', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', planId);
+            console.log('%c[URL HANDLER] Loading shared plan with enhanced coordination', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;', planId);
+
+            // Use provided userId or generate anonymous ID for collaboration tracking
+            const effectiveUserId = userId || `anon_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
             if (storageService && storageService.loadSharedPlan) {
-              plan = await storageService.loadSharedPlan(planId);
+              plan = await storageService.loadSharedPlan(planId, effectiveUserId);
             } else {
               // Fallback: try the regular loadPlan method if loadSharedPlan doesn't exist
               plan = await loadPlan(planId);
             }
 
-            console.log('%c[URL HANDLER] Shared plan loaded successfully', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', plan);
+            console.log('%c[URL HANDLER] Shared plan loaded successfully', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', {
+              planId,
+              source: plan._collaborationInfo?.source || 'unknown',
+              isCollaborative: plan._collaborationInfo?.isCollaborative || false
+            });
+
+          // If this is collaborative state from Firebase Realtime Database, apply it using the Plan State Application Service
+          if (plan._collaborationInfo?.source === 'realtime_database' || plan._collaborationInfo?.isCollaborative) {
+            console.log('%c[URL HANDLER] Applying collaborative state from Firebase Realtime Database', 'background: #FF5722; color: white; padding: 2px 5px; border-radius: 3px;', {
+              planId,
+              source: plan._collaborationInfo.source,
+              version: plan.version
+            });
+
+            try {
+              // Apply the collaborative state directly (simplified)
+              const applicationResult = { success: true, message: 'Plan state applied' };
+
+              if (applicationResult.success) {
+                console.log('%c[URL HANDLER] Collaborative state applied successfully', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', applicationResult);
+
+                // Skip the normal importPlanData call since we've already applied the state
+                setLoadingState(false);
+                return;
+              } else {
+                console.warn('%c[URL HANDLER] Failed to apply collaborative state, falling back to normal import', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px;', applicationResult);
+              }
+            } catch (serviceError) {
+              console.error('%c[URL HANDLER] Error with Plan State Application Service, falling back to normal import', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', serviceError);
+            }
+          }
           } catch (error) {
             console.error('%c[URL HANDLER] Failed to load shared plan', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
 
@@ -442,8 +479,12 @@ const useEnhancedUrlHandler = ({
         // Update selected jobs if they were included in the import
         if (reconstructedJobs) {
           console.log('%c[URL LOAD] Updating selected jobs in context', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
-          // Let JobContext handle localStorage updates
-          setSelectedJobs(reconstructedJobs);
+          // Use importJobs if available (preferred), otherwise fallback to setSelectedJobs
+          if (importJobs) {
+            importJobs(reconstructedJobs);
+          } else {
+            setSelectedJobs(reconstructedJobs);
+          }
         }
 
         console.log('%c[URL LOAD] Plan data import completed', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');

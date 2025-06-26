@@ -4,6 +4,7 @@ import { mitigationAbilities, ffxivJobs } from '../../../data';
 import { usePlanStorage } from '../../../contexts/PlanStorageContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCollaboration } from '../../../contexts/CollaborationContext';
+import { useReadOnly } from '../../../contexts/ReadOnlyContext';
 import StorageStatusIndicator from '../../../components/storage/StorageStatusIndicator';
 import PlanMigrationDialog from '../../../components/migration/PlanMigrationDialog';
 import SessionControlPanel from '../../../components/collaboration/SessionControlPanel';
@@ -283,6 +284,7 @@ const ImportButton = styled.button`
 
 function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
   const { isAuthenticated, user } = useAuth();
+  const { isSharedPlan } = useReadOnly();
   const {
     savePlan,
     loadAllPlans,
@@ -431,6 +433,13 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
       // Reload plans to update the shared status
       await loadSavedPlans();
+
+      // Auto-redirect to shared plan URL for immediate collaboration
+      if (result.collaborationEnabled && result.shareUrl) {
+        setTimeout(() => {
+          window.location.href = result.shareUrl;
+        }, 1500); // Give user time to see the success message
+      }
     } catch (error) {
       console.error('Share failed:', error);
       setMessage({
@@ -624,7 +633,8 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
       <Container>
         <Header>
           <Title>Plan Management</Title>
-          <StorageStatusIndicator />
+          {/* Hide storage status indicator on shared plan pages to avoid showing unnecessary offline messages */}
+          {!isSharedPlan() && <StorageStatusIndicator />}
         </Header>
 
         {!isInitialized && (
@@ -639,8 +649,8 @@ function EnhancedImportExport({ assignments, bossId, selectedJobs, onImport }) {
           </StatusMessage>
         )}
 
-        {/* Session Status and Control */}
-        {(isCollaborating || currentSession) && (
+        {/* Session Status and Control - Only show when there's an active session to avoid "no active collaboration session" message */}
+        {(isCollaborating && currentSession && sessionStatus) && (
           <SessionStatusIndicator />
         )}
 

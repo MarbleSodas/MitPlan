@@ -160,6 +160,35 @@ export const extractPlanIdFromUrl = (url) => {
 };
 
 /**
+ * Sanitize plan ID for Firebase Realtime Database paths
+ * Firebase Realtime Database keys cannot contain: . $ # [ ] /
+ * and some other special characters
+ */
+export const sanitizePlanIdForRealtimeDb = (planId) => {
+  if (!planId) return null;
+
+  // Replace any problematic characters with safe alternatives
+  // Firebase Realtime Database allows: a-z A-Z 0-9 - _
+  return planId
+    .replace(/[.#$[\]/]/g, '_') // Replace forbidden characters with underscore
+    .replace(/[^a-zA-Z0-9-_]/g, '_'); // Replace any other special characters
+};
+
+/**
+ * Generate a Firebase Realtime Database safe path for collaboration
+ */
+export const getCollaborationPath = (planId, ...pathSegments) => {
+  const sanitizedPlanId = sanitizePlanIdForRealtimeDb(planId);
+  const basePath = `collaboration/${sanitizedPlanId}`;
+
+  if (pathSegments.length > 0) {
+    return `${basePath}/${pathSegments.join('/')}`;
+  }
+
+  return basePath;
+};
+
+/**
  * Validate plan data structure
  */
 export const validatePlanData = (planData) => {

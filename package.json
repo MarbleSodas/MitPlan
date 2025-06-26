@@ -22,6 +22,7 @@
     "test:import-export": "playwright test tests/e2e/import-export.spec.js",
     "test:mobile": "playwright test tests/e2e/mobile-responsive.spec.js",
     "test:errors": "playwright test tests/e2e/error-handling.spec.js",
+
     "test:install": "playwright install",
     "test:report": "playwright show-report",
     "test:ci": "playwright test --reporter=github"

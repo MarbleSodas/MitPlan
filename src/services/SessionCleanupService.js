@@ -29,9 +29,9 @@ class SessionCleanupService {
     
     // Configuration
     this.config = {
-      sessionTimeout: 10 * 60 * 1000, // 10 minutes in milliseconds
-      heartbeatTimeout: 2 * 60 * 1000, // 2 minutes for heartbeat timeout
-      cleanupCheckInterval: 2 * 60 * 1000, // Check every 2 minutes
+      sessionTimeout: 30 * 60 * 1000, // 30 minutes in milliseconds (increased from 10)
+      heartbeatTimeout: 5 * 60 * 1000, // 5 minutes for heartbeat timeout (increased from 2)
+      cleanupCheckInterval: 5 * 60 * 1000, // Check every 5 minutes (increased from 2)
       maxCleanupRetries: 3,
       retryDelay: 5000 // 5 seconds
     };
@@ -64,6 +64,7 @@ class SessionCleanupService {
         sessionId: session.id,
         startedAt: Date.now(),
         lastUserCheck: Date.now(),
+        lastUserActivity: Date.now(), // Track when users were last active
         activeUsers: new Map(),
         cleanupAttempts: 0
       };
@@ -168,8 +169,14 @@ class SessionCleanupService {
       });
 
       monitoringData.activeUsers = activeUsers;
-      
+
       const activeCount = Array.from(activeUsers.values()).filter(user => user.isActive).length;
+
+      // Update last user activity time if there are active users
+      if (activeCount > 0) {
+        monitoringData.lastUserActivity = now;
+      }
+
       console.log(`🧹 Plan ${planId}: ${activeCount} active users out of ${activeUsers.size} total`);
 
     } else {
@@ -243,10 +250,20 @@ class SessionCleanupService {
   shouldCleanupSession(monitoringData, now) {
     const activeUsers = Array.from(monitoringData.activeUsers.values()).filter(user => user.isActive);
 
-    // No active users
+    // No active users - check if enough time has passed since last activity
     if (activeUsers.length === 0) {
-      const timeSinceLastUser = now - monitoringData.lastUserCheck;
-      return timeSinceLastUser > this.config.sessionTimeout;
+      const timeSinceLastActivity = now - monitoringData.lastUserActivity;
+      const shouldCleanup = timeSinceLastActivity > this.config.sessionTimeout;
+
+      if (shouldCleanup) {
+        console.log(`🧹 Session cleanup criteria met for plan ${monitoringData.planId}:`, {
+          timeSinceLastActivity: Math.round(timeSinceLastActivity / 1000),
+          sessionTimeout: Math.round(this.config.sessionTimeout / 1000),
+          activeUsers: activeUsers.length
+        });
+      }
+
+      return shouldCleanup;
     }
 
     return false;

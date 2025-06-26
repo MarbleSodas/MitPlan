@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { generateUserId } from '../utils/collaborationUtils';
 
 const DisplayNameContext = createContext();
 
@@ -29,13 +30,16 @@ export const DisplayNameProvider = ({ children }) => {
   // Session timeout (30 minutes of inactivity)
   const SESSION_TIMEOUT = 30 * 60 * 1000;
 
-  // Initialize from session storage
+  // Initialize from session storage and localStorage
   useEffect(() => {
     try {
       const storedName = sessionStorage.getItem(STORAGE_KEYS.DISPLAY_NAME);
       const storedSessionId = sessionStorage.getItem(STORAGE_KEYS.SESSION_ID);
       const storedActivity = sessionStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY);
       const storedHasProvided = sessionStorage.getItem(STORAGE_KEYS.HAS_PROVIDED_NAME);
+
+      // Also check localStorage for persistent display name
+      const persistentName = localStorage.getItem('mitplan_display_name');
 
       const now = Date.now();
       const lastActivityTime = storedActivity ? parseInt(storedActivity, 10) : 0;
@@ -47,6 +51,31 @@ export const DisplayNameProvider = ({ children }) => {
         setLastActivity(lastActivityTime);
         setHasProvidedName(storedHasProvided === 'true');
         console.log('🎭 Restored display name session:', storedName);
+      } else if (persistentName) {
+        // For shared plans, don't auto-restore from localStorage to ensure proper prompting
+        const isSharedPlan = window.location.pathname.includes('/plan/shared/');
+
+        if (!isSharedPlan) {
+          // Use persistent name from localStorage if session expired (non-shared plans only)
+          setCustomDisplayName(persistentName);
+          setHasProvidedName(true);
+          console.log('🎭 Restored display name from localStorage:', persistentName);
+
+          // Create new session
+          const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          setSessionId(newSessionId);
+          updateActivity();
+
+          try {
+            sessionStorage.setItem(STORAGE_KEYS.SESSION_ID, newSessionId);
+            sessionStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, persistentName);
+            sessionStorage.setItem(STORAGE_KEYS.HAS_PROVIDED_NAME, 'true');
+          } catch (error) {
+            console.warn('Failed to create new session:', error);
+          }
+        } else {
+          console.log('🎭 Shared plan detected - skipping localStorage restore to ensure proper prompting');
+        }
       } else if (storedName || storedSessionId) {
         // Clear expired session
         clearSession();
@@ -100,14 +129,16 @@ export const DisplayNameProvider = ({ children }) => {
 
   // Set custom display name
   const setDisplayName = (name, generateSessionId = true) => {
-    setCustomDisplayName(name);
+    const trimmedName = name ? name.trim() : '';
+
+    setCustomDisplayName(trimmedName);
     setHasProvidedName(true);
     updateActivity();
 
     if (generateSessionId) {
       const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       setSessionId(newSessionId);
-      
+
       try {
         sessionStorage.setItem(STORAGE_KEYS.SESSION_ID, newSessionId);
       } catch (error) {
@@ -116,17 +147,25 @@ export const DisplayNameProvider = ({ children }) => {
     }
 
     try {
-      if (name) {
-        sessionStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, name);
+      if (trimmedName) {
+        sessionStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, trimmedName);
+        // Also store in localStorage for persistence across sessions
+        localStorage.setItem('mitplan_display_name', trimmedName);
       } else {
         sessionStorage.removeItem(STORAGE_KEYS.DISPLAY_NAME);
+        localStorage.removeItem('mitplan_display_name');
       }
       sessionStorage.setItem(STORAGE_KEYS.HAS_PROVIDED_NAME, 'true');
     } catch (error) {
       console.warn('Failed to store display name:', error);
     }
 
-    console.log('🎭 Set display name:', name || 'Anonymous');
+    console.log('🎭 Set display name:', trimmedName || 'Anonymous');
+
+    // Emit event for other components to listen to
+    window.dispatchEvent(new CustomEvent('displayNameChanged', {
+      detail: { displayName: trimmedName, userId: getUserId() }
+    }));
   };
 
   // Clear display name

@@ -13,7 +13,9 @@ const IndicatorContainer = styled.div`
   color: ${props => props.theme.colors.text};
 `;
 
-const StatusDot = styled.div`
+const StatusDot = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['isCollaborating'].includes(prop)
+})`
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -42,8 +44,8 @@ const CollaborationIndicator = ({ isCollaborating, roomUsers = [] }) => {
 
   return (
     <IndicatorContainer>
-      <StatusDot isCollaborating={isCollaborating} />
-      <span>
+      <StatusDot key="status-dot" isCollaborating={isCollaborating} />
+      <span key="status-text">
         {userCount > 1 ? (
           <>
             <UserCount>{userCount}</UserCount> users collaborating
@@ -53,8 +55,8 @@ const CollaborationIndicator = ({ isCollaborating, roomUsers = [] }) => {
         )}
       </span>
       {otherUsers.length > 0 && (
-        <span style={{ fontSize: '12px', opacity: 0.7 }}>
-          ({otherUsers.map(user => user.userName).join(', ')})
+        <span key="user-list" style={{ fontSize: '12px', opacity: 0.7 }}>
+          ({otherUsers.map(user => user.userName || 'Anonymous').join(', ')})
         </span>
       )}
     </IndicatorContainer>
