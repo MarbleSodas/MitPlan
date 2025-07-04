@@ -12,6 +12,8 @@ import { determineMitigationAssignment } from '../../utils/mitigation/autoAssign
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import DisplayNameModal from '../collaboration/DisplayNameModal';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
+import KofiButton from '../common/KofiButton/KofiButton';
+import DiscordButton from '../common/DiscordButton/DiscordButton';
 
 // Import planning components
 import JobSelector from '../../features/jobs/JobSelector/JobSelector';
@@ -698,6 +700,8 @@ const MitigationPlannerContent = ({
               isReadOnly={isReadOnly}
             />
           )}
+          <KofiButton />
+          <DiscordButton />
           <SaveButton onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save Plan'}
           </SaveButton>

@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import AuthForm from '../auth/AuthForm';
 import ThemeToggle from '../common/ThemeToggle';
+import KofiButton from '../common/KofiButton/KofiButton';
+import DiscordButton from '../common/DiscordButton/DiscordButton';
 
 const LandingContainer = styled.div`
   min-height: 100vh;
@@ -13,11 +15,24 @@ const LandingContainer = styled.div`
   position: relative;
 `;
 
-const ThemeToggleWrapper = styled.div`
+const TopNavigation = styled.div`
   position: absolute;
   top: 2rem;
   right: 2rem;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    top: 1rem;
+    right: 1rem;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+  }
 `;
 
 const MainContent = styled.div`
@@ -157,9 +172,11 @@ const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
 
   return (
     <LandingContainer>
-      <ThemeToggleWrapper>
+      <TopNavigation>
+        <KofiButton />
+        <DiscordButton />
         <ThemeToggle />
-      </ThemeToggleWrapper>
+      </TopNavigation>
       <MainContent>
         <ContentWrapper>
         <HeroSection>

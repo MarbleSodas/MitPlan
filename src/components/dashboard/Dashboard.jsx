@@ -7,6 +7,8 @@ import PlanCard from './PlanCard';
 import CreatePlanModal from './CreatePlanModal';
 import ImportPlanModal from './ImportPlanModal';
 import ThemeToggle from '../common/ThemeToggle';
+import KofiButton from '../common/KofiButton/KofiButton';
+import DiscordButton from '../common/DiscordButton/DiscordButton';
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -196,6 +198,8 @@ const Dashboard = () => {
           <UserName>
             Welcome, {user?.displayName || user?.email || 'User'}!
           </UserName>
+          <KofiButton />
+          <DiscordButton />
           <ThemeToggle />
           <LogoutButton onClick={handleLogout}>
             Sign Out
