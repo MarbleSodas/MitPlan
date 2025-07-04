@@ -26,9 +26,20 @@ export const filterAbilitiesByLevel = (abilities, selectedJobs, bossLevel) => {
     return ability.jobs.some(jobId => {
       // Find which role this job belongs to
       for (const [, jobs] of Object.entries(selectedJobs)) {
-        const job = jobs.find(j => j.id === jobId);
-        if (job && job.selected) {
-          return true;
+        if (Array.isArray(jobs)) {
+          // Handle both optimized format (array of job IDs) and legacy format (array of job objects)
+          if (jobs.length > 0 && typeof jobs[0] === 'string') {
+            // Optimized format: ["SCH", "WHM"]
+            if (jobs.includes(jobId)) {
+              return true;
+            }
+          } else if (jobs.length > 0 && typeof jobs[0] === 'object' && jobs[0] !== null) {
+            // Legacy format: [{ id: "SCH", selected: true }]
+            const job = jobs.find(j => j && j.id === jobId);
+            if (job && job.selected) {
+              return true;
+            }
+          }
         }
       }
       return false;
@@ -195,10 +206,22 @@ export const getRoleSharedAbilityCount = (ability, selectedJobs) => {
   for (const jobId of ability.jobs) {
     // Find which role this job belongs to
     for (const [, jobs] of Object.entries(selectedJobs)) {
-      const job = jobs.find(j => j.id === jobId);
-      if (job && job.selected) {
-        count++;
-        break; // Found a match for this job, move to the next one
+      if (Array.isArray(jobs)) {
+        // Handle both optimized format (array of job IDs) and legacy format (array of job objects)
+        if (jobs.length > 0 && typeof jobs[0] === 'string') {
+          // Optimized format: ["SCH", "WHM"]
+          if (jobs.includes(jobId)) {
+            count++;
+            break; // Found a match for this job, move to the next one
+          }
+        } else if (jobs.length > 0 && typeof jobs[0] === 'object' && jobs[0] !== null) {
+          // Legacy format: [{ id: "SCH", selected: true }]
+          const job = jobs.find(j => j && j.id === jobId);
+          if (job && job.selected) {
+            count++;
+            break; // Found a match for this job, move to the next one
+          }
+        }
       }
     }
   }
@@ -229,6 +252,51 @@ export const isSelfTargetingAbilityUsableByTank = (ability, tankJobId, tankPosit
   return false;
 };
 
+/**
+ * Filter out abilities that have been upgraded by higher-level versions
+ *
+ * @param {Array} abilities - Array of mitigation ability objects
+ * @param {number} bossLevel - The level of the boss
+ * @returns {Array} - Filtered array of abilities with upgrades removed
+ */
+export const filterAbilityUpgrades = (abilities, bossLevel) => {
+  if (!abilities || !bossLevel) return abilities || [];
+
+  return abilities.filter(ability => {
+    // If this ability has an upgrade
+    if (ability.upgradedBy) {
+      // Find the upgrade ability
+      const upgradeAbility = abilities.find(a => a.id === ability.upgradedBy);
+
+      // If the upgrade exists and is available at the current boss level
+      if (upgradeAbility && upgradeAbility.levelRequirement <= bossLevel) {
+        return false; // Hide the original ability
+      }
+    }
+
+    return true; // Keep the ability
+  });
+};
+
+/**
+ * Get available abilities with proper upgrade filtering
+ * This is the main function to use for getting abilities that should be displayed
+ *
+ * @param {Array} abilities - Array of mitigation ability objects
+ * @param {Object} selectedJobs - Object containing selected jobs
+ * @param {number} bossLevel - The level of the boss
+ * @returns {Array} - Filtered array of abilities with level, job, and upgrade filtering applied
+ */
+export const getAvailableAbilities = (abilities, selectedJobs, bossLevel) => {
+  if (!abilities) return [];
+
+  // First apply existing level and job filtering
+  const levelFiltered = filterAbilitiesByLevel(abilities, selectedJobs, bossLevel);
+
+  // Then apply upgrade filtering to remove outdated abilities
+  return filterAbilityUpgrades(levelFiltered, bossLevel);
+};
+
 // Create an index file for easier imports
 export default {
   filterAbilitiesByLevel,
@@ -238,5 +306,7 @@ export default {
   getAbilityDurationForLevel,
   getAbilityChargeCount,
   getRoleSharedAbilityCount,
-  isSelfTargetingAbilityUsableByTank
+  isSelfTargetingAbilityUsableByTank,
+  filterAbilityUpgrades,
+  getAvailableAbilities
 };

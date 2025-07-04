@@ -314,7 +314,8 @@ export const mitigationAbilities = [
     target: 'self', // Can only be used on self
     forTankBusters: true, // Primarily used for tank busters
     forRaidWide: false, // Not used for raid-wide damage
-    count: 1 // Has 1 charge
+    count: 1, // Has 1 charge
+    upgradedBy: 'damnation' // This ability is replaced by Damnation at level 92
   },
   {
     id: 'shake',
@@ -709,7 +710,8 @@ export const mitigationAbilities = [
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    targetsTank: true
+    targetsTank: true,
+    upgradedBy: 'divine_caress' // This ability is replaced by Divine Caress at level 100
   },
   {
     id: 'temperance',

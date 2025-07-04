@@ -6,15 +6,13 @@ import { useFilterContext } from '../../../contexts';
 const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
-  margin: 10px 0;
   padding: 8px 12px;
   background-color: ${props => props.theme.colors.secondary};
   border-radius: ${props => props.theme.borderRadius.medium};
   box-shadow: ${props => props.theme.shadows.small};
-  
+
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: 6px 10px;
-    margin: 8px 0;
   }
 `;
 

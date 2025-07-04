@@ -21,6 +21,11 @@ import {
  * @returns {Array} - Array of active mitigation objects with source information
  */
 export const findActiveMitigationsAtTime = (assignments, bossActions, mitigationAbilities, targetActionId, targetTime, bossLevel = 90) => {
+  // Safety checks
+  if (!bossActions || !Array.isArray(bossActions) || !assignments) {
+    return [];
+  }
+
   // Initialize array to store active mitigations
   const activeMitigations = [];
 
@@ -210,15 +215,28 @@ export const generateMitigationBreakdown = (mitigations, damageType = 'both', bo
  * @returns {boolean} - Whether the mitigation is available with current job selection
  */
 export const isMitigationAvailable = (mitigation, selectedJobs) => {
-  if (!mitigation || !selectedJobs) return false;
+  if (!mitigation || !selectedJobs || !mitigation.jobs) {
+    return false;
+  }
 
   // Check if any of the jobs that can use this ability are selected
   return mitigation.jobs.some(jobId => {
     // Find which role this job belongs to
-    for (const [, jobs] of Object.entries(selectedJobs)) {
-      const job = jobs.find(j => j.id === jobId);
-      if (job && job.selected) {
-        return true;
+    for (const [roleKey, jobs] of Object.entries(selectedJobs)) {
+      // Handle both optimized format (array of job IDs) and full format (array of job objects)
+      if (Array.isArray(jobs)) {
+        // Check if it's an array of strings (optimized format from Firebase)
+        if (jobs.length > 0 && typeof jobs[0] === 'string') {
+          if (jobs.includes(jobId)) {
+            return true;
+          }
+        } else if (jobs.length > 0 && typeof jobs[0] === 'object' && jobs[0] !== null) {
+          // Array of job objects (legacy format from local state)
+          const job = jobs.find(j => j && j.id === jobId);
+          if (job && job.selected) {
+            return true;
+          }
+        }
       }
     }
     return false;

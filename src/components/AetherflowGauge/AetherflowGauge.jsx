@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useAetherflowContext } from '../../contexts/AetherflowContext';
+import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
 import Tooltip from '../common/Tooltip/Tooltip';
 
 // Container for the entire gauge
@@ -62,28 +62,28 @@ const GaugeIcon = styled.div`
 // Container for the stack indicators
 const StacksContainer = styled.div`
   display: flex;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 6px;
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    gap: 4px;
-    margin-top: 2px;
+    gap: 6px;
+    margin-top: 4px;
   }
 `;
 
 // Individual stack indicator
 const StackIndicator = styled.div`
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background-color: ${props => props.$active ? '#2ecc40' : props.theme.mode === 'dark' ? '#333' : '#ddd'}; /* Green for active */
-  border: 1.5px solid ${props => props.$active ? '#27ae60' : props.theme.colors.border}; /* Darker green border */
+  border: 2px solid ${props => props.$active ? '#27ae60' : props.theme.colors.border}; /* Darker green border */
   transition: all 0.3s ease;
-  box-shadow: ${props => props.$active ? '0 0 6px 2px rgba(46, 204, 64, 0.4)' : 'none'}; /* Green glow */
+  box-shadow: ${props => props.$active ? '0 0 8px 3px rgba(46, 204, 64, 0.4)' : 'none'}; /* Green glow */
 
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
   }
 `;
 
@@ -102,31 +102,73 @@ const CooldownText = styled.div`
 
 /**
  * AetherflowGauge component for displaying Scholar's Aetherflow stacks
+ * Now uses the Enhanced Mitigation System for improved accuracy
  *
  * @returns {JSX.Element} - Rendered component
  */
-const AetherflowGauge = () => {
+const AetherflowGauge = ({ selectedBossAction }) => {
   const {
-    aetherflowStacks,
-    lastAetherflowTime,
-    isScholarSelected,
-    aetherflowAbility
-  } = useAetherflowContext();
+    cooldownManager,
+    selectedJobs,
+    assignments
+  } = useEnhancedMitigation();
+
+  // Force refresh state to trigger re-renders when assignments change
+  const [forceRefresh, setForceRefresh] = useState(0);
+
+  // Force refresh when assignments change
+  useEffect(() => {
+    setForceRefresh(prev => prev + 1);
+  }, [assignments]);
+
+  // Check if Scholar is selected (handle both legacy and optimized formats)
+  const isScholarSelected = selectedJobs && (
+    selectedJobs['SCH'] || // Direct format
+    (selectedJobs.healer && Array.isArray(selectedJobs.healer)) && (
+      // Optimized format: ["SCH", "WHM"]
+      (typeof selectedJobs.healer[0] === 'string' && selectedJobs.healer.includes('SCH')) ||
+      // Legacy format: [{ id: "SCH", selected: true }]
+      (typeof selectedJobs.healer[0] === 'object' &&
+       selectedJobs.healer.some(job => job && job.id === 'SCH' && job.selected))
+    )
+  );
+
+  // Get Aetherflow state from enhanced system
+  const aetherflowState = cooldownManager?.aetherflowTracker?.getAetherflowState(
+    selectedBossAction?.time || 0
+  ) || {
+    availableStacks: 0,
+    totalStacks: 3,
+    canRefresh: false,
+    timeUntilRefresh: 0
+  };
 
   // If Scholar is not selected, don't render the gauge
   if (!isScholarSelected) {
     return null;
   }
 
-  console.log(`[AetherflowGauge] Rendering gauge with ${aetherflowStacks} stacks`);
+  // If cooldown manager isn't ready, don't render yet
+  if (!cooldownManager || !cooldownManager.aetherflowTracker) {
+    return null;
+  }
+
+  // If no boss action is selected, don't render
+  if (!selectedBossAction) {
+    return null;
+  }
+
+  console.log(`[AetherflowGauge] Rendering gauge with ${aetherflowState.availableStacks} stacks`);
+
+
 
   // Create tooltip content
   const tooltipContent = `
-    Aetherflow Stacks: ${aetherflowStacks}/3
+    Aetherflow Stacks: ${aetherflowState.availableStacks}/${aetherflowState.totalStacks}
 
-    Aetherflow is a Scholar resource that allows the use of powerful healing and utility abilities.
+    Aetherflow automatically refreshes to 3/3 stacks every 60 seconds.
     Each stack is consumed when using abilities like Sacred Soil, Lustrate, Indomitability, Excogitation, or Energy Drain.
-    Stacks are refreshed to 3/3 when using the Aetherflow ability (60s cooldown).
+    You can also manually refresh using the Aetherflow ability.
   `;
 
   return (
@@ -135,7 +177,7 @@ const AetherflowGauge = () => {
         <GaugeTitle>
           <GaugeIcon>
             <img
-              src={aetherflowAbility?.icon || '/abilities-gamerescape/aetherflow.png'}
+              src="/abilities-gamerescape/aetherflow.png"
               alt="Aetherflow"
             />
           </GaugeIcon>
@@ -143,10 +185,10 @@ const AetherflowGauge = () => {
         </GaugeTitle>
 
         <StacksContainer>
-          {[...Array(3)].map((_, index) => (
+          {[...Array(aetherflowState.totalStacks)].map((_, index) => (
             <StackIndicator
               key={index}
-              $active={index < aetherflowStacks}
+              $active={index < aetherflowState.availableStacks}
             />
           ))}
         </StacksContainer>

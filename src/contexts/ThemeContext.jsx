@@ -9,8 +9,11 @@ const lightTheme = {
     background: '#f5f5f5',
     cardBackground: '#ffffff',
     text: '#333333',
+    textSecondary: '#666666',
     lightText: '#666666',
+    buttonText: '#ffffff',
     border: '#dddddd',
+    hover: '#e6f7ff',
     critical: '#ff0000',
     high: '#ff9900',
     medium: '#ffcc00',
@@ -18,7 +21,8 @@ const lightTheme = {
     barrier: '#ffcc00', // Yellow color for barriers
     success: '#4caf50', // Green for healthy health bars
     warning: '#ff9900', // Orange for moderate health
-    error: '#ff5555' // Red for low health
+    error: '#ef4444', // Bright red for error states
+    errorHover: '#dc2626' // Darker red for hover states
   },
   breakpoints: {
     smallMobile: '320px',  // Small smartphones
@@ -92,8 +96,11 @@ const darkTheme = {
     background: '#121212',
     cardBackground: '#1e1e1e',
     text: '#f5f5f5',
+    textSecondary: '#cccccc',
     lightText: '#cccccc', // Improved contrast from #aaaaaa
+    buttonText: '#ffffff',
     border: '#444444',
+    hover: '#2a3a4a',
     critical: '#ff6666', // Brighter for better visibility
     high: '#ffbb44', // Brighter for better visibility
     medium: '#ffee44', // Brighter for better visibility
@@ -101,7 +108,8 @@ const darkTheme = {
     barrier: '#ffdd44', // Brighter yellow for barriers in dark mode
     success: '#66bb66', // Brighter green for healthy health bars
     warning: '#ffbb44', // Brighter orange for moderate health
-    error: '#ff6666' // Brighter red for low health
+    error: '#ef4444', // Bright red for error states
+    errorHover: '#dc2626' // Darker red for hover states
   },
   breakpoints: {
     smallMobile: '320px',  // Small smartphones

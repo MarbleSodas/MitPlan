@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { ffxivJobs } from '../../../data';
+import { useRealtimeJobContext } from '../../../contexts/RealtimeJobContext';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -205,27 +206,12 @@ const JobName = styled.div`
   margin-top: 3px;
 `;
 
-function JobSelector({ onJobsChange, initialJobs }) {
-  // Use initialJobs directly if provided, otherwise fallback to localStorage
-  const [jobs, setJobs] = useState(() => {
-    if (initialJobs) {
-      // If initialJobs is provided, use it directly
-      return initialJobs;
-    }
+function JobSelector({ disabled = false }) {
+  // Use the realtime job context for state and actions
+  const { selectedJobs: jobs, toggleJobSelection: contextToggleJobSelection } = useRealtimeJobContext();
 
-    // Try to load from localStorage as fallback
-    try {
-      const savedJobs = localStorage.getItem('selectedJobs');
-      if (savedJobs) {
-        return JSON.parse(savedJobs);
-      }
-    } catch (error) {
-      console.error('Error loading jobs from localStorage:', error);
-    }
-
-    // Default to ffxivJobs if nothing else is available
-    return JSON.parse(JSON.stringify(ffxivJobs));
-  });
+  // Simple click debouncing to prevent double-clicks
+  const lastClickTimeRef = useRef(new Map());
 
   // Role icons and names for display
   const roleIcons = {
@@ -244,55 +230,27 @@ function JobSelector({ onJobsChange, initialJobs }) {
     caster: 'Magical Ranged DPS'
   };
 
-  // Toggle job selection
+  // Toggle job selection - direct call to context without complex optimistic updates
   const toggleJobSelection = (roleKey, jobId) => {
+    if (disabled) return;
+
+    const clickKey = `${roleKey}-${jobId}`;
+    const now = Date.now();
+    const lastClickTime = lastClickTimeRef.current.get(clickKey) || 0;
+
+    // Prevent rapid successive clicks (debounce to 200ms to prevent double-clicks)
+    if (now - lastClickTime < 200) {
+      console.log(`%c[JOB SELECTOR] Click debounced for ${jobId}`, 'background: #FFC107; color: black; padding: 2px 5px; border-radius: 3px;');
+      return;
+    }
+
+    lastClickTimeRef.current.set(clickKey, now);
+
     console.log(`%c[JOB SELECTOR] Toggling job ${jobId} in role ${roleKey}`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;');
 
-    const updatedJobs = {
-      ...jobs,
-      [roleKey]: jobs[roleKey].map(job => {
-        if (job.id === jobId) {
-          const newSelected = !job.selected;
-          console.log(`%c[JOB SELECTOR] Job ${jobId} selected state changed to:`, 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', newSelected);
-          return { ...job, selected: newSelected };
-        }
-        return job;
-      })
-    };
-    setJobs(updatedJobs);
+    // Direct call to context - let the context handle all state management
+    contextToggleJobSelection(roleKey, jobId);
   };
-
-  // Update parent component when jobs change
-  useEffect(() => {
-    onJobsChange(jobs);
-    // Save to localStorage
-    localStorage.setItem('selectedJobs', JSON.stringify(jobs));
-  }, [jobs, onJobsChange]);
-
-  // Update local state when initialJobs changes (e.g., from URL parameters)
-  useEffect(() => {
-    if (initialJobs) {
-      console.log('%c[JOB SELECTOR] Received initialJobs update', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', initialJobs);
-
-      // Check if there are any selected jobs in the initialJobs
-      const hasSelectedJobs = Object.values(initialJobs).some(
-        roleJobs => roleJobs.some(job => job.selected)
-      );
-
-      console.log('%c[JOB SELECTOR] Has selected jobs:', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', hasSelectedJobs);
-
-      // Force update the local state with initialJobs
-      setJobs(initialJobs);
-
-      // Also update localStorage directly to ensure consistency
-      try {
-        console.log('%c[JOB SELECTOR] Updating localStorage', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;');
-        localStorage.setItem('selectedJobs', JSON.stringify(initialJobs));
-      } catch (error) {
-        console.error('Error saving jobs to localStorage:', error);
-      }
-    }
-  }, [initialJobs]);
 
   return (
     <Container>
@@ -307,21 +265,32 @@ function JobSelector({ onJobsChange, initialJobs }) {
             </RoleHeader>
 
             <JobGrid>
-              {roleJobs.map(job => (
-                <JobCard
-                  key={job.id}
-                  $isSelected={job.selected}
-                  onClick={() => toggleJobSelection(roleKey, job.id)}
-                >
-                  <JobIcon>
-                    {typeof job.icon === 'string' && job.icon.startsWith('/') ?
-                      <img src={job.icon} alt={job.name} style={{ maxHeight: '48px', maxWidth: '48px' }} /> :
-                      job.icon
-                    }
-                  </JobIcon>
-                  <JobName $isSelected={job.selected}>{job.name}</JobName>
-                </JobCard>
-              ))}
+              {roleJobs.map(job => {
+                // Debug: Log the job selection state
+                if (job.selected) {
+                  console.log(`[JOB SELECTOR] Rendering selected job: ${job.id} (${job.name})`);
+                }
+
+                return (
+                  <JobCard
+                    key={job.id}
+                    $isSelected={job.selected}
+                    onClick={() => toggleJobSelection(roleKey, job.id)}
+                    style={{
+                      opacity: disabled ? 0.6 : 1,
+                      cursor: disabled ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <JobIcon>
+                      {typeof job.icon === 'string' && job.icon.startsWith('/') ?
+                        <img src={job.icon} alt={job.name} style={{ maxHeight: '48px', maxWidth: '48px' }} /> :
+                        job.icon
+                      }
+                    </JobIcon>
+                    <JobName $isSelected={job.selected}>{job.name}</JobName>
+                  </JobCard>
+                );
+              })}
             </JobGrid>
           </RoleSection>
         ))}

@@ -137,11 +137,11 @@ const useDragAndDrop = ({
             tankPositions
           });
 
-          if (selectedBossAction.isDualTankBuster && mitigation.target === 'single') {
+          if (selectedBossAction.isDualTankBuster && mitigation.target === 'single' && mitigation.targetsTank) {
             // Use the custom modal to select which tank to apply the mitigation to
             openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
               processMitigationAssignment(selectedBossAction, mitigation, selectedTankPosition);
-            });
+            }, mitigation, selectedBossAction);
 
             // Set active mitigation to null and return early
             // The modal callback will handle the assignment when a tank is selected

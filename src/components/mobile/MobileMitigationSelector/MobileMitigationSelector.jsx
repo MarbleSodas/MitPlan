@@ -13,7 +13,6 @@ import {
 } from '../../../utils';
 import {
   useFilterContext,
-  useChargeCountContext,
   useTankPositionContext,
   useTankSelectionModalContext
 } from '../../../contexts';
@@ -86,7 +85,7 @@ const MitigationItem = styled.div`
     } else if (props.$isDisabled) {
       return props.theme.colors.error || '#ff5555';
     } else {
-      return 'transparent';
+      return props.theme.colors.primary || '#3399ff';
     }
   }};
   -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
@@ -344,9 +343,9 @@ const AssignedMitigationName = styled.div`
 `;
 
 const RemoveButton = styled.button`
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.2)' : 'rgba(255, 100, 100, 0.1)'};
-  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 100, 100, 0.3)' : 'rgba(255, 100, 100, 0.2)'};
-  color: ${props => props.theme.colors.text};
+  background-color: ${props => props.theme?.colors?.error || '#ef4444'};
+  border: none;
+  color: white;
   cursor: pointer;
   padding: ${props => props.theme.spacing.responsive.small} ${props => props.theme.spacing.responsive.medium};
   display: flex;
@@ -475,21 +474,15 @@ const MobileMitigationSelector = ({
   pendingAssignments = [], // Add pendingAssignments prop with default empty array
   onAssignMitigation,
   onRemoveMitigation,
-  checkAbilityCooldown,
+  checkAbilityAvailability,
   bossLevel,
   selectedJobs
 }) => {
   // Get the filter context
   const { filterMitigations, showAllMitigations } = useFilterContext();
 
-  // Get the charge count context
-  const {
-    addPendingAssignment,
-    removePendingAssignment,
-    canAssignMitigationToBossAction,
-    getChargeCount,
-    getInstanceCount
-  } = useChargeCountContext();
+  // Note: Pending assignments and charge/instance counts are now handled
+  // by the enhanced mitigation system through checkAbilityAvailability
 
   // Get the tank position context
   const { tankPositions } = useTankPositionContext();
@@ -567,9 +560,7 @@ const MobileMitigationSelector = ({
         console.error('Error dispatching mitigation-processing-start event:', eventError);
       }
 
-      // Remove pending assignment from the ChargeCountContext immediately
-      // This will update the charge/instance counts immediately
-      removePendingAssignment(bossAction.id, mitigationId);
+      // Note: Pending assignments are now handled internally by the enhanced mitigation system
 
       // Clear the justAssignedMitigation state if it matches this mitigation
       if (justAssignedMitigation === mitigationId) {
@@ -650,7 +641,7 @@ const MobileMitigationSelector = ({
         setError(null);
       }, 3000);
     }
-  }, [bossAction, justAssignedMitigation, onRemoveMitigation, removePendingAssignment, assignments]);
+  }, [bossAction, justAssignedMitigation, onRemoveMitigation, assignments]);
 
   // Helper function to handle mitigation assignment
   const handleMitigationAssignment = useCallback((mitigation) => {
@@ -679,9 +670,7 @@ const MobileMitigationSelector = ({
         )
       );
 
-      // Add pending assignment to the ChargeCountContext
-      // This will update the charge/instance counts immediately
-      addPendingAssignment(bossAction.id, mitigation.id);
+      // Note: Pending assignments are now handled internally by the enhanced mitigation system
 
       // Set justAssignedMitigation for immediate UI feedback
       // This will update the charge count display without requiring deselection
@@ -753,7 +742,7 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
             } catch (eventError) {
               console.error('Error dispatching mitigation-processing-end event:', eventError);
             }
-          });
+          }, mitigation, bossAction);
 
           // Return early since the modal callback will handle the assignment
           return;
@@ -874,12 +863,7 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
         console.error('Error dispatching mitigation-processing-end event:', eventError);
       }
 
-      // Remove the pending assignment since it failed
-      try {
-        removePendingAssignment(bossAction.id, mitigation.id);
-      } catch (removeError) {
-        console.error('Error removing pending assignment:', removeError);
-      }
+      // Note: Pending assignments are now handled internally by the enhanced mitigation system
 
       // Update local pending assignments state to remove this mitigation
       setLocalPendingAssignments(prev =>
@@ -893,7 +877,7 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
         setError(null);
       }, 3000);
     }
-  }, [bossAction, onAssignMitigation, addPendingAssignment, removePendingAssignment, tankPositions]);
+  }, [bossAction, onAssignMitigation, tankPositions]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1392,33 +1376,26 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
             // Check if this mitigation was just assigned (for immediate UI feedback)
             const wasJustAssigned = justAssignedMitigation === mitigation.id;
 
-            // Get cooldown information for this mitigation
-            // We need to pass isAssigned to ensure the cooldown is calculated correctly
-            const cooldownResult = checkAbilityCooldown(
+            // Get enhanced cooldown information for this mitigation
+            const availability = checkAbilityAvailability(
               mitigation.id,
               bossAction.time,
-              isAssigned,
-              bossAction.id
+              bossAction.id,
+              { isBeingAssigned: false }
             );
 
-            // Check if the ability has no available charges
-            const hasNoAvailableCharges = cooldownResult &&
-                                         cooldownResult.totalCharges > 1 &&
-                                         cooldownResult.availableCharges === 0;
-
-            // Check if this mitigation can be assigned to this boss action
-            // based on the rules for raid-wide vs tank buster mitigations
-            const cannotBeAssignedMultipleTimes = isAssigned && !canAssignMitigationToBossAction(bossAction.id, mitigation.id);
+            // Check if the ability has no available charges or instances
+            const hasNoAvailableCharges = availability.totalCharges > 1 && availability.availableCharges === 0;
+            const hasNoAvailableInstances = availability.isRoleShared && availability.availableInstances === 0;
 
             // A mitigation is disabled if:
-            // 1. It cannot be assigned multiple times to this boss action, OR
-            // 2. It's on cooldown, OR
-            // 3. It has no available charges
-            // 4. BUT, if it was just assigned, we want to allow immediate removal
+            // 1. It cannot be assigned (based on enhanced cooldown system), OR
+            // 2. It has no available charges or instances
+            // 3. BUT, if it was just assigned, we want to allow immediate removal
             const isDisabled = !wasJustAssigned && (
-                              (cannotBeAssignedMultipleTimes) ||
-                              (cooldownResult && cooldownResult.isOnCooldown) ||
-                              hasNoAvailableCharges
+                              !availability.canAssign() ||
+                              hasNoAvailableCharges ||
+                              hasNoAvailableInstances
                               );
 
             // Get the cooldown reason if applicable
@@ -1426,41 +1403,9 @@ console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
 
             // Skip cooldown reason if this mitigation was just assigned
             // This ensures the UI doesn't show a cooldown reason for a mitigation that was just assigned
-            if (!wasJustAssigned && (
-                (cooldownResult && cooldownResult.isOnCooldown) ||
-                (cooldownResult && cooldownResult.availableCharges === 0) ||
-                (cooldownResult && cooldownResult.reason === 'already-assigned') ||
-                (isAssigned && !canAssignMitigationToBossAction(bossAction.id, mitigation.id))
-            )) {
-              // Check if this mitigation can be assigned to this boss action
-              // based on the rules for raid-wide vs tank buster mitigations
-              if (isAssigned && !canAssignMitigationToBossAction(bossAction.id, mitigation.id)) {
-                cooldownReason = `Cannot be assigned multiple times to this action`;
-              }
-              else if (cooldownResult.reason === 'already-assigned') {
-                cooldownReason = `Already assigned to this action`;
-              }
-              // Handle role-shared abilities
-              else if (cooldownResult.isRoleShared && cooldownResult.roleSharedCount > 1) {
-                if (cooldownResult.availableCharges === 0) {
-                  cooldownReason = `All ${cooldownResult.roleSharedCount} instances on cooldown`;
-                } else {
-                  const availableInstances = cooldownResult.roleSharedCount - (cooldownResult.instancesUsed || 0);
-                  cooldownReason = `${availableInstances}/${cooldownResult.roleSharedCount} instances available`;
-                }
-              }
-              // Handle abilities with multiple charges
-              else if (cooldownResult.totalCharges > 1) {
-                if (cooldownResult.availableCharges === 0) {
-                  cooldownReason = `All ${cooldownResult.totalCharges} charges on cooldown\nLast used: ${cooldownResult.lastUsedActionName} (${cooldownResult.lastUsedTime}s)`;
-                } else {
-                  cooldownReason = `${cooldownResult.availableCharges}/${cooldownResult.totalCharges} charges available\nLast used: ${cooldownResult.lastUsedActionName} (${cooldownResult.lastUsedTime}s)`;
-                }
-              }
-              // Handle regular abilities
-              else {
-                cooldownReason = `On cooldown from ${cooldownResult.lastUsedActionName} (${cooldownResult.lastUsedTime}s)`;
-              }
+            if (!wasJustAssigned && !availability.canAssign()) {
+              // Use enhanced cooldown system for reason
+              cooldownReason = availability.getUnavailabilityReason ? availability.getUnavailabilityReason() : 'Unavailable';
             }
 
             return (

@@ -2,75 +2,52 @@ import { useCallback } from 'react';
 
 /**
  * Custom hook for handling mobile interactions in the mitigation planner
+ * Updated to use the Enhanced Cooldown System
  *
  * @param {Object} options - Configuration options
- * @param {Function} options.checkAbilityCooldown - Function to check if an ability is on cooldown
+ * @param {Function} options.checkAbilityAvailability - Enhanced function to check ability availability
  * @param {Function} options.addMitigation - Function to add a mitigation to a boss action
- * @param {Function} options.addPendingAssignment - Function to add a pending assignment
- * @param {Function} options.canAssignMitigationToBossAction - Function to check if a mitigation can be assigned to a boss action
- * @param {Function} options.setPendingAssignments - Function to set pending assignments
  * @param {Array} options.sortedBossActions - Array of sorted boss actions
  * @param {Object} options.assignments - Current mitigation assignments
  * @returns {Object} - Mobile interaction handlers
  */
 const useMobileInteraction = ({
-  checkAbilityCooldown,
+  checkAbilityAvailability,
   addMitigation,
-  addPendingAssignment,
-  canAssignMitigationToBossAction,
-  setPendingAssignments,
   sortedBossActions,
   assignments
 }) => {
   // Handle mobile mitigation assignment
   const handleMobileAssignMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
-    // Check if the ability would be on cooldown
+    // Find the boss action
     const bossAction = sortedBossActions.find(action => action.id === bossActionId);
     if (!bossAction) return;
 
-    // Check if this mitigation is already assigned to this boss action
-    const isAlreadyAssigned = assignments[bossActionId]?.some(m => m.id === mitigation.id);
+    // Use enhanced availability checking
+    const availability = checkAbilityAvailability(
+      mitigation.id,
+      bossAction.time,
+      bossActionId,
+      { isBeingAssigned: true, tankPosition }
+    );
 
-    // If already assigned, check if it can be assigned again based on the rules
-    if (isAlreadyAssigned && !canAssignMitigationToBossAction(bossActionId, mitigation.id)) {
-      console.log(`Cannot assign ${mitigation.name} to ${bossAction.name} because it cannot be assigned multiple times to this boss action.`);
+    // Check if the ability can be assigned
+    if (!availability.canAssign()) {
+      const reason = availability.getUnavailabilityReason();
+      console.log(`Cannot assign ${mitigation.name} to ${bossAction.name}: ${reason}`);
       return;
     }
 
-    const cooldownResult = checkAbilityCooldown(
-      mitigation.id,
-      bossAction.time,
-      isAlreadyAssigned, // Pass true if already assigned
-      bossActionId
-    );
+    // If we get here, the ability can be assigned
+    console.log(`Assigning ${mitigation.name} to ${bossAction.name} for ${tankPosition}`);
 
-    if (cooldownResult && cooldownResult.isOnCooldown) {
-      // Ability is on cooldown, but we no longer show error messages
-      console.log(`Cannot assign ${mitigation.name} to ${bossAction.name} because it would be on cooldown. Previously used at ${cooldownResult.lastUsedTime}s (${cooldownResult.lastUsedActionName}). Cooldown remaining: ${Math.ceil(cooldownResult.timeUntilReady)}s`);
-    } else {
-      // Create the pending assignment object
-      const newPendingAssignment = {
-        bossActionId: bossActionId,
-        mitigationId: mitigation.id,
-        timestamp: Date.now()
-      };
+    // Add the mitigation using the enhanced system
+    const result = addMitigation(bossActionId, mitigation, tankPosition);
 
-      // Add pending assignment to the ChargeCountContext
-      // This will update the charge/instance counts immediately
-      addPendingAssignment(bossActionId, mitigation.id);
-
-      // Add to local pending assignments for state management
-      setPendingAssignments(prev => [...prev, newPendingAssignment]);
-
-      // Then add the mitigation to the boss action with the specified tank position
-      const result = addMitigation(bossActionId, mitigation, tankPosition);
-
-      if (result && result.conflicts && result.conflicts.removedCount > 0) {
-        // Log about removed future assignments only if there are conflicts
-        console.log(`Added ${mitigation.name} to ${bossAction.name} for ${tankPosition}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
-      }
+    if (result) {
+      console.log(`Successfully added ${mitigation.name} to ${bossAction.name} for ${tankPosition}`);
     }
-  }, [sortedBossActions, assignments, checkAbilityCooldown, addMitigation, addPendingAssignment, canAssignMitigationToBossAction, setPendingAssignments]);
+  }, [sortedBossActions, checkAbilityAvailability, addMitigation]);
 
   // Handle boss action click for mobile
   const handleBossActionClick = useCallback((action, isMobile, toggleBossActionSelection, setSelectedActionForMobile, setIsMobileBottomSheetOpen) => {

@@ -2,14 +2,12 @@ import React from 'react';
 import { ThemeProvider } from './ThemeContext.jsx';
 import { BossProvider } from './BossContext.jsx';
 import { JobProvider } from './JobContext.jsx';
-import { MitigationProvider } from './MitigationContext.jsx';
-import { ChargeCountProvider } from './ChargeCountContext.jsx';
+import { LegacyEnhancedMitigationProvider } from './EnhancedMitigationContext.jsx';
 import { FilterProvider } from './FilterContext.jsx';
-import { AetherflowProvider } from './AetherflowContext.jsx';
 import { TankPositionProvider } from './TankPositionContext.jsx';
+import { TankSelectionModalProvider } from './TankSelectionModalContext.jsx';
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
-import MitigationContext from './MitigationContext.jsx';
 
 /**
  * Combined provider component for all contexts
@@ -21,37 +19,14 @@ const AppProvider = ({ children }) => {
       <BossProvider>
         <JobProvider>
           <TankPositionProvider>
-            {/* MitigationProvider needs access to boss actions, level, and selected jobs */}
-            <BossContext.Consumer>
-              {({ currentBossActions, currentBossLevel }) => (
-                <JobContext.Consumer>
-                  {({ selectedJobs }) => (
-                    <MitigationProvider
-                      bossActions={currentBossActions}
-                      bossLevel={currentBossLevel}
-                      selectedJobs={selectedJobs}
-                    >
-                      <MitigationContext.Consumer>
-                        {({ assignments }) => (
-                          <ChargeCountProvider
-                            bossActions={currentBossActions}
-                            bossLevel={currentBossLevel}
-                            selectedJobs={selectedJobs}
-                            assignments={assignments}
-                          >
-                            <AetherflowProvider>
-                              <FilterProvider>
-                                {children}
-                              </FilterProvider>
-                            </AetherflowProvider>
-                          </ChargeCountProvider>
-                        )}
-                      </MitigationContext.Consumer>
-                    </MitigationProvider>
-                  )}
-                </JobContext.Consumer>
-              )}
-            </BossContext.Consumer>
+            {/* EnhancedMitigationProvider automatically gets data from other contexts */}
+            <LegacyEnhancedMitigationProvider>
+              <FilterProvider>
+                <TankSelectionModalProvider>
+                  {children}
+                </TankSelectionModalProvider>
+              </FilterProvider>
+            </LegacyEnhancedMitigationProvider>
           </TankPositionProvider>
         </JobProvider>
       </BossProvider>
