@@ -29,7 +29,7 @@ const KofiLink = styled.a`
 const KofiButton = () => {
   return (
     <KofiLink
-      href="https://ko-fi.com/P5P1136OC5"
+      href="https://ko-fi.com/marblesodas"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Support me on Ko-fi"
