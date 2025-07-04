@@ -35,6 +35,7 @@ import BossActionItem from './components/BossActionItem';
 import AssignedMitigations from './components/AssignedMitigations';
 import MitigationItem from './components/MitigationItem';
 import TankPositionSelector from './components/TankPositionSelector';
+import DataMigrationBanner from './components/common/DataMigrationBanner';
 
 // Import layout components
 import { AppLayout, HeaderLayout } from './components/layout';
@@ -63,6 +64,9 @@ import {
 } from './utils';
 
 function App() {
+  // State for tracking banner visibility
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
+
   // Get state from contexts
   const { isDarkMode, toggleTheme } = useTheme();
   const {
@@ -373,16 +377,34 @@ function App() {
     selectedJobs
   ]);
 
+  // Handle export click from migration banner
+  const handleExportFromBanner = useCallback(() => {
+    // Scroll to the ImportExport section
+    const importExportSection = document.querySelector('[data-export-section]');
+    if (importExportSection) {
+      importExportSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
+  // Handle banner visibility change
+  const handleBannerVisibilityChange = useCallback((isVisible) => {
+    setIsBannerVisible(isVisible);
+  }, []);
+
   return (
     <>
       <GlobalStyle />
+      <DataMigrationBanner
+        onExportClick={handleExportFromBanner}
+        onVisibilityChange={handleBannerVisibilityChange}
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={memoizedHandleDragEnd}
       >
-        <AppLayout>
+        <AppLayout hasBanner={isBannerVisible}>
           <HeaderLayout
             title="FFXIV Boss Timeline & Mitigation Planner"
             description="Click on a boss action to select it (click again to deselect). Mitigation abilities can only be dragged when a boss action is selected and can only be dropped on the selected action. Abilities on cooldown will be disabled."
@@ -412,22 +434,24 @@ function App() {
 
           <FilterToggle />
 
-          <ImportExport
-            assignments={assignments}
-            bossId={currentBossId}
-            selectedJobs={selectedJobs}
-            onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
-              if (importedAssignments) {
-                importAssignments(importedAssignments);
-              }
-              if (importedBossId && importedBossId !== currentBossId) {
-                setCurrentBossId(importedBossId);
-              }
-              if (importedSelectedJobs) {
-                setSelectedJobs(importedSelectedJobs);
-              }
-            }}
-          />
+          <div data-export-section>
+            <ImportExport
+              assignments={assignments}
+              bossId={currentBossId}
+              selectedJobs={selectedJobs}
+              onImport={(importedAssignments, importedBossId, importedSelectedJobs) => {
+                if (importedAssignments) {
+                  importAssignments(importedAssignments);
+                }
+                if (importedBossId && importedBossId !== currentBossId) {
+                  setCurrentBossId(importedBossId);
+                }
+                if (importedSelectedJobs) {
+                  setSelectedJobs(importedSelectedJobs);
+                }
+              }}
+            />
+          </div>
 
           <MainContent>
             <TimelineContainer>
