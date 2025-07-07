@@ -14,6 +14,7 @@ import DisplayNameModal from '../collaboration/DisplayNameModal';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
+import ThemeToggle from '../common/ThemeToggle';
 
 // Import planning components
 import JobSelector from '../../features/jobs/JobSelector/JobSelector';
@@ -93,12 +94,13 @@ const Title = styled.h1`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   align-items: center;
 
   @media (max-width: 768px) {
     flex-direction: column;
     width: 100%;
+    gap: 0.75rem;
   }
 `;
 
@@ -702,6 +704,7 @@ const MitigationPlannerContent = ({
           )}
           <KofiButton />
           <DiscordButton />
+          <ThemeToggle />
           <SaveButton onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save Plan'}
           </SaveButton>

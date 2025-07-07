@@ -146,6 +146,8 @@ const TankSelectionModal = ({
   isOpen,
   onClose,
   mitigationName,
+  mitigation,
+  bossAction,
   mainTankJob,
   offTankJob,
   onSelectMainTank,
@@ -207,17 +209,33 @@ const TankSelectionModal = ({
   const mainTankIcon = getJobIcon(mainTankJob);
   const offTankIcon = getJobIcon(offTankJob);
 
+  // Determine who can cast the ability
+  const canMainTankCast = mitigation && mainTankJob && mitigation.jobs?.includes(mainTankJob);
+  const canOffTankCast = mitigation && offTankJob && mitigation.jobs?.includes(offTankJob);
+
+  // Create context message
+  let contextMessage = `Apply ${mitigationName} to which tank?`;
+  if (mitigation && mitigation.target === 'single') {
+    if (canMainTankCast && !canOffTankCast) {
+      contextMessage = `${mainTankJob} will cast ${mitigationName} on which tank?`;
+    } else if (canOffTankCast && !canMainTankCast) {
+      contextMessage = `${offTankJob} will cast ${mitigationName} on which tank?`;
+    } else if (canMainTankCast && canOffTankCast) {
+      contextMessage = `Which tank should cast and receive ${mitigationName}?`;
+    }
+  }
+
   return createPortal(
     <ModalOverlay>
       <ModalContainer ref={modalRef}>
         <ModalHeader>
-          <ModalTitle>Select Tank</ModalTitle>
+          <ModalTitle>Select Tank Target</ModalTitle>
           <CloseButton onClick={onClose} aria-label="Close">
             <X size={20} />
           </CloseButton>
         </ModalHeader>
         <ModalContent>
-          Apply <strong>{mitigationName}</strong> to which tank?
+          <strong>{contextMessage}</strong>
         </ModalContent>
         <ButtonContainer>
           <Button onClick={onSelectMainTank} $primary>

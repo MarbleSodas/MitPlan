@@ -14,6 +14,7 @@ import {
   isTouchDevice
 } from '../../utils';
 import { isDualTankBusterAction } from '../../utils/boss/bossActionUtils';
+import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import { mitigationAbilities, bosses } from '../../data';
 import { useTankPositionContext, useTankSelectionModalContext } from '../../contexts';
 
@@ -457,44 +458,26 @@ const BossActionItem = memo(({
   // Tank position context
   const { tankPositions } = useTankPositionContext();
 
-  // Handler for assigning mitigation (single-target, dual tank buster)
+  // Handler for assigning mitigation using unified assignment logic
   const handleAssignMitigation = useCallback((mitigation, assignCallback) => {
-    // DEBUG: Log all relevant values before modal condition in BossActionItem
-    console.log('[DEBUG] BossActionItem Modal Condition Check', {
-      action,
-      mitigation,
-      isTankBuster: action.isTankBuster,
-      isDualTankBuster: isDualTankBusterAction(action),
-      isDualTankBusterProperty: action.isDualTankBuster,
-      mitigationTarget: mitigation.target
+    // Use the unified assignment function to determine if modal should be shown
+    const assignmentDecision = determineMitigationAssignment(mitigation, action, tankPositions);
+
+    console.log('[BossActionItem] Mitigation assignment decision:', {
+      mitigationName: mitigation.name,
+      mitigationType: mitigation.target,
+      bossActionName: action.name,
+      decision: assignmentDecision
     });
 
-    // Show tank selection modal for:
-    // 1. Single-target abilities in dual tank busters OR
-    // 2. Self-targeting tank abilities that both tanks can use in dual tank busters
-    const canBothTanksUse = tankPositions?.mainTank && 
-                            tankPositions?.offTank && 
-                            mitigation.jobs.includes(tankPositions.mainTank) && 
-                            mitigation.jobs.includes(tankPositions.offTank);
-                            
-    if (isDualTankBusterAction(action) && 
-        ((mitigation.target === 'single') || 
-         (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide && canBothTanksUse))) {
-      // DEBUG: Log when modal logic is triggered for dual tank buster in BossActionItem
-      console.log('[DEBUG] BossActionItem Dual Tank Buster Modal Trigger:', {
-        action,
-        mitigation,
-        isDualTankBusterAction: isDualTankBusterAction(action),
-        isDualTankBusterProperty: action.isDualTankBuster,
-        canBothTanksUse,
-        tankPositions
-      });
-
+    if (assignmentDecision.shouldShowModal) {
+      console.log('[BossActionItem] Opening tank selection modal for mitigation assignment');
       openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
         assignCallback(selectedTankPosition);
       }, mitigation, action);
       return;
     }
+
     // Default assignment (no modal)
     assignCallback();
   }, [action, tankPositions, openTankSelectionModal]);

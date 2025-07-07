@@ -22,12 +22,12 @@ const TopNavigation = styled.div`
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 
   @media (max-width: 768px) {
     top: 1rem;
     right: 1rem;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   @media (max-width: 480px) {

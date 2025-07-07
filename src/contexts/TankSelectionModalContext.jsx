@@ -170,6 +170,8 @@ export const TankSelectionModalProvider = ({ children }) => {
     console.log('[TankSelectionModal] Showing modal for tank selection');
     setModalData({
       mitigationName,
+      mitigation,
+      bossAction,
       callback
     });
     setIsModalOpen(true);
@@ -206,6 +208,8 @@ export const TankSelectionModalProvider = ({ children }) => {
         isOpen={isModalOpen}
         onClose={closeTankSelectionModal}
         mitigationName={modalData.mitigationName}
+        mitigation={modalData.mitigation}
+        bossAction={modalData.bossAction}
         mainTankJob={getJobName(tankPositions.mainTank)}
         offTankJob={getJobName(tankPositions.offTank)}
         onSelectMainTank={handleSelectMainTank}

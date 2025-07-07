@@ -283,7 +283,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
               onChange={handleFileUpload}
             />
             <HelpText>
-              Select a JSON file exported from MitPlan
+              Select a JSON file exported from MitPlan (supports all versions)
             </HelpText>
           </FormGroup>
 
@@ -296,7 +296,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
               onChange={(e) => setImportData(e.target.value)}
             />
             <HelpText>
-              Paste the JSON data from an exported plan
+              Paste the JSON data from an exported plan (supports all versions)
             </HelpText>
           </FormGroup>
 

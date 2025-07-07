@@ -35,7 +35,7 @@ const Title = styled.h1`
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 `;
 
 const UserName = styled.span`

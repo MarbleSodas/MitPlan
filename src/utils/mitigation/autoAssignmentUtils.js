@@ -302,87 +302,6 @@ export const shouldTriggerAutoAssignment = (bossAction, tankPositions, currentAs
 };
 
 /**
- * Determine the best tank assignment for a self-target mitigation
- *
- * @param {Object} mitigation - The mitigation ability object
- * @param {Object} bossAction - The boss action object
- * @param {Object} tankPositions - Tank position assignments
- * @returns {Object} - Assignment decision with caster and target information
- */
-export const determineSelfTargetAssignment = (mitigation, bossAction, tankPositions) => {
-  if (!mitigation || mitigation.target !== 'self' || !mitigation.forTankBusters || !tankPositions) {
-    return { shouldShowModal: false, assignment: null };
-  }
-
-  const mainTankJob = tankPositions.mainTank;
-  const offTankJob = tankPositions.offTank;
-
-  const canMainTankCast = mainTankJob && mitigation.jobs.includes(mainTankJob);
-  const canOffTankCast = offTankJob && mitigation.jobs.includes(offTankJob);
-
-  console.log('[SelfTargetAssignment] Analyzing assignment:', {
-    mitigation: mitigation.name,
-    mainTankJob,
-    offTankJob,
-    canMainTankCast,
-    canOffTankCast,
-    isRoleShared: mitigation.isRoleShared,
-    isDualTankBuster: bossAction.isDualTankBuster
-  });
-
-  // If only one tank can cast the ability, auto-assign to that tank
-  if (canMainTankCast && !canOffTankCast) {
-    return {
-      shouldShowModal: false,
-      assignment: {
-        casterPosition: 'mainTank',
-        targetPosition: 'mainTank',
-        reason: 'Only main tank can cast this self-target ability'
-      }
-    };
-  }
-
-  if (canOffTankCast && !canMainTankCast) {
-    return {
-      shouldShowModal: false,
-      assignment: {
-        casterPosition: 'offTank',
-        targetPosition: 'offTank',
-        reason: 'Only off tank can cast this self-target ability'
-      }
-    };
-  }
-
-  // If both tanks can cast the ability (like Rampart), show modal for dual tank busters
-  if (canMainTankCast && canOffTankCast && bossAction.isDualTankBuster) {
-    return {
-      shouldShowModal: true,
-      assignment: null,
-      reason: 'Both tanks can cast this role-shared ability - user choice needed'
-    };
-  }
-
-  // If both tanks can cast but it's a single tank buster, default to main tank
-  if (canMainTankCast && canOffTankCast && !bossAction.isDualTankBuster) {
-    return {
-      shouldShowModal: false,
-      assignment: {
-        casterPosition: 'mainTank',
-        targetPosition: 'mainTank',
-        reason: 'Single tank buster - main tank uses self-target ability'
-      }
-    };
-  }
-
-  // If no tank can cast, don't assign
-  return {
-    shouldShowModal: false,
-    assignment: null,
-    reason: 'No tank can cast this self-target ability'
-  };
-};
-
-/**
  * Determine the best tank assignment for a single-target mitigation
  *
  * @param {Object} mitigation - The mitigation ability object
@@ -407,53 +326,137 @@ export const determineSingleTargetAssignment = (mitigation, bossAction, tankPosi
     offTankJob,
     canMainTankCast,
     canOffTankCast,
-    isDualTankBuster: bossAction.isDualTankBuster
+    isDualTankBuster: bossAction.isDualTankBuster,
+    forTankBusters: mitigation.forTankBusters
   });
+
+  // For dual tank busters: ALL single-target abilities with forTankBusters: true should show modal
+  // This ensures that healer/DPS abilities like Divine Benison, Aquaveil, etc. also show tank selection
+  if (bossAction.isDualTankBuster && mitigation.forTankBusters) {
+    console.log('[SingleTargetAssignment] Dual tank buster with single-target tank mitigation - showing modal for tank selection');
+    return {
+      shouldShowModal: true,
+      assignment: null,
+      reason: 'Dual tank buster with single-target tank mitigation - user choice needed for tank selection'
+    };
+  }
+
+  // For single tank busters or non-tank-buster actions: use job-based logic
 
   // If only one tank can cast the ability, auto-assign
   if (canMainTankCast && !canOffTankCast) {
-    // Main tank casts, determine target based on boss action type
-    const targetPosition = bossAction.isDualTankBuster ? 'mainTank' : 'mainTank'; // For dual tank busters, could target either tank
     return {
       shouldShowModal: false,
       assignment: {
         casterPosition: 'mainTank',
-        targetPosition: targetPosition,
+        targetPosition: 'mainTank',
         reason: 'Only main tank can cast this ability'
       }
     };
   }
 
   if (canOffTankCast && !canMainTankCast) {
-    // Off tank casts, determine target based on boss action type
-    const targetPosition = bossAction.isDualTankBuster ? 'offTank' : 'offTank'; // For dual tank busters, could target either tank
     return {
       shouldShowModal: false,
       assignment: {
         casterPosition: 'offTank',
-        targetPosition: targetPosition,
+        targetPosition: 'offTank',
         reason: 'Only off tank can cast this ability'
       }
     };
   }
 
-  // If both tanks can cast the ability, show modal for dual tank busters
-  if (canMainTankCast && canOffTankCast && bossAction.isDualTankBuster) {
+  // If both tanks can cast the ability, show modal to let user choose
+  if (canMainTankCast && canOffTankCast) {
     return {
       shouldShowModal: true,
       assignment: null,
-      reason: 'Both tanks can cast - user choice needed'
+      reason: 'Both tanks can cast - user choice needed for tank selection'
     };
   }
 
-  // If both tanks can cast but it's a single tank buster, default to main tank casting on main tank
+  // If neither tank can cast and it's not a dual tank buster scenario, don't assign
+  return {
+    shouldShowModal: false,
+    assignment: null,
+    reason: 'No tank can cast this ability and not applicable for dual tank buster targeting'
+  };
+};
+
+/**
+ * Determine the best tank assignment for a self-target mitigation
+ *
+ * @param {Object} mitigation - The mitigation ability object
+ * @param {Object} bossAction - The boss action object
+ * @param {Object} tankPositions - Tank position assignments
+ * @returns {Object} - Assignment decision with caster and target information
+ */
+export const determineSelfTargetAssignment = (mitigation, bossAction, tankPositions) => {
+  if (!mitigation || mitigation.target !== 'self' || !tankPositions) {
+    return { shouldShowModal: false, assignment: null };
+  }
+
+  const mainTankJob = tankPositions.mainTank;
+  const offTankJob = tankPositions.offTank;
+
+  const canMainTankCast = mainTankJob && mitigation.jobs.includes(mainTankJob);
+  const canOffTankCast = offTankJob && mitigation.jobs.includes(offTankJob);
+
+  // Special case for Rampart: Show modal for dual tank busters to allow user choice
+  const isRampart = mitigation.id === 'rampart';
+
+  console.log('[SelfTargetAssignment] Analyzing assignment:', {
+    mitigation: mitigation.name,
+    mitigationId: mitigation.id,
+    mainTankJob,
+    offTankJob,
+    canMainTankCast,
+    canOffTankCast,
+    isRampart,
+    isDualTankBuster: bossAction.isDualTankBuster
+  });
+
+  // Special case: Rampart on dual tank busters should show modal
+  if (isRampart && bossAction.isDualTankBuster && (canMainTankCast || canOffTankCast)) {
+    console.log('[SelfTargetAssignment] Rampart on dual tank buster - showing modal for tank selection');
+    return {
+      shouldShowModal: true,
+      assignment: null,
+      reason: 'Rampart on dual tank buster - user choice needed for which tank uses their instance'
+    };
+  }
+
+  // For all other self-target abilities, auto-assign to the tank that can cast them
+  if (canMainTankCast && !canOffTankCast) {
+    return {
+      shouldShowModal: false,
+      assignment: {
+        casterPosition: 'mainTank',
+        targetPosition: 'mainTank',
+        reason: 'Only main tank can cast this self-target ability'
+      }
+    };
+  }
+
+  if (canOffTankCast && !canMainTankCast) {
+    return {
+      shouldShowModal: false,
+      assignment: {
+        casterPosition: 'offTank',
+        targetPosition: 'offTank',
+        reason: 'Only off tank can cast this self-target ability'
+      }
+    };
+  }
+
+  // If both tanks can cast the ability (like Rampart for single tank busters), default to main tank
   if (canMainTankCast && canOffTankCast && !bossAction.isDualTankBuster) {
     return {
       shouldShowModal: false,
       assignment: {
         casterPosition: 'mainTank',
         targetPosition: 'mainTank',
-        reason: 'Single tank buster - main tank casts on self'
+        reason: 'Single tank buster - main tank uses self-target ability'
       }
     };
   }
@@ -462,7 +465,52 @@ export const determineSingleTargetAssignment = (mitigation, bossAction, tankPosi
   return {
     shouldShowModal: false,
     assignment: null,
-    reason: 'No tank can cast this ability'
+    reason: 'No tank can cast this self-target ability'
+  };
+};
+
+/**
+ * Unified function to determine mitigation assignment logic
+ * This is the main entry point for determining whether to show tank selection modal
+ *
+ * @param {Object} mitigation - The mitigation ability object
+ * @param {Object} bossAction - The boss action object
+ * @param {Object} tankPositions - Tank position assignments
+ * @param {Object} selectedJobs - Selected jobs (optional, for compatibility)
+ * @returns {Object} - Assignment decision with modal and assignment information
+ */
+export const determineMitigationAssignment = (mitigation, bossAction, tankPositions, selectedJobs = null) => {
+  if (!mitigation || !bossAction || !tankPositions) {
+    return { shouldShowModal: false, assignment: null };
+  }
+
+  console.log('[MitigationAssignment] Analyzing mitigation:', {
+    mitigationName: mitigation.name,
+    mitigationId: mitigation.id,
+    target: mitigation.target,
+    bossActionName: bossAction.name,
+    isDualTankBuster: bossAction.isDualTankBuster,
+    forTankBusters: mitigation.forTankBusters
+  });
+
+  // For single-target mitigations, use the specialized logic
+  if (mitigation.target === 'single') {
+    return determineSingleTargetAssignment(mitigation, bossAction, tankPositions);
+  }
+
+  // For self-target mitigations, use the specialized logic (includes special Rampart handling)
+  if (mitigation.target === 'self') {
+    return determineSelfTargetAssignment(mitigation, bossAction, tankPositions);
+  }
+
+  // For party-wide or area mitigations, no modal needed
+  return {
+    shouldShowModal: false,
+    assignment: {
+      casterPosition: 'shared',
+      targetPosition: 'shared',
+      reason: 'Party-wide or area mitigation - no tank selection needed'
+    }
   };
 };
 
@@ -534,33 +582,4 @@ export const autoAssignSingleTargetMitigation = (
       reason: `Assignment failed: ${error.message}`
     };
   }
-};
-
-/**
- * Unified function to determine assignment for any mitigation type
- * Handles both self-target and single-target mitigations
- *
- * @param {Object} mitigation - The mitigation ability object
- * @param {Object} bossAction - The boss action object
- * @param {Object} tankPositions - Tank position assignments
- * @param {Object} selectedJobs - Currently selected jobs (optional, for non-tank casters)
- * @returns {Object} - Assignment decision with caster and target information
- */
-export const determineMitigationAssignment = (mitigation, bossAction, tankPositions, selectedJobs = null) => {
-  if (!mitigation || !bossAction || !tankPositions) {
-    return { shouldShowModal: false, assignment: null };
-  }
-
-  // Handle self-target mitigations (tank abilities like Sentinel, Rampart, etc.)
-  if (mitigation.target === 'self' && mitigation.forTankBusters) {
-    return determineSelfTargetAssignment(mitigation, bossAction, tankPositions);
-  }
-
-  // Handle single-target mitigations (abilities that can be cast on others)
-  if (mitigation.target === 'single' && mitigation.targetsTank) {
-    return determineSingleTargetAssignment(mitigation, bossAction, tankPositions, selectedJobs);
-  }
-
-  // For other types of mitigations, don't show modal
-  return { shouldShowModal: false, assignment: null };
 };

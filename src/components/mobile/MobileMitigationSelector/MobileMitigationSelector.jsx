@@ -692,99 +692,70 @@ const MobileMitigationSelector = ({
       // Otherwise, will be determined based on specific conditions below
       let tankPosition = null;
 
-      // If this is a tank buster and either:
-      // 1. A self-targeting ability for tank busters, or
-      // 2. A single-target ability for tank busters that can target tanks
-// DEBUG: Log all relevant values before modal condition
-console.log('[DEBUG] Modal Condition Check', {
-  bossAction,
-  mitigation,
-  isTankBuster: bossAction.isTankBuster,
-  isDualTankBuster: isDualTankBusterAction(bossAction),
-  isDualTankBusterProperty: bossAction.isDualTankBuster,
-  mitigationTarget: mitigation.target,
-  forTankBusters: mitigation.forTankBusters,
-  forRaidWide: mitigation.forRaidWide,
-  targetsTank: mitigation.targetsTank
-});
-      if (bossAction.isTankBuster &&
-          ((mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) ||
-           (mitigation.target === 'single' && mitigation.forTankBusters && mitigation.targetsTank))) {
+      // Use the unified assignment function to determine if modal should be shown
+      const assignmentDecision = determineMitigationAssignment(mitigation, bossAction, tankPositions);
 
-        // For dual tank busters, we need to ask which tank to apply the mitigation to
-// DEBUG: Log when modal logic is triggered for dual tank buster
-console.log('[DEBUG] Dual Tank Buster Modal Trigger:', {
-  bossAction,
-  mitigation,
-  isDualTankBusterAction: isDualTankBusterAction(bossAction),
-  isDualTankBusterProperty: bossAction.isDualTankBuster
-});
-        // Show modal if:
-        // 1. It's a dual tank buster with single-target mitigation OR
-        // 2. It's a dual tank buster with self-targeting tank mitigation that BOTH tanks can use
-        if (isDualTankBusterAction(bossAction) && 
-            ((mitigation.target === 'single') || 
-             (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide &&
-              tankPositions?.mainTank && tankPositions?.offTank && 
-              mitigation.jobs.includes(tankPositions.mainTank) && mitigation.jobs.includes(tankPositions.offTank)))) {
-          // Show the tank selection modal
-          openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
-            // Process the mitigation assignment with the selected tank position
-            onAssignMitigation(bossAction.id, mitigation, selectedTankPosition);
+      console.log('[MobileMitigationSelector] Mitigation assignment decision:', {
+        mitigationName: mitigation.name,
+        mitigationType: mitigation.target,
+        bossActionName: bossAction.name,
+        decision: assignmentDecision
+      });
 
-            // Reset processing flags
-            setIsProcessingAssignment(false);
-            isProcessingRef.current = false;
+      if (assignmentDecision.shouldShowModal) {
+        console.log('[MobileMitigationSelector] Opening tank selection modal for mitigation assignment');
+        // Show the tank selection modal
+        openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
+          // Process the mitigation assignment with the selected tank position
+          onAssignMitigation(bossAction.id, mitigation, selectedTankPosition);
 
-            // Dispatch custom event to notify MobileBottomSheet
-            try {
-              window.dispatchEvent(new Event('mitigation-processing-end'));
-            } catch (eventError) {
-              console.error('Error dispatching mitigation-processing-end event:', eventError);
-            }
-          }, mitigation, bossAction);
+          // Reset processing flags
+          setIsProcessingAssignment(false);
+          isProcessingRef.current = false;
 
-          // Return early since the modal callback will handle the assignment
-          return;
-        }
-        // For class-specific self-targeting abilities, determine which tank can use it and explicitly force that assignment
-        else if (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) {
-          const mainTankJob = tankPositions?.mainTank;
-          const offTankJob = tankPositions?.offTank;
-          
-          // Check which tank can use this ability based on job compatibility
-          const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
-          const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-          
-          if (canMainTankUse && !canOffTankUse) {
-            // Only main tank can use this ability
-            tankPosition = 'mainTank';
-          } else if (canOffTankUse && !canMainTankUse) {
-            // Only off tank can use this ability
-            tankPosition = 'offTank';
-          } else if (canMainTankUse && canOffTankUse) {
-            // If both tanks can use it and a tank position isn't explicitly specified,
-            // leave tankPosition as null and it will trigger the modal for dual tank busters
-            // otherwise keep the specified tank position
-            if (['mainTank', 'offTank'].includes(tankPosition)) {
-              // Keep the explicit tank position that was specified
-            } else {
-              // For all other cases, if both can use it, set to null so a modal will appear
-              tankPosition = null;
-            }
-          } else {
-            // Neither tank can use it (shouldn't happen in normal usage)
-            // Still specify a tank position to avoid using 'shared'
-            tankPosition = mainTankJob ? 'mainTank' : 'offTank';
+          // Dispatch custom event to notify MobileBottomSheet
+          try {
+            window.dispatchEvent(new Event('mitigation-processing-end'));
+          } catch (eventError) {
+            console.error('Error dispatching mitigation-processing-end event:', eventError);
           }
-        }
-        // For other cases, if only one tank is selected, use that tank's position
-        else if (tankPositions.mainTank) {
+        }, mitigation, bossAction);
+
+        // Return early since the modal callback will handle the assignment
+        return;
+      }
+
+      // For tank-specific abilities, use the assignment decision if available
+      if (assignmentDecision.assignment) {
+        tankPosition = assignmentDecision.assignment.targetPosition;
+      }
+      // For class-specific self-targeting abilities, determine which tank can use it
+      else if (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) {
+        const mainTankJob = tankPositions?.mainTank;
+        const offTankJob = tankPositions?.offTank;
+
+        // Check which tank can use this ability based on job compatibility
+        const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
+        const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
+
+        if (canMainTankUse && !canOffTankUse) {
           tankPosition = 'mainTank';
-        }
-        else if (tankPositions.offTank) {
+        } else if (canOffTankUse && !canMainTankUse) {
           tankPosition = 'offTank';
+        } else if (canMainTankUse && canOffTankUse) {
+          // Default to main tank for role-shared abilities
+          tankPosition = 'mainTank';
+        } else {
+          // Neither tank can use it - default to main tank if available
+          tankPosition = mainTankJob ? 'mainTank' : 'offTank';
         }
+      }
+      // For other cases, default to main tank if available
+      else if (tankPositions.mainTank) {
+        tankPosition = 'mainTank';
+      }
+      else if (tankPositions.offTank) {
+        tankPosition = 'offTank';
       }
 
       // Debug log for tank-specific mitigations

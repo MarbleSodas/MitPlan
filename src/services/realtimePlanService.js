@@ -240,25 +240,39 @@ export const exportPlan = async (planId) => {
  */
 export const importPlan = async (userId, importData, planName) => {
   try {
-    // Validate import data
-    if (!importData.bossId || !importData.assignments) {
-      throw new Error('Invalid plan data');
+    // Import the migration utilities
+    const { migratePlanData, validatePlanData } = await import('../utils/version/versionUtils.js');
+
+    console.log('%c[IMPORT] Starting plan import process',
+      'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', importData);
+
+    // Migrate the plan data to the current version
+    const migratedData = migratePlanData(importData);
+
+    // Validate the migrated data
+    if (!validatePlanData(migratedData)) {
+      throw new Error('Invalid plan data after migration');
     }
 
+    console.log('%c[IMPORT] Plan data migrated and validated successfully',
+      'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', migratedData);
+
     const planData = {
-      name: planName || importData.name || 'Imported Plan',
-      bossId: importData.bossId,
-      assignments: importData.assignments,
-      selectedJobs: importData.selectedJobs || {},
-      description: importData.description || '',
+      name: planName || migratedData.name || 'Imported Plan',
+      bossId: migratedData.bossId,
+      assignments: migratedData.assignments,
+      selectedJobs: migratedData.selectedJobs || {},
+      tankPositions: migratedData.tankPositions || {},
+      description: migratedData.description || '',
       importedAt: new Date().toISOString(),
-      originalVersion: importData.version || 'unknown'
+      originalVersion: importData.version || 'unknown',
+      migratedVersion: migratedData.version
     };
 
     return await createPlan(userId, planData);
   } catch (error) {
     console.error('Error importing plan:', error);
-    throw new Error('Failed to import plan');
+    throw new Error(`Failed to import plan: ${error.message}`);
   }
 };
 
