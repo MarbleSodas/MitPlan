@@ -12,27 +12,36 @@ import {
 import { useTankPositionContext } from '../../contexts';
 
 const MitigationItemContainer = styled.div`
-  background-color: ${props => props.$disabled ?
-    props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)' :
-    props.theme.colors.cardBackground};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  padding: ${props => props.theme.spacing.medium};
-  box-shadow: ${props => props.theme.shadows.small};
+  background-color: ${props => {
+    if (props.$disabled) {
+      return props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)';
+    }
+    return 'transparent';
+  }};
+  border: none;
+  border-left: 4px solid ${props => {
+    if (props.$disabled) {
+      return props.theme?.colors?.error || '#ff5555';
+    }
+    return props.theme?.colors?.primary || '#3399ff';
+  }};
+  border-radius: ${props => props.theme.borderRadius.small};
+  padding: ${props => props.theme.spacing.small} ${props => props.theme.spacing.medium};
   cursor: ${props => props.$disabled ? 'not-allowed' : 'grab'};
-  border-left: 4px solid ${props => props.$disabled ?
-    props.theme.colors.error || '#ff5555' :
-    props.theme.colors.primary};
   transition: all 0.2s ease;
   width: 100%;
   opacity: ${props => props.$disabled ? 0.7 : 1};
   position: relative;
+  margin-bottom: 2px;
 
   &:hover {
-    background-color: ${props => props.$disabled ?
-      props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)' :
-      props.theme.colors.background};
-    transform: ${props => props.$disabled ? 'none' : 'translateY(-2px)'};
-    box-shadow: ${props => props.$disabled ? props.theme.shadows.small : props.theme.shadows.medium};
+    background-color: ${props => {
+      if (props.$disabled) {
+        return props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)';
+      }
+      return props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+    }};
+    transform: none;
   }
 
   &:active {
@@ -100,9 +109,10 @@ const MitigationItem = memo(({
   cooldownReason,
   currentBossLevel,
   selectedBossAction,
-  pendingAssignments,
-  checkAbilityCooldown,
-  selectedJobs
+  pendingAssignments = [],
+  checkAbilityAvailability,
+  selectedJobs,
+  isDragging = false
 }) => {
   // Get the tank position context
   const { tankPositions } = useTankPositionContext();
@@ -112,21 +122,19 @@ const MitigationItem = memo(({
       return null;
     }
 
-    // Get the cooldown result to check available charges
-    const cooldownResult = selectedBossAction ?
-      checkAbilityCooldown(
+    // Get the availability result to check available charges
+    const availabilityResult = selectedBossAction && checkAbilityAvailability ?
+      checkAbilityAvailability(
         mitigation.id,
         selectedBossAction.time,
-        // Check if this ability is being assigned to the current boss action
-        // The isBeingAssigned parameter is true if:
-        // 1. The ability is already assigned to this action, or
-        // 2. The ability is currently being assigned to this action (via pendingAssignments)
-        selectedBossAction.assignments?.some(m => m.id === mitigation.id) ||
-        pendingAssignments.some(pa =>
-          pa.mitigationId === mitigation.id &&
-          pa.bossActionId === selectedBossAction.id
-        ),
-        selectedBossAction.id
+        selectedBossAction.id,
+        {
+          isBeingAssigned: selectedBossAction.assignments?.some(m => m.id === mitigation.id) ||
+            pendingAssignments.some(pa =>
+              pa.mitigationId === mitigation.id &&
+              pa.bossActionId === selectedBossAction.id
+            )
+        }
       ) :
       {
         availableCharges: getAbilityChargeCount(mitigation, currentBossLevel),
@@ -135,7 +143,7 @@ const MitigationItem = memo(({
       };
 
     // Get the available charges
-    let availableCharges = cooldownResult.availableCharges || 0;
+    let availableCharges = availabilityResult.availableCharges || 0;
 
     // Check if there are any pending assignments for this mitigation
     // This ensures the UI updates immediately after assignment
@@ -155,7 +163,7 @@ const MitigationItem = memo(({
         mitigationId={mitigation.id}
         bossActionId={selectedBossAction?.id}
         type="charges"
-        totalCount={cooldownResult.totalCharges}
+        totalCount={availabilityResult.totalCharges}
         availableCount={availableCharges}
       /></>
     );
@@ -167,34 +175,32 @@ const MitigationItem = memo(({
       return null;
     }
 
-    // Get the cooldown result to check available instances
-    const cooldownResult = selectedBossAction ?
-      checkAbilityCooldown(
+    // Get the availability result to check available instances
+    const instanceAvailability = selectedBossAction && checkAbilityAvailability ?
+      checkAbilityAvailability(
         mitigation.id,
         selectedBossAction.time,
-        // Check if this ability is being assigned to the current boss action
-        selectedBossAction.assignments?.some(m => m.id === mitigation.id) ||
-        pendingAssignments.some(pa =>
-          pa.mitigationId === mitigation.id &&
-          pa.bossActionId === selectedBossAction.id
-        ),
-        selectedBossAction.id
+        selectedBossAction.id,
+        {
+          isBeingAssigned: selectedBossAction.assignments?.some(m => m.id === mitigation.id) ||
+            pendingAssignments.some(pa =>
+              pa.mitigationId === mitigation.id &&
+              pa.bossActionId === selectedBossAction.id
+            )
+        }
       ) :
       {
         isRoleShared: true,
-        roleSharedCount: getRoleSharedAbilityCount(mitigation, selectedJobs),
-        instancesUsed: 0,
-        totalInstances: getRoleSharedAbilityCount(mitigation, selectedJobs)
+        totalInstances: getRoleSharedAbilityCount(mitigation, selectedJobs),
+        availableInstances: getRoleSharedAbilityCount(mitigation, selectedJobs)
       };
 
     // Only show if we have multiple instances available
-    const roleSharedCount = cooldownResult.roleSharedCount || 0;
-    if (roleSharedCount <= 1) return null;
+    const totalInstances = instanceAvailability.totalInstances || 0;
+    if (totalInstances <= 1) return null;
 
     // Calculate available instances
-    const totalInstances = cooldownResult.totalInstances || roleSharedCount;
-    const instancesUsed = cooldownResult.instancesUsed || 0;
-    let availableInstances = Math.max(0, totalInstances - instancesUsed);
+    let availableInstances = instanceAvailability.availableInstances || 0;
 
     // Check if there are any pending assignments for this mitigation
     const hasPendingAssignment = selectedBossAction ? pendingAssignments.some(pa =>

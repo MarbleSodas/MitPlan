@@ -1,0 +1,100 @@
+{
+  "rules": {
+    "plans": {
+      ".read": true,
+      ".write": true,
+      "$planId": {
+        ".read": true,
+        ".write": true,
+        "userId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "ownerId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "bossId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "isPublic": {
+          ".validate": "newData.isBoolean()"
+        },
+        "accessedBy": {
+          "$userId": {
+            ".validate": "newData.hasChildren(['firstAccess', 'lastAccess', 'accessCount'])",
+            "firstAccess": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "lastAccess": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "accessCount": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        },
+        "collaboration": {
+          "activeUsers": {
+            ".write": true,
+            "$sessionId": {
+              ".validate": "newData.hasChildren(['userId', 'displayName', 'sessionId', 'joinedAt', 'lastActivity', 'isActive'])",
+              "userId": {
+                ".validate": "newData.isString()"
+              },
+              "displayName": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+              },
+              "sessionId": {
+                ".validate": "newData.isString() && newData.val().length > 0"
+              },
+              "email": {
+                ".validate": "newData.isString()"
+              },
+              "joinedAt": {
+                ".validate": "newData.isNumber()"
+              },
+              "lastActivity": {
+                ".validate": "newData.isNumber()"
+              },
+              "isActive": {
+                ".validate": "newData.isBoolean()"
+              }
+            }
+          },
+          "changes": {
+            ".write": true,
+            "$changeId": {
+              ".validate": "newData.hasChildren(['userId', 'sessionId', 'changeType', 'timestamp', 'data'])",
+              "userId": {
+                ".validate": "newData.isString()"
+              },
+              "sessionId": {
+                ".validate": "newData.isString() && newData.val().length > 0"
+              },
+              "changeType": {
+                ".validate": "newData.isString() && newData.val().matches(/^(title|boss_selection|job_selection|tank_assignment|mitigation_assignment|mitigation_removal|tank_position_assignment)$/)"
+              },
+              "data": {
+                ".validate": "newData.hasChildren()"
+              },
+              "timestamp": {
+                ".validate": "newData.isNumber()"
+              }
+            }
+          }
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() || newData.isString()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() || newData.isString()"
+        },
+        "lastAccessedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    }
+  }
+}

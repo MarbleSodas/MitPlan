@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { mitigationAbilities } from '../data';
+import { getCooldownManager } from '../utils/cooldown/cooldownManager';
 import {
   findActiveMitigationsAtTime,
   getAbilityChargeCount,
@@ -678,6 +679,15 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     // Check for cooldown conflicts and remove future assignments if needed
     const conflicts = checkAndRemoveFutureConflicts(bossActionId, mitigation);
 
+    // If this is an Aetherflow-consuming ability, clear the cache immediately for real-time UI updates
+    if (mitigation.consumesAetherflow) {
+      const cooldownManager = getCooldownManager();
+      if (cooldownManager?.aetherflowTracker) {
+        console.log('[MitigationContext] Clearing Aetherflow cache before adding stack-consuming ability:', mitigation.name);
+        cooldownManager.aetherflowTracker.clearCache();
+      }
+    }
+
     // Add the mitigation to the assignments
     setAssignments(prev => ({
       ...prev,
@@ -727,12 +737,20 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       ? assignments[bossActionId].find(m => m.id === mitigationId && m.tankPosition === tankPosition)
       : assignments[bossActionId].find(m => m.id === mitigationId);
 
-    // If this is an Aetherflow-consuming ability, refund the stack
-    if (mitigation && mitigation.consumesAetherflow) {
-      // If we have access to the Aetherflow context, refund the stack
+    // If this is an Aetherflow-consuming ability, clear the cache to trigger recalculation
+    const ability = mitigationAbilities.find(a => a.id === mitigationId);
+    if (mitigation && ability && ability.consumesAetherflow) {
+      // Clear the Aetherflow cache to trigger recalculation
+      const cooldownManager = getCooldownManager();
+      if (cooldownManager?.aetherflowTracker) {
+        console.log('[MitigationContext] Clearing Aetherflow cache after removing stack-consuming ability:', ability.name);
+        cooldownManager.aetherflowTracker.clearCache();
+      }
+
+      // If we have access to the Aetherflow context, trigger recalculation
       if (aetherflowContextRef.current) {
-        // We don't have a direct refund function, but we can recalculate stacks
-        // This will be handled by the useEffect in AetherflowContext
+        // The useEffect in AetherflowContext will handle the recalculation
+        // when assignments change
       }
     }
 

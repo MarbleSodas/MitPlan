@@ -84,7 +84,7 @@ const BossLevel = styled.div`
   margin-top: 5px;
 `;
 
-function BossSelector({ selectedBossId, onSelectBoss }) {
+function BossSelector({ selectedBossId, onSelectBoss, disabled = false }) {
   return (
     <SelectorContainer>
       <SelectorTitle>Select Boss</SelectorTitle>
@@ -93,7 +93,11 @@ function BossSelector({ selectedBossId, onSelectBoss }) {
           <BossCard
             key={boss.id}
             $isSelected={boss.id === selectedBossId}
-            onClick={() => onSelectBoss(boss.id)}
+            onClick={() => disabled ? () => {} : onSelectBoss(boss.id)}
+            style={{
+              opacity: disabled ? 0.6 : 1,
+              cursor: disabled ? 'not-allowed' : 'pointer'
+            }}
           >
               <BossIcon>
                 {typeof boss.icon === 'string' && boss.icon.startsWith('/') ?

@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { useChargeCountContext } from '../../contexts/ChargeCountContext';
+import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
 
 // Styled component for charge count display
 const ChargeCountContainer = styled.span`
   display: inline-block;
   padding: 1px 5px;
   border-radius: 10px;
-  background-color: ${props => props.available === 0 ?
+  background-color: ${props => props.$available === 0 ?
     props.theme.colors.error || '#ff5555' :
     props.theme.colors.primary};
   color: ${props => props.theme.colors.buttonText};
   font-weight: bold;
   margin-left: 4px;
   font-size: 0.8rem;
-  opacity: ${props => props.available === 0 ? 0.8 : 1};
+  opacity: ${props => props.$available === 0 ? 0.8 : 1};
   transition: all 0.3s ease;
   position: relative;
 
@@ -48,10 +48,10 @@ const ChargeCounter = ({
   availableCount
 }) => {
   const {
-    getChargeCount,
-    getInstanceCount,
-    pendingAssignments
-  } = useChargeCountContext();
+    checkAbilityAvailability,
+    pendingAssignments,
+    currentBossActions
+  } = useEnhancedMitigation();
 
   // Local state for animation
   const [isFlashing, setIsFlashing] = useState(false);
@@ -59,21 +59,25 @@ const ChargeCounter = ({
   // Use a ref to track previous available count for comparison
   const prevAvailableRef = useRef();
 
-  // Get the appropriate count based on the type
-  let count;
-  if (type === 'charges') {
-    count = getChargeCount(mitigationId);
-  } else {
-    count = getInstanceCount(mitigationId);
-  }
-
-  // Use provided counts if available, otherwise use context counts
-  const total = totalCount || (count ? (type === 'charges' ? count.totalCharges : count.totalInstances) : 1);
+  // Get the appropriate count using enhanced availability checking
+  let total = totalCount || 1;
   let available = availableCount;
 
-  // If available count is not provided, use context count
-  if (available === undefined) {
-    available = count ? (type === 'charges' ? count.availableCharges : count.availableInstances) : 0;
+  // If counts are not provided, get them from enhanced availability checking
+  if (available === undefined || totalCount === undefined) {
+    // Find the boss action to get the time for availability checking
+    const bossAction = bossActionId ? currentBossActions?.find(action => action.id === bossActionId) : null;
+    const targetTime = bossAction?.time || 0;
+
+    const availability = checkAbilityAvailability(mitigationId, targetTime, bossActionId);
+
+    if (type === 'charges') {
+      total = totalCount || availability.totalCharges;
+      available = availableCount !== undefined ? availableCount : availability.availableCharges;
+    } else {
+      total = totalCount || availability.totalInstances;
+      available = availableCount !== undefined ? availableCount : availability.availableInstances;
+    }
   }
 
   // We don't need to check for pending assignments here because the context already decremented the count
@@ -98,7 +102,7 @@ const ChargeCounter = ({
 
   return (
     <ChargeCountContainer
-      available={available}
+      $available={available}
       data-mitigation-id={mitigationId}
       data-charge-type={type}
       className={isFlashing ? 'flash-update' : ''}

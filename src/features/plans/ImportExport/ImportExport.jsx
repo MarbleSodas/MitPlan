@@ -464,57 +464,77 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     try {
       const importObj = JSON.parse(importData);
 
-      // Validate the import data
-      if (!importObj.assignments || !importObj.bossId) {
-        throw new Error('Invalid import data: missing required fields');
-      }
+      // Import migration utilities
+      import('../../../utils/version/versionUtils.js').then(({ migratePlanData, validatePlanData }) => {
+        try {
+          console.log('%c[IMPORT] Starting plan import process',
+            'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', importObj);
 
-      // Reconstruct the full mitigation objects from IDs
-      const reconstructedAssignments = {};
+          // Migrate the plan data to the current version
+          const migratedData = migratePlanData(importObj);
 
-      Object.entries(importObj.assignments).forEach(([bossActionId, mitigationIds]) => {
-        reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-          const mitigation = mitigationAbilities.find(m => m.id === id);
-          if (!mitigation) {
-            console.warn(`Mitigation with ID ${id} not found`);
-            return null;
+          // Validate the migrated data
+          if (!validatePlanData(migratedData)) {
+            throw new Error('Invalid plan data after migration');
           }
-          return mitigation;
-        }).filter(Boolean); // Remove null values
-      });
 
-      // Reconstruct the full job objects if selectedJobs is included
-      let reconstructedJobs = null;
-      if (importObj.selectedJobs) {
-        reconstructedJobs = JSON.parse(JSON.stringify(ffxivJobs)); // Deep clone
+          console.log('%c[IMPORT] Plan data migrated and validated successfully',
+            'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', migratedData);
 
-        // Reset all jobs to unselected
-        Object.keys(reconstructedJobs).forEach(roleKey => {
-          reconstructedJobs[roleKey].forEach(job => {
-            job.selected = false;
+          // Reconstruct the full mitigation objects from IDs
+          const reconstructedAssignments = {};
+
+          Object.entries(migratedData.assignments).forEach(([bossActionId, mitigationIds]) => {
+            reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
+              const mitigation = mitigationAbilities.find(m => m.id === id);
+              if (!mitigation) {
+                console.warn(`Mitigation with ID ${id} not found`);
+                return null;
+              }
+              return mitigation;
+            }).filter(Boolean); // Remove null values
           });
-        });
 
-        // Set selected jobs based on import data
-        Object.entries(importObj.selectedJobs).forEach(([roleKey, jobIds]) => {
-          if (reconstructedJobs[roleKey]) {
-            jobIds.forEach(jobId => {
-              const job = reconstructedJobs[roleKey].find(j => j.id === jobId);
-              if (job) {
-                job.selected = true;
+          // Reconstruct the full job objects if selectedJobs is included
+          let reconstructedJobs = null;
+          if (migratedData.selectedJobs) {
+            reconstructedJobs = JSON.parse(JSON.stringify(ffxivJobs)); // Deep clone
+
+            // Reset all jobs to unselected
+            Object.keys(reconstructedJobs).forEach(roleKey => {
+              reconstructedJobs[roleKey].forEach(job => {
+                job.selected = false;
+              });
+            });
+
+            // Set selected jobs based on import data
+            Object.entries(migratedData.selectedJobs).forEach(([roleKey, jobIds]) => {
+              if (reconstructedJobs[roleKey]) {
+                jobIds.forEach(jobId => {
+                  const job = reconstructedJobs[roleKey].find(j => j.id === jobId);
+                  if (job) {
+                    job.selected = true;
+                  }
+                });
               }
             });
           }
-        });
-      }
 
-      // Call the onImport callback with the reconstructed data
-      onImport(reconstructedAssignments, importObj.bossId, reconstructedJobs);
-      setImportData('');
-      alert('Import successful!');
+          // Call the onImport callback with the reconstructed data
+          onImport(reconstructedAssignments, migratedData.bossId, reconstructedJobs);
+          setImportData('');
+          alert('Import successful!');
+        } catch (error) {
+          console.error('Import error:', error);
+          alert(`Import failed: ${error.message}`);
+        }
+      }).catch(error => {
+        console.error('Failed to load migration utilities:', error);
+        alert('Import failed: Unable to load migration utilities');
+      });
     } catch (error) {
-      console.error('Import error:', error);
-      alert(`Import failed: ${error.message}`);
+      console.error('JSON parsing error:', error);
+      alert(`Import failed: Invalid JSON format - ${error.message}`);
     }
   };
 
@@ -533,48 +553,70 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   // Handle loading a saved plan
   const handleLoadPlan = (plan) => {
     try {
-      // Reconstruct the full mitigation objects from IDs
-      const reconstructedAssignments = {};
+      // Import migration utilities and migrate the plan data
+      import('../../../utils/version/versionUtils.js').then(({ migratePlanData, validatePlanData }) => {
+        try {
+          console.log('%c[LOAD] Loading saved plan',
+            'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', plan);
 
-      Object.entries(plan.assignments).forEach(([bossActionId, mitigationIds]) => {
-        reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-          const mitigation = mitigationAbilities.find(m => m.id === id);
-          if (!mitigation) {
-            console.warn(`Mitigation with ID ${id} not found`);
-            return null;
+          // Migrate the plan data to the current version
+          const migratedPlan = migratePlanData(plan);
+
+          // Validate the migrated data
+          if (!validatePlanData(migratedPlan)) {
+            throw new Error('Invalid plan data after migration');
           }
-          return mitigation;
-        }).filter(Boolean); // Remove null values
-      });
 
-      // Reconstruct the full job objects if selectedJobs is included
-      let reconstructedJobs = null;
-      if (plan.selectedJobs) {
-        reconstructedJobs = JSON.parse(JSON.stringify(ffxivJobs)); // Deep clone
+          // Reconstruct the full mitigation objects from IDs
+          const reconstructedAssignments = {};
 
-        // Reset all jobs to unselected
-        Object.keys(reconstructedJobs).forEach(roleKey => {
-          reconstructedJobs[roleKey].forEach(job => {
-            job.selected = false;
+          Object.entries(migratedPlan.assignments).forEach(([bossActionId, mitigationIds]) => {
+            reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
+              const mitigation = mitigationAbilities.find(m => m.id === id);
+              if (!mitigation) {
+                console.warn(`Mitigation with ID ${id} not found`);
+                return null;
+              }
+              return mitigation;
+            }).filter(Boolean); // Remove null values
           });
-        });
 
-        // Set selected jobs based on import data
-        Object.entries(plan.selectedJobs).forEach(([roleKey, jobIds]) => {
-          if (reconstructedJobs[roleKey]) {
-            jobIds.forEach(jobId => {
-              const job = reconstructedJobs[roleKey].find(j => j.id === jobId);
-              if (job) {
-                job.selected = true;
+          // Reconstruct the full job objects if selectedJobs is included
+          let reconstructedJobs = null;
+          if (migratedPlan.selectedJobs) {
+            reconstructedJobs = JSON.parse(JSON.stringify(ffxivJobs)); // Deep clone
+
+            // Reset all jobs to unselected
+            Object.keys(reconstructedJobs).forEach(roleKey => {
+              reconstructedJobs[roleKey].forEach(job => {
+                job.selected = false;
+              });
+            });
+
+            // Set selected jobs based on import data
+            Object.entries(migratedPlan.selectedJobs).forEach(([roleKey, jobIds]) => {
+              if (reconstructedJobs[roleKey]) {
+                jobIds.forEach(jobId => {
+                  const job = reconstructedJobs[roleKey].find(j => j.id === jobId);
+                  if (job) {
+                    job.selected = true;
+                  }
+                });
               }
             });
           }
-        });
-      }
 
-      // Call the onImport callback with the reconstructed data
-      onImport(reconstructedAssignments, plan.bossId, reconstructedJobs);
-      alert(`Plan "${plan.name}" loaded successfully!`);
+          // Call the onImport callback with the reconstructed data
+          onImport(reconstructedAssignments, migratedPlan.bossId, reconstructedJobs);
+          alert(`Plan "${migratedPlan.name || plan.name}" loaded successfully!`);
+        } catch (error) {
+          console.error('Load error:', error);
+          alert(`Load failed: ${error.message}`);
+        }
+      }).catch(error => {
+        console.error('Failed to load migration utilities:', error);
+        alert('Load failed: Unable to load migration utilities');
+      });
     } catch (error) {
       console.error('Load error:', error);
       alert(`Load failed: ${error.message}`);

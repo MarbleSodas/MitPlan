@@ -16,37 +16,85 @@ const AssignedMitigationsContainer = styled.div`
   position: absolute;
   top: 35px;
   right: 0;
-  width: 100%;
-  max-width: 260px;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  border-left: 1px solid ${props => props.theme.colors.border};
-  padding: 4px 6px;
+  gap: 6px;
+  border-left: 2px solid ${props => props.theme.colors.border};
+  padding: 8px 10px;
   height: calc(100% - 40px);
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.5)'};
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.8)'};
   border-bottom-right-radius: ${props => props.theme.borderRadius.medium};
   -webkit-overflow-scrolling: touch;
-  z-index: 1;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 100%;
-    max-width: 100vw;
-    min-width: 0;
+  /* Desktop styles - optimized for 1920x1080, 1440x900, 2560x1440 */
+  width: clamp(200px, 15vw, 280px);
+  min-width: 200px;
+  max-width: 280px;
+
+  /* Large desktop styles (2560x1440 and above) */
+  @media (min-width: ${props => props.theme.breakpoints.largeDesktop}) {
+    width: clamp(240px, 12vw, 320px);
+    min-width: 240px;
+    max-width: 320px;
+    padding: 10px 12px;
+    gap: 8px;
+    font-size: ${props => props.theme.fontSizes.medium};
+  }
+
+  /* Standard desktop styles (1200px to 1440px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeDesktop}) and (min-width: ${props => props.theme.breakpoints.desktop}) {
+    width: clamp(180px, 16vw, 240px);
+    min-width: 180px;
+    max-width: 240px;
+  }
+
+  /* Large tablet styles (992px to 1200px) */
+  @media (max-width: ${props => props.theme.breakpoints.desktop}) and (min-width: ${props => props.theme.breakpoints.largeTablet}) {
+    width: clamp(160px, 18vw, 200px);
+    min-width: 160px;
+    max-width: 200px;
+    padding: 5px 7px;
+    gap: 5px;
+  }
+
+  /* Tablet styles (768px to 992px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
+    width: clamp(140px, 22vw, 180px);
+    min-width: 140px;
+    max-width: 180px;
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  /* Mobile styles (480px to 768px) */
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
+    width: clamp(120px, 30vw, 160px);
+    min-width: 120px;
+    max-width: 160px;
     top: 30px;
-    padding: 2px 2px 2px 4px;
-    gap: 2px;
+    padding: 3px 5px;
+    gap: 3px;
+    height: calc(100% - 30px);
+  }
+
+  /* Small mobile styles (below 480px) */
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: clamp(110px, 35vw, 140px);
+    min-width: 110px;
+    max-width: 140px;
+    top: 30px;
+    padding: 3px 5px;
+    gap: 3px;
     height: calc(100% - 30px);
     touch-action: pan-y;
     overscroll-behavior: contain;
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.7)'};
-    border-left: 1px solid ${props => props.theme.colors.border};
-    max-height: calc(100% - 30px);
-    overflow-x: hidden;
+    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.85)'};
+    border-left: 2px solid ${props => props.theme.colors.primary};
+    box-shadow: -2px 0 6px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -148,52 +196,105 @@ const MitigationIcon = styled.span`
   height: 16px;
   flex-shrink: 0;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+  /* Tablet styles (768px to 992px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
     margin-right: 3px;
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  /* Mobile styles (480px to 768px) */
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-right: 3px;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Small mobile styles (below 480px) */
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    margin-right: 2px;
+    width: 11px;
+    height: 11px;
     flex-shrink: 0;
   }
 `;
 
 const RemoveButton = styled.button`
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  max-width: 28px;
-  max-height: 28px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
   border-radius: 50%;
   border: none;
-  background-color: rgba(255, 100, 100, 0.18);
-  color: inherit;
+  background-color: ${props => props.theme?.colors?.error || '#ef4444'};
+  color: white;
   /* Removed transition for better performance */
   padding: 0;
-  margin-left: 8px;
+  margin-left: 6px;
   line-height: 1;
   flex-shrink: 0;
   /* Ensure button is above other elements and can receive clicks */
   position: relative;
-  z-index: 5;
+  z-index: 15; /* Higher z-index to ensure clickability */
+  /* Ensure button stays within container bounds */
+  box-sizing: border-box;
+  /* Touch optimization */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 
   &:hover {
-    background-color: rgba(255, 100, 100, 0.28);
+    background-color: ${props => props.theme?.colors?.errorHover || '#dc2626'};
   }
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    min-height: 24px;
-    max-width: 24px;
-    max-height: 24px;
+  &:active {
+    background-color: rgba(255, 100, 100, 0.35);
+    transform: scale(0.95);
+  }
+
+  /* Tablet styles (768px to 992px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    max-width: 26px;
+    max-height: 26px;
     font-size: 16px;
-    margin-left: 6px;
+    margin-left: 5px;
+  }
+
+  /* Mobile styles (480px to 768px) */
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+    font-size: 16px;
+    margin-left: 4px;
+  }
+
+  /* Small mobile styles (below 480px) */
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    max-width: 30px;
+    max-height: 30px;
+    font-size: 16px;
+    margin-left: 3px;
   }
 `;
 
@@ -225,28 +326,35 @@ const TankPositionBadge = styled.span`
   }
 `;
 
-const AssignedMitigations = memo(({
+const AssignedMitigations = ({
   action,
   assignments,
   getActiveMitigations,
   selectedJobs,
   currentBossLevel,
   isMobile,
-  onRemoveMitigation,
-  removePendingAssignment
+  onRemoveMitigation
 }) => {
   // Get tank position context
   const { tankPositions } = useTankPositionContext();
+
   // Get directly assigned mitigations
-  const directMitigations = assignments[action.id] || [];
+  const directMitigations = (assignments && assignments[action.id]) || [];
 
   // Filter out mitigations that don't have any corresponding selected jobs
-  const filteredDirectMitigations = directMitigations.filter(mitigation =>
-    isMitigationAvailable(mitigation, selectedJobs)
-  );
+  const filteredDirectMitigations = directMitigations.filter(mitigation => {
+    if (!mitigation) return false;
+
+    // Find the full mitigation data from the abilities array
+    const fullMitigation = mitigationAbilities.find(a => a.id === mitigation.id);
+    if (!fullMitigation) return false;
+
+    // Check if any of the jobs that can use this ability are selected
+    return isMitigationAvailable(fullMitigation, selectedJobs);
+  });
 
   // Get inherited mitigations from previous actions
-  const activeMitigations = getActiveMitigations(action.id, action.time);
+  const activeMitigations = getActiveMitigations ? getActiveMitigations(action.id, action.time) : [];
 
   // Filter out inherited mitigations that don't have any corresponding selected jobs
   const filteredActiveMitigations = activeMitigations.filter(mitigation => {
@@ -262,28 +370,33 @@ const AssignedMitigations = memo(({
   if (filteredDirectMitigations.length === 0 && filteredActiveMitigations.length === 0) {
     return null;
   }
-
-  console.log('[AssignedMitigations] filteredDirectMitigations.length:', filteredDirectMitigations.length);
   return (
     <AssignedMitigationsContainer>
       {/* Render directly assigned mitigations */}
       {filteredDirectMitigations.map(mitigation => {
+        // Find the full mitigation data from the abilities array
+        const fullMitigation = mitigationAbilities.find(a => a.id === mitigation.id);
+        if (!fullMitigation) return null;
+
+        // Use the full mitigation data for rendering, but preserve assignment-specific data like tankPosition
+        const displayMitigation = { ...fullMitigation, ...mitigation };
+
         // Compute tooltip content directly (no useMemo)
-        const tooltipContent = `${mitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: ${getAbilityDescriptionForLevel(mitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(mitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(mitigation, currentBossLevel)}s${getAbilityChargeCount(mitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(mitigation, currentBossLevel)}` : ''})${mitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(mitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(mitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(mitigation, currentBossLevel) * 100}%`}` : ''}`;
+        const tooltipContent = `${displayMitigation.name}${displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' ? ` (${displayMitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: ${getAbilityDescriptionForLevel(displayMitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(displayMitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(displayMitigation, currentBossLevel)}s${getAbilityChargeCount(displayMitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(displayMitigation, currentBossLevel)}` : ''})${displayMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) * 100}%`}` : ''}`;
         return (
           <Tooltip
-            key={mitigation.id}
+            key={displayMitigation.id}
             content={tooltipContent}
           >
             <AssignedMitigationItem>
               <MitigationIcon>
-                {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
-                  <img src={mitigation.icon} alt={mitigation.name} style={{
-                    maxHeight: isMobile ? '14px' : '18px',
-                    maxWidth: isMobile ? '14px' : '18px',
+                {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
+                  <img src={displayMitigation.icon} alt={displayMitigation.name} style={{
+                    maxHeight: '100%',
+                    maxWidth: '100%',
                     display: 'block'
                   }} /> :
-                  mitigation.icon
+                  displayMitigation.icon
                 }
               </MitigationIcon>
               <span
@@ -297,10 +410,10 @@ const AssignedMitigations = memo(({
                   alignItems: 'center'
                 }}
               >
-                {mitigation.name}
-                {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
-                  <TankPositionBadge $position={mitigation.tankPosition}>
-                    {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
+                {displayMitigation.name}
+                {displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' && (
+                  <TankPositionBadge $position={displayMitigation.tankPosition}>
+                    {displayMitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
                   </TankPositionBadge>
                 )}
               </span>
@@ -313,14 +426,11 @@ const AssignedMitigations = memo(({
 
                     // Add a small delay to ensure the click is processed
                     setTimeout(() => {
-                      // Remove pending assignment
-                      removePendingAssignment(action.id, mitigation.id);
-
                       // Remove the mitigation with its tank position
-                      onRemoveMitigation(action.id, mitigation.id, mitigation.tankPosition);
+                      onRemoveMitigation(action.id, displayMitigation.id, displayMitigation.tankPosition);
                     }, 10);
                   }}
-                  aria-label={`Remove ${mitigation.name}`}
+                  aria-label={`Remove ${displayMitigation.name}`}
                 >
                   ×
                 </RemoveButton>
@@ -383,8 +493,8 @@ const AssignedMitigations = memo(({
       )}
     </AssignedMitigationsContainer>
   );
-});
+};
 
 AssignedMitigations.displayName = 'AssignedMitigations';
 
-export default AssignedMitigations;
+export default memo(AssignedMitigations);

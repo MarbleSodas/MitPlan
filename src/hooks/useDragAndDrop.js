@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { mitigationAbilities } from '../data';
 import { useTankSelectionModalContext } from '../contexts/TankSelectionModalContext';
 import { isDualTankBusterAction } from '../utils/boss/bossActionUtils';
+import { determineMitigationAssignment } from '../utils/mitigation/autoAssignmentUtils';
 
 /**
  * Custom hook for handling drag and drop operations in the mitigation planner
@@ -107,54 +108,27 @@ const useDragAndDrop = ({
         // Determine tank position for tank-specific mitigations
         let tankPosition = 'shared';
 
-        // If this is a tank buster and either:
-        // 1. A self-targeting ability for tank busters, or
-        // 2. A single-target ability for tank busters that can target tanks
-        // DEBUG: Log all relevant values before modal condition in useDragAndDrop
-        console.log('[DEBUG] useDragAndDrop Modal Condition Check', {
-          selectedBossAction,
-          mitigation,
-          isTankBuster: selectedBossAction.isTankBuster,
-          isDualTankBuster: isDualTankBusterAction(selectedBossAction),
-          isDualTankBusterProperty: selectedBossAction.isDualTankBuster,
-          mitigationTarget: mitigation.target,
-          forTankBusters: mitigation.forTankBusters,
-          forRaidWide: mitigation.forRaidWide,
-          targetsTank: mitigation.targetsTank
+        // Use the unified assignment function to determine if modal should be shown
+        const assignmentDecision = determineMitigationAssignment(mitigation, selectedBossAction, tankPositions);
+
+        console.log('[useDragAndDrop] Mitigation assignment decision:', {
+          mitigationName: mitigation.name,
+          mitigationType: mitigation.target,
+          bossActionName: selectedBossAction.name,
+          decision: assignmentDecision
         });
 
-        if (selectedBossAction.isTankBuster &&
-            ((mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide) ||
-             (mitigation.target === 'single' && mitigation.forTankBusters && mitigation.targetsTank))) {
+        if (assignmentDecision.shouldShowModal) {
+          console.log('[useDragAndDrop] Opening tank selection modal for mitigation assignment');
+          // Use the custom modal to select which tank to apply the mitigation to
+          openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
+            processMitigationAssignment(selectedBossAction, mitigation, selectedTankPosition);
+          }, mitigation, selectedBossAction);
 
-          // For dual tank busters, we need to ask which tank to apply the mitigation to
-          // DEBUG: Log when modal logic is triggered for dual tank buster in useDragAndDrop
-          console.log('[DEBUG] useDragAndDrop Dual Tank Buster Modal Trigger:', {
-            selectedBossAction,
-            mitigation,
-            isDualTankBusterAction: isDualTankBusterAction(selectedBossAction),
-            isDualTankBusterProperty: selectedBossAction.isDualTankBuster,
-            tankPositions
-          });
-
-          if (selectedBossAction.isDualTankBuster && mitigation.target === 'single') {
-            // Use the custom modal to select which tank to apply the mitigation to
-            openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
-              processMitigationAssignment(selectedBossAction, mitigation, selectedTankPosition);
-            });
-
-            // Set active mitigation to null and return early
-            // The modal callback will handle the assignment when a tank is selected
-            setActiveMitigation(null);
-            return;
-          }
-          // If only one tank is selected, use that tank's position
-          else if (tankPositions?.mainTank) {
-            tankPosition = 'mainTank';
-          }
-          else if (tankPositions?.offTank) {
-            tankPosition = 'offTank';
-          }
+          // Set active mitigation to null and return early
+          // The modal callback will handle the assignment when a tank is selected
+          setActiveMitigation(null);
+          return;
         }
 
         // Process the mitigation assignment with the determined tank position

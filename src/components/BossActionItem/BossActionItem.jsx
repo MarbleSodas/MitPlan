@@ -1,9 +1,9 @@
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
 import TankMitigationDisplay from '../common/TankMitigationDisplay';
-import AetherflowGauge from '../AetherflowGauge';
+import EnhancedAetherflowGauge from '../common/EnhancedAetherflowGauge/EnhancedAetherflowGauge.jsx';
 import {
   calculateTotalMitigation,
   formatMitigation,
@@ -13,9 +13,10 @@ import {
   calculateBarrierAmount,
   isTouchDevice
 } from '../../utils';
-import { isDualTankBusterAction } from '../../utils/boss/bossActionUtils';
+
+
 import { mitigationAbilities, bosses } from '../../data';
-import { useAetherflowContext, useTankPositionContext, useTankSelectionModalContext } from '../../contexts';
+import { useTankPositionContext } from '../../contexts';
 
 const BossAction = styled.div`
   background-color: ${props => {
@@ -30,7 +31,9 @@ const BossAction = styled.div`
   border-radius: ${props => props.theme.borderRadius.responsive.medium};
   padding: ${props => props.theme.spacing.medium};
   padding-top: 40px; /* Fixed padding at top for time indicator */
-  padding-right: ${props => props.$hasAssignments ? '165px' : props.theme.spacing.medium}; /* Extra space on right for mitigations */
+
+  /* Desktop padding - optimized for 1920x1080, 1440x900, 2560x1440 */
+  padding-right: ${props => props.$hasAssignments ? 'clamp(210px, 15vw, 290px)' : props.theme.spacing.medium};
   box-shadow: ${props => props.theme.shadows.small};
   position: relative;
   border-left: 4px solid ${props => {
@@ -71,33 +74,54 @@ const BossAction = styled.div`
     opacity: 0.95;
   }
 
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+  /* Large desktop styles (2560x1440 and above) */
+  @media (min-width: ${props => props.theme.breakpoints.largeDesktop}) {
+    padding-right: ${props => props.$hasAssignments ? '0px' : props.theme.spacing.medium};
+  }
+
+  /* Standard desktop styles (1200px to 1440px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeDesktop}) and (min-width: ${props => props.theme.breakpoints.desktop}) {
+    padding-right: ${props => props.$hasAssignments ? '0px' : props.theme.spacing.medium};
+  }
+
+  /* Large tablet styles (992px to 1200px) */
+  @media (max-width: ${props => props.theme.breakpoints.desktop}) and (min-width: ${props => props.theme.breakpoints.largeTablet}) {
     padding: ${props => props.theme.spacing.responsive.medium};
     padding-top: 40px;
-    padding-right: ${props => props.$hasAssignments ? '150px' : props.theme.spacing.responsive.medium};
+    padding-right: ${props => props.$hasAssignments ? '0px' : props.theme.spacing.responsive.medium};
     min-height: 130px;
     border-radius: ${props => props.theme.borderRadius.responsive.medium};
   }
 
-  /* Mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+  /* Tablet styles (768px to 992px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
+    padding: ${props => props.theme.spacing.responsive.medium};
+    padding-top: 40px;
+    padding-right: ${props => props.$hasAssignments ? 'clamp(150px, 22vw, 190px)' : props.theme.spacing.responsive.medium};
+    min-height: 130px;
+    border-radius: ${props => props.theme.borderRadius.responsive.medium};
+  }
+
+  /* Mobile styles (480px to 768px) */
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.responsive.small};
-    padding-top: 35px; /* Slightly smaller padding for time indicator on mobile */
-    padding-right: ${props => props.$hasAssignments ? '110px' : props.theme.spacing.responsive.small}; /* Increased space for mitigations on mobile */
-    min-height: 120px; /* Smaller minimum height on mobile */
-    margin-bottom: ${props => props.theme.spacing.responsive.small}; /* Increased spacing between boss actions */
-    position: relative; /* Ensure proper positioning context for absolute elements */
+    padding-top: 35px;
+    padding-right: ${props => props.$hasAssignments ? 'clamp(110px, 25vw, 150px)' : props.theme.spacing.responsive.small};
+    min-height: 120px;
+    margin-bottom: ${props => props.theme.spacing.responsive.small};
+    position: relative;
     border-radius: ${props => props.theme.borderRadius.responsive.small};
   }
 
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    padding: ${props => props.theme.spacing.small};
+  /* Small mobile styles (below 480px) */
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    padding: ${props => props.theme.spacing.responsive.small};
     padding-top: 30px;
-    padding-right: ${props => props.$hasAssignments ? '100px' : props.theme.spacing.small};
+    padding-right: ${props => props.$hasAssignments ? 'clamp(90px, 30vw, 130px)' : props.theme.spacing.responsive.small};
     min-height: 110px;
-    margin-bottom: ${props => props.theme.spacing.small};
+    margin-bottom: ${props => props.theme.spacing.responsive.small};
+    position: relative;
+    border-radius: ${props => props.theme.borderRadius.responsive.small};
   }
 `;
 
@@ -192,21 +216,26 @@ const ActionName = styled.h3`
   margin: 0;
   font-size: ${props => props.theme.fontSizes.responsive.large};
   font-weight: bold;
-  flex-grow: 1;
-  user-select: none; /* Prevent text selection */
+  user-select: none;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.4;
+  width: 100%;
 
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+  /* Tablet styles (768px to 992px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
     font-size: ${props => props.theme.fontSizes.responsive.medium};
   }
 
-  /* Mobile styles */
+  /* Mobile styles (480px to 768px) */
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
+  }
+
+  /* Small mobile styles (below 480px) */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-  }
-
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
     font-size: ${props => props.theme.fontSizes.responsive.small};
   }
 `;
@@ -216,48 +245,100 @@ const ActionDescription = styled.p`
   color: ${props => props.theme.colors.lightText};
   font-size: ${props => props.theme.fontSizes.responsive.medium};
   font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-  min-height: 40px; /* Ensure all descriptions have at least this height */
-  flex-grow: 1; /* Allow description to grow and fill available space */
-  line-height: 1.5; /* Improve readability */
-  padding-left: 2px; /* Slight indent */
-  margin-bottom: ${props => props.theme.spacing.medium}; /* Add space before mitigations */
-  width: ${props => props.$hasAssignments ? 'calc(100% - 100px)' : '100%'}; /* Ensure description doesn't flow into assignments */
-  max-width: ${props => props.$hasAssignments ? 'calc(100% - 100px)' : '100%'}; /* Ensure description doesn't flow into assignments */
-  overflow-wrap: break-word; /* Ensure long words don't overflow */
-  word-wrap: break-word; /* For older browsers */
-  hyphens: auto; /* Allow hyphenation for very long words */
-  white-space: normal; /* Ensure text wraps properly */
+  min-height: 40px;
+  line-height: 1.5;
+  padding-left: 2px;
+  margin-bottom: ${props => props.theme.spacing.medium};
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  white-space: normal;
+  width: 100%;
 
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+  /* Tablet styles (768px to 992px) */
+  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
     font-size: ${props => props.theme.fontSizes.responsive.medium};
     min-height: 36px;
     line-height: 1.4;
     margin-bottom: ${props => props.theme.spacing.responsive.medium};
-    width: ${props => props.$hasAssignments ? 'calc(100% - 80px)' : '100%'};
-    max-width: ${props => props.$hasAssignments ? 'calc(100% - 80px)' : '100%'};
   }
 
-  /* Mobile styles */
+  /* Mobile styles (480px to 768px) */
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
+    font-size: ${props => props.theme.fontSizes.responsive.medium};
+    min-height: 34px;
+    line-height: 1.4;
+    margin-bottom: ${props => props.theme.spacing.responsive.medium};
+  }
+
+  /* Small mobile styles (below 480px) */
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     font-size: ${props => props.theme.fontSizes.responsive.small};
-    min-height: 32px;
+    min-height: 30px;
     line-height: 1.3;
     margin-bottom: ${props => props.theme.spacing.responsive.small};
-    width: ${props => props.$hasAssignments ? 'calc(100% - 40px)' : '100%'};
-    max-width: ${props => props.$hasAssignments ? 'calc(100% - 40px)' : '100%'};
-  }
-
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
-    min-height: 28px;
-    line-height: 1.2;
-    margin-bottom: ${props => props.theme.spacing.small};
-    width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
-    max-width: ${props => props.$hasAssignments ? 'calc(100% - 30px)' : '100%'};
   }
 `;
+
+const ContentContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  margin: 10px 0;
+  width: 100%;
+  max-width: 100%;
+
+  /* Ensure content never overlaps with mitigations */
+  ${props => props.$hasAssignments && `
+    width: calc(100% - clamp(210px, 15vw, 290px));
+    max-width: calc(100% - clamp(210px, 15vw, 290px));
+
+    /* Large desktop styles (2560x1440 and above) */
+    @media (min-width: ${props.theme.breakpoints.largeDesktop}) {
+      width: calc(100% - clamp(250px, 12vw, 330px));
+      max-width: calc(100% - clamp(250px, 12vw, 330px));
+    }
+
+    /* Standard desktop styles (1200px to 1440px) */
+    @media (max-width: ${props.theme.breakpoints.largeDesktop}) and (min-width: ${props.theme.breakpoints.desktop}) {
+      width: calc(100% - clamp(190px, 16vw, 250px));
+      max-width: calc(100% - clamp(190px, 16vw, 250px));
+    }
+
+    /* Large tablet styles (992px to 1200px) */
+    @media (max-width: ${props.theme.breakpoints.desktop}) and (min-width: ${props.theme.breakpoints.largeTablet}) {
+      width: calc(100% - clamp(170px, 18vw, 210px));
+      max-width: calc(100% - clamp(170px, 18vw, 210px));
+    }
+
+    /* Tablet styles (768px to 992px) */
+    @media (max-width: ${props.theme.breakpoints.largeTablet}) and (min-width: ${props.theme.breakpoints.tablet}) {
+      width: calc(100% - clamp(150px, 22vw, 190px));
+      max-width: calc(100% - clamp(150px, 22vw, 190px));
+    }
+
+    /* Mobile styles (480px to 768px) */
+    @media (max-width: ${props.theme.breakpoints.tablet}) and (min-width: ${props.theme.breakpoints.mobile}) {
+      width: calc(100% - clamp(110px, 25vw, 150px));
+      max-width: calc(100% - clamp(110px, 25vw, 150px));
+    }
+
+    /* Small mobile styles (below 480px) */
+    @media (max-width: ${props.theme.breakpoints.mobile}) {
+      width: calc(100% - clamp(90px, 30vw, 130px));
+      max-width: calc(100% - clamp(90px, 30vw, 130px));
+    }
+  `}
+`;
+
+const TextContainer = styled.div`
+  flex: 1;
+  min-width: 0; /* Allows flex item to shrink below content size */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+`;
+
 const MitigationPercentage = styled.div`
   display: inline-flex;
   align-items: center;
@@ -371,53 +452,10 @@ const BossActionItem = memo(({
   const [isTouched, setIsTouched] = useState(false);
   const isTouch = isTouchDevice();
 
-  // Tank selection modal context
-  const { openTankSelectionModal } = useTankSelectionModalContext();
-  
   // Tank position context
   const { tankPositions } = useTankPositionContext();
 
-  // Handler for assigning mitigation (single-target, dual tank buster)
-  const handleAssignMitigation = useCallback((mitigation, assignCallback) => {
-    // DEBUG: Log all relevant values before modal condition in BossActionItem
-    console.log('[DEBUG] BossActionItem Modal Condition Check', {
-      action,
-      mitigation,
-      isTankBuster: action.isTankBuster,
-      isDualTankBuster: isDualTankBusterAction(action),
-      isDualTankBusterProperty: action.isDualTankBuster,
-      mitigationTarget: mitigation.target
-    });
 
-    // Show tank selection modal for:
-    // 1. Single-target abilities in dual tank busters OR
-    // 2. Self-targeting tank abilities that both tanks can use in dual tank busters
-    const canBothTanksUse = tankPositions?.mainTank && 
-                            tankPositions?.offTank && 
-                            mitigation.jobs.includes(tankPositions.mainTank) && 
-                            mitigation.jobs.includes(tankPositions.offTank);
-                            
-    if (isDualTankBusterAction(action) && 
-        ((mitigation.target === 'single') || 
-         (mitigation.target === 'self' && mitigation.forTankBusters && !mitigation.forRaidWide && canBothTanksUse))) {
-      // DEBUG: Log when modal logic is triggered for dual tank buster in BossActionItem
-      console.log('[DEBUG] BossActionItem Dual Tank Buster Modal Trigger:', {
-        action,
-        mitigation,
-        isDualTankBusterAction: isDualTankBusterAction(action),
-        isDualTankBusterProperty: action.isDualTankBuster,
-        canBothTanksUse,
-        tankPositions
-      });
-
-      openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
-        assignCallback(selectedTankPosition);
-      });
-      return;
-    }
-    // Default assignment (no modal)
-    assignCallback();
-  }, [action, tankPositions, openTankSelectionModal]);
 
   // Touch event handlers
   const handleTouchStart = useCallback(() => {
@@ -443,24 +481,31 @@ const BossActionItem = memo(({
     onClick(e);
   }, [onClick, isTouch]);
 
-  // Calculate if this action has any assignments
-  const hasAssignments =
-    (assignments[action.id] && assignments[action.id].filter(mitigation =>
-      isMitigationAvailable(mitigation, selectedJobs)
-    ).length > 0) ||
-    getActiveMitigations(action.id, action.time).filter(mitigation => {
-      const fullMitigation = mitigationAbilities.find(m => m.id === mitigation.id);
-      return fullMitigation && isMitigationAvailable(fullMitigation, selectedJobs);
-    }).length > 0;
+  // Calculate if this action has any assignments (either direct or inherited)
+  const directAssignments = assignments[action.id] || [];
+  const activeAssignments = getActiveMitigations ? getActiveMitigations(action.id, action.time) : [];
+
+  // Check if there are any assignments at all (regardless of job availability)
+  const hasAssignments = directAssignments.length > 0 || activeAssignments.length > 0;
   // Calculate total mitigation
   const calculateMitigationInfo = (tankPosition = null) => {
     // Get directly assigned mitigations
     const directMitigations = assignments[action.id] || [];
 
-    // Filter out mitigations that don't have any corresponding selected jobs
-    let filteredDirectMitigations = directMitigations.filter(mitigation =>
-      isMitigationAvailable(mitigation, selectedJobs)
-    );
+    // Transform assignment objects to full mitigation ability objects and filter by job availability
+    let filteredDirectMitigations = directMitigations
+      .map(assignment => {
+        // Find the full mitigation ability data
+        const fullMitigation = mitigationAbilities.find(m => m.id === assignment.id);
+        if (!fullMitigation) return null;
+
+        // Return the full mitigation object with assignment metadata
+        return {
+          ...fullMitigation,
+          ...assignment // Include assignment-specific data like tankPosition
+        };
+      })
+      .filter(mitigation => mitigation && isMitigationAvailable(mitigation, selectedJobs));
 
     // If a tank position is specified, filter mitigations by tank position and targeting type
     if (tankPosition) {
@@ -566,8 +611,19 @@ const BossActionItem = memo(({
   // Get general mitigation info (for display in the UI)
   const { allMitigations, barrierMitigations, hasMitigations } = calculateMitigationInfo();
 
-  // Get Aetherflow context
-  const { isScholarSelected } = useAetherflowContext();
+
+
+  // Check if Scholar is selected (handle all possible formats)
+  const isScholarSelected = selectedJobs && (
+    selectedJobs['SCH'] || // Direct format
+    (selectedJobs.healer && Array.isArray(selectedJobs.healer)) && (
+      // Optimized format: ["SCH", "WHM"]
+      (typeof selectedJobs.healer[0] === 'string' && selectedJobs.healer.includes('SCH')) ||
+      // Legacy format: [{ id: "SCH", selected: true }]
+      (typeof selectedJobs.healer[0] === 'object' &&
+       selectedJobs.healer.some(job => job && job.id === 'SCH' && job.selected))
+    )
+  );
 
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
@@ -588,12 +644,17 @@ const BossActionItem = memo(({
   const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
   const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
 
+
+
   // Calculate tank-specific mitigation percentages
   // Get the mitigation info for each tank position
-  const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.mainTank ?
+  const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) ?
     calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
-  const offTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.offTank ?
+  // For dual tank busters, always calculate off tank mitigation (party-wide abilities should apply)
+  const offTankMitigationInfo = (action.isDualTankBuster) ?
     calculateMitigationInfo('offTank') : { allMitigations: [], barrierMitigations: [] };
+
+
 
   // Extract the mitigations for each tank
   const mainTankMitigations = mainTankMitigationInfo.allMitigations;
@@ -737,15 +798,17 @@ const BossActionItem = memo(({
       onTouchCancel={handleTouchCancel}
     >
       <ActionTime>{action.time} seconds</ActionTime>
-      <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+      <ContentContainer $hasAssignments={hasAssignments}>
         <ActionIcon>
           {action.icon}
         </ActionIcon>
-        <ActionName>{action.name}</ActionName>
-      </div>
-      <ActionDescription $hasAssignments={hasAssignments}>
-        {action.description}
-      </ActionDescription>
+        <TextContainer>
+          <ActionName>{action.name}</ActionName>
+          <ActionDescription>
+            {action.description}
+          </ActionDescription>
+        </TextContainer>
+      </ContentContainer>
 
       {/* Display multi-hit indicator for multi-hit tank busters and raid-wide abilities */}
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -817,7 +880,7 @@ const BossActionItem = memo(({
                         isDualTankBuster={true}
                       />
                       {isSelected && isScholarSelected && (
-                        <AetherflowGauge />
+                        <EnhancedAetherflowGauge selectedBossAction={action} />
                       )}
                     </div>
 
@@ -846,7 +909,7 @@ const BossActionItem = memo(({
                       tankPosition="mainTank"
                     />
                     {isSelected && isScholarSelected && (
-                      <AetherflowGauge />
+                      <EnhancedAetherflowGauge selectedBossAction={action} />
                     )}
                   </div>
                 )}
@@ -862,7 +925,7 @@ const BossActionItem = memo(({
                   isTankBuster={false}
                 />
                 {isSelected && isScholarSelected && (
-                  <AetherflowGauge />
+                  <EnhancedAetherflowGauge selectedBossAction={action} />
                 )}
               </div>
             )}

@@ -1,8 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { mitigationAbilities } from '../data';
-import { useJobContext } from './JobContext';
-import { useBossContext } from './BossContext';
-import { useMitigationContext } from './MitigationContext';
+import { useRealtimeJobContext } from './RealtimeJobContext';
+import { useRealtimeBossContext } from './RealtimeBossContext';
+import { useRealtimeMitigationContext } from './RealtimeMitigationContext';
 
 // Create the context
 const AetherflowContext = createContext();
@@ -12,17 +12,35 @@ const AetherflowContext = createContext();
  */
 export const AetherflowProvider = ({ children }) => {
   // Get state from other contexts
-  const { selectedJobs } = useJobContext();
-  const { currentBossActions, selectedBossAction } = useBossContext();
-  const { assignments, setAetherflowContext } = useMitigationContext();
+  const { selectedJobs } = useRealtimeJobContext();
+  const { currentBossActions, selectedBossAction } = useRealtimeBossContext();
+  const { assignments } = useRealtimeMitigationContext();
 
   // State for Aetherflow stacks
   const [aetherflowStacks, setAetherflowStacks] = useState(3); // Start with full stacks
   const [lastAetherflowTime, setLastAetherflowTime] = useState(0); // Time when Aetherflow was last used
 
-  // Check if Scholar is selected
+  // Check if Scholar is selected (handles multiple data formats)
   const isScholarSelected = useMemo(() => {
-    return selectedJobs.healer.some(job => job.id === 'SCH' && job.selected);
+    if (!selectedJobs) return false;
+
+    // Direct format: selectedJobs['SCH']
+    if (selectedJobs['SCH']) return true;
+
+    // Check healer array for Scholar
+    if (selectedJobs.healer && Array.isArray(selectedJobs.healer)) {
+      // Optimized format: ["SCH", "WHM"]
+      if (typeof selectedJobs.healer[0] === 'string' && selectedJobs.healer.includes('SCH')) {
+        return true;
+      }
+      // Legacy format: [{ id: "SCH", selected: true }]
+      if (typeof selectedJobs.healer[0] === 'object' &&
+          selectedJobs.healer.some(job => job && job.id === 'SCH' && job.selected)) {
+        return true;
+      }
+    }
+
+    return false;
   }, [selectedJobs]);
 
   // Get all Aetherflow abilities
@@ -55,9 +73,10 @@ export const AetherflowProvider = ({ children }) => {
 
       // Check if Aetherflow was used at this action
       const actionAssignments = assignments[action.id] || [];
-      const aetherflowUsed = actionAssignments.some(
-        assignment => assignment.isAetherflowProvider
-      );
+      const aetherflowUsed = actionAssignments.some(assignment => {
+        const ability = mitigationAbilities.find(a => a.id === assignment.id);
+        return ability && ability.isAetherflowProvider;
+      });
 
       if (aetherflowUsed) {
         // Refresh stacks to 3
@@ -66,9 +85,10 @@ export const AetherflowProvider = ({ children }) => {
       }
 
       // Check for abilities that consume Aetherflow
-      const consumingAbilities = actionAssignments.filter(
-        assignment => assignment.consumesAetherflow
-      );
+      const consumingAbilities = actionAssignments.filter(assignment => {
+        const ability = mitigationAbilities.find(a => a.id === assignment.id);
+        return ability && ability.consumesAetherflow;
+      });
 
       // Reduce stacks for each consuming ability
       stacks = Math.max(0, stacks - consumingAbilities.length);
@@ -143,12 +163,8 @@ export const AetherflowProvider = ({ children }) => {
     aetherflowAbility
   };
 
-  // Provide the AetherflowContext to the MitigationContext
-  useEffect(() => {
-    if (setAetherflowContext) {
-      setAetherflowContext(contextValue);
-    }
-  }, [contextValue, setAetherflowContext]);
+  // Note: AetherflowContext now works independently with real-time contexts
+  // The setAetherflowContext integration is not needed with RealtimeMitigationContext
 
   return (
     <AetherflowContext.Provider value={contextValue}>

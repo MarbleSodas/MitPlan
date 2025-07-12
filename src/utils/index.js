@@ -9,7 +9,9 @@ export {
   getAbilityDurationForLevel,
   getAbilityChargeCount,
   getRoleSharedAbilityCount,
-  isSelfTargetingAbilityUsableByTank
+  isSelfTargetingAbilityUsableByTank,
+  filterAbilityUpgrades,
+  getAvailableAbilities
 } from './abilities/abilityUtils';
 
 export {
