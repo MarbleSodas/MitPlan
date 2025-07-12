@@ -49,7 +49,7 @@ const LogoutButton = styled.button`
   padding: 0.5rem 1rem;
   background: ${props => props.theme?.colors?.error || '#ef4444'} !important;
   color: white;
-  border: none;
+  border: 1px solid ${props => props.theme?.colors?.error || '#ef4444'};
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
@@ -57,6 +57,7 @@ const LogoutButton = styled.button`
 
   &:hover {
     background: ${props => props.theme?.colors?.errorHover || '#dc2626'};
+    border-color: ${props => props.theme?.colors?.errorHover || '#dc2626'};
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
   }
@@ -249,10 +250,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreatePlan = () => {
-    setShowCreateModal(true);
-  };
-
   const handleCreatePlanByBoss = () => {
     setShowBossSelectionModal(true);
   };
@@ -316,11 +313,8 @@ const Dashboard = () => {
       )}
 
       <ActionButtons>
-        <Button onClick={handleCreatePlan}>
-          Create New Plan
-        </Button>
         <Button onClick={handleCreatePlanByBoss}>
-          Create Plan by Boss
+          Create New Plan
         </Button>
         <SecondaryButton onClick={handleImportPlan}>
           Import Plan
@@ -334,11 +328,8 @@ const Dashboard = () => {
             Create your first mitigation plan to get started with optimizing your raid strategies.
           </EmptyStateText>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button onClick={handleCreatePlan}>
-              Create Your First Plan
-            </Button>
             <Button onClick={handleCreatePlanByBoss}>
-              Choose Boss First
+              Create Your First Plan
             </Button>
           </div>
         </EmptyState>

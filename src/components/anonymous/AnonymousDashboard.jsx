@@ -254,10 +254,6 @@ const AnonymousDashboard = () => {
     }
   };
 
-  const handleCreatePlan = () => {
-    setShowCreateModal(true);
-  };
-
   const handleCreatePlanByBoss = () => {
     setShowBossSelectionModal(true);
   };
@@ -323,13 +319,9 @@ const AnonymousDashboard = () => {
           <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Your Plans ({categorizedPlans.totalPlans})</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <PrimaryButton onClick={handleCreatePlan}>
-            <Plus size={16} />
-            Create New Plan
-          </PrimaryButton>
           <PrimaryButton onClick={handleCreatePlanByBoss}>
             <Plus size={16} />
-            Create Plan by Boss
+            Create New Plan
           </PrimaryButton>
         </div>
       </ActionsBar>
@@ -344,13 +336,9 @@ const AnonymousDashboard = () => {
           <h3>No plans yet</h3>
           <p>Create your first mitigation plan to get started.</p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
-            <PrimaryButton onClick={handleCreatePlan}>
-              <Plus size={16} />
-              Create Your First Plan
-            </PrimaryButton>
             <PrimaryButton onClick={handleCreatePlanByBoss}>
               <Plus size={16} />
-              Choose Boss First
+              Create Your First Plan
             </PrimaryButton>
           </div>
         </EmptyState>

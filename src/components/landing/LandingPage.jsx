@@ -214,6 +214,7 @@ const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
             onSuccess={onAuthSuccess}
           />
 
+          {/* TODO: Anonymous mode feature not fully implemented yet
           <DemoSection>
             <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
               Want to try it first?
@@ -225,6 +226,7 @@ const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
               No account required • Plans stored locally
             </p>
           </DemoSection>
+          */}
         </AuthSection>
         </ContentWrapper>
       </MainContent>
