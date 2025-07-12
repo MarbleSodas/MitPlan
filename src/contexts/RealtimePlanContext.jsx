@@ -95,6 +95,28 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     let unsubscribe = () => {};
 
     if (!isLocalPlan) {
+      // Track access when first loading the plan
+      const trackInitialAccess = async () => {
+        try {
+          const currentUser = user || anonymousUser;
+          if (currentUser) {
+            const { trackPlanAccess } = await import('../services/planAccessService');
+            if (currentUser.uid) {
+              await trackPlanAccess(planId, currentUser.uid, false);
+              console.log('[RealtimePlanContext] Initial access tracked for authenticated user:', currentUser.uid);
+            } else if (currentUser.id) {
+              await trackPlanAccess(planId, currentUser.id, true);
+              console.log('[RealtimePlanContext] Initial access tracked for anonymous user:', currentUser.id);
+            }
+          }
+        } catch (error) {
+          console.error('[RealtimePlanContext] Error tracking initial access:', error);
+        }
+      };
+
+      // Track access on first load
+      trackInitialAccess();
+
       unsubscribe = planService.subscribeToPlanWithOrigin(
         planId,
         (planData, changeOrigin, error) => {

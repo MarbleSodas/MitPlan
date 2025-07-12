@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Copy, Check, Share2, Users } from 'lucide-react';
 import * as planService from '../../services/realtimePlanService';
+import { useToast } from '../common/Toast/Toast';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -154,6 +155,7 @@ const SecondaryButton = styled(Button)`
 `;
 
 const SharePlanModal = ({ isOpen, onClose, plan }) => {
+  const { addToast } = useToast();
   const [isPublic, setIsPublic] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -195,6 +197,14 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+
+      // Show success toast
+      addToast({
+        type: 'success',
+        title: 'Plan link copied!',
+        message: 'The plan link has been copied to your clipboard.',
+        duration: 3000
+      });
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       const textArea = document.createElement('textarea');
@@ -205,6 +215,14 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
       document.body.removeChild(textArea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+
+      // Show success toast for fallback method
+      addToast({
+        type: 'success',
+        title: 'Plan link copied!',
+        message: 'The plan link has been copied to your clipboard.',
+        duration: 3000
+      });
     }
   };
 

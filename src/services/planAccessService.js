@@ -133,6 +133,16 @@ export const getUserAccessiblePlans = async (userId, isAnonymous = false) => {
         const isOwner = planData.ownerId === userId || planData.userId === userId;
         const hasAccessed = planData.accessedBy && planData.accessedBy[userId];
 
+        console.log('[PlanAccessService] Processing plan:', planId, {
+          isOwner,
+          hasAccessed: !!hasAccessed,
+          accessedByExists: !!planData.accessedBy,
+          userInAccessedBy: planData.accessedBy ? Object.keys(planData.accessedBy).includes(userId) : false,
+          ownerId: planData.ownerId,
+          userId: planData.userId,
+          currentUserId: userId
+        });
+
         // Universal access: include ALL plans
         accessiblePlans.push({
           id: planId,
@@ -234,14 +244,27 @@ export const getUserSharedPlans = async (userId, isAnonymous = false) => {
     if (isAnonymous) {
       // For anonymous users, there are no "shared" plans since they only work with localStorage
       // All plans are either owned or not accessible
+      console.log('[PlanAccessService] Anonymous user - no shared plans');
       return [];
     }
 
     const allPlans = await getUserAccessiblePlans(userId, isAnonymous);
+    console.log('[PlanAccessService] All accessible plans for user:', userId, allPlans.length);
 
     // Filter to only shared plans (accessed but not owned)
-    const sharedPlans = allPlans.filter(plan => !plan.isOwner && plan.hasAccessed);
+    const sharedPlans = allPlans.filter(plan => {
+      const isShared = !plan.isOwner && plan.hasAccessed;
+      if (isShared) {
+        console.log('[PlanAccessService] Found shared plan:', plan.id, plan.name, {
+          isOwner: plan.isOwner,
+          hasAccessed: plan.hasAccessed,
+          accessInfo: plan.accessInfo
+        });
+      }
+      return isShared;
+    });
 
+    console.log('[PlanAccessService] Filtered shared plans:', sharedPlans.length);
     return sharedPlans;
   } catch (error) {
     console.error('[PlanAccessService] Error getting shared plans:', error);
@@ -257,10 +280,18 @@ export const getUserSharedPlans = async (userId, isAnonymous = false) => {
  */
 export const getCategorizedUserPlans = async (userId, isAnonymous = false) => {
   try {
+    console.log('[PlanAccessService] Getting categorized plans for user:', userId, 'isAnonymous:', isAnonymous);
+
     const [ownedPlans, sharedPlans] = await Promise.all([
       getUserOwnedPlans(userId, isAnonymous),
       getUserSharedPlans(userId, isAnonymous)
     ]);
+
+    console.log('[PlanAccessService] Categorized plans result:', {
+      ownedPlans: ownedPlans.length,
+      sharedPlans: sharedPlans.length,
+      totalPlans: ownedPlans.length + sharedPlans.length
+    });
 
     return {
       ownedPlans,

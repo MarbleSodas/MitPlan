@@ -6,6 +6,7 @@ import {
   loadFromLocalStorage,
   generateShareableUrl
 } from '../../../utils';
+import { useToast } from '../../../components/common/Toast/Toast';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};
@@ -285,6 +286,7 @@ const ActionButton = styled.button`
 `;
 
 function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
+  const { addToast } = useToast();
   const [planName, setPlanName] = useState('');
   const [exportData, setExportData] = useState('');
   const [importData, setImportData] = useState('');
@@ -304,7 +306,12 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   // Handle saving the current plan
   const handleSave = () => {
     if (!planName.trim()) {
-      alert('Please enter a plan name');
+      addToast({
+        type: 'warning',
+        title: 'Plan name required',
+        message: 'Please enter a plan name.',
+        duration: 3000
+      });
       return;
     }
 
@@ -347,7 +354,12 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     saveToLocalStorage('mitPlanSavedPlans', updatedPlans);
     setSavedPlans(updatedPlans);
     setPlanName('');
-    alert(`Plan "${planName}" saved successfully!`);
+    addToast({
+      type: 'success',
+      title: 'Plan saved!',
+      message: `Plan "${planName}" saved successfully!`,
+      duration: 3000
+    });
   };
 
   // Handle exporting the current plan
@@ -444,11 +456,21 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     // Copy the URL to clipboard directly
     navigator.clipboard.writeText(url)
       .then(() => {
-        alert('Plan link copied to clipboard!');
+        addToast({
+          type: 'success',
+          title: 'Plan link copied!',
+          message: 'The plan link has been copied to your clipboard.',
+          duration: 3000
+        });
       })
       .catch(err => {
         console.error('Failed to copy link: ', err);
-        alert('Failed to copy link. Please try again.');
+        addToast({
+          type: 'error',
+          title: 'Failed to copy link',
+          message: 'Please try again.',
+          duration: 4000
+        });
       });
   };
 
@@ -457,7 +479,12 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   // Handle importing data
   const handleImport = () => {
     if (!importData.trim()) {
-      alert('Please enter import data or select a file');
+      addToast({
+        type: 'warning',
+        title: 'Import data required',
+        message: 'Please enter import data or select a file.',
+        duration: 3000
+      });
       return;
     }
 
@@ -523,18 +550,38 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
           // Call the onImport callback with the reconstructed data
           onImport(reconstructedAssignments, migratedData.bossId, reconstructedJobs);
           setImportData('');
-          alert('Import successful!');
+          addToast({
+            type: 'success',
+            title: 'Import successful!',
+            message: 'Your plan has been imported successfully.',
+            duration: 3000
+          });
         } catch (error) {
           console.error('Import error:', error);
-          alert(`Import failed: ${error.message}`);
+          addToast({
+            type: 'error',
+            title: 'Import failed',
+            message: error.message,
+            duration: 4000
+          });
         }
       }).catch(error => {
         console.error('Failed to load migration utilities:', error);
-        alert('Import failed: Unable to load migration utilities');
+        addToast({
+          type: 'error',
+          title: 'Import failed',
+          message: 'Unable to load migration utilities.',
+          duration: 4000
+        });
       });
     } catch (error) {
       console.error('JSON parsing error:', error);
-      alert(`Import failed: Invalid JSON format - ${error.message}`);
+      addToast({
+        type: 'error',
+        title: 'Import failed',
+        message: `Invalid JSON format - ${error.message}`,
+        duration: 4000
+      });
     }
   };
 
@@ -608,18 +655,38 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
           // Call the onImport callback with the reconstructed data
           onImport(reconstructedAssignments, migratedPlan.bossId, reconstructedJobs);
-          alert(`Plan "${migratedPlan.name || plan.name}" loaded successfully!`);
+          addToast({
+            type: 'success',
+            title: 'Plan loaded!',
+            message: `Plan "${migratedPlan.name || plan.name}" loaded successfully!`,
+            duration: 3000
+          });
         } catch (error) {
           console.error('Load error:', error);
-          alert(`Load failed: ${error.message}`);
+          addToast({
+            type: 'error',
+            title: 'Load failed',
+            message: error.message,
+            duration: 4000
+          });
         }
       }).catch(error => {
         console.error('Failed to load migration utilities:', error);
-        alert('Load failed: Unable to load migration utilities');
+        addToast({
+          type: 'error',
+          title: 'Load failed',
+          message: 'Unable to load migration utilities.',
+          duration: 4000
+        });
       });
     } catch (error) {
       console.error('Load error:', error);
-      alert(`Load failed: ${error.message}`);
+      addToast({
+        type: 'error',
+        title: 'Load failed',
+        message: error.message,
+        duration: 4000
+      });
     }
   };
 
@@ -649,11 +716,21 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     // Copy the URL to clipboard directly
     navigator.clipboard.writeText(url)
       .then(() => {
-        alert(`Link for plan "${plan.name}" copied to clipboard!`);
+        addToast({
+          type: 'success',
+          title: 'Plan link copied!',
+          message: `Link for plan "${plan.name}" has been copied to your clipboard.`,
+          duration: 3000
+        });
       })
       .catch(err => {
         console.error('Failed to copy link: ', err);
-        alert('Failed to copy link. Please try again.');
+        addToast({
+          type: 'error',
+          title: 'Failed to copy link',
+          message: 'Please try again.',
+          duration: 4000
+        });
       });
   };
 

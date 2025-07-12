@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Plus, FileText, Calendar, User, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../common/Toast/Toast';
 import unifiedPlanService from '../../services/unifiedPlanService';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
@@ -222,6 +223,7 @@ const Modal = styled.div`
 const AnonymousDashboard = () => {
   const navigate = useNavigate();
   const { isAnonymousMode, anonymousUser } = useAuth();
+  const { addToast } = useToast();
   const [categorizedPlans, setCategorizedPlans] = useState({
     ownedPlans: [],
     sharedPlans: [],
@@ -286,7 +288,12 @@ const AnonymousDashboard = () => {
         loadPlans(); // Refresh the list
       } catch (error) {
         console.error('Error deleting plan:', error);
-        alert('Failed to delete plan: ' + error.message);
+        addToast({
+          type: 'error',
+          title: 'Delete failed',
+          message: 'Failed to delete plan: ' + error.message,
+          duration: 4000
+        });
       }
     }
   };

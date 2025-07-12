@@ -227,7 +227,13 @@ const Dashboard = () => {
     setError(null);
 
     try {
+      console.log('[Dashboard] Loading categorized plans for user:', user.uid);
       const plans = await unifiedPlanService.getCategorizedUserPlans();
+      console.log('[Dashboard] Categorized plans loaded:', {
+        ownedPlans: plans.ownedPlans.length,
+        sharedPlans: plans.sharedPlans.length,
+        totalPlans: plans.totalPlans
+      });
       setCategorizedPlans(plans);
     } catch (err) {
       console.error('Error loading categorized plans:', err);
@@ -355,6 +361,7 @@ const Dashboard = () => {
                     key={plan.id}
                     plan={plan}
                     onEdit={() => handleNavigateToPlanner(plan.id)}
+                    isSharedPlan={false}
                   />
                 ))}
               </PlansGrid>
@@ -382,6 +389,7 @@ const Dashboard = () => {
                       key={plan.id}
                       plan={plan}
                       onEdit={() => handleNavigateToPlanner(plan.id)}
+                      isSharedPlan={true}
                     />
                   ))}
                 </PlansGrid>

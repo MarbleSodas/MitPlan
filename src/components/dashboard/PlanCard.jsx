@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Share2 } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
+import { useToast } from '../common/Toast/Toast';
+import { getUserDisplayName } from '../../services/userService';
 
 const Card = styled.div`
   background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
@@ -146,13 +148,26 @@ const DangerButton = styled(Button)`
 
 const MetaInfo = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
   font-size: 0.8rem;
   color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
+`;
+
+const MetaRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const CreatorInfo = styled.div`
+  text-align: center;
+  font-style: italic;
+  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
+  font-weight: 500;
 `;
 
 const ConfirmDialog = styled.div`
@@ -188,10 +203,53 @@ const ConfirmActions = styled.div`
   margin-top: 1.5rem;
 `;
 
-const PlanCard = ({ plan, onEdit }) => {
+const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
+  const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [creatorDisplayName, setCreatorDisplayName] = useState('');
+  const [fetchingCreator, setFetchingCreator] = useState(false);
+
+  // Fetch creator's display name for shared plans
+  useEffect(() => {
+    const fetchCreatorDisplayName = async () => {
+      // Only fetch for shared plans
+      if (!isSharedPlan) {
+        return;
+      }
+
+      // Get the creator ID (prefer ownerId, fallback to userId)
+      const creatorId = plan.ownerId || plan.userId;
+      if (!creatorId) {
+        console.log('[PlanCard] No creator ID found for plan:', plan.id);
+        return;
+      }
+
+      console.log('[PlanCard] Fetching creator display name for shared plan:', {
+        planId: plan.id,
+        planName: plan.name,
+        creatorId,
+        ownerId: plan.ownerId,
+        userId: plan.userId
+      });
+
+      setFetchingCreator(true);
+
+      try {
+        const displayName = await getUserDisplayName(creatorId);
+        console.log('[PlanCard] Creator display name fetched:', displayName);
+        setCreatorDisplayName(displayName);
+      } catch (error) {
+        console.error('[PlanCard] Error fetching creator display name:', error);
+        setCreatorDisplayName('Unknown User');
+      } finally {
+        setFetchingCreator(false);
+      }
+    };
+
+    fetchCreatorDisplayName();
+  }, [isSharedPlan, plan.ownerId, plan.userId, plan.id]);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Unknown';
@@ -276,11 +334,33 @@ const PlanCard = ({ plan, onEdit }) => {
       // Make the plan public to enable sharing
       await makePlanPublic(plan.id, true);
 
+      // Generate the edit link
+      const baseUrl = window.location.origin;
+      const editLink = `${baseUrl}/plan/edit/${plan.id}`;
+
+      // Copy the edit link to clipboard
+      await navigator.clipboard.writeText(editLink);
+
+      // Show success toast
+      addToast({
+        type: 'success',
+        title: 'Plan link copied!',
+        message: 'The plan link has been copied to your clipboard and is ready to share.',
+        duration: 4000
+      });
+
       // Navigate to edit route for sharing - collaboration will be enabled automatically
       onEdit(plan.id);
     } catch (error) {
-      console.error('Failed to make plan public:', error);
-      alert('Failed to enable sharing. Please try again.');
+      console.error('Failed to share plan:', error);
+
+      // Show error toast
+      addToast({
+        type: 'error',
+        title: 'Failed to share plan',
+        message: 'Please try again.',
+        duration: 4000
+      });
     } finally {
       setLoading(false);
     }
@@ -319,8 +399,19 @@ const PlanCard = ({ plan, onEdit }) => {
         </CardActions>
 
         <MetaInfo>
-          <span>Created: {formatDate(plan.createdAt)}</span>
-          <span>Updated: {formatDate(plan.updatedAt)}</span>
+          <MetaRow>
+            <span>Created: {formatDate(plan.createdAt)}</span>
+            <span>Updated: {formatDate(plan.updatedAt)}</span>
+          </MetaRow>
+          {isSharedPlan && (
+            <CreatorInfo>
+              {fetchingCreator ? (
+                'Loading creator...'
+              ) : creatorDisplayName ? (
+                `Created by: ${creatorDisplayName}`
+              ) : null}
+            </CreatorInfo>
+          )}
         </MetaInfo>
       </Card>
 

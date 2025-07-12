@@ -559,32 +559,7 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
     setPlanIsPublic(isSharedPlan);
   }, [isSharedPlan]);
 
-  // Track access for shared plans
-  useEffect(() => {
-    const trackSharedPlanAccess = async () => {
-      if (planId && isSharedPlan && user) {
-        try {
-          console.log('[MitigationPlanner] Tracking access to shared plan:', planId);
-          // Import the access tracking function
-          const { trackPlanAccess } = await import('../../services/planAccessService');
-
-          // Track access for authenticated users
-          if (user.uid) {
-            await trackPlanAccess(planId, user.uid, false);
-            console.log('[MitigationPlanner] Access tracked for authenticated user:', user.uid);
-          } else if (user.isAnonymous && user.id) {
-            // Track access for anonymous users
-            await trackPlanAccess(planId, user.id, true);
-            console.log('[MitigationPlanner] Access tracked for anonymous user:', user.id);
-          }
-        } catch (error) {
-          console.error('[MitigationPlanner] Error tracking plan access:', error);
-        }
-      }
-    };
-
-    trackSharedPlanAccess();
-  }, [planId, isSharedPlan, user]);
+  // Access tracking is now handled in RealtimePlanContext
 
   // Collaboration logic moved to MitigationPlannerContent
 
@@ -606,10 +581,30 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
       // Simulate save delay for user feedback
       await new Promise(resolve => setTimeout(resolve, 500));
       console.log('Real-time plan is automatically saved');
-      alert('Plan saved successfully!');
+      // Show success toast (if toast system is available)
+      if (typeof addToast === 'function') {
+        addToast({
+          type: 'success',
+          title: 'Plan saved!',
+          message: 'Your plan has been saved successfully.',
+          duration: 3000
+        });
+      } else {
+        alert('Plan saved successfully!');
+      }
     } catch (error) {
       console.error('Error with save operation:', error);
-      alert('Failed to save plan. Please try again.');
+      // Show error toast (if toast system is available)
+      if (typeof addToast === 'function') {
+        addToast({
+          type: 'error',
+          title: 'Save failed',
+          message: 'Failed to save plan. Please try again.',
+          duration: 4000
+        });
+      } else {
+        alert('Failed to save plan. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
