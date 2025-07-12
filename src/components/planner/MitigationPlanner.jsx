@@ -108,7 +108,7 @@ const BackButton = styled.button`
   padding: 0.75rem 1.5rem;
   background: transparent;
   color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  border: 2px solid ${props => props.theme?.colors?.primary || '#3399ff'};
+  border: none;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;

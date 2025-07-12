@@ -7,22 +7,20 @@ const ToggleButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  padding: 0.75rem 0.75rem;
+  background: transparent;
+  color: ${props => props.theme?.colors?.primary || '#3399ff'};
   border: none;
   border-radius: 8px;
-  background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 
   &:hover {
-    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
-    border-color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    transform: translateY(-1px);
+    background: ${props => props.theme?.colors?.primary || '#3399ff'};
+    color: white;
   }
 
   &:active {
