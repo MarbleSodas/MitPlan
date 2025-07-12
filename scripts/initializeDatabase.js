@@ -7,18 +7,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, serverTimestamp } from 'firebase/database';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBSfsBbrunA3aejnWlsMe0z1NiwJUvRNPU",
-  authDomain: "xivmit.firebaseapp.com",
-  databaseURL: "https://xivmit-default-rtdb.firebaseio.com",
-  projectId: "xivmit",
-  storageBucket: "xivmit.firebasestorage.app",
-  messagingSenderId: "1056456049686",
-  appId: "1:1056456049686:web:a269ab0a6d59da09462137",
-  measurementId: "G-834J53ZVFF"
-};
+import { firebaseConfig } from './firebase-config.js';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -110,12 +99,15 @@ const samplePlan = {
     // Empty object for connected users - will be populated during real-time sessions
   },
   ownerId: "system",
+  userId: "system", // For backward compatibility
+  accessedBy: {}, // Initialize empty access tracking
   isPublic: true,
   createdAt: serverTimestamp(),
   updatedAt: serverTimestamp(),
+  lastAccessedAt: serverTimestamp(),
   lastModifiedBy: "system",
   lastChangeOrigin: "initialization",
-  version: 1
+  version: 4.0
 };
 
 async function initializeDatabase() {
@@ -126,17 +118,9 @@ async function initializeDatabase() {
     const planId = "sample-plan-001";
     await set(ref(database, `plans/${planId}`), samplePlan);
     console.log('✅ Sample plan created successfully');
-    
-    // Initialize shared collaboration structure for the sample plan
-    await set(ref(database, `shared/${planId}/metadata`), {
-      activeUserCount: 0,
-      lastActivity: serverTimestamp(),
-      sessionCount: 0
-    });
-    console.log('✅ Shared collaboration structure initialized');
-    
+
     console.log('🎉 Database initialization complete!');
-    console.log(`📋 Sample plan URL: /plan/shared/${planId}`);
+    console.log(`📋 Sample plan URL: /plan/edit/${planId}`);
     
     process.exit(0);
   } catch (error) {

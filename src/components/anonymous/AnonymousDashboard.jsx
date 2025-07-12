@@ -1,0 +1,431 @@
+/**
+ * Anonymous Dashboard Component
+ * Shows local plans and provides access to anonymous features
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import { Plus, FileText, Calendar, User, Trash2, Edit } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import unifiedPlanService from '../../services/unifiedPlanService';
+
+import AnonymousPlanCreator from './AnonymousPlanCreator';
+import BossSelectionModal from '../dashboard/BossSelectionModal';
+
+const DashboardContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+`;
+
+const Header = styled.div`
+  margin-bottom: 2rem;
+`;
+
+const Title = styled.h1`
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+const Subtitle = styled.p`
+  margin: 0;
+  font-size: 1rem;
+  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
+`;
+
+const PlansSection = styled.div`
+  margin-bottom: 3rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+`;
+
+const SectionTitle = styled.h2`
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const PlanCount = styled.span`
+  background: ${props => props.theme?.colors?.primaryBackground || '#eff6ff'};
+  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+`;
+
+const ActionsBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const Button = styled.button`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const PrimaryButton = styled(Button)`
+  background: ${props => props.theme?.colors?.primary || '#3399ff'};
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background: ${props => props.theme?.colors?.primaryHover || '#2980b9'};
+  }
+`;
+
+const PlansGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+`;
+
+const PlanCard = styled.div`
+  background: ${props => props.theme?.colors?.background || '#ffffff'};
+  border: 1px solid ${props => props.theme?.colors?.border || '#e0e0e0'};
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    border-color: ${props => props.theme?.colors?.primary || '#3399ff'};
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const PlanTitle = styled.h3`
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: ${props => props.theme?.colors?.text || '#333333'};
+`;
+
+const PlanMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
+`;
+
+const PlanActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+`;
+
+const SmallButton = styled(Button)`
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+`;
+
+const SecondaryButton = styled(SmallButton)`
+  background: transparent;
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  border: 1px solid ${props => props.theme?.colors?.border || '#e0e0e0'};
+  
+  &:hover:not(:disabled) {
+    background: ${props => props.theme?.colors?.hover || '#f5f5f5'};
+  }
+`;
+
+const DangerButton = styled(SmallButton)`
+  background: transparent;
+  color: ${props => props.theme?.colors?.error || '#e74c3c'};
+  border: 1px solid ${props => props.theme?.colors?.error || '#e74c3c'};
+
+  &:hover:not(:disabled) {
+    background: ${props => props.theme?.colors?.error || '#e74c3c'};
+    color: white;
+  }
+`;
+
+const SectionEmptyState = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
+  background: ${props => props.theme?.colors?.backgroundSecondary || '#f8fafc'};
+  border-radius: 8px;
+  border: 1px dashed ${props => props.theme?.colors?.border || '#e2e8f0'};
+`;
+
+const SectionEmptyText = styled.p`
+  font-size: 0.875rem;
+  margin: 0;
+  font-style: italic;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 3rem 1rem;
+  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
+`;
+
+const EmptyStateIcon = styled.div`
+  margin-bottom: 1rem;
+  color: ${props => props.theme?.colors?.textTertiary || '#999999'};
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+const AnonymousDashboard = () => {
+  const navigate = useNavigate();
+  const { isAnonymousMode, anonymousUser } = useAuth();
+  const [categorizedPlans, setCategorizedPlans] = useState({
+    ownedPlans: [],
+    sharedPlans: [],
+    totalPlans: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
+  const [selectedBossForPlan, setSelectedBossForPlan] = useState(null);
+
+  // Set up unified plan service context and load plans
+  useEffect(() => {
+    if (isAnonymousMode && anonymousUser) {
+      // Set the user context for the unified plan service
+      unifiedPlanService.setUserContext(anonymousUser, true);
+      loadPlans();
+    }
+  }, [isAnonymousMode, anonymousUser]);
+
+  const loadPlans = async () => {
+    try {
+      setLoading(true);
+      const plans = await unifiedPlanService.getCategorizedUserPlans();
+      setCategorizedPlans(plans);
+    } catch (error) {
+      console.error('Error loading categorized plans:', error);
+      setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePlan = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleCreatePlanByBoss = () => {
+    setShowBossSelectionModal(true);
+  };
+
+  const handleBossSelected = (bossId) => {
+    setSelectedBossForPlan(bossId);
+    setShowBossSelectionModal(false);
+    setShowCreateModal(true);
+  };
+
+  const handleCreateModalClose = () => {
+    setShowCreateModal(false);
+    setSelectedBossForPlan(null);
+  };
+
+  const handlePlanCreated = (plan) => {
+    setShowCreateModal(false);
+    setSelectedBossForPlan(null);
+    loadPlans(); // Refresh the list
+  };
+
+  const handleEditPlan = (planId) => {
+    navigate(`/anonymous/plan/${planId}`);
+  };
+
+  const handleDeletePlan = async (planId, planName) => {
+    if (window.confirm(`Are you sure you want to delete "${planName}"? This action cannot be undone.`)) {
+      try {
+        await localStoragePlanService.deletePlan(planId);
+        loadPlans(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting plan:', error);
+        alert('Failed to delete plan: ' + error.message);
+      }
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (!isAnonymousMode) {
+    return null;
+  }
+
+  return (
+    <DashboardContainer>
+      <Header>
+        <Title>
+          <User size={32} />
+          Anonymous Dashboard
+        </Title>
+        <Subtitle>
+          Welcome, {anonymousUser?.displayName || 'Anonymous User'}! 
+          Your plans are stored locally in your browser.
+        </Subtitle>
+      </Header>
+
+
+
+      <ActionsBar>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Your Plans ({categorizedPlans.totalPlans})</h2>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <PrimaryButton onClick={handleCreatePlan}>
+            <Plus size={16} />
+            Create New Plan
+          </PrimaryButton>
+          <PrimaryButton onClick={handleCreatePlanByBoss}>
+            <Plus size={16} />
+            Create Plan by Boss
+          </PrimaryButton>
+        </div>
+      </ActionsBar>
+
+      {loading ? (
+        <div>Loading plans...</div>
+      ) : categorizedPlans.totalPlans === 0 ? (
+        <EmptyState>
+          <EmptyStateIcon>
+            <FileText size={48} />
+          </EmptyStateIcon>
+          <h3>No plans yet</h3>
+          <p>Create your first mitigation plan to get started.</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
+            <PrimaryButton onClick={handleCreatePlan}>
+              <Plus size={16} />
+              Create Your First Plan
+            </PrimaryButton>
+            <PrimaryButton onClick={handleCreatePlanByBoss}>
+              <Plus size={16} />
+              Choose Boss First
+            </PrimaryButton>
+          </div>
+        </EmptyState>
+      ) : (
+        <>
+          {/* My Plans Section */}
+          <PlansSection>
+            <SectionHeader>
+              <SectionTitle>My Plans</SectionTitle>
+              <PlanCount>{categorizedPlans.ownedPlans.length}</PlanCount>
+            </SectionHeader>
+
+            {categorizedPlans.ownedPlans.length === 0 ? (
+              <SectionEmptyState>
+                <SectionEmptyText>
+                  You haven't created any plans yet. Click "Create New Plan" to get started!
+                </SectionEmptyText>
+              </SectionEmptyState>
+            ) : (
+              <PlansGrid>
+                {categorizedPlans.ownedPlans.map((plan) => (
+                  <PlanCard key={plan.id} onClick={() => handleEditPlan(plan.id)}>
+                    <PlanTitle>{plan.name}</PlanTitle>
+                    <PlanMeta>
+                      <div>Boss: {plan.bossId}</div>
+                      <div>
+                        <Calendar size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                        Created: {formatDate(plan.createdAt)}
+                      </div>
+                      <div>
+                        <Calendar size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                        Updated: {formatDate(plan.updatedAt)}
+                      </div>
+                    </PlanMeta>
+
+                    <PlanActions onClick={(e) => e.stopPropagation()}>
+                      <SecondaryButton onClick={() => handleEditPlan(plan.id)}>
+                        <Edit size={14} />
+                        Edit
+                      </SecondaryButton>
+                      <DangerButton onClick={() => handleDeletePlan(plan.id, plan.name)}>
+                        <Trash2 size={14} />
+                        Delete
+                      </DangerButton>
+                    </PlanActions>
+                  </PlanCard>
+                ))}
+              </PlansGrid>
+            )}
+          </PlansSection>
+
+          {/* Note: Anonymous users don't have shared plans since they only work with localStorage */}
+        </>
+      )}
+
+      {showBossSelectionModal && (
+        <BossSelectionModal
+          onClose={() => setShowBossSelectionModal(false)}
+          onSelectBoss={handleBossSelected}
+        />
+      )}
+
+      {showCreateModal && (
+        <Modal onClick={handleCreateModalClose}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <AnonymousPlanCreator
+              onCancel={handleCreateModalClose}
+              onSuccess={handlePlanCreated}
+              preSelectedBossId={selectedBossForPlan}
+            />
+          </div>
+        </Modal>
+      )}
+    </DashboardContainer>
+  );
+};
+
+export default AnonymousDashboard;

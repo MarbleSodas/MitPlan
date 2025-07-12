@@ -1,12 +1,11 @@
-import { 
-  ref, 
-  set, 
-  remove, 
-  get, 
-  onValue, 
-  off, 
-  serverTimestamp,
-  onDisconnect 
+import {
+  ref,
+  set,
+  remove,
+  get,
+  onValue,
+  off,
+  onDisconnect
 } from 'firebase/database';
 import { database } from '../config/firebase';
 
@@ -25,13 +24,13 @@ class SessionManager {
    */
   async startSession(planId, sessionId, userData) {
     try {
-      const sessionRef = ref(database, `shared/${planId}/activeUsers/${sessionId}`);
+      const sessionRef = ref(database, `plans/${planId}/collaboration/activeUsers/${sessionId}`);
 
       const sessionData = {
         ...userData,
         sessionId,
-        joinedAt: serverTimestamp(),
-        lastActivity: serverTimestamp(),
+        joinedAt: Date.now(),
+        lastActivity: Date.now(),
         isActive: true
       };
 
@@ -106,8 +105,8 @@ class SessionManager {
 
     const heartbeatInterval = setInterval(async () => {
       try {
-        const activityRef = ref(database, `shared/${planId}/activeUsers/${sessionId}/lastActivity`);
-        await set(activityRef, serverTimestamp());
+        const activityRef = ref(database, `plans/${planId}/collaboration/activeUsers/${sessionId}/lastActivity`);
+        await set(activityRef, Date.now());
       } catch (error) {
         console.error('Error updating heartbeat:', error);
         // If heartbeat fails, the session might be invalid
@@ -241,7 +240,7 @@ class SessionManager {
    * Subscribe to session changes for a plan
    */
   subscribeToSessions(planId, callback) {
-    const sessionsRef = ref(database, `shared/${planId}/activeUsers`);
+    const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
 
     const unsubscribe = onValue(sessionsRef, (snapshot) => {
       const sessions = [];

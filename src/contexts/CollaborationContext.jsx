@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import sessionManager from '../services/sessionManager';
+import { loadFromLocalStorage, saveToLocalStorage } from '../utils/storage/storageUtils';
 
 const CollaborationContext = createContext({});
 
@@ -18,12 +19,14 @@ const generateSessionId = () => {
 };
 
 export const CollaborationProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  // CollaborationProvider initializing
+  const { user, isAuthenticated, anonymousUser, isAnonymousMode, getCurrentUser } = useAuth();
   const [activePlanId, setActivePlanId] = useState(null);
   const [collaborators, setCollaborators] = useState([]);
   const [isCollaborating, setIsCollaborating] = useState(false);
   const [sessionId] = useState(() => generateSessionId());
   const [displayName, setDisplayName] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Refs to track listeners and prevent memory leaks
   const listenersRef = useRef(new Map());
@@ -33,15 +36,26 @@ export const CollaborationProvider = ({ children }) => {
   // Track if we're currently updating to prevent feedback loops
   const isUpdatingRef = useRef(false);
 
+  // Helper function to clean display names (remove quotes if present)
+  const cleanDisplayName = (name) => {
+    if (!name) return name;
+    // Remove surrounding quotes if present (handles both single and double quotes)
+    if ((name.startsWith('"') && name.endsWith('"')) ||
+        (name.startsWith("'") && name.endsWith("'"))) {
+      return name.slice(1, -1);
+    }
+    return name;
+  };
+
   // Get user display name
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || user.email || 'Anonymous User');
     } else {
       // For unauthenticated users, try to get from localStorage
-      const savedDisplayName = localStorage.getItem('mitplan_display_name');
+      const savedDisplayName = loadFromLocalStorage('mitplan_display_name');
       if (savedDisplayName) {
-        setDisplayName(savedDisplayName);
+        setDisplayName(cleanDisplayName(savedDisplayName));
       }
     }
   }, [user]);
@@ -75,19 +89,28 @@ export const CollaborationProvider = ({ children }) => {
       setActivePlanId(planId);
       setIsCollaborating(true);
 
-      const finalDisplayName = userDisplayName || displayName || 'Anonymous User';
+      const currentUser = getCurrentUser();
+      const finalDisplayName = userDisplayName || displayName || currentUser?.displayName || 'Anonymous User';
 
-      // Save display name for unauthenticated users
-      if (!user && userDisplayName) {
-        localStorage.setItem('mitplan_display_name', userDisplayName);
+      // Save display name for anonymous users
+      if (isAnonymousMode && userDisplayName) {
+        saveToLocalStorage('mitplan_display_name', userDisplayName);
         setDisplayName(userDisplayName);
+
+        // Also update anonymous user's display name
+        if (anonymousUser) {
+          anonymousUser.setDisplayName(userDisplayName);
+        }
       }
 
-      // Prepare session data
+      // Prepare session data with proper user identification
+      // Firebase security rules expect userId to be either auth.uid or exactly 'anonymous'
       const sessionData = {
         userId: user?.uid || 'anonymous',
-        displayName: finalDisplayName,
-        email: user?.email || ''
+        displayName: cleanDisplayName(finalDisplayName),
+        email: user?.email || '',
+        isAnonymous: !isAuthenticated,
+        userType: isAuthenticated ? 'authenticated' : 'anonymous'
       };
 
       // Start session using session manager
@@ -232,6 +255,12 @@ export const CollaborationProvider = ({ children }) => {
     }
   }, []);
 
+  // Initialize the provider
+  useEffect(() => {
+    setIsInitialized(true);
+    // CollaborationProvider initialized
+  }, []);
+
   const value = {
     // State
     activePlanId,
@@ -239,6 +268,7 @@ export const CollaborationProvider = ({ children }) => {
     isCollaborating,
     sessionId,
     displayName,
+    isInitialized,
 
     // Actions
     joinCollaborativeSession,
@@ -256,6 +286,16 @@ export const CollaborationProvider = ({ children }) => {
     // Performance metrics (for debugging)
     getPerformanceMetrics: () => performanceMetrics.current
   };
+
+  // Only log when there are issues
+  if (!isInitialized || typeof joinCollaborativeSession !== 'function') {
+    console.log('[CollaborationProvider] Context status:', {
+      hasJoinFunction: typeof joinCollaborativeSession === 'function',
+      hasLeaveFunction: typeof leaveCollaborativeSession === 'function',
+      isInitialized,
+      valueKeys: Object.keys(value)
+    });
+  }
 
   return (
     <CollaborationContext.Provider value={value}>

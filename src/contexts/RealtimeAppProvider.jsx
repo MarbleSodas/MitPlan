@@ -6,6 +6,7 @@ import { EnhancedMitigationProvider } from './EnhancedMitigationContext';
 import { TankPositionProvider } from './TankPositionContext';
 import { FilterProvider } from './FilterContext';
 import { TankSelectionModalProvider } from './TankSelectionModalContext';
+import { CollaborationProvider } from './CollaborationContext';
 
 /**
  * Real-time App Provider that wraps all the real-time contexts
@@ -14,21 +15,23 @@ import { TankSelectionModalProvider } from './TankSelectionModalContext';
  */
 export const RealtimeAppProvider = ({ children, planId }) => {
   return (
-    <RealtimePlanProvider planId={planId}>
-      <RealtimeBossProvider>
-        <RealtimeJobProvider>
-          <TankPositionProvider>
-            <EnhancedMitigationProvider>
-              <FilterProvider>
-                <TankSelectionModalProvider>
-                  {children}
-                </TankSelectionModalProvider>
-              </FilterProvider>
-            </EnhancedMitigationProvider>
-          </TankPositionProvider>
-        </RealtimeJobProvider>
-      </RealtimeBossProvider>
-    </RealtimePlanProvider>
+    <CollaborationProvider>
+      <RealtimePlanProvider planId={planId}>
+        <RealtimeBossProvider>
+          <RealtimeJobProvider>
+            <TankPositionProvider>
+              <EnhancedMitigationProvider>
+                <FilterProvider>
+                  <TankSelectionModalProvider>
+                    {children}
+                  </TankSelectionModalProvider>
+                </FilterProvider>
+              </EnhancedMitigationProvider>
+            </TankPositionProvider>
+          </RealtimeJobProvider>
+        </RealtimeBossProvider>
+      </RealtimePlanProvider>
+    </CollaborationProvider>
   );
 };
 

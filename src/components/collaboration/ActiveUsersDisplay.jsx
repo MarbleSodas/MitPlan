@@ -95,8 +95,8 @@ const Tooltip = styled.div`
   font-weight: 500;
   border-radius: 6px;
   white-space: nowrap;
-  opacity: ${props => props.visible ? 1 : 0};
-  visibility: ${props => props.visible ? 'visible' : 'hidden'};
+  opacity: ${props => props.$visible ? 1 : 0};
+  visibility: ${props => props.$visible ? 'visible' : 'hidden'};
   transition: all 0.2s ease;
   z-index: 1000;
   pointer-events: none;
@@ -166,9 +166,21 @@ const generateUserColor = (userId) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+// Helper function to clean display names (remove quotes if present)
+const cleanDisplayName = (name) => {
+  if (!name) return name;
+  // Remove surrounding quotes if present (handles both single and double quotes)
+  if ((name.startsWith('"') && name.endsWith('"')) ||
+      (name.startsWith("'") && name.endsWith("'"))) {
+    return name.slice(1, -1);
+  }
+  return name;
+};
+
 // Get initials from display name
 const getInitials = (displayName) => {
-  return displayName
+  const cleanName = cleanDisplayName(displayName);
+  return cleanName
     .split(' ')
     .map(word => word.charAt(0))
     .join('')
@@ -227,8 +239,8 @@ const ActiveUsersDisplay = ({
             onMouseLeave={handleMouseLeave}
           >
             {getInitials(user.displayName)}
-            <Tooltip visible={hoveredUser === user.sessionId}>
-              {user.displayName}
+            <Tooltip $visible={hoveredUser === user.sessionId}>
+              {cleanDisplayName(user.displayName)}
               {user.sessionId === currentSessionId ? ' (You)' : ''}
             </Tooltip>
           </UserAvatar>

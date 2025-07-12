@@ -1,13 +1,17 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
-import { AuthProvider } from './contexts/AuthContext';
-import { PlanProvider } from './contexts/PlanContext';
-import { CollaborationProvider } from './contexts/CollaborationContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { PlanProvider } from './contexts/PlanContext';
 import LandingPage from './components/landing/LandingPage';
 import Dashboard from './components/dashboard/Dashboard';
 import MitigationPlanner from './components/planner/MitigationPlanner';
-import { useAuth } from './contexts/AuthContext';
+import UnauthenticatedPlanGuard from './components/guards/UnauthenticatedPlanGuard';
+import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
+
+// DEBUGGING: Minimal App to test if React is working
+// TODO: Restore full app once loading issue is resolved
 
 // Global styles
 const GlobalStyle = createGlobalStyle`
@@ -51,7 +55,7 @@ const LoadingComponent = () => (
   </LoadingSpinner>
 );
 
-// Protected Route component
+// Protected Route component (requires authentication)
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -61,6 +65,24 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// Anonymous-Allowed Route component (allows both authenticated and anonymous users)
+const AnonymousAllowedRoute = ({ children }) => {
+  const { hasUser, loading, enableAnonymousMode } = useAuth();
+
+  // Use useEffect to enable anonymous mode after render to avoid setState during render
+  useEffect(() => {
+    if (!loading && !hasUser) {
+      enableAnonymousMode();
+    }
+  }, [hasUser, loading, enableAnonymousMode]);
+
+  if (loading) {
+    return <LoadingComponent />;
   }
 
   return children;
@@ -93,7 +115,9 @@ const AppContent = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <PlanProvider>
+              <Dashboard />
+            </PlanProvider>
           </ProtectedRoute>
         }
       />
@@ -102,9 +126,9 @@ const AppContent = () => {
       <Route
         path="/plan/edit/:planId"
         element={
-          <ProtectedRoute>
+          <UnauthenticatedPlanGuard>
             <MitigationPlanner />
-          </ProtectedRoute>
+          </UnauthenticatedPlanGuard>
         }
       />
 
@@ -120,17 +144,60 @@ const AppContent = () => {
       <Route
         path="/planner/:planId"
         element={
-          <ProtectedRoute>
+          <UnauthenticatedPlanGuard>
             <MitigationPlanner />
-          </ProtectedRoute>
+          </UnauthenticatedPlanGuard>
+        }
+      />
+
+      <Route
+        path="/plan/:planId"
+        element={
+          <UnauthenticatedPlanGuard>
+            <MitigationPlanner />
+          </UnauthenticatedPlanGuard>
         }
       />
 
       {/* Shared plan routes - accessible to both authenticated and unauthenticated users */}
       <Route
         path="/plan/shared/:planId"
-        element={<MitigationPlanner isSharedPlan={true} />}
+        element={
+          <AnonymousAllowedRoute>
+            <MitigationPlanner isSharedPlan={true} />
+          </AnonymousAllowedRoute>
+        }
       />
+
+      {/* Anonymous dashboard and plan routes */}
+      <Route
+        path="/anonymous"
+        element={
+          <AnonymousAllowedRoute>
+            <AnonymousDashboard />
+          </AnonymousAllowedRoute>
+        }
+      />
+
+      <Route
+        path="/anonymous/planner"
+        element={
+          <AnonymousAllowedRoute>
+            <MitigationPlanner isAnonymous={true} />
+          </AnonymousAllowedRoute>
+        }
+      />
+
+      <Route
+        path="/anonymous/plan/:planId"
+        element={
+          <AnonymousAllowedRoute>
+            <MitigationPlanner isAnonymous={true} />
+          </AnonymousAllowedRoute>
+        }
+      />
+
+
 
       {/* Catch all route */}
       <Route
@@ -141,20 +208,18 @@ const AppContent = () => {
   );
 };
 
-// Main App component
+// Main App component with full routing and authentication
 function App() {
+  console.log('[App] Rendering full application with routing');
+
   return (
     <ThemeProvider>
-      <GlobalStyle />
-      <Router>
-        <AuthProvider>
-          <CollaborationProvider>
-            <PlanProvider>
-              <AppContent />
-            </PlanProvider>
-          </CollaborationProvider>
-        </AuthProvider>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <GlobalStyle />
+          <AppContent />
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

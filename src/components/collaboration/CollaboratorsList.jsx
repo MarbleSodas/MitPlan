@@ -141,9 +141,21 @@ const generateUserColor = (userId) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+// Helper function to clean display names (remove quotes if present)
+const cleanDisplayName = (name) => {
+  if (!name) return name;
+  // Remove surrounding quotes if present (handles both single and double quotes)
+  if ((name.startsWith('"') && name.endsWith('"')) ||
+      (name.startsWith("'") && name.endsWith("'"))) {
+    return name.slice(1, -1);
+  }
+  return name;
+};
+
 // Get initials from display name
 const getInitials = (displayName) => {
-  return displayName
+  const cleanName = cleanDisplayName(displayName);
+  return cleanName
     .split(' ')
     .map(word => word.charAt(0))
     .join('')
@@ -205,7 +217,7 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
                   </CollaboratorAvatar>
                   <CollaboratorInfo>
                     <CollaboratorName>
-                      {currentUser.displayName} (You)
+                      {cleanDisplayName(currentUser.displayName)} (You)
                     </CollaboratorName>
                     <CollaboratorStatus>
                       <StatusIcon isActive={true} />
@@ -233,7 +245,7 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
                   </CollaboratorAvatar>
                   <CollaboratorInfo>
                     <CollaboratorName>
-                      {collaborator.displayName}
+                      {cleanDisplayName(collaborator.displayName)}
                     </CollaboratorName>
                     <CollaboratorStatus>
                       <StatusIcon isActive={true} />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { usePlan } from '../../contexts/PlanContext';
+import { bosses } from '../../data';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -182,24 +183,17 @@ const ErrorMessage = styled.div`
   font-size: 0.9rem;
 `;
 
-const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner }) => {
+const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedBossId = null }) => {
   const { createNewPlan } = usePlan();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    bossId: ''
+    bossId: preSelectedBossId || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const bosses = [
-    { id: 'ketuduke', name: 'Ketuduke' },
-    { id: 'lala', name: 'Lala' },
-    { id: 'statice', name: 'Statice' },
-    { id: 'm6s', name: 'Sugar Riot (M6S)' },
-    { id: 'm7s', name: 'Brute Abominator (M7S)' },
-    { id: 'm8s', name: 'M8S' }
-  ];
+  // Use the imported bosses data for consistency
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -260,7 +254,12 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner }) => {
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <ModalTitle>Create New Plan</ModalTitle>
+          <ModalTitle>
+            {preSelectedBossId
+              ? `Create Plan for ${bosses.find(b => b.id === preSelectedBossId)?.name}`
+              : 'Create New Plan'
+            }
+          </ModalTitle>
           <CloseButton onClick={onClose}>×</CloseButton>
         </ModalHeader>
 
@@ -285,6 +284,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner }) => {
               name="bossId"
               value={formData.bossId}
               onChange={handleInputChange}
+              disabled={!!preSelectedBossId}
               required
             >
               <option value="">Select a boss encounter</option>
@@ -294,6 +294,15 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner }) => {
                 </option>
               ))}
             </Select>
+            {preSelectedBossId && (
+              <div style={{
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                marginTop: '0.25rem'
+              }}>
+                Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
+              </div>
+            )}
           </FormGroup>
 
           <FormGroup>

@@ -10,11 +10,11 @@ import AppProvider from '../../contexts/AppProvider';
 import { useDeviceDetection } from '../../hooks';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import CollaboratorsList from '../collaboration/CollaboratorsList';
-import DisplayNameModal from '../collaboration/DisplayNameModal';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
+
 
 // Import planning components
 import JobSelector from '../../features/jobs/JobSelector/JobSelector';
@@ -210,7 +210,7 @@ const ReadOnlyBanner = styled.div`
 `;
 
 // Planning interface component that gets data from real-time contexts
-const PlanningInterface = ({ onSave, saving, isReadOnly = false }) => {
+const PlanningInterface = ({ onSave, saving }) => {
   const { isMobile } = useDeviceDetection();
 
   // Get real-time plan data
@@ -382,6 +382,11 @@ const PlanningInterface = ({ onSave, saving, isReadOnly = false }) => {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>
         <div>Error loading plan: {error}</div>
+        {error.includes('permission') && (
+          <div style={{ marginTop: '1rem', fontSize: '0.9em', color: '#666' }}>
+            This plan may be private or you may not have access to it.
+          </div>
+        )}
       </div>
     );
   }
@@ -395,11 +400,11 @@ const PlanningInterface = ({ onSave, saving, isReadOnly = false }) => {
       <SelectorsContainer>
         <BossSelector
           selectedBossId={currentBossId}
-          onSelectBoss={isReadOnly ? () => {} : setCurrentBossId}
-          disabled={isReadOnly}
+          onSelectBoss={setCurrentBossId}
+          disabled={false}
         />
         <JobSelector
-          disabled={isReadOnly}
+          disabled={false}
         />
         <TankPositionSelector />
       </SelectorsContainer>
@@ -428,7 +433,7 @@ const PlanningInterface = ({ onSave, saving, isReadOnly = false }) => {
                   getActiveMitigations={getActiveMitigations}
                   selectedJobs={selectedJobs}
                   currentBossLevel={currentBossLevel}
-                  onClick={() => isReadOnly ? () => {} : handleBossActionSelection(action)}
+                  onClick={() => handleBossActionSelection(action)}
                 >
                   <AssignedMitigations
                     action={action}
@@ -520,22 +525,13 @@ const PlanningInterface = ({ onSave, saving, isReadOnly = false }) => {
   );
 };
 
-const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = false }) => {
+const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = false, isAnonymous = false }) => {
   const { planId: routePlanId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const {
-    joinCollaborativeSession,
-    leaveCollaborativeSession,
-    collaborators,
-    isCollaborating,
-    sessionId,
-    displayName
-  } = useCollaboration();
+  const { user, isAuthenticated, isAnonymousMode, anonymousUser, enableAnonymousMode } = useAuth();
+  // Remove collaboration context usage from here - it will be moved to MitigationPlannerContent
 
   const [saving, setSaving] = useState(false);
-  const [showDisplayNameModal, setShowDisplayNameModal] = useState(false);
-  const [isReadOnly, setIsReadOnly] = useState(false);
   const [planIsPublic, setPlanIsPublic] = useState(false);
 
   // Use route param if available, otherwise fall back to prop (for backward compatibility)
@@ -544,81 +540,55 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
   // Determine if this is a shared plan (either from prop or if plan is public)
   const isActuallySharedPlan = isSharedPlan || planIsPublic;
 
+  // Determine if this is an anonymous session
+  const isAnonymousSession = isAnonymous || (!isAuthenticated && isAnonymousMode);
+
   console.log('[MitigationPlanner] Rendering with planId:', planId);
 
-  // Check if plan is public to enable collaboration
+  // Initialize anonymous mode if needed
   useEffect(() => {
-    const checkPlanPublicStatus = async () => {
-      if (planId && !isSharedPlan) {
+    if (isAnonymous && !isAuthenticated && !isAnonymousMode) {
+      enableAnonymousMode();
+    }
+  }, [isAnonymous, isAuthenticated, isAnonymousMode, enableAnonymousMode]);
+
+  // Set plan public status based on isSharedPlan prop
+  useEffect(() => {
+    // If this is explicitly marked as a shared plan, treat it as public
+    // Otherwise, assume it's private (no need to check permissions)
+    setPlanIsPublic(isSharedPlan);
+  }, [isSharedPlan]);
+
+  // Track access for shared plans
+  useEffect(() => {
+    const trackSharedPlanAccess = async () => {
+      if (planId && isSharedPlan && user) {
         try {
-          // Import the service function to check plan status
-          const { getPlan } = await import('../../services/realtimePlanService');
-          const plan = await getPlan(planId);
-          setPlanIsPublic(plan.isPublic || false);
+          console.log('[MitigationPlanner] Tracking access to shared plan:', planId);
+          // Import the access tracking function
+          const { trackPlanAccess } = await import('../../services/planAccessService');
+
+          // Track access for authenticated users
+          if (user.uid) {
+            await trackPlanAccess(planId, user.uid, false);
+            console.log('[MitigationPlanner] Access tracked for authenticated user:', user.uid);
+          } else if (user.isAnonymous && user.id) {
+            // Track access for anonymous users
+            await trackPlanAccess(planId, user.id, true);
+            console.log('[MitigationPlanner] Access tracked for anonymous user:', user.id);
+          }
         } catch (error) {
-          console.error('Error checking plan public status:', error);
-          setPlanIsPublic(false);
+          console.error('[MitigationPlanner] Error tracking plan access:', error);
         }
       }
     };
 
-    checkPlanPublicStatus();
-  }, [planId, isSharedPlan]);
+    trackSharedPlanAccess();
+  }, [planId, isSharedPlan, user]);
 
-  // Handle collaboration setup for shared plans
-  useEffect(() => {
-    if (isActuallySharedPlan && planId) {
-      // Check if user needs to provide display name
-      if (!isAuthenticated && !displayName) {
-        setShowDisplayNameModal(true);
-      } else {
-        // Join collaborative session
-        joinCollaborativeSession(planId, displayName);
-      }
-
-      // Set read-only mode for unauthenticated users initially
-      setIsReadOnly(!isAuthenticated);
-    }
-
-    // Cleanup on unmount or plan change
-    return () => {
-      if (isActuallySharedPlan && isCollaborating) {
-        leaveCollaborativeSession();
-      }
-    };
-  }, [
-    isActuallySharedPlan,
-    planId,
-    isAuthenticated,
-    displayName,
-    joinCollaborativeSession,
-    leaveCollaborativeSession,
-    isCollaborating
-  ]);
-
-  // Handle display name submission for unauthenticated users
-  const handleDisplayNameSubmit = async (name) => {
-    try {
-      await joinCollaborativeSession(planId, name);
-      setShowDisplayNameModal(false);
-      setIsReadOnly(false); // Allow editing after joining
-    } catch (error) {
-      console.error('Failed to join collaboration:', error);
-      throw error;
-    }
-  };
-
-  const handleDisplayNameCancel = () => {
-    setShowDisplayNameModal(false);
-    setIsReadOnly(true); // Keep as read-only if user cancels
-  };
+  // Collaboration logic moved to MitigationPlannerContent
 
   const handleBack = () => {
-    // Leave collaboration session before navigating away
-    if (isActuallySharedPlan && isCollaborating) {
-      leaveCollaborativeSession();
-    }
-
     if (onNavigateBack) {
       onNavigateBack();
     } else if (isActuallySharedPlan) {
@@ -650,20 +620,13 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
   return (
     <RealtimeAppProvider planId={planId}>
       <MitigationPlannerContent
+        planId={planId}
         isSharedPlan={isActuallySharedPlan}
-        isReadOnly={isReadOnly}
-        setIsReadOnly={setIsReadOnly}
-        collaborators={collaborators}
-        isCollaborating={isCollaborating}
-        sessionId={sessionId}
+        isAnonymousSession={isAnonymousSession}
         isAuthenticated={isAuthenticated}
         handleBack={handleBack}
         handleSave={handleSave}
         saving={saving}
-        showDisplayNameModal={showDisplayNameModal}
-        setShowDisplayNameModal={setShowDisplayNameModal}
-        handleDisplayNameSubmit={handleDisplayNameSubmit}
-        handleDisplayNameCancel={handleDisplayNameCancel}
       />
     </RealtimeAppProvider>
   );
@@ -671,22 +634,64 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
 
 // Content component that has access to real-time contexts
 const MitigationPlannerContent = ({
+  planId,
   isSharedPlan,
-  isReadOnly,
-  setIsReadOnly,
-  collaborators,
-  isCollaborating,
-  sessionId,
+  isAnonymousSession,
   isAuthenticated,
   handleBack,
   handleSave,
-  saving,
-  showDisplayNameModal,
-  setShowDisplayNameModal,
-  handleDisplayNameSubmit,
-  handleDisplayNameCancel
+  saving
 }) => {
-  const { realtimePlan, loading, error } = useRealtimePlan();
+  const { realtimePlan, error } = useRealtimePlan();
+
+  // Use collaboration hook
+  const {
+    joinCollaborativeSession,
+    leaveCollaborativeSession,
+    collaborators,
+    isCollaborating,
+    sessionId,
+    displayName,
+    isInitialized: collaborationInitialized
+  } = useCollaboration();
+
+  // No longer need display name modal for anonymous users
+
+  // Handle collaboration setup for all plans (not just shared plans)
+  useEffect(() => {
+    if (planId && collaborationInitialized) {
+      // Check if collaboration functions are available
+      if (typeof joinCollaborativeSession !== 'function') {
+        console.error('[MitigationPlannerContent] joinCollaborativeSession is not a function');
+        return;
+      }
+
+      // Setting up collaboration for plan editing
+
+      // Join collaborative session - anonymous users now have auto-generated display names
+      console.log('[MitigationPlannerContent] Joining collaboration session with display name:', displayName);
+      joinCollaborativeSession(planId, displayName);
+
+      // Universal access enabled - no read-only restrictions
+    }
+
+    // Cleanup on unmount or plan change
+    return () => {
+      if (isCollaborating && typeof leaveCollaborativeSession === 'function') {
+        leaveCollaborativeSession();
+      }
+    };
+  }, [
+    planId,
+    isAuthenticated,
+    displayName,
+    collaborationInitialized,
+    joinCollaborativeSession,
+    leaveCollaborativeSession,
+    isCollaborating
+  ]);
+
+  // No longer need display name handlers for anonymous users
 
   return (
     <PlannerContainer>
@@ -695,11 +700,11 @@ const MitigationPlannerContent = ({
           {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : 'Editing: '}${realtimePlan.name}` : 'Mitigation Planner'}
         </Title>
         <ButtonGroup>
-          {isSharedPlan && isCollaborating && (
+          {isCollaborating && (
             <CollaboratorsList
               collaborators={collaborators}
               currentSessionId={sessionId}
-              isReadOnly={isReadOnly}
+              isReadOnly={false}
             />
           )}
           <KofiButton />
@@ -720,18 +725,9 @@ const MitigationPlannerContent = ({
         </ErrorMessage>
       )}
 
-      {isSharedPlan && isReadOnly && (
-        <ReadOnlyBanner>
-          <span>You are viewing this plan in read-only mode.</span>
-          {!isAuthenticated && (
-            <button onClick={() => setShowDisplayNameModal(true)}>
-              Join to Edit
-            </button>
-          )}
-        </ReadOnlyBanner>
-      )}
+      {/* Universal access enabled - no read-only restrictions */}
 
-      {isSharedPlan && isCollaborating && collaborators.length > 0 && (
+      {isCollaborating && collaborators.length > 0 && (
         <ActiveUsersDisplay
           collaborators={collaborators}
           currentSessionId={sessionId}
@@ -739,22 +735,14 @@ const MitigationPlannerContent = ({
         />
       )}
 
+
+
       <PlanningInterface
         onSave={handleSave}
         saving={saving}
-        isReadOnly={isReadOnly}
       />
 
-      {showDisplayNameModal && (
-        <DisplayNameModal
-          isOpen={showDisplayNameModal}
-          onSubmit={handleDisplayNameSubmit}
-          onCancel={handleDisplayNameCancel}
-          allowCancel={true}
-          title="Join Collaborative Session"
-          description="Enter your display name to join this collaborative planning session and start editing."
-        />
-      )}
+      {/* No longer showing display name modal for anonymous users */}
     </PlannerContainer>
   );
 };

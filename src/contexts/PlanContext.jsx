@@ -74,7 +74,7 @@ export const PlanProvider = ({ children }) => {
           console.error('Error loading plans:', error);
           setPlans([]); // Set empty array to prevent further errors
         } else {
-          setPlans(userPlans);
+          setPlans(Array.isArray(userPlans) ? userPlans : []);
           setError(null);
         }
         setLoading(false);
@@ -97,7 +97,7 @@ export const PlanProvider = ({ children }) => {
 
     try {
       const userPlans = await planService.getUserPlans(user.uid);
-      setPlans(userPlans);
+      setPlans(Array.isArray(userPlans) ? userPlans : []);
     } catch (err) {
       // Handle permission denied errors gracefully
       if (err.message.includes('Permission denied')) {
@@ -208,8 +208,8 @@ export const PlanProvider = ({ children }) => {
 
       currentPlanListenerRef.current = unsubscribe;
 
-      // Also get initial plan data
-      const plan = await planService.getPlan(planId);
+      // Also get initial plan data with access tracking
+      const plan = await planService.getPlanWithAccessTracking(planId);
       setCurrentPlan(plan);
       return plan;
     } catch (err) {
@@ -225,7 +225,8 @@ export const PlanProvider = ({ children }) => {
     setError(null);
 
     try {
-      const plan = await planService.getPlan(planId);
+      // Use access tracking when loading plans
+      const plan = await planService.getPlanWithAccessTracking(planId);
       setCurrentPlan(plan);
       return plan;
     } catch (err) {

@@ -100,6 +100,12 @@ export const RealtimeMitigationProvider = ({ children }) => {
 
   // Add mitigation with real-time sync and conflict resolution
   const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
+    // Check if anonymous user has proper session for collaborative editing
+    if (!user && (!sessionId || sessionId === 'unknown')) {
+      console.warn('[RealtimeMitigationContext] Anonymous user attempting assignment without proper session');
+      return false;
+    }
+
     // Check if this mitigation is already assigned to this action for this tank position
     if (localAssignments[bossActionId] && localAssignments[bossActionId].some(m =>
       m.id === mitigation.id && m.tankPosition === tankPosition
@@ -167,6 +173,20 @@ export const RealtimeMitigationProvider = ({ children }) => {
         });
       }).catch((error) => {
         console.error('[RealtimeMitigationContext] Failed to sync assignment:', error);
+
+        // Provide user-friendly error messages based on error type
+        let errorMessage = 'Failed to assign mitigation. Please try again.';
+        if (error.message && error.message.includes('permission')) {
+          errorMessage = 'Permission denied. Please ensure you have access to edit this plan.';
+        } else if (error.message && error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (!user && error.message && error.message.includes('auth')) {
+          errorMessage = 'Authentication required. Please sign in or ensure you have proper access to this plan.';
+        }
+
+        // Show error to user (you might want to use a toast notification system here)
+        console.warn('[RealtimeMitigationContext] User-facing error:', errorMessage);
+
         // Revert optimistic update on error
         setLocalAssignments(prev => ({
           ...prev,
@@ -250,6 +270,20 @@ export const RealtimeMitigationProvider = ({ children }) => {
         });
       }).catch((error) => {
         console.error('[RealtimeMitigationContext] Failed to sync removal:', error);
+
+        // Provide user-friendly error messages based on error type
+        let errorMessage = 'Failed to remove mitigation. Please try again.';
+        if (error.message && error.message.includes('permission')) {
+          errorMessage = 'Permission denied. Please ensure you have access to edit this plan.';
+        } else if (error.message && error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (!user && error.message && error.message.includes('auth')) {
+          errorMessage = 'Authentication required. Please sign in or ensure you have proper access to this plan.';
+        }
+
+        // Show error to user (you might want to use a toast notification system here)
+        console.warn('[RealtimeMitigationContext] User-facing error:', errorMessage);
+
         // Revert optimistic update on error
         setLocalAssignments(prev => ({
           ...prev,

@@ -165,7 +165,7 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
   useEffect(() => {
     if (plan && isOpen) {
       const baseUrl = window.location.origin;
-      const url = `${baseUrl}/plan/shared/${plan.id}`;
+      const url = `${baseUrl}/plan/edit/${plan.id}`;
       setShareUrl(url);
       setIsPublic(plan.isPublic || false);
     }
@@ -229,51 +229,35 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
           Share "{plan.name}" with others for collaborative editing. Anyone with the link will be able to view and edit this plan.
         </Description>
 
-        {!isPublic ? (
-          <ShareSection>
-            <SectionTitle>Make Plan Public</SectionTitle>
-            <Description>
-              This plan is currently private. Make it public to enable sharing and collaboration.
-            </Description>
-            <Button
-              onClick={handleMakePublic}
-              disabled={loading}
-              style={{
-                background: '#3399ff',
-                color: 'white'
-              }}
+        <ShareSection>
+          <SectionTitle>Share Link</SectionTitle>
+          <Description>
+            Universal access enabled - all plans are shareable and editable by anyone.
+          </Description>
+          <UrlContainer>
+            <UrlInput
+              value={shareUrl}
+              readOnly
+              onClick={(e) => e.target.select()}
+            />
+            <CopyButton
+              onClick={handleCopyUrl}
+              copied={copied}
             >
-              {loading ? 'Making Public...' : 'Make Public'}
-            </Button>
-          </ShareSection>
-        ) : (
-          <ShareSection>
-            <SectionTitle>Share Link</SectionTitle>
-            <UrlContainer>
-              <UrlInput
-                value={shareUrl}
-                readOnly
-                onClick={(e) => e.target.select()}
-              />
-              <CopyButton
-                onClick={handleCopyUrl}
-                copied={copied}
-              >
-                {copied ? (
-                  <>
-                    <Check size={16} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-                    Copy
-                  </>
-                )}
-              </CopyButton>
-            </UrlContainer>
-          </ShareSection>
-        )}
+              {copied ? (
+                <>
+                  <Check size={16} />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy size={16} />
+                  Copy
+                </>
+              )}
+            </CopyButton>
+          </UrlContainer>
+        </ShareSection>
 
         {error && (
           <StatusMessage className="error">

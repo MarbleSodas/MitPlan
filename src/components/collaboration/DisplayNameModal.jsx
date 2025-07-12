@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { loadFromLocalStorage } from '../../utils/storage/storageUtils';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -120,7 +121,7 @@ const DisplayNameModal = ({
   // Load saved display name on mount
   useEffect(() => {
     if (isOpen) {
-      const savedDisplayName = localStorage.getItem('mitplan_display_name');
+      const savedDisplayName = loadFromLocalStorage('mitplan_display_name');
       if (savedDisplayName) {
         setDisplayName(savedDisplayName);
       }

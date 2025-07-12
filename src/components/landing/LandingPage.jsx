@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import AuthForm from '../auth/AuthForm';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LandingContainer = styled.div`
   min-height: 100vh;
@@ -160,6 +162,13 @@ const DemoButton = styled.button`
 `;
 
 const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
+  const navigate = useNavigate();
+  const { enableAnonymousMode } = useAuth();
+
+  const handleAnonymousMode = () => {
+    enableAnonymousMode();
+    navigate('/anonymous');
+  };
 
   const features = [
     'Plan mitigation strategies for FFXIV raids',
@@ -205,16 +214,17 @@ const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
             onSuccess={onAuthSuccess}
           />
 
-          {onDemoMode && (
-            <DemoSection>
-              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-                Want to try it first?
-              </p>
-              <DemoButton onClick={onDemoMode}>
-                Try Demo Mode
-              </DemoButton>
-            </DemoSection>
-          )}
+          <DemoSection>
+            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+              Want to try it first?
+            </p>
+            <DemoButton onClick={handleAnonymousMode}>
+              Try Anonymous Mode
+            </DemoButton>
+            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+              No account required • Plans stored locally
+            </p>
+          </DemoSection>
         </AuthSection>
         </ContentWrapper>
       </MainContent>

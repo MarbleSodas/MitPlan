@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
@@ -13,10 +13,10 @@ import {
   calculateBarrierAmount,
   isTouchDevice
 } from '../../utils';
-import { isDualTankBusterAction } from '../../utils/boss/bossActionUtils';
-import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
+
+
 import { mitigationAbilities, bosses } from '../../data';
-import { useTankPositionContext, useTankSelectionModalContext } from '../../contexts';
+import { useTankPositionContext } from '../../contexts';
 
 const BossAction = styled.div`
   background-color: ${props => {
@@ -452,35 +452,10 @@ const BossActionItem = memo(({
   const [isTouched, setIsTouched] = useState(false);
   const isTouch = isTouchDevice();
 
-  // Tank selection modal context
-  const { openTankSelectionModal } = useTankSelectionModalContext();
-  
   // Tank position context
   const { tankPositions } = useTankPositionContext();
 
-  // Handler for assigning mitigation using unified assignment logic
-  const handleAssignMitigation = useCallback((mitigation, assignCallback) => {
-    // Use the unified assignment function to determine if modal should be shown
-    const assignmentDecision = determineMitigationAssignment(mitigation, action, tankPositions);
 
-    console.log('[BossActionItem] Mitigation assignment decision:', {
-      mitigationName: mitigation.name,
-      mitigationType: mitigation.target,
-      bossActionName: action.name,
-      decision: assignmentDecision
-    });
-
-    if (assignmentDecision.shouldShowModal) {
-      console.log('[BossActionItem] Opening tank selection modal for mitigation assignment');
-      openTankSelectionModal(mitigation.name, (selectedTankPosition) => {
-        assignCallback(selectedTankPosition);
-      }, mitigation, action);
-      return;
-    }
-
-    // Default assignment (no modal)
-    assignCallback();
-  }, [action, tankPositions, openTankSelectionModal]);
 
   // Touch event handlers
   const handleTouchStart = useCallback(() => {
@@ -673,10 +648,13 @@ const BossActionItem = memo(({
 
   // Calculate tank-specific mitigation percentages
   // Get the mitigation info for each tank position
-  const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.mainTank ?
+  const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) ?
     calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
-  const offTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) && tankPositions.offTank ?
+  // For dual tank busters, always calculate off tank mitigation (party-wide abilities should apply)
+  const offTankMitigationInfo = (action.isDualTankBuster) ?
     calculateMitigationInfo('offTank') : { allMitigations: [], barrierMitigations: [] };
+
+
 
   // Extract the mitigations for each tank
   const mainTankMitigations = mainTankMitigationInfo.allMitigations;

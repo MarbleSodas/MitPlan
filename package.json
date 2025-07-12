@@ -15,7 +15,9 @@
     "test:realtime": "vitest run src/tests/integration/realtime-sync-enhanced.test.js",
     "test:collaboration": "vitest run src/tests/integration/multi-user-collaboration.test.js",
     "test:persistence": "vitest run src/tests/integration/data-persistence-recovery.test.js",
-    "test:performance": "vitest run src/tests/performance/realtime-performance.test.jsx"
+    "test:performance": "vitest run src/tests/performance/realtime-performance.test.jsx",
+    "security:check": "node scripts/security-check.js",
+    "predeploy": "npm run security:check && npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

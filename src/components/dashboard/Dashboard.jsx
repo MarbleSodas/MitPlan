@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
+import unifiedPlanService from '../../services/unifiedPlanService';
 import PlanCard from './PlanCard';
 import CreatePlanModal from './CreatePlanModal';
+import BossSelectionModal from './BossSelectionModal';
 import ImportPlanModal from './ImportPlanModal';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
@@ -93,11 +95,41 @@ const SecondaryButton = styled(Button)`
   }
 `;
 
+const PlansSection = styled.div`
+  margin-bottom: 3rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+`;
+
+const SectionTitle = styled.h2`
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const PlanCount = styled.span`
+  background: ${props => props.theme?.colors?.primaryBackground || '#eff6ff'};
+  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+`;
+
 const PlansGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 1.5rem;
-  margin-top: 2rem;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -105,7 +137,6 @@ const PlansGrid = styled.div`
   }
 
   @media (max-width: 600px) {
-    margin-top: 1rem;
     padding: 0 0.5rem;
   }
 `;
@@ -125,6 +156,21 @@ const EmptyStateTitle = styled.h3`
 const EmptyStateText = styled.p`
   font-size: 1rem;
   margin-bottom: 2rem;
+`;
+
+const SectionEmptyState = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
+  background: ${props => props.theme?.colors?.backgroundSecondary || '#f8fafc'};
+  border-radius: 8px;
+  border: 1px dashed ${props => props.theme?.colors?.border || '#e2e8f0'};
+`;
+
+const SectionEmptyText = styled.p`
+  font-size: 0.875rem;
+  margin: 0;
+  font-style: italic;
 `;
 
 const LoadingSpinner = styled.div`
@@ -148,9 +194,48 @@ const ErrorMessage = styled.div`
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { plans, loading, error, loadUserPlans } = usePlan();
+  const { loadUserPlans } = usePlan();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedBossForPlan, setSelectedBossForPlan] = useState(null);
+  const [categorizedPlans, setCategorizedPlans] = useState({
+    ownedPlans: [],
+    sharedPlans: [],
+    totalPlans: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Set up unified plan service context and load categorized plans
+  useEffect(() => {
+    if (user) {
+      // Set the user context for the unified plan service
+      unifiedPlanService.setUserContext(user, false);
+      loadCategorizedPlans();
+    }
+  }, [user]);
+
+  const loadCategorizedPlans = async () => {
+    if (!user) {
+      setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const plans = await unifiedPlanService.getCategorizedUserPlans();
+      setCategorizedPlans(plans);
+    } catch (err) {
+      console.error('Error loading categorized plans:', err);
+      setError(err.message);
+      setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNavigateToPlanner = (planId) => {
     navigate(`/plan/edit/${planId}`);
@@ -168,18 +253,35 @@ const Dashboard = () => {
     setShowCreateModal(true);
   };
 
+  const handleCreatePlanByBoss = () => {
+    setShowBossSelectionModal(true);
+  };
+
+  const handleBossSelected = (bossId) => {
+    setSelectedBossForPlan(bossId);
+    setShowBossSelectionModal(false);
+    setShowCreateModal(true);
+  };
+
+  const handleCreateModalClose = () => {
+    setShowCreateModal(false);
+    setSelectedBossForPlan(null);
+  };
+
   const handleImportPlan = () => {
     setShowImportModal(true);
   };
 
   const handlePlanCreated = () => {
     setShowCreateModal(false);
-    loadUserPlans();
+    loadUserPlans(); // Keep for real-time updates
+    loadCategorizedPlans(); // Refresh categorized view
   };
 
   const handlePlanImported = () => {
     setShowImportModal(false);
-    loadUserPlans();
+    loadUserPlans(); // Keep for real-time updates
+    loadCategorizedPlans(); // Refresh categorized view
   };
 
   if (loading) {
@@ -217,38 +319,100 @@ const Dashboard = () => {
         <Button onClick={handleCreatePlan}>
           Create New Plan
         </Button>
+        <Button onClick={handleCreatePlanByBoss}>
+          Create Plan by Boss
+        </Button>
         <SecondaryButton onClick={handleImportPlan}>
           Import Plan
         </SecondaryButton>
       </ActionButtons>
 
-      {plans.length === 0 ? (
+      {categorizedPlans.totalPlans === 0 ? (
         <EmptyState>
           <EmptyStateTitle>No Plans Yet</EmptyStateTitle>
           <EmptyStateText>
             Create your first mitigation plan to get started with optimizing your raid strategies.
           </EmptyStateText>
-          <Button onClick={handleCreatePlan}>
-            Create Your First Plan
-          </Button>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button onClick={handleCreatePlan}>
+              Create Your First Plan
+            </Button>
+            <Button onClick={handleCreatePlanByBoss}>
+              Choose Boss First
+            </Button>
+          </div>
         </EmptyState>
       ) : (
-        <PlansGrid>
-          {plans.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              onEdit={() => handleNavigateToPlanner(plan.id)}
-            />
-          ))}
-        </PlansGrid>
+        <>
+          {/* My Plans Section */}
+          <PlansSection>
+            <SectionHeader>
+              <SectionTitle>My Plans</SectionTitle>
+              <PlanCount>{categorizedPlans.ownedPlans.length}</PlanCount>
+            </SectionHeader>
+
+            {categorizedPlans.ownedPlans.length === 0 ? (
+              <SectionEmptyState>
+                <SectionEmptyText>
+                  You haven't created any plans yet. Click "Create New Plan" to get started!
+                </SectionEmptyText>
+              </SectionEmptyState>
+            ) : (
+              <PlansGrid>
+                {categorizedPlans.ownedPlans.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onEdit={() => handleNavigateToPlanner(plan.id)}
+                  />
+                ))}
+              </PlansGrid>
+            )}
+          </PlansSection>
+
+          {/* Shared Plans Section - Only show for authenticated users */}
+          {user && !user.isAnonymous && (
+            <PlansSection>
+              <SectionHeader>
+                <SectionTitle>Shared Plans</SectionTitle>
+                <PlanCount>{categorizedPlans.sharedPlans.length}</PlanCount>
+              </SectionHeader>
+
+              {categorizedPlans.sharedPlans.length === 0 ? (
+                <SectionEmptyState>
+                  <SectionEmptyText>
+                    No plans have been shared with you yet. Shared plans will appear here when other users give you access.
+                  </SectionEmptyText>
+                </SectionEmptyState>
+              ) : (
+                <PlansGrid>
+                  {categorizedPlans.sharedPlans.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      onEdit={() => handleNavigateToPlanner(plan.id)}
+                    />
+                  ))}
+                </PlansGrid>
+              )}
+            </PlansSection>
+          )}
+        </>
+      )}
+
+      {showBossSelectionModal && (
+        <BossSelectionModal
+          onClose={() => setShowBossSelectionModal(false)}
+          onSelectBoss={handleBossSelected}
+        />
       )}
 
       {showCreateModal && (
         <CreatePlanModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={handleCreateModalClose}
           onSuccess={handlePlanCreated}
           onNavigateToPlanner={handleNavigateToPlanner}
+          preSelectedBossId={selectedBossForPlan}
         />
       )}
 

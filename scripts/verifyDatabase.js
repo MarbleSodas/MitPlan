@@ -7,18 +7,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, get, set, serverTimestamp } from 'firebase/database';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBSfsBbrunA3aejnWlsMe0z1NiwJUvRNPU",
-  authDomain: "xivmit.firebaseapp.com",
-  databaseURL: "https://xivmit-default-rtdb.firebaseio.com",
-  projectId: "xivmit",
-  storageBucket: "xivmit.firebasestorage.app",
-  messagingSenderId: "1056456049686",
-  appId: "1:1056456049686:web:a269ab0a6d59da09462137",
-  measurementId: "G-834J53ZVFF"
-};
+import { firebaseConfig } from './firebase-config.js';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -45,19 +34,18 @@ async function verifyDatabase() {
       return false;
     }
     
-    // Test 2: Check shared collaboration structure
-    console.log('\n🤝 Test 2: Checking shared collaboration structure...');
-    const sharedRef = ref(database, 'shared/sample-plan-001');
-    const sharedSnapshot = await get(sharedRef);
-    
-    if (sharedSnapshot.exists()) {
-      const sharedData = sharedSnapshot.val();
-      console.log('✅ Shared collaboration structure exists');
-      console.log(`   Active users: ${sharedData.metadata?.activeUserCount || 0}`);
-      console.log(`   Session count: ${sharedData.metadata?.sessionCount || 0}`);
+    // Test 2: Check plan-based collaboration structure
+    console.log('\n🤝 Test 2: Checking plan-based collaboration structure...');
+    const collaborationRef = ref(database, 'plans/sample-plan-001/collaboration');
+    const collaborationSnapshot = await get(collaborationRef);
+
+    if (collaborationSnapshot.exists()) {
+      const collaborationData = collaborationSnapshot.val();
+      console.log('✅ Plan-based collaboration structure exists');
+      console.log(`   Active users: ${Object.keys(collaborationData.activeUsers || {}).length}`);
+      console.log(`   Changes: ${Object.keys(collaborationData.changes || {}).length}`);
     } else {
-      console.log('❌ Shared collaboration structure not found');
-      return false;
+      console.log('ℹ️  Plan-based collaboration structure will be created when first user joins');
     }
     
     // Test 3: Verify data structure completeness
@@ -146,11 +134,11 @@ async function verifyDatabase() {
       };
       
       // Try to add a test user session
-      await set(ref(database, `shared/sample-plan-001/activeUsers/${testSessionId}`), testUserData);
+      await set(ref(database, `plans/sample-plan-001/collaboration/activeUsers/${testSessionId}`), testUserData);
       console.log('✅ Write operation successful');
-      
+
       // Clean up test data
-      await set(ref(database, `shared/sample-plan-001/activeUsers/${testSessionId}`), null);
+      await set(ref(database, `plans/sample-plan-001/collaboration/activeUsers/${testSessionId}`), null);
       console.log('✅ Cleanup successful');
       
     } catch (error) {
@@ -163,7 +151,7 @@ async function verifyDatabase() {
     console.log('   ✅ Security rules are deployed');
     console.log('   ✅ Sample data is available');
     console.log('   ✅ Real-time collaboration structure is ready');
-    console.log('\n🔗 Access the sample plan at: /plan/shared/sample-plan-001');
+    console.log('\n🔗 Access the sample plan at: /plan/edit/sample-plan-001');
     
     return true;
     

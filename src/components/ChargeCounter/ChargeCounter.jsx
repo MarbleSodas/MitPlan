@@ -7,14 +7,14 @@ const ChargeCountContainer = styled.span`
   display: inline-block;
   padding: 1px 5px;
   border-radius: 10px;
-  background-color: ${props => props.available === 0 ?
+  background-color: ${props => props.$available === 0 ?
     props.theme.colors.error || '#ff5555' :
     props.theme.colors.primary};
   color: ${props => props.theme.colors.buttonText};
   font-weight: bold;
   margin-left: 4px;
   font-size: 0.8rem;
-  opacity: ${props => props.available === 0 ? 0.8 : 1};
+  opacity: ${props => props.$available === 0 ? 0.8 : 1};
   transition: all 0.3s ease;
   position: relative;
 
@@ -102,7 +102,7 @@ const ChargeCounter = ({
 
   return (
     <ChargeCountContainer
-      available={available}
+      $available={available}
       data-mitigation-id={mitigationId}
       data-charge-type={type}
       className={isFlashing ? 'flash-update' : ''}

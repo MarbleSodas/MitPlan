@@ -10,6 +10,7 @@ import {
   off
 } from 'firebase/database';
 import { database } from '../config/firebase';
+import { initializePlanOwnership, trackPlanAccess, getUserAccessiblePlans } from './planAccessService';
 
 const PLANS_PATH = 'plans';
 
@@ -24,16 +25,17 @@ export const createPlan = async (userId, planData) => {
         'ketuduke': 'Ketuduke',
         'lala': 'Lala',
         'statice': 'Statice',
-        'm6s': 'Sugar Riot (M6S)',
-        'm7s': 'Brute Abominator (M7S)',
-        'm8s': 'M8S'
+        'dancing-green-m5s': 'Dancing Green (M5S)',
+        'sugar-riot': 'Sugar Riot (M6S)',
+        'brute-abominator-m7s': 'Brute Abominator (M7S)',
+        'howling-blade-m8s': 'Howling Blade (M8S)'
       };
       return bossNames[bossId] || 'Unknown Boss';
     };
 
     // Ensure all required fields are present with proper defaults
     const bossId = planData.selectedBoss?.id || planData.bossId || 'ketuduke';
-    const planDoc = {
+    const basePlanDoc = {
       title: planData.title || planData.name || 'Untitled Plan',
       selectedBoss: planData.selectedBoss || {
         id: bossId,
@@ -47,14 +49,14 @@ export const createPlan = async (userId, planData) => {
       },
       assignedMitigations: planData.assignedMitigations || planData.assignments || {},
       connectedUsers: {},
-      ownerId: userId,
       isPublic: planData.isPublic || false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
       lastModifiedBy: userId,
       lastChangeOrigin: 'creation',
       version: 4.0 // New version for updated Realtime Database structure
     };
+
+    // Initialize ownership and access control
+    const planDoc = initializePlanOwnership(null, userId, basePlanDoc);
 
     console.log('[createPlan] Creating plan with data:', {
       title: planDoc.title,
@@ -125,26 +127,49 @@ export const getPlan = async (planId) => {
         bossId: planData.bossId,
         selectedJobsKeys: Object.keys(planData.selectedJobs || {}),
         assignmentsKeys: Object.keys(planData.assignments || {}),
-        hasUserId: !!planData.userId
+        hasUserId: !!planData.userId,
+        isPublic: !!planData.isPublic
       });
+
+      // Apply backward compatibility migration
+      const { migratePlanOwnership } = await import('./planAccessService');
+      const migratedPlanData = migratePlanOwnership(planId, planData);
 
       // Ensure all required fields exist with proper defaults
       const completePlan = {
         id: planId,
-        name: planData.title || planData.name || 'Untitled Plan',
-        description: planData.description || '',
-        bossId: planData.bossId || 'ketuduke',
-        selectedJobs: planData.selectedJobs || {},
-        assignments: planData.assignments || {},
-        tankPositions: planData.tankPositions || {},
-        isPublic: planData.isPublic || false,
-        userId: planData.userId,
-        createdAt: planData.createdAt,
-        updatedAt: planData.updatedAt,
-        version: planData.version || 3.0,
-        lastModifiedBy: planData.lastModifiedBy,
-        lastChangeOrigin: planData.lastChangeOrigin
+        name: migratedPlanData.title || migratedPlanData.name || 'Untitled Plan',
+        description: migratedPlanData.description || '',
+        bossId: migratedPlanData.bossId || 'ketuduke',
+        selectedJobs: migratedPlanData.selectedJobs || {},
+        assignments: migratedPlanData.assignments || {},
+        tankPositions: migratedPlanData.tankPositions || {},
+        isPublic: migratedPlanData.isPublic || false,
+        userId: migratedPlanData.userId,
+        ownerId: migratedPlanData.ownerId,
+        accessedBy: migratedPlanData.accessedBy || {},
+        createdAt: migratedPlanData.createdAt,
+        updatedAt: migratedPlanData.updatedAt,
+        lastAccessedAt: migratedPlanData.lastAccessedAt,
+        version: migratedPlanData.version || 3.0,
+        lastModifiedBy: migratedPlanData.lastModifiedBy,
+        lastChangeOrigin: migratedPlanData.lastChangeOrigin
       };
+
+      // If migration added fields, update the plan in Firebase
+      if (!planData.accessedBy || !planData.ownerId) {
+        console.log('[getPlan] Migrating plan to new schema:', planId);
+        try {
+          await update(planRef, {
+            ownerId: completePlan.ownerId,
+            accessedBy: completePlan.accessedBy,
+            lastAccessedAt: completePlan.lastAccessedAt
+          });
+        } catch (updateError) {
+          console.warn('[getPlan] Failed to update plan with migration data:', updateError);
+          // Don't throw error - plan can still be used
+        }
+      }
 
       return completePlan;
     } else {
@@ -152,40 +177,44 @@ export const getPlan = async (planId) => {
     }
   } catch (error) {
     console.error('Error getting plan:', error);
-    throw new Error('Failed to get plan');
+
+    // Provide more specific error messages
+    if (error.code === 'PERMISSION_DENIED' || error.message?.includes('Permission denied')) {
+      throw new Error('Permission denied: You do not have access to this plan');
+    } else if (error.message === 'Plan not found') {
+      throw error; // Re-throw the specific "Plan not found" error
+    } else {
+      throw new Error(`Failed to get plan: ${error.message}`);
+    }
   }
 };
 
 /**
- * Get all plans for a specific user
+ * Get a specific plan by ID and track user access
+ */
+export const getPlanWithAccessTracking = async (planId, userId) => {
+  try {
+    const plan = await getPlan(planId);
+
+    // Track access if user is provided and plan exists
+    if (plan && userId) {
+      await trackPlanAccess(planId, userId, false);
+    }
+
+    return plan;
+  } catch (error) {
+    console.error('Error getting plan with access tracking:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all plans for a specific user (owned + accessed)
  */
 export const getUserPlans = async (userId) => {
   try {
-    const plansRef = ref(database, PLANS_PATH);
-    const snapshot = await get(plansRef);
-
-    const plans = [];
-    if (snapshot.exists()) {
-      snapshot.forEach((childSnapshot) => {
-        const planData = childSnapshot.val();
-        // Only include plans owned by this user (check both userId and ownerId for compatibility)
-        if (planData && (planData.ownerId === userId || planData.userId === userId)) {
-          plans.push({
-            id: childSnapshot.key,
-            ...planData
-          });
-        }
-      });
-    }
-
-    // Sort by updatedAt in descending order (most recent first)
-    plans.sort((a, b) => {
-      const aTime = a.updatedAt || a.createdAt || 0;
-      const bTime = b.updatedAt || b.createdAt || 0;
-      return bTime - aTime;
-    });
-
-    return plans;
+    // Use the new access control service to get accessible plans
+    return await getUserAccessiblePlans(userId, false);
   } catch (error) {
     console.error('Error getting user plans:', error);
     throw new Error('Failed to get user plans');
@@ -677,21 +706,33 @@ export const updatePlanFieldWithOrigin = async (planId, fieldPath, value, userId
       sessionId
     });
 
-    const updates = {
-      [`${PLANS_PATH}/${planId}/${fieldPath}`]: value,
-      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp()
+    // Get current plan data first
+    const planRef = ref(database, `${PLANS_PATH}/${planId}`);
+    const snapshot = await get(planRef);
+
+    if (!snapshot.exists()) {
+      throw new Error('Plan not found');
+    }
+
+    const currentPlan = snapshot.val();
+
+    // Prepare the updated plan data
+    const updatedPlan = {
+      ...currentPlan,
+      [fieldPath]: value,
+      updatedAt: serverTimestamp()
     };
 
     if (userId) {
-      updates[`${PLANS_PATH}/${planId}/lastModifiedBy`] = userId;
+      updatedPlan.lastModifiedBy = userId;
     }
 
     if (sessionId) {
-      updates[`${PLANS_PATH}/${planId}/lastChangeOrigin`] = sessionId;
+      updatedPlan.lastChangeOrigin = sessionId;
     }
 
-    console.log('[updatePlanFieldWithOrigin] Executing update with paths:', Object.keys(updates));
-    await update(ref(database), updates);
+    console.log('[updatePlanFieldWithOrigin] Executing single plan update');
+    await set(planRef, updatedPlan);
     console.log('[updatePlanFieldWithOrigin] Update completed successfully');
     return true;
   } catch (error) {
@@ -853,26 +894,7 @@ export const updatePlanBossRealtime = async (planId, bossId, userId = null, sess
   }
 };
 
-/**
- * Update tank positions with real-time collaboration support
- */
-export const updatePlanTankPositionsRealtime = async (planId, tankPositions, userId = null, sessionId = null) => {
-  try {
-    console.log('[updatePlanTankPositionsRealtime] Updating tank positions:', {
-      planId,
-      tankPositions,
-      userId,
-      sessionId
-    });
 
-    const result = await updatePlanFieldWithOrigin(planId, 'tankPositions', tankPositions, userId, sessionId);
-    console.log('[updatePlanTankPositionsRealtime] Update successful');
-    return result;
-  } catch (error) {
-    console.error('Error updating plan tank positions realtime:', error);
-    throw new Error('Failed to update plan tank positions');
-  }
-};
 
 /**
  * Batch update multiple plan fields for better performance
@@ -895,7 +917,7 @@ export const batchUpdatePlanRealtime = async (planId, updates, userId = null, se
  */
 export const cleanupInactiveSessions = async (planId) => {
   try {
-    const sessionsRef = ref(database, `collaboration/plans/${planId}/users`);
+    const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
     const snapshot = await get(sessionsRef);
 
     if (!snapshot.exists()) return;
@@ -911,7 +933,7 @@ export const cleanupInactiveSessions = async (planId) => {
 
       // Remove sessions that haven't been active for 10+ minutes
       if (lastActivity && lastActivity < tenMinutesAgo) {
-        updates[`collaboration/plans/${planId}/users/${childSnapshot.key}`] = null;
+        updates[`plans/${planId}/collaboration/activeUsers/${childSnapshot.key}`] = null;
       }
     });
 
@@ -928,7 +950,7 @@ export const cleanupInactiveSessions = async (planId) => {
  */
 export const getActiveCollaborators = async (planId) => {
   try {
-    const sessionsRef = ref(database, `collaboration/plans/${planId}/users`);
+    const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
     const snapshot = await get(sessionsRef);
 
     const collaborators = [];
@@ -968,7 +990,7 @@ export const isPlanBeingCollaborated = async (planId) => {
  * Subscribe to collaboration changes for a plan
  */
 export const subscribeToCollaboration = (planId, callback) => {
-  const collaborationRef = ref(database, `shared/${planId}/activeUsers`);
+  const collaborationRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
 
   const unsubscribe = onValue(collaborationRef, (snapshot) => {
     const collaborators = [];
@@ -1066,6 +1088,30 @@ export const ensurePlanStructure = async (planId) => {
       needsUpdate = true;
     }
 
+    // Check and initialize access control fields for backward compatibility
+    if (!plan.accessedBy || typeof plan.accessedBy !== 'object') {
+      updates.accessedBy = {};
+      needsUpdate = true;
+      console.log('[ensurePlanStructure] Initializing accessedBy field for backward compatibility');
+    }
+
+    if (!plan.ownerId && plan.userId) {
+      // Migrate userId to ownerId for backward compatibility
+      updates.ownerId = plan.userId;
+      needsUpdate = true;
+      console.log('[ensurePlanStructure] Migrating userId to ownerId:', plan.userId);
+    }
+
+    if (!plan.createdAt) {
+      updates.createdAt = Date.now();
+      needsUpdate = true;
+    }
+
+    if (!plan.updatedAt) {
+      updates.updatedAt = Date.now();
+      needsUpdate = true;
+    }
+
     if (needsUpdate) {
       console.log('[ensurePlanStructure] Updating plan structure with:', updates);
       await updatePlanFieldsWithOrigin(planId, updates);
@@ -1087,6 +1133,12 @@ export const ensurePlanStructure = async (planId) => {
     return true;
   } catch (error) {
     console.error('Error ensuring plan structure:', error);
-    throw new Error('Failed to ensure plan structure');
+
+    // Handle permission errors more gracefully
+    if (error.message?.includes('Permission denied')) {
+      throw new Error('Permission denied: You do not have access to this plan');
+    } else {
+      throw new Error('Failed to ensure plan structure');
+    }
   }
 };
