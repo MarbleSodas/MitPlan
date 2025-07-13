@@ -13,6 +13,7 @@ import unifiedPlanService from '../../services/unifiedPlanService';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
 import BossSelectionModal from '../dashboard/BossSelectionModal';
+import Footer from '../layout/Footer';
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -307,7 +308,8 @@ const AnonymousDashboard = () => {
   }
 
   return (
-    <DashboardContainer>
+    <>
+      <DashboardContainer>
       <Header>
         <Title>
           <User size={32} />
@@ -420,6 +422,8 @@ const AnonymousDashboard = () => {
         </Modal>
       )}
     </DashboardContainer>
+    <Footer />
+  </>
   );
 };
 

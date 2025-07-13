@@ -14,6 +14,7 @@ import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
+import Footer from '../layout/Footer';
 
 
 // Import planning components
@@ -689,7 +690,8 @@ const MitigationPlannerContent = ({
   // No longer need display name handlers for anonymous users
 
   return (
-    <PlannerContainer>
+    <>
+      <PlannerContainer>
       <Header>
         <Title>
           {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : 'Editing: '}${realtimePlan.name}` : 'Mitigation Planner'}
@@ -739,6 +741,8 @@ const MitigationPlannerContent = ({
 
       {/* No longer showing display name modal for anonymous users */}
     </PlannerContainer>
+    <Footer />
+  </>
   );
 };
 

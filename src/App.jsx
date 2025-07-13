@@ -9,6 +9,7 @@ import LandingPage from './components/landing/LandingPage';
 import Dashboard from './components/dashboard/Dashboard';
 import MitigationPlanner from './components/planner/MitigationPlanner';
 import UnauthenticatedPlanGuard from './components/guards/UnauthenticatedPlanGuard';
+import DataPolicy from './pages/DataPolicy';
 import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
 
 // DEBUGGING: Minimal App to test if React is working
@@ -198,7 +199,11 @@ const AppContent = () => {
         }
       />
 
-
+      {/* Legal pages - accessible to all users */}
+      <Route
+        path="/privacy-policy"
+        element={<DataPolicy />}
+      />
 
       {/* Catch all route */}
       <Route

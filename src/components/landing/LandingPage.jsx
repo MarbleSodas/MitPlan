@@ -5,6 +5,7 @@ import AuthForm from '../auth/AuthForm';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
+import Footer from '../layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LandingContainer = styled.div`
@@ -193,15 +194,15 @@ const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
             <LogoIcon>M</LogoIcon>
             <LogoText>MitPlan</LogoText>
           </Logo>
-          
+
           <Tagline>FFXIV Mitigation Planner</Tagline>
-          
+
           <Description>
-            The ultimate tool for Final Fantasy XIV raiders to plan and optimize 
-            their mitigation strategies. Create detailed plans, track cooldowns, 
+            The ultimate tool for Final Fantasy XIV raiders to plan and optimize
+            their mitigation strategies. Create detailed plans, track cooldowns,
             and coordinate with your team for perfect raid execution.
           </Description>
-          
+
           <FeatureList>
             {features.map((feature, index) => (
               <FeatureItem key={index}>{feature}</FeatureItem>
@@ -230,6 +231,7 @@ const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
         </AuthSection>
         </ContentWrapper>
       </MainContent>
+      <Footer />
     </LandingContainer>
   );
 };

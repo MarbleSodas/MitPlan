@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import Footer from './Footer';
 
 const AppContainer = styled.div`
   width: 100%;
@@ -11,6 +12,8 @@ const AppContainer = styled.div`
   color: ${props => props.theme.colors.text};
   box-sizing: border-box;
   transition: padding-top 0.3s ease;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.responsive.medium};
@@ -28,8 +31,15 @@ const AppContainer = styled.div`
   }
 `;
 
+const MainContent = styled.div`
+  flex: 1;
+`;
+
 export const AppLayout = ({ children, hasBanner = false }) => (
-  <AppContainer $hasBanner={hasBanner}>{children}</AppContainer>
+  <AppContainer $hasBanner={hasBanner}>
+    <MainContent>{children}</MainContent>
+    <Footer />
+  </AppContainer>
 );
 
 export default AppLayout;

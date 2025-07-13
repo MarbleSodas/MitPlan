@@ -11,6 +11,7 @@ import ImportPlanModal from './ImportPlanModal';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
+import Footer from '../layout/Footer';
 
 const DashboardContainer = styled.div`
   max-width: 1200px;
@@ -289,14 +290,18 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <DashboardContainer>
-        <LoadingSpinner>Loading your plans...</LoadingSpinner>
-      </DashboardContainer>
+      <>
+        <DashboardContainer>
+          <LoadingSpinner>Loading your plans...</LoadingSpinner>
+        </DashboardContainer>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <DashboardContainer>
+    <>
+      <DashboardContainer>
       <Header>
         <Title>Mitigation Plans</Title>
         <UserInfo>
@@ -422,6 +427,8 @@ const Dashboard = () => {
         />
       )}
     </DashboardContainer>
+    <Footer />
+  </>
   );
 };
 
