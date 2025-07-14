@@ -33,7 +33,8 @@ export class AbilityAvailability {
     lastUsedActionName = null,
     isRoleShared = false,
     tankSpecific = false,
-    tankPosition = null
+    tankPosition = null,
+    sharedCooldownGroup = null
   }) {
     this.abilityId = abilityId;
     this.isAvailable = isAvailable;
@@ -49,6 +50,7 @@ export class AbilityAvailability {
     this.isRoleShared = isRoleShared;
     this.tankSpecific = tankSpecific;
     this.tankPosition = tankPosition;
+    this.sharedCooldownGroup = sharedCooldownGroup;
   }
 
   /**
@@ -63,10 +65,12 @@ export class AbilityAvailability {
    */
   getUnavailabilityReason() {
     if (this.isAvailable) return null;
-    
+
     switch (this.reason) {
       case 'on_cooldown':
         return `On cooldown until ${this.nextAvailableTime}s`;
+      case 'shared_cooldown':
+        return `Shared cooldown until ${this.nextAvailableTime}s`;
       case 'no_charges':
         return 'No charges available';
       case 'no_instances':
@@ -226,6 +230,37 @@ export class CooldownManager {
   }
 
   /**
+   * Get all abilities that share a cooldown group
+   */
+  getAbilitiesInSharedCooldownGroup(groupId) {
+    return mitigationAbilities.filter(ability => ability.sharedCooldownGroup === groupId);
+  }
+
+  /**
+   * Get aggregated usage history for all abilities in a shared cooldown group
+   */
+  _getSharedCooldownUsageHistory(ability, targetTime) {
+    if (!ability.sharedCooldownGroup) {
+      return this.getAbilityUsageHistory(ability.id);
+    }
+
+    const groupAbilities = this.getAbilitiesInSharedCooldownGroup(ability.sharedCooldownGroup);
+    const allUsages = [];
+
+    for (const groupAbility of groupAbilities) {
+      const usages = this.getAbilityUsageHistory(groupAbility.id);
+      // Filter usages up to target time
+      const relevantUsages = usages.filter(usage => usage.time <= targetTime);
+      allUsages.push(...relevantUsages);
+    }
+
+    // Sort by time to get chronological order
+    allUsages.sort((a, b) => a.time - b.time);
+
+    return allUsages;
+  }
+
+  /**
    * Check if an ability is available at a specific time
    */
   checkAbilityAvailability(abilityId, targetTime, targetBossActionId = null, options = {}) {
@@ -241,7 +276,8 @@ export class CooldownManager {
       return new AbilityAvailability({
         abilityId,
         isAvailable: false,
-        reason: 'ability_not_found'
+        reason: 'ability_not_found',
+        sharedCooldownGroup: null
       });
     }
 
@@ -292,7 +328,8 @@ export class CooldownManager {
             lastUsedActionName: targetAction?.name,
             totalCharges,
             totalInstances,
-            isRoleShared
+            isRoleShared,
+            sharedCooldownGroup: ability.sharedCooldownGroup || null
           });
         }
       }
@@ -343,7 +380,8 @@ export class CooldownManager {
       availableInstances,
       totalInstances,
       nextAvailableTime,
-      isRoleShared: true
+      isRoleShared: true,
+      sharedCooldownGroup: ability.sharedCooldownGroup || null
     });
   }
 
@@ -384,7 +422,8 @@ export class CooldownManager {
       availableInstances: 1,
       totalInstances: 1,
       nextAvailableTime,
-      isRoleShared: false
+      isRoleShared: false,
+      sharedCooldownGroup: ability.sharedCooldownGroup || null
     });
   }
 
@@ -400,7 +439,8 @@ export class CooldownManager {
         totalCharges: 1,
         availableInstances: 1,
         totalInstances: 1,
-        isRoleShared: false
+        isRoleShared: false,
+        sharedCooldownGroup: ability.sharedCooldownGroup || null
       });
     }
 
@@ -421,7 +461,8 @@ export class CooldownManager {
       lastUsedTime: lastUsage.time,
       lastUsedActionId: lastUsage.bossActionId,
       lastUsedActionName: lastUsage.actionName,
-      isRoleShared: false
+      isRoleShared: false,
+      sharedCooldownGroup: ability.sharedCooldownGroup || null
     });
   }
 
@@ -441,7 +482,8 @@ export class CooldownManager {
         totalCharges: 1,
         availableInstances: 0,
         totalInstances: 1,
-        isRoleShared: false
+        isRoleShared: false,
+        sharedCooldownGroup: ability.sharedCooldownGroup || null
       });
     }
 
@@ -456,7 +498,8 @@ export class CooldownManager {
         availableInstances: 0,
         totalInstances: 1,
         nextAvailableTime: aetherflowState.nextRefreshAvailableAt,
-        isRoleShared: false
+        isRoleShared: false,
+        sharedCooldownGroup: ability.sharedCooldownGroup || null
       });
     }
 
@@ -479,7 +522,8 @@ export class CooldownManager {
       availableInstances: instancesState.availableInstances,
       totalInstances: instancesState.totalInstances,
       nextAvailableTime: instancesState.nextInstanceAvailableAt,
-      isRoleShared: true
+      isRoleShared: true,
+      sharedCooldownGroup: ability.sharedCooldownGroup || null
     });
   }
 
@@ -499,7 +543,8 @@ export class CooldownManager {
       totalInstances: 1,
       nextAvailableTime: chargeState.nextChargeAvailableAt,
       lastUsedTime: chargeState.lastUsedTime,
-      isRoleShared: false
+      isRoleShared: false,
+      sharedCooldownGroup: ability.sharedCooldownGroup || null
     });
   }
 
@@ -507,10 +552,12 @@ export class CooldownManager {
    * Check availability for single-charge abilities
    */
   _checkSingleChargeAvailability(ability, targetTime, targetBossActionId, options) {
-    const usageHistory = this.getAbilityUsageHistory(ability.id);
-    const relevantUsages = usageHistory.filter(usage => usage.time <= targetTime);
+    // Use shared cooldown usage history if the ability has a shared cooldown group
+    const usageHistory = ability.sharedCooldownGroup
+      ? this._getSharedCooldownUsageHistory(ability, targetTime)
+      : this.getAbilityUsageHistory(ability.id).filter(usage => usage.time <= targetTime);
 
-    if (relevantUsages.length === 0) {
+    if (usageHistory.length === 0) {
       return new AbilityAvailability({
         abilityId: ability.id,
         isAvailable: true,
@@ -518,29 +565,39 @@ export class CooldownManager {
         totalCharges: 1,
         availableInstances: 1,
         totalInstances: 1,
-        isRoleShared: false
+        isRoleShared: false,
+        sharedCooldownGroup: ability.sharedCooldownGroup || null
       });
     }
 
-    // Check the most recent usage
-    const lastUsage = relevantUsages[relevantUsages.length - 1];
+    // Check the most recent usage across all abilities in the shared cooldown group
+    const lastUsage = usageHistory[usageHistory.length - 1];
     const cooldownDuration = getAbilityCooldownForLevel(ability, this.bossLevel);
+
+    // For shared cooldown groups, use the maximum cooldown duration among all abilities in the group
+    let effectiveCooldownDuration = cooldownDuration;
+    if (ability.sharedCooldownGroup) {
+      const groupAbilities = this.getAbilitiesInSharedCooldownGroup(ability.sharedCooldownGroup);
+      effectiveCooldownDuration = Math.max(...groupAbilities.map(a => getAbilityCooldownForLevel(a, this.bossLevel)));
+    }
+
     const timeSinceLastUse = targetTime - lastUsage.time;
-    const isOnCooldown = timeSinceLastUse < cooldownDuration;
+    const isOnCooldown = timeSinceLastUse < effectiveCooldownDuration;
 
     return new AbilityAvailability({
       abilityId: ability.id,
       isAvailable: !isOnCooldown,
-      reason: isOnCooldown ? 'on_cooldown' : null,
+      reason: isOnCooldown ? (ability.sharedCooldownGroup ? 'shared_cooldown' : 'on_cooldown') : null,
       availableCharges: isOnCooldown ? 0 : 1,
       totalCharges: 1,
       availableInstances: 1,
       totalInstances: 1,
-      nextAvailableTime: isOnCooldown ? lastUsage.time + cooldownDuration : null,
+      nextAvailableTime: isOnCooldown ? lastUsage.time + effectiveCooldownDuration : null,
       lastUsedTime: lastUsage.time,
       lastUsedActionId: lastUsage.bossActionId,
       lastUsedActionName: lastUsage.actionName,
-      isRoleShared: false
+      isRoleShared: false,
+      sharedCooldownGroup: ability.sharedCooldownGroup || null
     });
   }
 

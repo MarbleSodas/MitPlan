@@ -25,6 +25,11 @@
  * isAetherflowProvider property:
  * - When true, this ability provides Aetherflow stacks (Aetherflow ability)
  * - Refreshes all Aetherflow stacks to maximum (3)
+ *
+ * sharedCooldownGroup property:
+ * - When present, this ability shares its cooldown with other abilities in the same group
+ * - When one ability in the group is used, all abilities in the group go on cooldown
+ * - Example: Bloodwhetting and Nascent Flash share the same cooldown group
  */
 
 export const mitigationAbilities = [
@@ -357,7 +362,8 @@ export const mitigationAbilities = [
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
     forRaidWide: false, // Not used for raid-wide damage
-    count: 1 // Has 1 charge
+    count: 1, // Has 1 charge
+    sharedCooldownGroup: 'war_bloodwhetting_nascent' // Shares cooldown with Nascent Flash
   },
   {
     id: 'nascent_flash',
@@ -378,7 +384,8 @@ export const mitigationAbilities = [
     forTankBusters: true, // Commonly used for tank busters
     forRaidWide: false, // Not used for raid-wide damage
     targetsTank: true, // Can target other tanks
-    count: 1 // Has 1 charge
+    count: 1, // Has 1 charge
+    sharedCooldownGroup: 'war_bloodwhetting_nascent' // Shares cooldown with Bloodwhetting
   },
   {
     id: 'thrill_of_battle',
