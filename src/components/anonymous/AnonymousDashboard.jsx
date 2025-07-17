@@ -257,8 +257,7 @@ const SmallButton = styled(Button)`
 const SecondaryButton = styled(SmallButton)`
   background: transparent;
   color: ${props => props.theme?.colors?.text || '#333333'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e0e0e0'};
-  
+
   &:hover:not(:disabled) {
     background: ${props => props.theme?.colors?.hover || '#f5f5f5'};
   }
@@ -267,7 +266,6 @@ const SecondaryButton = styled(SmallButton)`
 const DangerButton = styled(SmallButton)`
   background: transparent;
   color: ${props => props.theme?.colors?.error || '#e74c3c'};
-  border: 1px solid ${props => props.theme?.colors?.error || '#e74c3c'};
 
   &:hover:not(:disabled) {
     background: ${props => props.theme?.colors?.error || '#e74c3c'};

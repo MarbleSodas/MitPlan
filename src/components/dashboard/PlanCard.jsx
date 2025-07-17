@@ -211,12 +211,10 @@ const PrimaryButton = styled(Button)`
 const SecondaryButton = styled(Button)`
   background: transparent;
   color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
 
   &:hover:not(:disabled) {
     background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
     color: ${props => props.theme?.colors?.text || '#333333'};
-    border-color: ${props => props.theme?.colors?.primary || '#3b82f6'};
     transform: translateY(-1px);
   }
 `;
@@ -224,11 +222,9 @@ const SecondaryButton = styled(Button)`
 const DangerButton = styled(Button)`
   background: ${props => props.theme?.colors?.error || '#ef4444'} !important;
   color: white;
-  border: 1px solid ${props => props.theme?.colors?.error || '#ef4444'};
 
   &:hover:not(:disabled) {
     background: ${props => props.theme?.colors?.errorHover || '#dc2626'};
-    border-color: ${props => props.theme?.colors?.errorHover || '#dc2626'};
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
