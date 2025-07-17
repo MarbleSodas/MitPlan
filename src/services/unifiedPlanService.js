@@ -78,9 +78,24 @@ class UnifiedPlanService {
    * Update a plan
    */
   async updatePlan(planId, updates) {
+    console.log('[UnifiedPlanService] updatePlan called:', {
+      planId,
+      updates,
+      isAnonymousMode: this.isAnonymousMode,
+      currentUser: this.currentUser?.uid || this.currentUser?.id,
+      hasCurrentUser: !!this.currentUser
+    });
+
+    if (!this.currentUser && !this.isAnonymousMode) {
+      console.error('[UnifiedPlanService] No user context set for Firebase operation');
+      throw new Error('User context not set. Please ensure user is authenticated.');
+    }
+
     if (this.isAnonymousMode) {
+      console.log('[UnifiedPlanService] Routing to localStorage service');
       return await localStoragePlanService.updatePlan(planId, updates);
     } else {
+      console.log('[UnifiedPlanService] Routing to Firebase service');
       return await firebasePlanService.updatePlan(planId, updates);
     }
   }

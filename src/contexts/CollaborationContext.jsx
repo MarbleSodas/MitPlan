@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useAuth } from './AuthContext';
 import sessionManager from '../services/sessionManager';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils/storage/storageUtils';
+import { storeUserProfile } from '../services/userService';
 
 const CollaborationContext = createContext({});
 
@@ -112,6 +113,16 @@ export const CollaborationProvider = ({ children }) => {
         isAnonymous: !isAuthenticated,
         userType: isAuthenticated ? 'authenticated' : 'anonymous'
       };
+
+      // Store user profile for authenticated users to improve display name resolution
+      if (user?.uid && finalDisplayName) {
+        try {
+          await storeUserProfile(user.uid, finalDisplayName, user.email);
+          console.log('[CollaborationContext] User profile stored for collaboration:', user.uid, finalDisplayName);
+        } catch (error) {
+          console.error('[CollaborationContext] Failed to store user profile:', error);
+        }
+      }
 
       // Start session using session manager
       await sessionManager.startSession(planId, sessionId, sessionData);

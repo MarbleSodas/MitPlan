@@ -288,6 +288,11 @@ const Dashboard = () => {
     loadCategorizedPlans(); // Refresh categorized view
   };
 
+  const handlePlanChanged = () => {
+    loadUserPlans(); // Keep for real-time updates
+    loadCategorizedPlans(); // Refresh categorized view
+  };
+
   if (loading) {
     return (
       <>
@@ -366,6 +371,7 @@ const Dashboard = () => {
                     key={plan.id}
                     plan={plan}
                     onEdit={() => handleNavigateToPlanner(plan.id)}
+                    onPlanChanged={handlePlanChanged}
                     isSharedPlan={false}
                   />
                 ))}
@@ -394,6 +400,7 @@ const Dashboard = () => {
                       key={plan.id}
                       plan={plan}
                       onEdit={() => handleNavigateToPlanner(plan.id)}
+                      onPlanChanged={handlePlanChanged}
                       isSharedPlan={true}
                     />
                   ))}

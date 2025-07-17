@@ -79,20 +79,32 @@ export const createPlan = async (userId, planData) => {
 };
 
 /**
- * Update an existing mitigation plan
+ * Update an existing mitigation plan (partial update)
  */
 export const updatePlan = async (planId, planData) => {
   try {
-    const planRef = ref(database, `${PLANS_PATH}/${planId}`);
-    const updateData = {
-      ...planData,
-      updatedAt: serverTimestamp()
-    };
+    console.log('[updatePlan] Updating plan:', { planId, updates: planData });
 
-    await set(planRef, updateData);
-    return { id: planId, ...updateData };
+    // Prepare updates object for partial update
+    const updates = {};
+    Object.entries(planData).forEach(([key, value]) => {
+      updates[`${PLANS_PATH}/${planId}/${key}`] = value;
+    });
+
+    // Add timestamp
+    updates[`${PLANS_PATH}/${planId}/updatedAt`] = serverTimestamp();
+
+    console.log('[updatePlan] Firebase updates:', updates);
+
+    // Use update() for partial updates instead of set() which replaces everything
+    await update(ref(database), updates);
+
+    console.log('[updatePlan] Update successful');
+
+    // Return the updated data
+    return { id: planId, ...planData, updatedAt: Date.now() };
   } catch (error) {
-    console.error('Error updating plan:', error);
+    console.error('[updatePlan] Error updating plan:', error);
     throw new Error('Failed to update plan');
   }
 };
@@ -232,7 +244,7 @@ export const duplicatePlan = async (userId, originalPlanId, newName) => {
     const { id, createdAt, updatedAt, ...planData } = originalPlan;
     const duplicatedPlan = {
       ...planData,
-      name: newName || `${originalPlan.name} (Copy)`,
+      name: newName || `Copy of ${originalPlan.name}`,
       userId
     };
 

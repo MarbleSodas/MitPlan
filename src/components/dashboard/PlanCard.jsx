@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Share2 } from 'lucide-react';
+import { Share2, Edit, Check, X } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
 import { useToast } from '../common/Toast/Toast';
 import { getUserDisplayName } from '../../services/userService';
+import unifiedPlanService from '../../services/unifiedPlanService';
 
 const Card = styled.div`
   background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
@@ -36,12 +37,104 @@ const CardHeader = styled.div`
   margin-bottom: 1rem;
 `;
 
+const PlanTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
 const PlanName = styled.h3`
   color: ${props => props.theme?.colors?.text || '#333333'};
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
   line-height: 1.3;
+`;
+
+const HeaderEditButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
+  cursor: pointer;
+  padding: 0.375rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+    background: ${props => props.theme?.colors?.primaryLight || 'rgba(59, 130, 246, 0.1)'};
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+const PlanNameInput = styled.input`
+  background: ${props => props.theme?.colors?.background || '#ffffff'};
+  border: 2px solid ${props => props.theme?.colors?.primary || '#3b82f6'};
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+
+  &:focus {
+    border-color: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+`;
+
+const EditActions = styled.div`
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+`;
+
+const EditActionButton = styled.button`
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+const SaveButton = styled(EditActionButton)`
+  color: ${props => props.theme?.colors?.success || '#10b981'};
+
+  &:hover {
+    background: rgba(16, 185, 129, 0.1);
+  }
+`;
+
+const CancelButton = styled(EditActionButton)`
+  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
+
+  &:hover {
+    background: rgba(107, 114, 128, 0.1);
+  }
 `;
 
 const BossName = styled.div`
@@ -203,13 +296,16 @@ const ConfirmActions = styled.div`
   margin-top: 1.5rem;
 `;
 
-const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
+const PlanCard = ({ plan, onEdit, onPlanChanged, isSharedPlan = false }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
   const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [creatorDisplayName, setCreatorDisplayName] = useState('');
   const [fetchingCreator, setFetchingCreator] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(plan.name);
+  const [savingName, setSavingName] = useState(false);
 
   // Fetch creator's display name for shared plans
   useEffect(() => {
@@ -285,6 +381,10 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
     try {
       await deletePlanById(plan.id);
       setShowDeleteConfirm(false);
+      // Refresh the plans list
+      if (onPlanChanged) {
+        onPlanChanged();
+      }
     } catch (error) {
       console.error('Failed to delete plan:', error);
     } finally {
@@ -295,7 +395,11 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
   const handleDuplicate = async () => {
     setLoading(true);
     try {
-      await duplicatePlanById(plan.id, `${plan.name} (Copy)`);
+      await duplicatePlanById(plan.id, `Copy of ${plan.name}`);
+      // Refresh the plans list
+      if (onPlanChanged) {
+        onPlanChanged();
+      }
     } catch (error) {
       console.error('Failed to duplicate plan:', error);
     } finally {
@@ -366,12 +470,140 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
     }
   };
 
+  const handleStartEditName = () => {
+    // Only allow editing of owned plans, not shared plans
+    if (isSharedPlan) {
+      addToast({
+        type: 'error',
+        title: 'Cannot edit shared plan',
+        message: 'You can only edit plans that you own.',
+        duration: 3000
+      });
+      return;
+    }
+
+    setIsEditingName(true);
+    setEditedName(plan.name);
+  };
+
+  const handleSaveName = async () => {
+    if (editedName.trim() === '' || editedName.trim() === plan.name) {
+      setIsEditingName(false);
+      setEditedName(plan.name);
+      return;
+    }
+
+    console.log('[PlanCard] Starting name save:', {
+      planId: plan.id,
+      oldName: plan.name,
+      newName: editedName.trim(),
+      isSharedPlan
+    });
+
+    setSavingName(true);
+    try {
+      // Use unified service for consistency with dashboard loading
+      // Update both 'title' (primary field) and 'name' (for compatibility)
+      const result = await unifiedPlanService.updatePlan(plan.id, {
+        title: editedName.trim(),
+        name: editedName.trim()
+      });
+      console.log('[PlanCard] Update result:', result);
+
+      setIsEditingName(false);
+
+      // Show success toast
+      addToast({
+        type: 'success',
+        title: 'Plan renamed!',
+        message: `Plan renamed to "${editedName.trim()}".`,
+        duration: 3000
+      });
+
+      // Refresh the plans list
+      if (onPlanChanged) {
+        console.log('[PlanCard] Calling onPlanChanged to refresh dashboard');
+        onPlanChanged();
+      }
+    } catch (error) {
+      console.error('[PlanCard] Failed to rename plan:', error);
+
+      // Show error toast
+      addToast({
+        type: 'error',
+        title: 'Failed to rename plan',
+        message: 'Please try again.',
+        duration: 4000
+      });
+
+      // Reset to original name
+      setEditedName(plan.name);
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleCancelEditName = () => {
+    setIsEditingName(false);
+    setEditedName(plan.name);
+  };
+
+  const handleNameKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveName();
+    } else if (e.key === 'Escape') {
+      handleCancelEditName();
+    }
+  };
+
   return (
     <>
       <Card>
         <CardHeader>
           <div>
-            <PlanName>{plan.name}</PlanName>
+            <PlanTitleRow>
+              {isEditingName && !isSharedPlan ? (
+                <>
+                  <PlanNameInput
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    onKeyDown={handleNameKeyPress}
+                    onBlur={handleSaveName}
+                    autoFocus
+                    disabled={savingName}
+                  />
+                  <EditActions>
+                    <SaveButton
+                      onClick={handleSaveName}
+                      disabled={savingName}
+                      title="Save name"
+                    >
+                      <Check size={14} />
+                    </SaveButton>
+                    <CancelButton
+                      onClick={handleCancelEditName}
+                      disabled={savingName}
+                      title="Cancel"
+                    >
+                      <X size={14} />
+                    </CancelButton>
+                  </EditActions>
+                </>
+              ) : (
+                <>
+                  <PlanName>{plan.name}</PlanName>
+                  {!isSharedPlan && (
+                    <HeaderEditButton
+                      onClick={handleStartEditName}
+                      disabled={loading || savingName}
+                      title="Edit plan name"
+                    >
+                      <Edit size={18} />
+                    </HeaderEditButton>
+                  )}
+                </>
+              )}
+            </PlanTitleRow>
             <BossName>Boss: {plan.bossId || 'Unknown'}</BossName>
           </div>
         </CardHeader>
