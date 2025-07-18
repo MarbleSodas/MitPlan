@@ -215,7 +215,7 @@ class UnifiedPlanService {
       return await localStoragePlanService.updatePlan(planId, updates);
     } else {
       const effectiveUserId = userId || this.currentUser?.uid;
-      return await firebasePlanService.updatePlanRealtime(planId, updates, effectiveUserId, sessionId);
+      return await firebasePlanService.batchUpdatePlanRealtime(planId, updates, effectiveUserId, sessionId);
     }
   }
 
@@ -258,7 +258,7 @@ class UnifiedPlanService {
       return await localStoragePlanService.updatePlan(planId, { tankPositions });
     } else {
       const effectiveUserId = userId || this.currentUser?.uid;
-      return await firebasePlanService.updatePlanTankPositionsRealtime(planId, tankPositions, effectiveUserId, sessionId);
+      return await firebasePlanService.updateTankPositionsRealtime(planId, tankPositions, effectiveUserId, sessionId);
     }
   }
 
