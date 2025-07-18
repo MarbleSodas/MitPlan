@@ -4,10 +4,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
-import { ToastProvider } from './components/Common/Toast/Toast';
+import { ToastProvider } from './components/Common/Toast';
 import LandingPage from './components/Landing/LandingPage';
-import Dashboard from './components/Dashboard/Dashboard';
-import MitigationPlanner from './components/Planner/MitigationPlanner';
+import Dashboard from './components/Dashboard';
+import MitigationPlanner from './components/Planner';
 import UnauthenticatedPlanGuard from './components/Guards/UnauthenticatedPlanGuard';
 import DataPolicy from './pages/DataPolicy';
 import AnonymousDashboard from './components/anonymous/AnonymousDashboard';

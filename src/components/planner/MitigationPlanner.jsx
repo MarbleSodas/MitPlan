@@ -25,7 +25,7 @@ import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
 import MobileMitigationSelector from '../mobile/MobileMitigationSelector/MobileMitigationSelector';
 import FilterToggle from '../common/FilterToggle/FilterToggle';
-import TankSelectionModal from '../common/TankSelectionModal/TankSelectionModal';
+import TankSelectionModal from '../../common/TankSelectionModal/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
 import Draggable from '../DragAndDrop/Draggable/Draggable';
 import Droppable from '../DragAndDrop/Droppable/Droppable';
