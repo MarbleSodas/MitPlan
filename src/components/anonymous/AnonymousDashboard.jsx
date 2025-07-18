@@ -13,6 +13,7 @@ import unifiedPlanService from '../../services/unifiedPlanService';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
 import BossSelectionModal from '../dashboard/BossSelectionModal';
+import UserProfile from '../dashboard/UserProfile';
 import Footer from '../layout/Footer';
 
 const DashboardContainer = styled.div`
@@ -23,6 +24,19 @@ const DashboardContainer = styled.div`
 
 const Header = styled.div`
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const HeaderContent = styled.div`
+  flex: 1;
 `;
 
 const Title = styled.h1`
@@ -39,6 +53,16 @@ const Subtitle = styled.p`
   margin: 0;
   font-size: 1rem;
   color: ${props => props.theme?.colors?.textSecondary || '#666666'};
+`;
+
+const UserSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    justify-content: flex-start;
+  }
 `;
 
 const PlansSection = styled.div`
@@ -272,7 +296,7 @@ const AnonymousDashboard = () => {
     setSelectedBossForPlan(null);
   };
 
-  const handlePlanCreated = (plan) => {
+  const handlePlanCreated = () => {
     setShowCreateModal(false);
     setSelectedBossForPlan(null);
     loadPlans(); // Refresh the list
@@ -311,14 +335,18 @@ const AnonymousDashboard = () => {
     <>
       <DashboardContainer>
       <Header>
-        <Title>
-          <User size={32} />
-          Anonymous Dashboard
-        </Title>
-        <Subtitle>
-          Welcome, {anonymousUser?.displayName || 'Anonymous User'}! 
-          Your plans are stored locally in your browser.
-        </Subtitle>
+        <HeaderContent>
+          <Title>
+            <User size={32} />
+            Anonymous Dashboard
+          </Title>
+          <Subtitle>
+            Your plans are stored locally in your browser.
+          </Subtitle>
+        </HeaderContent>
+        <UserSection>
+          <UserProfile />
+        </UserSection>
       </Header>
 
 

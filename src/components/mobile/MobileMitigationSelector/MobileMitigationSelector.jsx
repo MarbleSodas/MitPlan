@@ -17,8 +17,8 @@ import {
   useTankSelectionModalContext
 } from '../../../contexts';
 import ChargeCounter from '../../../components/ChargeCounter';
-import HealthBar from '../../../components/common/HealthBar';
-import TankMitigationDisplay from '../../../components/common/TankMitigationDisplay';
+import HealthBar from '../../../components/Common/HealthBar';
+import TankMitigationDisplay from '../../../components/Common/TankMitigationDisplay';
 import { bosses, mitigationAbilities } from '../../../data';
 import { isDualTankBusterAction } from '../../../utils/boss/bossActionUtils';
 

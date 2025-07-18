@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import ThemeToggle from '../components/common/ThemeToggle';
+import ThemeToggle from '../components/Common/ThemeToggle';
 
 const PrivacyContainer = styled.div`
   min-height: 100vh;

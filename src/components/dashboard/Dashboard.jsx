@@ -8,6 +8,7 @@ import PlanCard from './PlanCard';
 import CreatePlanModal from './CreatePlanModal';
 import BossSelectionModal from './BossSelectionModal';
 import ImportPlanModal from './ImportPlanModal';
+import UserProfile from './UserProfile';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
@@ -305,9 +306,7 @@ const Dashboard = () => {
       <Header>
         <Title>Mitigation Plans</Title>
         <UserInfo>
-          <UserName>
-            Welcome, {user?.displayName || user?.email || 'User'}!
-          </UserName>
+          <UserProfile />
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />

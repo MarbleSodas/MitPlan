@@ -27,8 +27,8 @@ import MobileMitigationSelector from '../mobile/MobileMitigationSelector/MobileM
 import FilterToggle from '../common/FilterToggle/FilterToggle';
 import TankSelectionModal from '../common/TankSelectionModal/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
-import Draggable from '../dnd/Draggable/Draggable';
-import Droppable from '../dnd/Droppable/Droppable';
+import Draggable from '../DragAndDrop/Draggable/Draggable';
+import Droppable from '../DragAndDrop/Droppable/Droppable';
 
 // Import styled layout components
 import MainContent from '../styled/MainContent';
@@ -694,7 +694,7 @@ const MitigationPlannerContent = ({
       <PlannerContainer>
       <Header>
         <Title>
-          {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : 'Editing: '}${realtimePlan.name}` : 'Mitigation Planner'}
+          {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
         </Title>
         <ButtonGroup>
           {isCollaborating && (
