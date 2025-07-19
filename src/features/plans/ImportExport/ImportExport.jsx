@@ -6,7 +6,7 @@ import {
   loadFromLocalStorage,
   generateShareableUrl
 } from '../../../utils';
-import { useToast } from '../../../components/Common/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 const Container = styled.div`
   background-color: ${props => props.theme.colors.secondary};

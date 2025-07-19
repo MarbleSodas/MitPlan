@@ -4,13 +4,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
-import { ToastProvider } from './components/Common/Toast';
-import LandingPage from './components/Landing/LandingPage';
-import Dashboard from './components/Dashboard/Dashboard';
-import MitigationPlanner from './components/Planner/MitigationPlanner';
-import UnauthenticatedPlanGuard from './components/Guards/UnauthenticatedPlanGuard';
+import { ToastProvider } from './components/common/Toast';
+import LandingPage from './components/landing/LandingPage';
+import Dashboard from './components/dashboard/Dashboard';
+import MitigationPlanner from './components/planner/MitigationPlanner';
+import UnauthenticatedPlanGuard from './components/guards/UnauthenticatedPlanGuard';
 import DataPolicy from './pages/DataPolicy';
-import AnonymousDashboard from './components/Anonymous/AnonymousDashboard';
+import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
 
 // DEBUGGING: Minimal App to test if React is working
 // TODO: Restore full app once loading issue is resolved

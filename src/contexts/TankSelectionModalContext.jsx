@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
-import TankSelectionModal from '../components/Common/TankSelectionModal';
+import TankSelectionModal from '../components/common/TankSelectionModal';
 import { useTankPositionContext } from './TankPositionContext';
 import { useRealtimeJobContext } from './RealtimeJobContext';
 import { ffxivJobs } from '../data';
