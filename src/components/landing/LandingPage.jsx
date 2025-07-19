@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import AuthForm from '../Auth';
-import ThemeToggle from '../Common/ThemeToggle';
-import KofiButton from '../Common/KofiButton/KofiButton';
-import DiscordButton from '../Common/DiscordButton/DiscordButton';
+import AuthForm from '../auth';
+import ThemeToggle from '../common/ThemeToggle';
+import KofiButton from '../common/KofiButton/KofiButton';
+import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Share2, Edit2, Check, X } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
-import { useToast } from '../Common/Toast';
+import { useToast } from '../common/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
 import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';

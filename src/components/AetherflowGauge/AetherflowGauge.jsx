@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
-import Tooltip from '../Common/Tooltip/Tooltip';
+import Tooltip from '../common/Tooltip/Tooltip';
 
 // Container for the entire gauge
 const GaugeContainer = styled.div`

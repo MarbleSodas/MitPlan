@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import styled from 'styled-components';
-import Tooltip from '../Common/Tooltip/Tooltip';
+import Tooltip from '../common/Tooltip/Tooltip';
 import {
   getAbilityDescriptionForLevel,
   getAbilityDurationForLevel,

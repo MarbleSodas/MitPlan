@@ -8,11 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Plus, FileText, Calendar, User, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../Common/Toast';
+import { useToast } from '../common/Toast';
 import unifiedPlanService from '../../services/unifiedPlanService';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
-import { BossSelectionModal, UserProfile } from '../Dashboard';
+import { BossSelectionModal, UserProfile } from '../dashboard';
 import Footer from '../layout/Footer';
 
 const DashboardContainer = styled.div`
