@@ -1,3 +1,3 @@
-import TankPositionSelector from './TankPositionSelector';
+import TankPositionSelector from './TankPositionSelector.jsx';
 
 export default TankPositionSelector;

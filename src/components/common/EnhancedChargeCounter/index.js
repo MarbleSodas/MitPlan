@@ -1,1 +1,1 @@
-export { default } from './EnhancedChargeCounter';
+export { default } from './EnhancedChargeCounter.jsx';

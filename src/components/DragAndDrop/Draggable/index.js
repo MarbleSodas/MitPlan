@@ -1,1 +1,1 @@
-export { default } from './Draggable';
+export { default } from './Draggable.jsx';

@@ -1,1 +1,1 @@
-export { default } from './EnhancedAetherflowGauge';
+export { default } from './EnhancedAetherflowGauge.jsx';

@@ -1,2 +1,2 @@
-export { default as MitigationPlanner } from './MitigationPlanner';
-export { default } from './MitigationPlanner';
+export { default as MitigationPlanner } from './MitigationPlanner.jsx';
+export { default } from './MitigationPlanner.jsx';

@@ -1,2 +1,2 @@
-export { default as UnauthenticatedPlanGuard } from './UnauthenticatedPlanGuard';
-export { default } from './UnauthenticatedPlanGuard';
+export { default as UnauthenticatedPlanGuard } from './UnauthenticatedPlanGuard.jsx';
+export { default } from './UnauthenticatedPlanGuard.jsx';

@@ -1,1 +1,1 @@
-export { default } from './DataMigrationBanner';
+export { default } from './DataMigrationBanner.jsx';

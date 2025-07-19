@@ -1,3 +1,3 @@
-export { default as AnonymousDashboard } from './AnonymousDashboard';
-export { default as AnonymousPlanCreator } from './AnonymousPlanCreator';
-export { default } from './AnonymousDashboard';
+export { default as AnonymousDashboard } from './AnonymousDashboard.jsx';
+export { default as AnonymousPlanCreator } from './AnonymousPlanCreator.jsx';
+export { default } from './AnonymousDashboard.jsx';

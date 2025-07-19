@@ -1,1 +1,1 @@
-export { default } from './MobileMitigationSelector';
+export { default } from './MobileMitigationSelector.jsx';
