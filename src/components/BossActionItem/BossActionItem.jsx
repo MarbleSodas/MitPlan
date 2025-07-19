@@ -1,9 +1,9 @@
 import { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
-import Tooltip from '../common/Tooltip/Tooltip';
-import HealthBar from '../common/HealthBar';
-import TankMitigationDisplay from '../common/TankMitigationDisplay';
-import EnhancedAetherflowGauge from '../common/EnhancedAetherflowGauge/EnhancedAetherflowGauge.jsx';
+import Tooltip from '../Common/Tooltip/Tooltip';
+import HealthBar from '../Common/HealthBar';
+import TankMitigationDisplay from '../Common/TankMitigationDisplay';
+import EnhancedAetherflowGauge from '../Common/EnhancedAetherflowGauge/EnhancedAetherflowGauge.jsx';
 import {
   calculateTotalMitigation,
   formatMitigation,

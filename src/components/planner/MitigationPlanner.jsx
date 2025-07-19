@@ -9,11 +9,11 @@ import { RealtimePlanProvider } from '../../contexts/RealtimePlanContext';
 import AppProvider from '../../contexts/AppProvider';
 import { useDeviceDetection } from '../../hooks';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
-import CollaboratorsList from '../collaboration/CollaboratorsList';
-import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
-import KofiButton from '../common/KofiButton/KofiButton';
-import DiscordButton from '../common/DiscordButton/DiscordButton';
-import ThemeToggle from '../common/ThemeToggle';
+import CollaboratorsList from '../Collaboration/CollaboratorsList';
+import ActiveUsersDisplay from '../Collaboration/ActiveUsersDisplay';
+import KofiButton from '../Common/KofiButton/KofiButton';
+import DiscordButton from '../Common/DiscordButton/DiscordButton';
+import ThemeToggle from '../Common/ThemeToggle';
 import Footer from '../layout/Footer';
 
 
@@ -23,19 +23,19 @@ import BossSelector from '../../features/bosses/BossSelector/BossSelector';
 import BossActionItem from '../BossActionItem/BossActionItem';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
-import MobileMitigationSelector from '../mobile/MobileMitigationSelector/MobileMitigationSelector';
-import FilterToggle from '../common/FilterToggle/FilterToggle';
-import TankSelectionModal from '../../common/TankSelectionModal/TankSelectionModal';
+import MobileMitigationSelector from '../Mobile/MobileMitigationSelector';
+import FilterToggle from '../Common/FilterToggle';
+import TankSelectionModal from '../Common/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
-import Draggable from '../DragAndDrop/Draggable/Draggable';
-import Droppable from '../DragAndDrop/Droppable/Droppable';
+import Draggable from '../DragAndDrop/Draggable';
+import Droppable from '../DragAndDrop/Droppable';
 
 // Import styled layout components
-import MainContent from '../styled/MainContent';
-import TimelineContainer from '../styled/TimelineContainer';
-import MitigationContainer from '../styled/MitigationContainer';
-import BossActionsList from '../styled/BossActionsList';
-import MitigationList from '../styled/MitigationList';
+import MainContent from '../Styled/MainContent';
+import TimelineContainer from '../Styled/TimelineContainer';
+import MitigationContainer from '../Styled/MitigationContainer';
+import BossActionsList from '../Styled/BossActionsList';
+import MitigationList from '../Styled/MitigationList';
 
 // Import contexts
 import {

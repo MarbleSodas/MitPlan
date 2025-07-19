@@ -5,12 +5,12 @@ import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
 import { ToastProvider } from './components/Common/Toast';
-import LandingPage from './components/Landing/LandingPage';
+import LandingPage from './components/Landing';
 import Dashboard from './components/Dashboard';
 import MitigationPlanner from './components/Planner';
-import UnauthenticatedPlanGuard from './components/Guards/UnauthenticatedPlanGuard';
+import UnauthenticatedPlanGuard from './components/Guards';
 import DataPolicy from './pages/DataPolicy';
-import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
+import AnonymousDashboard from './components/Anonymous';
 
 // DEBUGGING: Minimal App to test if React is working
 // TODO: Restore full app once loading issue is resolved

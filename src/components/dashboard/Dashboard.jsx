@@ -9,9 +9,9 @@ import CreatePlanModal from './CreatePlanModal';
 import BossSelectionModal from './BossSelectionModal';
 import ImportPlanModal from './ImportPlanModal';
 import UserProfile from './UserProfile';
-import ThemeToggle from '../common/ThemeToggle';
-import KofiButton from '../common/KofiButton/KofiButton';
-import DiscordButton from '../common/DiscordButton/DiscordButton';
+import ThemeToggle from '../Common/ThemeToggle';
+import KofiButton from '../Common/KofiButton/KofiButton';
+import DiscordButton from '../Common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
 
 const DashboardContainer = styled.div`
