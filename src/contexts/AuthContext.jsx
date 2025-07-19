@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import anonymousUserService from '../services/anonymousUserService';
+import { storeUserProfile } from '../services/userService';
 // import { planMigrationService } from '../services/planMigrationService';
 
 const AuthContext = createContext({});
@@ -56,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     console.log('[AuthContext] Setting up Firebase auth listener');
 
     const unsubscribe = onAuthStateChanged(auth,
-      (user) => {
+      async (user) => {
         console.log('[AuthContext] Auth state changed:', user ? 'User logged in' : 'No user');
         setUser(user);
         setLoading(false);
@@ -65,6 +66,16 @@ export const AuthProvider = ({ children }) => {
         // If user logs in, disable anonymous mode and check for migrations
         if (user) {
           setIsAnonymousMode(false);
+
+          // Store user profile for better display name resolution
+          try {
+            const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+            await storeUserProfile(user.uid, displayName, user.email);
+            console.log('[AuthContext] User profile stored for:', user.uid, displayName);
+          } catch (error) {
+            console.error('[AuthContext] Failed to store user profile:', error);
+          }
+
           checkForPendingMigration(user).catch(error => {
             console.error('[AuthContext] Failed to check pending migration:', error);
           });
