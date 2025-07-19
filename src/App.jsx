@@ -5,7 +5,7 @@ import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
 import { ToastProvider } from './components/Common/Toast';
-import LandingPage from './components/Landing';
+import LandingPage from './components/Landing/LandingPage';
 import Dashboard from './components/Dashboard';
 import MitigationPlanner from './components/Planner';
 import UnauthenticatedPlanGuard from './components/Guards';
