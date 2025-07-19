@@ -7,7 +7,8 @@ const ToggleButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 0.75rem;
+  height: 36px;
+  width: 36px;
   background: transparent;
   color: ${props => props.theme?.colors?.primary || '#3399ff'};
   border: none;

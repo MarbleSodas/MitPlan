@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Copy, Check, Share2, Users } from 'lucide-react';
 import * as planService from '../../services/realtimePlanService';
-import { useToast } from '../common/Toast/Toast';
+import { useToast } from '../common/Toast';
 
 const ModalOverlay = styled.div`
   position: fixed;

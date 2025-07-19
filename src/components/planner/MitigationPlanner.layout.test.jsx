@@ -57,7 +57,7 @@ vi.mock('../../contexts/EnhancedMitigationContext', () => ({
 vi.mock('../../features/jobs/JobSelector/JobSelector', () => ({ default: () => <div data-testid="job-selector">Job Selector</div> }));
 vi.mock('../../features/bosses/BossSelector/BossSelector', () => ({ default: () => <div data-testid="boss-selector">Boss Selector</div> }));
 vi.mock('../TankPositionSelector/TankPositionSelector', () => ({ default: () => <div data-testid="tank-position-selector">Tank Position Selector</div> }));
-vi.mock('../common/FilterToggle/FilterToggle', () => ({ default: () => <div data-testid="filter-toggle">Filter Toggle</div> }));
+vi.mock('../Common/FilterToggle/FilterToggle', () => ({ default: () => <div data-testid="filter-toggle">Filter Toggle</div> }));
 
 const TestWrapper = ({ children }) => (
   <ThemeProvider>

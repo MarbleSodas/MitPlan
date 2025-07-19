@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Share2 } from 'lucide-react';
+import { Share2, Edit2, Check, X } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
-import { useToast } from '../common/Toast/Toast';
+import { useToast } from '../common/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
+import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 
 const Card = styled.div`
   background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
@@ -36,12 +38,88 @@ const CardHeader = styled.div`
   margin-bottom: 1rem;
 `;
 
+const PlanNameContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+`;
+
 const PlanName = styled.h3`
   color: ${props => props.theme?.colors?.text || '#333333'};
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
   line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+`;
+
+const PlanNameInput = styled.input`
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  background: ${props => props.theme?.colors?.background || '#ffffff'};
+  border: 2px solid ${props => props.theme?.colors?.primary || '#3b82f6'};
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  outline: none;
+
+  &:focus {
+    border-color: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+`;
+
+const EditButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
+    color: ${props => props.theme?.colors?.primary || '#3b82f6'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const EditActions = styled.div`
+  display: flex;
+  gap: 0.25rem;
+`;
+
+const SaveButton = styled(EditButton)`
+  color: ${props => props.theme?.colors?.success || '#10b981'};
+
+  &:hover:not(:disabled) {
+    background: rgba(16, 185, 129, 0.1);
+  }
+`;
+
+const CancelButton = styled(EditButton)`
+  color: ${props => props.theme?.colors?.error || '#ef4444'};
+
+  &:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+  }
 `;
 
 const BossName = styled.div`
@@ -206,10 +284,31 @@ const ConfirmActions = styled.div`
 const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
   const { addToast } = useToast();
+  const { user, isAnonymousMode, anonymousUser } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [creatorDisplayName, setCreatorDisplayName] = useState('');
   const [fetchingCreator, setFetchingCreator] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(plan.name || '');
+  const [nameUpdateLoading, setNameUpdateLoading] = useState(false);
+
+  // Check if current user owns this plan
+  const isOwner = () => {
+    if (isAnonymousMode) {
+      // For anonymous users, check if they own the plan locally
+      return anonymousUser?.ownsPlan?.(plan.id) || false;
+    } else {
+      // For authenticated users, check ownerId or userId
+      const currentUserId = user?.uid;
+      return currentUserId && (plan.ownerId === currentUserId || plan.userId === currentUserId);
+    }
+  };
+
+  // Update edited name when plan name changes
+  useEffect(() => {
+    setEditedName(plan.name || '');
+  }, [plan.name]);
 
   // Fetch creator's display name for shared plans
   useEffect(() => {
@@ -250,6 +349,65 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
 
     fetchCreatorDisplayName();
   }, [isSharedPlan, plan.ownerId, plan.userId, plan.id]);
+
+  // Handle name editing
+  const handleStartEdit = () => {
+    if (!isOwner()) return;
+    setIsEditingName(true);
+    setEditedName(plan.name || '');
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName(plan.name || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!isOwner() || !editedName.trim()) return;
+
+    const trimmedName = editedName.trim();
+    setNameUpdateLoading(true);
+
+    // Optimistically update the local plan name for immediate visual feedback
+    const originalName = plan.name;
+    plan.name = trimmedName;
+
+    try {
+      // Use the direct plan service to update the title field (which maps to name in the frontend)
+      const currentUserId = user?.uid || 'anonymous';
+      await updatePlanFieldsWithOrigin(plan.id, { title: trimmedName }, currentUserId, null);
+
+      setIsEditingName(false);
+      addToast({
+        type: 'success',
+        title: 'Plan name updated',
+        message: 'The plan name has been successfully updated.',
+        duration: 3000
+      });
+    } catch (error) {
+      // Revert the optimistic update on error
+      plan.name = originalName;
+      setEditedName(originalName);
+
+      console.error('Failed to update plan name:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to update name',
+        message: 'Please try again.',
+        duration: 4000
+      });
+    } finally {
+      setNameUpdateLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Unknown';
@@ -370,8 +528,50 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
     <>
       <Card>
         <CardHeader>
-          <div>
-            <PlanName>{plan.name}</PlanName>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <PlanNameContainer>
+              {isEditingName ? (
+                <>
+                  <PlanNameInput
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    disabled={nameUpdateLoading}
+                    autoFocus
+                    placeholder="Enter plan name"
+                  />
+                  <EditActions>
+                    <SaveButton
+                      onClick={handleSaveEdit}
+                      disabled={nameUpdateLoading || !editedName.trim()}
+                      title="Save name"
+                    >
+                      <Check size={16} />
+                    </SaveButton>
+                    <CancelButton
+                      onClick={handleCancelEdit}
+                      disabled={nameUpdateLoading}
+                      title="Cancel editing"
+                    >
+                      <X size={16} />
+                    </CancelButton>
+                  </EditActions>
+                </>
+              ) : (
+                <>
+                  <PlanName>{plan.name}</PlanName>
+                  {isOwner() && (
+                    <EditButton
+                      onClick={handleStartEdit}
+                      disabled={loading}
+                      title="Edit plan name"
+                    >
+                      <Edit2 size={16} />
+                    </EditButton>
+                  )}
+                </>
+              )}
+            </PlanNameContainer>
             <BossName>Boss: {plan.bossId || 'Unknown'}</BossName>
           </div>
         </CardHeader>

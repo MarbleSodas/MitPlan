@@ -1,5 +1,25 @@
 {
   "rules": {
+    "userProfiles": {
+      ".read": true,
+      ".write": true,
+      "$userId": {
+        ".read": true,
+        ".write": true,
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+        },
+        "email": {
+          ".validate": "newData.isString() || newData.val() == null"
+        },
+        "lastUpdated": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
     "plans": {
       ".read": true,
       ".write": true,

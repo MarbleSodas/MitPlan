@@ -1,1 +1,1 @@
-export { default } from './ChargeCounter';
+export { default } from './ChargeCounter.jsx';

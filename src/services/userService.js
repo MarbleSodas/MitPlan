@@ -1,5 +1,5 @@
 import { auth, database } from '../config/firebase';
-import { ref, get } from 'firebase/database';
+import { ref, get, set } from 'firebase/database';
 import anonymousUserService from './anonymousUserService';
 
 /**
@@ -69,6 +69,64 @@ const getDisplayNameFromCollaboration = async (userId) => {
 };
 
 /**
+ * Try to get display name from user profiles stored in Firebase
+ * This looks up user profile data that we store when users first interact with the system
+ */
+const getDisplayNameFromUserProfile = async (userId) => {
+  try {
+    const userProfileRef = ref(database, `userProfiles/${userId}`);
+    const snapshot = await get(userProfileRef);
+
+    if (snapshot.exists()) {
+      const profile = snapshot.val();
+      console.log('[UserService] Found display name from user profile:', profile.displayName);
+      return profile.displayName;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[UserService] Error fetching from user profiles:', error);
+    return null;
+  }
+};
+
+/**
+ * Store or update user profile information
+ * This is called when a user first interacts with the system or updates their profile
+ */
+export const storeUserProfile = async (userId, displayName, email = null) => {
+  try {
+    const userProfileRef = ref(database, `userProfiles/${userId}`);
+    const profileData = {
+      displayName,
+      email: email || null,
+      lastUpdated: Date.now(),
+      lastSeen: Date.now()
+    };
+
+    await set(userProfileRef, profileData);
+    console.log('[UserService] User profile stored for:', userId, displayName);
+
+    // Update cache
+    setCache(userId, displayName);
+  } catch (error) {
+    console.error('[UserService] Error storing user profile:', error);
+  }
+};
+
+/**
+ * Update user's last seen timestamp
+ */
+export const updateUserLastSeen = async (userId) => {
+  try {
+    const userProfileRef = ref(database, `userProfiles/${userId}/lastSeen`);
+    await set(userProfileRef, Date.now());
+  } catch (error) {
+    console.error('[UserService] Error updating last seen:', error);
+  }
+};
+
+/**
  * Get display name for a user by their ID
  * @param {string} userId - The user ID (Firebase UID or anonymous user ID)
  * @returns {Promise<string>} The user's display name
@@ -107,19 +165,31 @@ export const getUserDisplayName = async (userId) => {
         displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
         console.log('[UserService] Found current authenticated user display name:', displayName);
       } else {
-        // For other authenticated users, try collaboration data first
-        displayName = await getDisplayNameFromCollaboration(userId);
+        // For other authenticated users, try multiple sources in order of preference
+        // 1. Try user profile data first (most reliable)
+        displayName = await getDisplayNameFromUserProfile(userId);
 
+        // 2. Try collaboration data (most recent activity)
         if (!displayName) {
-          // Fallback: try to extract a meaningful name from the user ID or use generic name
+          displayName = await getDisplayNameFromCollaboration(userId);
+        }
+
+        // 3. Fallback strategies
+        if (!displayName) {
           if (userId && userId.includes('@')) {
             // If the userId looks like an email, use the part before @
             displayName = userId.split('@')[0];
+            console.log('[UserService] Using email-based display name for user:', displayName);
+          } else if (userId && userId.length > 0) {
+            // Use a more descriptive fallback that indicates it's another user
+            displayName = `User (${userId.substring(0, 8)}...)`;
+            console.log('[UserService] Using ID-based display name for user:', displayName);
           } else {
-            displayName = 'User';
+            displayName = 'Unknown User';
+            console.log('[UserService] Using unknown user fallback');
           }
         }
-        console.log('[UserService] Using fallback display name for other user:', displayName);
+        console.log('[UserService] Final display name for other user:', displayName);
       }
     }
 
@@ -251,5 +321,7 @@ export default {
   getCurrentUserDisplayName,
   isAnonymousUserId,
   preloadUserDisplayNames,
-  getCacheStats
+  getCacheStats,
+  storeUserProfile,
+  updateUserLastSeen
 };

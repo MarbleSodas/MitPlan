@@ -6,13 +6,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Plus, FileText, Calendar, User, Trash2, Edit } from 'lucide-react';
+import { Plus, FileText, Calendar, User, Trash2, Edit, Check, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../common/Toast/Toast';
+import { useToast } from '../common/Toast';
 import unifiedPlanService from '../../services/unifiedPlanService';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
-import BossSelectionModal from '../dashboard/BossSelectionModal';
+import { BossSelectionModal, UserProfile } from '../dashboard';
 import Footer from '../layout/Footer';
 
 const DashboardContainer = styled.div`
@@ -23,6 +23,19 @@ const DashboardContainer = styled.div`
 
 const Header = styled.div`
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const HeaderContent = styled.div`
+  flex: 1;
 `;
 
 const Title = styled.h1`
@@ -39,6 +52,16 @@ const Subtitle = styled.p`
   margin: 0;
   font-size: 1rem;
   color: ${props => props.theme?.colors?.textSecondary || '#666666'};
+`;
+
+const UserSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    justify-content: flex-start;
+  }
 `;
 
 const PlansSection = styled.div`
@@ -133,11 +156,105 @@ const PlanCard = styled.div`
   }
 `;
 
+const PlanTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+`;
+
 const PlanTitle = styled.h3`
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
   color: ${props => props.theme?.colors?.text || '#333333'};
+  flex: 1;
+`;
+
+const HeaderEditButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${props => props.theme?.colors?.primary || '#3399ff'};
+  cursor: pointer;
+  padding: 0.375rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+    background: ${props => props.theme?.colors?.primaryLight || 'rgba(51, 153, 255, 0.1)'};
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+const PlanNameInput = styled.input`
+  background: ${props => props.theme?.colors?.background || '#ffffff'};
+  border: 2px solid ${props => props.theme?.colors?.primary || '#3399ff'};
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: ${props => props.theme?.colors?.text || '#333333'};
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+
+  &:focus {
+    border-color: ${props => props.theme?.colors?.primaryHover || '#2980b9'};
+    box-shadow: 0 0 0 3px rgba(51, 153, 255, 0.1);
+  }
+`;
+
+const EditActions = styled.div`
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+`;
+
+const EditActionButton = styled.button`
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.theme?.colors?.hover || '#f5f5f5'};
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+const SaveButton = styled(EditActionButton)`
+  color: ${props => props.theme?.colors?.success || '#10b981'};
+
+  &:hover {
+    background: rgba(16, 185, 129, 0.1);
+  }
+`;
+
+const CancelButton = styled(EditActionButton)`
+  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
+
+  &:hover {
+    background: rgba(102, 102, 102, 0.1);
+  }
 `;
 
 const PlanMeta = styled.div`
@@ -163,8 +280,7 @@ const SmallButton = styled(Button)`
 const SecondaryButton = styled(SmallButton)`
   background: transparent;
   color: ${props => props.theme?.colors?.text || '#333333'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e0e0e0'};
-  
+
   &:hover:not(:disabled) {
     background: ${props => props.theme?.colors?.hover || '#f5f5f5'};
   }
@@ -173,7 +289,6 @@ const SecondaryButton = styled(SmallButton)`
 const DangerButton = styled(SmallButton)`
   background: transparent;
   color: ${props => props.theme?.colors?.error || '#e74c3c'};
-  border: 1px solid ${props => props.theme?.colors?.error || '#e74c3c'};
 
   &:hover:not(:disabled) {
     background: ${props => props.theme?.colors?.error || '#e74c3c'};
@@ -234,6 +349,9 @@ const AnonymousDashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
   const [selectedBossForPlan, setSelectedBossForPlan] = useState(null);
+  const [editingPlanId, setEditingPlanId] = useState(null);
+  const [editedName, setEditedName] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   // Set up unified plan service context and load plans
   useEffect(() => {
@@ -272,7 +390,7 @@ const AnonymousDashboard = () => {
     setSelectedBossForPlan(null);
   };
 
-  const handlePlanCreated = (plan) => {
+  const handlePlanCreated = () => {
     setShowCreateModal(false);
     setSelectedBossForPlan(null);
     loadPlans(); // Refresh the list
@@ -299,6 +417,66 @@ const AnonymousDashboard = () => {
     }
   };
 
+  const handleStartEditName = (planId, currentName) => {
+    setEditingPlanId(planId);
+    setEditedName(currentName);
+  };
+
+  const handleSaveName = async (planId) => {
+    if (editedName.trim() === '' || !editingPlanId) {
+      setEditingPlanId(null);
+      setEditedName('');
+      return;
+    }
+
+    setSavingName(true);
+    try {
+      // Update both 'title' (primary field) and 'name' (for compatibility)
+      await unifiedPlanService.updatePlan(planId, {
+        title: editedName.trim(),
+        name: editedName.trim()
+      });
+      setEditingPlanId(null);
+      setEditedName('');
+
+      // Show success toast
+      addToast({
+        type: 'success',
+        title: 'Plan renamed!',
+        message: `Plan renamed to "${editedName.trim()}".`,
+        duration: 3000
+      });
+
+      // Refresh the plans list
+      loadPlans();
+    } catch (error) {
+      console.error('Failed to rename plan:', error);
+
+      // Show error toast
+      addToast({
+        type: 'error',
+        title: 'Failed to rename plan',
+        message: 'Please try again.',
+        duration: 4000
+      });
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleCancelEditName = () => {
+    setEditingPlanId(null);
+    setEditedName('');
+  };
+
+  const handleNameKeyPress = (e, planId) => {
+    if (e.key === 'Enter') {
+      handleSaveName(planId);
+    } else if (e.key === 'Escape') {
+      handleCancelEditName();
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -311,14 +489,18 @@ const AnonymousDashboard = () => {
     <>
       <DashboardContainer>
       <Header>
-        <Title>
-          <User size={32} />
-          Anonymous Dashboard
-        </Title>
-        <Subtitle>
-          Welcome, {anonymousUser?.displayName || 'Anonymous User'}! 
-          Your plans are stored locally in your browser.
-        </Subtitle>
+        <HeaderContent>
+          <Title>
+            <User size={32} />
+            Anonymous Dashboard
+          </Title>
+          <Subtitle>
+            Your plans are stored locally in your browser.
+          </Subtitle>
+        </HeaderContent>
+        <UserSection>
+          <UserProfile />
+        </UserSection>
       </Header>
 
 
@@ -370,7 +552,57 @@ const AnonymousDashboard = () => {
               <PlansGrid>
                 {categorizedPlans.ownedPlans.map((plan) => (
                   <PlanCard key={plan.id} onClick={() => handleEditPlan(plan.id)}>
-                    <PlanTitle>{plan.name}</PlanTitle>
+                    <PlanTitleRow>
+                      {editingPlanId === plan.id ? (
+                        <>
+                          <PlanNameInput
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            onKeyDown={(e) => handleNameKeyPress(e, plan.id)}
+                            onBlur={() => handleSaveName(plan.id)}
+                            autoFocus
+                            disabled={savingName}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <EditActions>
+                            <SaveButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveName(plan.id);
+                              }}
+                              disabled={savingName}
+                              title="Save name"
+                            >
+                              <Check size={12} />
+                            </SaveButton>
+                            <CancelButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelEditName();
+                              }}
+                              disabled={savingName}
+                              title="Cancel"
+                            >
+                              <X size={12} />
+                            </CancelButton>
+                          </EditActions>
+                        </>
+                      ) : (
+                        <>
+                          <PlanTitle>{plan.name}</PlanTitle>
+                          <HeaderEditButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEditName(plan.id, plan.name);
+                            }}
+                            disabled={savingName}
+                            title="Edit plan name"
+                          >
+                            <Edit size={16} />
+                          </HeaderEditButton>
+                        </>
+                      )}
+                    </PlanTitleRow>
                     <PlanMeta>
                       <div>Boss: {plan.bossId}</div>
                       <div>

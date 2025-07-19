@@ -15,15 +15,17 @@ import anonymousUserService from './anonymousUserService';
  */
 export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
   try {
+    console.log('[PlanAccessService] trackPlanAccess called:', { planId, userId, isAnonymous });
+
     if (isAnonymous) {
       // Handle anonymous user access tracking in localStorage
       const anonymousUser = anonymousUserService.getCurrentUser();
       anonymousUser.addAccessedPlan(planId);
-      
+
       // Track detailed access info in localStorage
       const accessInfo = anonymousUser.planAccess || {};
       const now = Date.now();
-      
+
       if (accessInfo[planId]) {
         accessInfo[planId].lastAccess = now;
         accessInfo[planId].accessCount = (accessInfo[planId].accessCount || 0) + 1;
@@ -34,10 +36,10 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
           accessCount: 1
         };
       }
-      
+
       anonymousUser.planAccess = accessInfo;
       anonymousUser.save();
-      
+
       console.log('[PlanAccessService] Tracked anonymous access to plan:', planId);
       return;
     }
@@ -45,32 +47,69 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
     // Handle authenticated user access tracking in Firebase
     const now = Date.now();
     const accessPath = `plans/${planId}/accessedBy/${userId}`;
-    
+
+    console.log('[PlanAccessService] Setting access path:', accessPath);
+    console.log('[PlanAccessService] Database instance:', database);
+    console.log('[PlanAccessService] Database app:', database.app);
+
     // Get current access data
     const currentAccessRef = ref(database, accessPath);
+    console.log('[PlanAccessService] Access ref:', currentAccessRef);
     const currentAccess = await get(currentAccessRef);
-    
+
+    console.log('[PlanAccessService] Current access exists:', currentAccess.exists());
+    console.log('[PlanAccessService] Current access value:', currentAccess.val());
+
     if (currentAccess.exists()) {
       // Update existing access
-      await update(currentAccessRef, {
-        lastAccess: now,
-        accessCount: (currentAccess.val().accessCount || 0) + 1
-      });
+      console.log('[PlanAccessService] Updating existing access');
+      try {
+        await update(currentAccessRef, {
+          lastAccess: now,
+          accessCount: (currentAccess.val().accessCount || 0) + 1
+        });
+        console.log('[PlanAccessService] Existing access updated successfully');
+      } catch (error) {
+        console.error('[PlanAccessService] Error updating existing access:', error);
+        throw error;
+      }
     } else {
       // First time access
-      await set(currentAccessRef, {
+      console.log('[PlanAccessService] Creating new access record');
+      const newAccessData = {
         firstAccess: now,
         lastAccess: now,
         accessCount: 1
-      });
+      };
+      console.log('[PlanAccessService] New access data:', newAccessData);
+      console.log('[PlanAccessService] Writing to path:', accessPath);
+      try {
+        await set(currentAccessRef, newAccessData);
+        console.log('[PlanAccessService] New access record created successfully');
+
+        // Verify the write by reading it back
+        const verifyAccess = await get(currentAccessRef);
+        console.log('[PlanAccessService] Verification read - exists:', verifyAccess.exists());
+        console.log('[PlanAccessService] Verification read - value:', verifyAccess.val());
+      } catch (error) {
+        console.error('[PlanAccessService] Error creating new access record:', error);
+        throw error;
+      }
     }
-    
+
     // Update plan's lastAccessedAt
-    await update(ref(database, `plans/${planId}`), {
-      lastAccessedAt: now
-    });
-    
-    console.log('[PlanAccessService] Tracked access to plan:', planId, 'by user:', userId);
+    console.log('[PlanAccessService] Updating plan lastAccessedAt');
+    try {
+      await update(ref(database, `plans/${planId}`), {
+        lastAccessedAt: now
+      });
+      console.log('[PlanAccessService] Plan lastAccessedAt updated successfully');
+    } catch (error) {
+      console.error('[PlanAccessService] Error updating plan lastAccessedAt:', error);
+      throw error;
+    }
+
+    console.log('[PlanAccessService] Successfully tracked access to plan:', planId, 'by user:', userId);
   } catch (error) {
     console.error('[PlanAccessService] Error tracking plan access:', error);
     // Don't throw error - access tracking shouldn't break plan loading
@@ -139,6 +178,8 @@ export const getUserAccessiblePlans = async (userId, isAnonymous = false) => {
           accessedByExists: !!planData.accessedBy,
           userInAccessedBy: planData.accessedBy ? Object.keys(planData.accessedBy).includes(userId) : false,
           ownerId: planData.ownerId,
+          accessedByData: planData.accessedBy,
+          currentUserId: userId,
           userId: planData.userId,
           currentUserId: userId
         });

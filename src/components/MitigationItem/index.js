@@ -1,1 +1,1 @@
-export { default } from './MitigationItem';
+export { default } from './MitigationItem.jsx';

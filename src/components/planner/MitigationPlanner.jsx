@@ -23,12 +23,12 @@ import BossSelector from '../../features/bosses/BossSelector/BossSelector';
 import BossActionItem from '../BossActionItem/BossActionItem';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
-import MobileMitigationSelector from '../mobile/MobileMitigationSelector/MobileMitigationSelector';
-import FilterToggle from '../common/FilterToggle/FilterToggle';
-import TankSelectionModal from '../common/TankSelectionModal/TankSelectionModal';
+import MobileMitigationSelector from '../mobile/MobileMitigationSelector';
+import FilterToggle from '../common/FilterToggle';
+import TankSelectionModal from '../common/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
-import Draggable from '../dnd/Draggable/Draggable';
-import Droppable from '../dnd/Droppable/Droppable';
+import Draggable from '../DragAndDrop/Draggable';
+import Droppable from '../DragAndDrop/Droppable';
 
 // Import styled layout components
 import MainContent from '../styled/MainContent';
@@ -694,7 +694,7 @@ const MitigationPlannerContent = ({
       <PlannerContainer>
       <Header>
         <Title>
-          {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : 'Editing: '}${realtimePlan.name}` : 'Mitigation Planner'}
+          {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
         </Title>
         <ButtonGroup>
           {isCollaborating && (

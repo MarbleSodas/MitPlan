@@ -1,1 +1,1 @@
-export { default } from './DiscordButton';
+export { default } from './DiscordButton.jsx';
