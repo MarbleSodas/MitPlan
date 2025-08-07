@@ -255,7 +255,9 @@ const MitigationItem = memo(({
       <MitigationDescription>
         {getAbilityDescriptionForLevel(mitigation, currentBossLevel)}<br />
         <small>
-          Duration: {getAbilityDurationForLevel(mitigation, currentBossLevel)}s |
+          {getAbilityDurationForLevel(mitigation, currentBossLevel) > 0 && (
+            <>Duration: {getAbilityDurationForLevel(mitigation, currentBossLevel)}s | </>
+          )}
           Cooldown: {getAbilityCooldownForLevel(mitigation, currentBossLevel)}s
           {renderChargeCounter()}
           {renderInstanceCounter()}

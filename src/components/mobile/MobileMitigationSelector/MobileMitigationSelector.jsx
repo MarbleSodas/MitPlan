@@ -1409,7 +1409,9 @@ const MobileMitigationSelector = ({
                   <MitigationDescription>
                     {mitigation.description}<br />
                     <small>
-                      Duration: {getAbilityDurationForLevel(mitigation, bossLevel)}s |
+                      {getAbilityDurationForLevel(mitigation, bossLevel) > 0 && (
+                        <>Duration: {getAbilityDurationForLevel(mitigation, bossLevel)}s | </>
+                      )}
                       Cooldown: {getAbilityCooldownForLevel(mitigation, bossLevel)}s
                       {/* Display charge count for abilities with multiple charges */}
                       {getAbilityChargeCount(mitigation, bossLevel) > 1 && (() => {

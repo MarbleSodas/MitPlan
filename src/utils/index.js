@@ -29,7 +29,10 @@ export {
   calculateBarrierAmount,
   calculateRemainingHealth,
   formatHealth,
-  formatPercentage
+  formatPercentage,
+  getHealingPotency,
+  calculateHealingAmount,
+  calculateHealthAfterHealing
 } from './health/healthBarUtils';
 
 export {

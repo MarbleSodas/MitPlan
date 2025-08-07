@@ -19,6 +19,7 @@ const lightTheme = {
     medium: '#ffcc00',
     low: '#99cc00',
     barrier: '#ffcc00', // Yellow color for barriers
+    healing: '#00ff88', // Bright green for healing recovery
     success: '#4caf50', // Green for healthy health bars
     warning: '#ff9900', // Orange for moderate health
     error: '#ef4444', // Bright red for error states
@@ -106,6 +107,7 @@ const darkTheme = {
     medium: '#ffee44', // Brighter for better visibility
     low: '#bbee44',  // Brighter for better visibility
     barrier: '#ffdd44', // Brighter yellow for barriers in dark mode
+    healing: '#44ff99', // Brighter green for healing recovery in dark mode
     success: '#66bb66', // Brighter green for healthy health bars
     warning: '#ffbb44', // Brighter orange for moderate health
     error: '#ef4444', // Bright red for error states

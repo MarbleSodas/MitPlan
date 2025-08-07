@@ -2,6 +2,7 @@ import { memo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
+import HealingHealthBar from '../common/HealingHealthBar';
 import TankMitigationDisplay from '../common/TankMitigationDisplay';
 import EnhancedAetherflowGauge from '../common/EnhancedAetherflowGauge/EnhancedAetherflowGauge.jsx';
 import {
@@ -11,6 +12,9 @@ import {
   isMitigationAvailable,
   calculateMitigatedDamage,
   calculateBarrierAmount,
+  getHealingPotency,
+  calculateHealingAmount,
+  calculateHealthAfterHealing,
   isTouchDevice
 } from '../../utils';
 
@@ -785,6 +789,19 @@ const BossActionItem = memo(({
       return total;
     }, 0) : tankBarrierAmount;
 
+  // Calculate healing amounts
+  const healingPotency = getHealingPotency(currentBossLevel);
+
+  // Filter healing abilities from all mitigations
+  const healingAbilities = allMitigations.filter(m => m.type === 'healing');
+  const mainTankHealingAbilities = mainTankMitigations.filter(m => m.type === 'healing');
+  const offTankHealingAbilities = offTankMitigations.filter(m => m.type === 'healing');
+
+  // Calculate healing amounts
+  const partyHealingAmount = calculateHealingAmount(healingAbilities, healingPotency, currentBossLevel, baseHealth.party);
+  const mainTankHealingAmount = calculateHealingAmount(mainTankHealingAbilities, healingPotency, currentBossLevel, baseHealth.tank);
+  const offTankHealingAmount = calculateHealingAmount(offTankHealingAbilities, healingPotency, currentBossLevel, baseHealth.tank);
+
   return (
     <BossAction
       $time={action.time}
@@ -870,11 +887,22 @@ const BossActionItem = memo(({
                     {/* Main Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                        label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={baseHealth.tank}
                         currentHealth={baseHealth.tank}
                         damageAmount={mainTankMitigatedDamage}
                         barrierAmount={mainTankBarrierAmount}
+                        isTankBuster={true}
+                        tankPosition="mainTank"
+                        isDualTankBuster={true}
+                      />
+                      {/* Main Tank Healing Health Bar - Always show */}
+                      <HealingHealthBar
+                        label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                        maxHealth={baseHealth.tank}
+                        remainingHealth={baseHealth.tank - mainTankMitigatedDamage + mainTankBarrierAmount}
+                        healingAmount={mainTankHealingAmount}
+                        barrierAmount={0} // Barriers are already accounted for in remaining health
                         isTankBuster={true}
                         tankPosition="mainTank"
                         isDualTankBuster={true}
@@ -885,26 +913,49 @@ const BossActionItem = memo(({
                     </div>
 
                     {/* Off Tank - show "N/A" if no tank is selected */}
-                    <HealthBar
-                      label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
-                      maxHealth={baseHealth.tank}
-                      currentHealth={baseHealth.tank}
-                      damageAmount={offTankMitigatedDamage}
-                      barrierAmount={offTankBarrierAmount}
-                      isTankBuster={true}
-                      tankPosition="offTank"
-                      isDualTankBuster={true}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <HealthBar
+                        label={`Off Tank After Damage (${tankPositions.offTank || 'N/A'})`}
+                        maxHealth={baseHealth.tank}
+                        currentHealth={baseHealth.tank}
+                        damageAmount={offTankMitigatedDamage}
+                        barrierAmount={offTankBarrierAmount}
+                        isTankBuster={true}
+                        tankPosition="offTank"
+                        isDualTankBuster={true}
+                      />
+                      {/* Off Tank Healing Health Bar - Always show */}
+                      <HealingHealthBar
+                        label={`Off Tank After Healing (${tankPositions.offTank || 'N/A'})`}
+                        maxHealth={baseHealth.tank}
+                        remainingHealth={baseHealth.tank - offTankMitigatedDamage + offTankBarrierAmount}
+                        healingAmount={offTankHealingAmount}
+                        barrierAmount={0} // Barriers are already accounted for in remaining health
+                        isTankBuster={true}
+                        tankPosition="offTank"
+                        isDualTankBuster={true}
+                      />
+                    </div>
                   </>
                 ) : (
                   /* For single-target tank busters, only show the Main Tank health bar */
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <HealthBar
-                      label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
+                      label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
                       maxHealth={baseHealth.tank}
                       currentHealth={baseHealth.tank}
                       damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
                       barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
+                      isTankBuster={true}
+                      tankPosition="mainTank"
+                    />
+                    {/* Main Tank Healing Health Bar for single tank busters - Always show */}
+                    <HealingHealthBar
+                      label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                      maxHealth={baseHealth.tank}
+                      remainingHealth={baseHealth.tank - (tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage) + (tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount)}
+                      healingAmount={mainTankHealingAmount}
+                      barrierAmount={0} // Barriers are already accounted for in remaining health
                       isTankBuster={true}
                       tankPosition="mainTank"
                     />
@@ -917,11 +968,20 @@ const BossActionItem = memo(({
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <HealthBar
-                  label="Party Health"
+                  label="Party After Damage"
                   maxHealth={baseHealth.party}
                   currentHealth={baseHealth.party}
                   damageAmount={mitigatedDamage}
                   barrierAmount={partyBarrierAmount}
+                  isTankBuster={false}
+                />
+                {/* Party Healing Health Bar - Always show */}
+                <HealingHealthBar
+                  label="Party After Healing"
+                  maxHealth={baseHealth.party}
+                  remainingHealth={baseHealth.party - mitigatedDamage + partyBarrierAmount}
+                  healingAmount={partyHealingAmount}
+                  barrierAmount={0} // Barriers are already accounted for in remaining health
                   isTankBuster={false}
                 />
                 {isSelected && isScholarSelected && (
@@ -932,6 +992,8 @@ const BossActionItem = memo(({
           </div>
         </>
       )}
+
+
 
       {/* Display Aetherflow gauge if Scholar is selected and this is the selected boss action */}
       {/* (Moved next to tank health bar for tank busters) */}

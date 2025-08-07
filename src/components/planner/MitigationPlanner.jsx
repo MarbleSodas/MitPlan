@@ -14,6 +14,7 @@ import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
+import HealingPotencyInput from '../common/HealingPotencyInput/HealingPotencyInput';
 import Footer from '../layout/Footer';
 
 
@@ -152,6 +153,7 @@ const ControlsContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
   padding: 1rem;
   background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
@@ -160,6 +162,8 @@ const ControlsContainer = styled.div`
 
   @media (max-width: 768px) {
     padding: 0.75rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
 `;
 
@@ -282,6 +286,7 @@ const PlanningInterface = ({ onSave, saving }) => {
   }, [availableMitigations, setActiveMitigation]);
 
   const handleDragEnd = useCallback((event) => {
+    console.log('[MitigationPlanner] handleDragEnd called:', event);
     const { active, over } = event;
 
     if (!over) {
@@ -360,8 +365,25 @@ const PlanningInterface = ({ onSave, saving }) => {
     );
 
     if (availability.canAssign()) {
+      // DEBUG: Log mitigation assignment
+      console.log('[MitigationPlanner] Calling addMitigation:', {
+        bossActionId: targetBossAction.id,
+        bossActionName: targetBossAction.name,
+        mitigationId: mitigation.id,
+        mitigationName: mitigation.name,
+        mitigationType: mitigation.type
+      });
+
       // Use the enhanced addMitigation with real-time sync
       addMitigation(targetBossAction.id, mitigation);
+    } else {
+      console.log('[MitigationPlanner] Cannot assign mitigation - availability check failed:', {
+        bossActionId: targetBossAction.id,
+        bossActionName: targetBossAction.name,
+        mitigationId: mitigation.id,
+        mitigationName: mitigation.name,
+        availabilityReason: availability.getUnavailabilityReason ? availability.getUnavailabilityReason() : 'Unknown'
+      });
     }
 
     setActiveMitigation(null);
@@ -412,6 +434,7 @@ const PlanningInterface = ({ onSave, saving }) => {
 
       <ControlsContainer>
         <FilterToggle />
+        <HealingPotencyInput />
       </ControlsContainer>
 
       <MainContent>
