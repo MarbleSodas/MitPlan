@@ -54,6 +54,30 @@ export const findActiveMitigationsAtTime = (assignments, bossActions, mitigation
       // Calculate when this mitigation ends
       const endTime = action.time + duration;
 
+      // Special handling for abilities that should be consumed by the first boss action
+      // This includes:
+      // 1. Shield/barrier abilities without regeneration (Divine Benison, The Blackest Night, etc.)
+      // 2. Instant healing abilities without regeneration (Cure, Tetragrammaton, Lustrate, etc.)
+      // 3. Healing abilities with barriers (Adloquium, Succor) - both healing AND barrier consumed
+      const isBarrierWithoutRegen = mitigation.type === 'barrier' && !mitigation.regenPotency && !mitigation.regenDuration;
+      const isInstantHealingWithoutRegen = mitigation.type === 'healing' &&
+        mitigation.healingType === 'instant' &&
+        !mitigation.regenPotency &&
+        !mitigation.regenDuration;
+      const isHealingWithBarrier = mitigation.type === 'healing' && mitigation.barrierPotency;
+
+      if (isBarrierWithoutRegen || isInstantHealingWithoutRegen || isHealingWithBarrier) {
+        // These abilities should ONLY affect the boss action they're assigned to
+        // They should NEVER carry over to subsequent actions, regardless of duration
+        // For healing+barrier abilities like Succor/Adloquium: BOTH healing AND barrier are consumed immediately
+
+        // Skip this ability if we're checking a different boss action than where it was assigned
+        // (i.e., don't let it carry over to subsequent actions)
+        if (action.id !== targetActionId) {
+          continue;
+        }
+      }
+
       // If the mitigation is still active at the target time, add it to the result
       if (endTime > targetTime) {
         activeMitigations.push({

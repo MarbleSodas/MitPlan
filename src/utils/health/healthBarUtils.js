@@ -146,29 +146,41 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
   let totalHealing = 0;
 
   healingAbilities.forEach(ability => {
-    if (ability.type === 'healing') {
-      let healingPotency = 0;
+    // Process abilities that have healing components (type: 'healing') or regen effects
+    if (ability.type === 'healing' || (ability.regenPotency && ability.regenPotency > 0)) {
+      let instantHealingPotency = 0;
+      let regenHealingPotency = 0;
 
-      // Use the healingPotency from ability data if available
+      // Get instant healing potency from ability data
       if (ability.healingPotency !== undefined) {
-        healingPotency = ability.healingPotency;
+        instantHealingPotency = ability.healingPotency;
       } else {
         // Fallback to old hardcoded values for backward compatibility
         switch (ability.id) {
           case 'aurora':
-            healingPotency = 200;
+            instantHealingPotency = 0; // Aurora is pure regen
             break;
           case 'indomitability':
-            healingPotency = 400;
+            instantHealingPotency = 400;
             break;
           case 'excogitation':
-            healingPotency = 800;
+            instantHealingPotency = 800;
             break;
           case 'liturgy_of_the_bell':
-            healingPotency = 400;
+            instantHealingPotency = 400;
             break;
           default:
-            healingPotency = 300;
+            instantHealingPotency = 300;
+        }
+      }
+
+      // Get regen potency from ability data
+      if (ability.regenPotency !== undefined) {
+        regenHealingPotency = ability.regenPotency;
+      } else {
+        // Fallback for abilities that have regen but no explicit regenPotency
+        if (ability.id === 'aurora') {
+          regenHealingPotency = 200; // Aurora's regen potency
         }
       }
 
@@ -176,19 +188,24 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
       if (ability.healingType === 'fullHeal' || ability.isFullHeal) {
         // Full heal abilities like Benediction restore all HP
         totalHealing += maxHealth;
-      } else if (ability.healingType === 'regen' && ability.regenDuration) {
-        // For regen abilities, calculate total healing over duration
-        // Assuming 3-second ticks for most regen effects
-        const tickInterval = 3;
-        const totalTicks = Math.floor(ability.regenDuration / tickInterval);
-        totalHealing += (healingPotency / 100) * healingPotencyPer100 * totalTicks;
       } else if (ability.healingType === 'boost') {
         // Healing boost abilities don't provide direct healing
         // They would enhance other healing abilities, but we'll skip for now
         return;
       } else {
-        // Instant and triggered healing
-        totalHealing += (healingPotency / 100) * healingPotencyPer100;
+        // Calculate instant healing component
+        if (instantHealingPotency > 0) {
+          totalHealing += (instantHealingPotency / 100) * healingPotencyPer100;
+        }
+
+        // Calculate regen healing component if present
+        if (regenHealingPotency > 0 && ability.regenDuration) {
+          // Assuming 3-second ticks for most regen effects in FFXIV
+          const tickInterval = 3;
+          const totalTicks = Math.floor(ability.regenDuration / tickInterval);
+          const regenHealing = (regenHealingPotency / 100) * healingPotencyPer100 * totalTicks;
+          totalHealing += regenHealing;
+        }
       }
     }
   });

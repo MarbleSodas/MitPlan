@@ -29,16 +29,31 @@ export const FilterProvider = ({ children }) => {
 
   // Filter mitigations based on boss action and current filter mode
   const filterMitigations = useCallback((mitigations, bossAction) => {
-    // If showing all mitigations or if no boss action is selected, return the full list
-    if (showAllMitigations || !bossAction) {
+    // If no boss action is selected, return the full list
+    if (!bossAction) {
       return mitigations;
     }
 
     // Check if the boss action is a tank buster
     const isTankBuster = bossAction.isTankBuster === true;
 
-    // Filter mitigations based on boss action type
-    return mitigations.filter(mitigation => {
+    // Always filter out single-target abilities for party-wide boss actions
+    // regardless of the filter toggle state
+    let filteredMitigations = mitigations.filter(mitigation => {
+      // For party-wide boss actions (not tank busters), exclude single-target abilities
+      if (!isTankBuster && mitigation.target === 'single') {
+        return false;
+      }
+      return true;
+    });
+
+    // If showing all mitigations, return the list with single-target filtering applied
+    if (showAllMitigations) {
+      return filteredMitigations;
+    }
+
+    // Apply additional filtering based on boss action type when filter is enabled
+    return filteredMitigations.filter(mitigation => {
       if (isTankBuster) {
         // For tank busters, show tank-specific and party-wide mitigations that affect tanks
         return mitigation.forTankBusters === true;

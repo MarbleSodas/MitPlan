@@ -256,6 +256,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/holy_sheltron.png',
     type: 'mitigation',
     mitigationValue: 0.15,
+    regenPotency: 250, // 250 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -281,6 +283,8 @@ export const mitigationAbilities = [
       62: 0.10, // At level 62, mitigation is 10%
       82: 0.10  // At level 82, mitigation is 10% with healing over time
     },
+    regenPotency: 250, // 250 potency per tick for healing over time (level 82+)
+    regenDuration: 12, // Healing over time lasts for 12s at level 82+
     damageType: 'both',
     target: 'single', // Can be cast on another player
     forTankBusters: true, // Commonly used for tank busters
@@ -367,6 +371,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/bloodwhetting.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 400, // 400 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -388,6 +394,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/nascent_flash.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 400, // 400 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'single', // Can be cast on another player
     forTankBusters: true, // Commonly used for tank busters
@@ -617,6 +625,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/heart_of_corundum.png',
     type: 'mitigation',
     mitigationValue: 0.15,
+    regenPotency: 250, // 250 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'single', // Can be cast on self or another player
     forTankBusters: true, // Commonly used for tank busters
@@ -1161,6 +1171,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/sacred_soil.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 100, // 100 potency per tick for regen (level 78+)
+    regenDuration: 15,
     damageType: 'both',
     target: 'area',
     forTankBusters: true,
@@ -1243,6 +1255,8 @@ export const mitigationAbilities = [
     icon: '/abilities-official/collective_unconscious.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 100, // 100 potency per tick for regen
+    regenDuration: 15,
     damageType: 'both',
     target: 'area',
     forTankBusters: false,
@@ -1498,6 +1512,8 @@ export const mitigationAbilities = [
     icon: '/abilities-official/kerachole.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 100, // 100 potency per tick for regen (level 78+)
+    regenDuration: 15,
     damageType: 'both',
     target: 'area',
     forTankBusters: false,

@@ -792,10 +792,10 @@ const BossActionItem = memo(({
   // Calculate healing amounts
   const healingPotency = getHealingPotency(currentBossLevel);
 
-  // Filter healing abilities from all mitigations
-  const healingAbilities = allMitigations.filter(m => m.type === 'healing');
-  const mainTankHealingAbilities = mainTankMitigations.filter(m => m.type === 'healing');
-  const offTankHealingAbilities = offTankMitigations.filter(m => m.type === 'healing');
+  // Filter healing abilities from all mitigations (includes abilities with healing or regen effects)
+  const healingAbilities = allMitigations.filter(m => m.type === 'healing' || (m.regenPotency && m.regenPotency > 0));
+  const mainTankHealingAbilities = mainTankMitigations.filter(m => m.type === 'healing' || (m.regenPotency && m.regenPotency > 0));
+  const offTankHealingAbilities = offTankMitigations.filter(m => m.type === 'healing' || (m.regenPotency && m.regenPotency > 0));
 
   // Calculate healing amounts
   const partyHealingAmount = calculateHealingAmount(healingAbilities, healingPotency, currentBossLevel, baseHealth.party);

@@ -1,0 +1,254 @@
+[
+  {
+    "id": "necron_shock_1",
+    "name": "Necron Shock",
+    "time": 14,
+    "description": "Opening party-wide magical damage. Necron's signature electrical attack is supposed to be baited by tanks and swapped.",
+    "unmitigatedDamage": "200,368",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "fear_of_death_1",
+    "name": "Fear of Death",
+    "time": 28,
+    "description": "Wide-hitting magical damage that affects many players with fear-based mechanics.",
+    "unmitigatedDamage": "91,841",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💀"
+  },
+  {
+    "id": "choking_grasp_1",
+    "name": "Choking Grasp",
+    "time": 35,
+    "description": "Party-wide magical damage with grasping mechanics. Later becomes a tank-focused attack.",
+    "unmitigatedDamage": "90,728",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🫷"
+  },
+  {
+    "id": "smite_of_gloom_1",
+    "name": "Smite of Gloom",
+    "time": 59,
+    "description": "Major party-wide magical damage attack imbued with dark energy.",
+    "unmitigatedDamage": "127,779",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌑"
+  },
+  {
+    "id": "necron_shock_2",
+    "name": "Shockwave",
+    "time": 79,
+    "description": "Second instance of the electrical party-wide attack.",
+    "unmitigatedDamage": "96,933",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "fear_of_death_2",
+    "name": "Fear of Death",
+    "time": 92,
+    "description": "Repeated fear-based party-wide magical damage.",
+    "unmitigatedDamage": "91,071",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💀"
+  },
+  {
+    "id": "choking_grasp_2",
+    "name": "Choking Grasp",
+    "time": 98,
+    "description": "Continued grasping attack affecting multiple players.",
+    "unmitigatedDamage": "90,997",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "�"
+  },
+  {
+    "id": "the_ends_embrace_1",
+    "name": "The End's Embrace",
+    "time": 103,
+    "description": "Party-wide magical damage representing Necron's deadly embrace.",
+    "unmitigatedDamage": "116,046",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "�"
+  },
+  {
+    "id": "necron_shock_3",
+    "name": "Necron Shock",
+    "time": 114,
+    "description": "Opening party-wide magical damage. Necron's signature electrical attack is supposed to be baited by tanks and swapped.",
+    "unmitigatedDamage": "208,778",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "necron_shock_4",
+    "name": "Shockwave",
+    "time": 125,
+    "description": "Opening party-wide magical damage. Necron's signature electrical attack is supposed to be baited by tanks and swapped.",
+    "unmitigatedDamage": "96,069",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "grand_cross_1",
+    "name": "Grand Cross",
+    "time": 140,
+    "description": "Necron's signature cross-shaped magical attack dealing massive party-wide damage.",
+    "unmitigatedDamage": "145,287",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "✝️"
+  },
+  {
+    "id": "grand_cross_2",
+    "name": "Grand Cross",
+    "time": 165,
+    "description": "Second casting of the devastating cross-shaped attack.",
+    "unmitigatedDamage": "124,866",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "✝️"
+  },
+  {
+    "id": "neutron_ring_1",
+    "name": "Neutron Ring",
+    "time": 187,
+    "description": "Massive ring-shaped magical attack dealing heavy party-wide damage.",
+    "unmitigatedDamage": "160,852",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "⭕"
+  },
+  {
+    "id": "darkness_of_eternity_1",
+    "name": "Darkness of Eternity",
+    "time": 249,
+    "timeRange": [249, 259],
+    "description": "Necron's ultimate darkness attack dealing massive party-wide magical damage.",
+    "unmitigatedDamage": "179,416",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🌌"
+  },
+  {
+    "id": "the_ends_embrace_2",
+    "name": "The End's Embrace",
+    "time": 318,
+    "timeRange": [318, 332],
+    "description": "Second instance of Necron's deadly embrace attack.",
+    "unmitigatedDamage": "113,474",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🤗"
+  },
+  {
+    "id": "necron_shock_5",
+    "name": "Necron Shock",
+    "time": 376,
+    "description": "Fourth instance of the electrical attack.",
+    "unmitigatedDamage": "111,518",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "necron_shock_6",
+    "name": "Shockwave",
+    "time": 423,
+    "description": "Fourth instance of the electrical attack.",
+    "unmitigatedDamage": "97,539",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "macabre_mark_1",
+    "name": "Macabre Mark",
+    "time": 438,
+    "description": "Dark marking attack that targets specific players with death magic.",
+    "unmitigatedDamage": "95,234",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "🔮"
+  },
+  {
+    "id": "necron_shock_7",
+    "name": "Necron Shock",
+    "time": 448,
+    "description": "Fourth instance of the electrical attack.",
+    "unmitigatedDamage": "143,020",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "necron_shock_8",
+    "name": "Shockwave",
+    "time": 510,
+    "description": "Fourth instance of the electrical attack.",
+    "unmitigatedDamage": "98,758",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+    {
+    "id": "fear_of_death_3",
+    "name": "Fear of Death",
+    "time": 517,
+    "description": "Repeated fear-based party-wide magical damage.",
+    "unmitigatedDamage": "142,016",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💀"
+  },
+  {
+    "id": "choking_grasp_3",
+    "name": "Choking Grasp",
+    "time": 522,
+    "description": "Continued grasping attack affecting multiple players.",
+    "unmitigatedDamage": "105,855",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "�"
+  },
+  {
+    "id": "smite_of_gloom_2",
+    "name": "Smite of Gloom",
+    "time": 566,
+    "description": "Major party-wide magical damage attack imbued with dark energy.",
+    "unmitigatedDamage": "124,015",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🌑"
+  },
+  {
+    "id": "grand_cross_finale",
+    "name": "Grand Cross",
+    "time": 580,
+    "description": "Final phase Grand Cross with devastating party-wide damage.",
+    "unmitigatedDamage": "124,101",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "✝️"
+  },
+  {
+    "id": "necron_enrage",
+    "name": "Darkness of Eternity (Enrage)",
+    "time": 630,
+    "description": "Enrage wipe mechanic that occurs at 10:30 into the fight.",
+    "unmitigatedDamage": "N/A",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "💀"
+  }
+]
