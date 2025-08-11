@@ -3,7 +3,7 @@
     "id": "necron_shock_1",
     "name": "Necron Shock",
     "time": 14,
-    "description": "Opening party-wide magical damage. Necron's signature electrical attack is supposed to be baited by tanks and swapped.",
+    "description": "Dual tank buster that targets both tanks with electrical damage.",
     "unmitigatedDamage": "200,368",
     "damageType": "magical",
     "importance": "high",
@@ -13,37 +13,37 @@
     "id": "fear_of_death_1",
     "name": "Fear of Death",
     "time": 28,
-    "description": "Wide-hitting magical damage that affects many players with fear-based mechanics.",
+    "description": "Raidwide hit that spawns dark puddles with arms firing line AoEs from them.",
     "unmitigatedDamage": "91,841",
     "damageType": "magical",
     "importance": "high",
     "icon": "💀"
   },
   {
-    "id": "choking_grasp_1",
-    "name": "Choking Grasp",
+    "id": "cold_grip_1",
+    "name": "Cold Grip",
     "time": 35,
-    "description": "Party-wide magical damage with grasping mechanics. Later becomes a tank-focused attack.",
+    "description": "Two-part slam on a side; a glowing arm marks the repeat side.",
     "unmitigatedDamage": "90,728",
     "damageType": "magical",
     "importance": "high",
     "icon": "🫷"
   },
   {
-    "id": "smite_of_gloom_1",
-    "name": "Smite of Gloom",
+    "id": "shockwave_1",
+    "name": "shockwave",
     "time": 59,
-    "description": "Major party-wide magical damage attack imbued with dark energy.",
+    "description": "Conal tank buster shockwave aimed forward. Massive damage that requires strong mitigation.",
     "unmitigatedDamage": "127,779",
     "damageType": "magical",
     "importance": "high",
-    "icon": "🌑"
+    "icon": "�"
   },
   {
-    "id": "necron_shock_2",
+    "id": "shockwave_2",
     "name": "Shockwave",
     "time": 79,
-    "description": "Second instance of the electrical party-wide attack.",
+    "description": "Raid-wide shockwave attack hitting all party members with electrical damage.",
     "unmitigatedDamage": "96,933",
     "damageType": "magical",
     "importance": "high",
@@ -70,7 +70,7 @@
     "icon": "�"
   },
   {
-    "id": "the_ends_embrace_1",
+    "id": "ends_embrace_1",
     "name": "The End's Embrace",
     "time": 103,
     "description": "Party-wide magical damage representing Necron's deadly embrace.",
@@ -80,20 +80,20 @@
     "icon": "�"
   },
   {
-    "id": "necron_shock_3",
+    "id": "necron_shock_2",
     "name": "Necron Shock",
     "time": 114,
-    "description": "Opening party-wide magical damage. Necron's signature electrical attack is supposed to be baited by tanks and swapped.",
+    "description": "Second dual tank buster targeting both tanks with electrical damage.",
     "unmitigatedDamage": "208,778",
     "damageType": "magical",
     "importance": "high",
     "icon": "⚡"
   },
   {
-    "id": "necron_shock_4",
+    "id": "shockwave_3",
     "name": "Shockwave",
     "time": 125,
-    "description": "Opening party-wide magical damage. Necron's signature electrical attack is supposed to be baited by tanks and swapped.",
+    "description": "Third raid-wide shockwave attack hitting all party members with electrical damage.",
     "unmitigatedDamage": "96,069",
     "damageType": "magical",
     "importance": "high",
@@ -141,7 +141,7 @@
     "icon": "🌌"
   },
   {
-    "id": "the_ends_embrace_2",
+    "id": "ends_embrace_2",
     "name": "The End's Embrace",
     "time": 318,
     "timeRange": [318, 332],
@@ -152,20 +152,20 @@
     "icon": "🤗"
   },
   {
-    "id": "necron_shock_5",
+    "id": "necron_shock_3",
     "name": "Necron Shock",
     "time": 376,
-    "description": "Fourth instance of the electrical attack.",
+    "description": "Third dual tank buster targeting both tanks with electrical damage.",
     "unmitigatedDamage": "111,518",
     "damageType": "magical",
     "importance": "high",
     "icon": "⚡"
   },
   {
-    "id": "necron_shock_6",
+    "id": "shockwave_4",
     "name": "Shockwave",
     "time": 423,
-    "description": "Fourth instance of the electrical attack.",
+    "description": "Fourth raid-wide shockwave attack hitting all party members with electrical damage.",
     "unmitigatedDamage": "97,539",
     "damageType": "magical",
     "importance": "high",
@@ -182,20 +182,20 @@
     "icon": "🔮"
   },
   {
-    "id": "necron_shock_7",
+    "id": "necron_shock_4",
     "name": "Necron Shock",
     "time": 448,
-    "description": "Fourth instance of the electrical attack.",
+    "description": "Fourth dual tank buster targeting both tanks with electrical damage.",
     "unmitigatedDamage": "143,020",
     "damageType": "magical",
     "importance": "high",
     "icon": "⚡"
   },
   {
-    "id": "necron_shock_8",
+    "id": "shockwave_5",
     "name": "Shockwave",
     "time": 510,
-    "description": "Fourth instance of the electrical attack.",
+    "description": "Fifth raid-wide shockwave attack hitting all party members with electrical damage.",
     "unmitigatedDamage": "98,758",
     "damageType": "magical",
     "importance": "high",
@@ -242,7 +242,7 @@
     "icon": "✝️"
   },
   {
-    "id": "necron_enrage",
+    "id": "darkness_of_eternity_enrage",
     "name": "Darkness of Eternity (Enrage)",
     "time": 630,
     "description": "Enrage wipe mechanic that occurs at 10:30 into the fight.",
