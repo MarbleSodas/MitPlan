@@ -74,6 +74,14 @@ export const bosses = [
     level: 100,
     baseHealth: baseHealthValues[100]
   },
+  {
+    id: 'necron',
+    name: 'Necron',
+    description: 'The ultimate darkness incarnate, a level 100 superboss wielding devastating magical attacks.',
+    icon: '💀',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
 ];
 
 export default bosses;
