@@ -82,6 +82,14 @@ export const bosses = [
     level: 100,
     baseHealth: baseHealthValues[100]
   },
+  {
+    id: 'seiryu-unreal',
+    name: 'Seiryu (Unreal)',
+    description: 'The Wreath of Snakes (Unreal) trial. A storm serpent with sigils, river sweeps, and heavy tankbusters.',
+    icon: '🐍',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
 ];
 
 export default bosses;

@@ -8,6 +8,7 @@ import staticeActions from './statice_actions.json';
 import bruteAbominatorActions from './brute-abominator_actions.json';
 import howlingBladeActions from './howling-blade_actions.json';
 import necronActions from './necron_actions.json';
+import seiryuUnrealActions from './seiryu-unreal_actions.json';
 
 export const bossActionsMap = {
   'sugar-riot': sugarRiotActions,
@@ -17,6 +18,7 @@ export const bossActionsMap = {
   'brute-abominator-m7s': bruteAbominatorActions,
   'howling-blade-m8s': howlingBladeActions,
   'necron': necronActions,
+  'seiryu-unreal': seiryuUnrealActions,
   ketuduke: [
     {
       id: 'tidal_roar_1',
