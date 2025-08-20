@@ -1,0 +1,459 @@
+[
+  {
+    "id": "fifth_element_1",
+    "name": "Fifth Element",
+    "time": 13,
+    "description": "Opening raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "serpent_descending_1",
+    "name": "Serpent Descending",
+    "time": 28,
+    "description": "Multi-hit party damage as serpent clones descend in lines. Moderate raidwide pulses while resolving early mechanics.",
+    "unmitigatedDamage": "~55,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "⬇️"
+  },
+  {
+    "id": "onmyo_sigil_1",
+    "name": "Onmyo Sigil",
+    "time": 37,
+    "description": "Targeted sigil AoEs that hit marked players hard. Handle patterns to reduce hits.",
+    "unmitigatedDamage": "~80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔮"
+  },
+  {
+    "id": "infirm_soul_1",
+    "name": "Infirm Soul",
+    "time": 51,
+    "description": "Heavy single-target tankbuster. Use strong mitigation or invuln.",
+    "unmitigatedDamage": "~185,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "karmic_curse_1",
+    "name": "Karmic Curse",
+    "time": 55,
+    "description": "Low magical damage to all players in a rapid sequence; applies debuffs/DoT. Healers be ready for follow-up.",
+    "unmitigatedDamage": "~10,000 per hit",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "☸️"
+  },
+  {
+    "id": "blue_bolt_red_rush_1",
+    "name": "Blue Bolt + Red Rush",
+    "time": 77,
+    "description": "Large magical hits on all players (Blue Bolt) with two smaller line dashes (Red Rush). Spread/position to minimize overlaps.",
+    "unmitigatedDamage": "~75,000 (Blue Bolt), ~35,000 (Red Rush)",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "iwa_no_shiki_kanabo_1",
+    "name": "Iwa-no-shiki Kanabō",
+    "time": 91,
+    "description": "Very heavy physical tankbuster from add. Tank swap or invuln recommended.",
+    "unmitigatedDamage": "~100,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "doro_no_shiki_explosion_1",
+    "name": "Doro-no-shiki Explosions",
+    "time": 102,
+    "description": "Series of ground explosions from mud sigils. Multiple small magical hits while resolving the pattern.",
+    "unmitigatedDamage": "~27,000 per hit",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💥"
+  },
+  {
+    "id": "numa_no_shiki_explosion_1",
+    "name": "Numa-no-shiki Explosion",
+    "time": 113,
+    "description": "Large magical hits from swamp sigils; heavier than Doro-no-shiki.",
+    "unmitigatedDamage": "~70,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "💧"
+  },
+  {
+    "id": "doro_no_shiki_explosion_2",
+    "name": "Doro-no-shiki Explosions",
+    "time": 126,
+    "description": "Further pulses of ground explosions while finishing the sigil phase.",
+    "unmitigatedDamage": "~28,000 per hit",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "💥"
+  },
+  {
+    "id": "numa_doro_combo_1",
+    "name": "Numa + Doro Explosions",
+    "time": 142,
+    "description": "Mixed heavy and light explosions in quick succession. Consider party mitigation with spot healing.",
+    "unmitigatedDamage": "~70,000 + ~28,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔷"
+  },
+  {
+    "id": "dragons_wake_1",
+    "name": "Dragon's Wake",
+    "time": 180,
+    "description": "High raidwide magical damage following add/transition.",
+    "unmitigatedDamage": "~100,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐉"
+  },
+  {
+    "id": "coursing_river_1",
+    "name": "Coursing River",
+    "time": 202,
+    "description": "Line AoEs that sweep the arena, dealing moderate magical damage to all.",
+    "unmitigatedDamage": "~16,000",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌊"
+  },
+  {
+    "id": "great_typhoon_1",
+    "name": "Great Typhoon",
+    "time": 204,
+    "description": "Knockback and light damage. Position to avoid being pushed into hazards.",
+    "unmitigatedDamage": "~9,000",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌪️"
+  },
+  {
+    "id": "fifth_element_2",
+    "name": "Fifth Element",
+    "time": 220,
+    "description": "Raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "yama_no_shiki_handprint_1",
+    "name": "Yama-no-shiki Handprint",
+    "time": 224,
+    "description": "Targeted heavy hit on marked players. Assign soaks/defensives as needed.",
+    "unmitigatedDamage": "~85,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "✋"
+  },
+  {
+    "id": "force_of_nature_1",
+    "name": "Force of Nature",
+    "time": 240,
+    "description": "Very low incidental magical damage ticks to all players.",
+    "unmitigatedDamage": "~4,500",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🍃"
+  },
+  {
+    "id": "coursing_river_2",
+    "name": "Coursing River",
+    "time": 242,
+    "description": "Another sweep of line AoEs across the arena.",
+    "unmitigatedDamage": "~17,000",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌊"
+  },
+  {
+    "id": "forbidden_arts_1",
+    "name": "Forbidden Arts (set 1)",
+    "time": 249,
+    "description": "Series of moderate-to-high magical hits in quick succession. Chain mitigation and healing.",
+    "unmitigatedDamage": "~35,000 x2",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "📜"
+  },
+  {
+    "id": "onmyo_sigil_2",
+    "name": "Onmyo Sigil",
+    "time": 277,
+    "description": "Targeted sigil AoEs; ensure safe resolutions to minimize hits.",
+    "unmitigatedDamage": "~85,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔮"
+  },
+  {
+    "id": "fifth_element_3",
+    "name": "Fifth Element",
+    "time": 314,
+    "description": "Raidwide magical damage as the fight loops.",
+    "unmitigatedDamage": "~65,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "serpent_descending_2",
+    "name": "Serpent Descending",
+    "time": 336,
+    "description": "Multi-hit party damage while resolving serpent patterns.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "⬇️"
+  },
+  {
+    "id": "serpents_fang_1",
+    "name": "Serpent's Fang",
+    "time": 339,
+    "description": "Light magical bleeds/marks on several players following Descending.",
+    "unmitigatedDamage": "~7,000",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🗡️"
+  },
+  {
+    "id": "forbidden_arts_2",
+    "name": "Forbidden Arts (set 2)",
+    "time": 347,
+    "description": "Another sequence of magical hits in short intervals. Rotate party mitigation.",
+    "unmitigatedDamage": "~75,000 total",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "📜"
+  },
+  {
+    "id": "fifth_element_4",
+    "name": "Fifth Element",
+    "time": 356,
+    "description": "Raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "infirm_soul_2",
+    "name": "Infirm Soul",
+    "time": 371,
+    "description": "Heavy tankbuster; healers prepare for follow-up Karmic Curse ticks.",
+    "unmitigatedDamage": "~185,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "karmic_curse_2",
+    "name": "Karmic Curse",
+    "time": 374,
+    "description": "Low multi-hit magical damage to all players.",
+    "unmitigatedDamage": "~10,000 per hit",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "☸️"
+  },
+  {
+    "id": "infirm_soul_3",
+    "name": "Infirm Soul",
+    "time": 384,
+    "description": "Second tankbuster in this loop.",
+    "unmitigatedDamage": "~185,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "karmic_curse_3",
+    "name": "Karmic Curse",
+    "time": 388,
+    "description": "Follow-up low raidwide ticks.",
+    "unmitigatedDamage": "~11,000 per hit",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "☸️"
+  },
+  {
+    "id": "fifth_element_5",
+    "name": "Fifth Element",
+    "time": 390,
+    "description": "Raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "onmyo_sigil_3",
+    "name": "Onmyo Sigil",
+    "time": 416,
+    "description": "More targeted sigil AoEs.",
+    "unmitigatedDamage": "~80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔮"
+  },
+  {
+    "id": "kanabo_2",
+    "name": "Iwa-no-shiki Kanabō",
+    "time": 425,
+    "description": "Physical tankbuster.",
+    "unmitigatedDamage": "~110,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "blue_bolt_red_rush_2",
+    "name": "Blue Bolt + Red Rush",
+    "time": 435,
+    "description": "Raidwide hits with two line dashes.",
+    "unmitigatedDamage": "~80,000 / ~40,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "⚡"
+  },
+  {
+    "id": "serpent_descending_3",
+    "name": "Serpent Descending",
+    "time": 442,
+    "description": "Multi-hit party damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "⬇️"
+  },
+  {
+    "id": "yama_no_shiki_handprint_2",
+    "name": "Yama-no-shiki Handprint",
+    "time": 449,
+    "description": "Targeted heavy hits on marked players.",
+    "unmitigatedDamage": "~90,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "✋"
+  },
+  {
+    "id": "fifth_element_6",
+    "name": "Fifth Element",
+    "time": 455,
+    "description": "Raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "force_coursing_set_1",
+    "name": "Force of Nature + Coursing River",
+    "time": 476,
+    "description": "Very low ticks followed by moderate line AoEs.",
+    "unmitigatedDamage": "~4,500 then ~17,000",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌊"
+  },
+  {
+    "id": "yama_no_shiki_handprint_3",
+    "name": "Yama-no-shiki Handprint",
+    "time": 500,
+    "description": "Targeted heavy hits.",
+    "unmitigatedDamage": "~85,000",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "✋"
+  },
+  {
+    "id": "force_coursing_set_2",
+    "name": "Force of Nature + Coursing River",
+    "time": 520,
+    "description": "Repeat of low ticks into sweeping lines.",
+    "unmitigatedDamage": "~4,500 then ~17,000",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌊"
+  },
+  {
+    "id": "forbidden_arts_3",
+    "name": "Forbidden Arts (set 3)",
+    "time": 528,
+    "description": "Burst sequence of magical hits; healers plan AoE heals.",
+    "unmitigatedDamage": "~75,000 total",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "📜"
+  },
+  {
+    "id": "fifth_element_7",
+    "name": "Fifth Element",
+    "time": 538,
+    "description": "Raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  },
+  {
+    "id": "infirm_karmic_loop_4",
+    "name": "Infirm Soul + Karmic Curse",
+    "time": 557,
+    "description": "Tankbuster followed by low ticking raidwide damage.",
+    "unmitigatedDamage": "~185,000 + ~10,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "onmyo_sigil_4",
+    "name": "Onmyo Sigil",
+    "time": 596,
+    "description": "Targeted sigil AoEs.",
+    "unmitigatedDamage": "~80,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🔮"
+  },
+  {
+    "id": "serpent_descending_4",
+    "name": "Serpent Descending",
+    "time": 612,
+    "description": "Patterned multi-hit party damage near the end of loop.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "⬇️"
+  },
+  {
+    "id": "fifth_element_8",
+    "name": "Fifth Element",
+    "time": 623,
+    "description": "Raidwide magical damage.",
+    "unmitigatedDamage": "~60,000",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🐍"
+  }
+]
+
