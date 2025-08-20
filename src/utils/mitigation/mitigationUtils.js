@@ -32,10 +32,10 @@ export const findActiveMitigationsAtTime = (assignments, bossActions, mitigation
   // Sort boss actions by time
   const sortedActions = [...bossActions].sort((a, b) => a.time - b.time);
 
-  // Check each boss action that occurs before the target time
+  // Check each boss action (past or future relative to targetTime)
   for (const action of sortedActions) {
-    // Skip if this is the target action or occurs after the target time
-    if (action.id === targetActionId || action.time >= targetTime) {
+    // Skip if this is the target action itself (we only want inherited/other windows here)
+    if (action.id === targetActionId) {
       continue;
     }
 
@@ -51,8 +51,16 @@ export const findActiveMitigationsAtTime = (assignments, bossActions, mitigation
       // Get the level-specific duration
       const duration = getAbilityDurationForLevel(mitigation, bossLevel);
 
-      // Calculate when this mitigation ends
-      const endTime = action.time + duration;
+      // Calculate when this mitigation starts (support precast) and ends
+      const precast = Number(assignedMitigation.precastSeconds || 0);
+      const startTime = Math.max(0, action.time - (isNaN(precast) ? 0 : precast));
+      const endTime = startTime + duration;
+
+      // Only count windows that have started by the target time
+      if (startTime > targetTime) {
+        continue;
+      }
+
 
       // Special handling for abilities that should be consumed by the first boss action
       // This includes:
@@ -65,8 +73,16 @@ export const findActiveMitigationsAtTime = (assignments, bossActions, mitigation
         !mitigation.regenPotency &&
         !mitigation.regenDuration;
       const isHealingWithBarrier = mitigation.type === 'healing' && mitigation.barrierPotency;
+      // NEW: Duration-based healing (e.g., Excogitation) should NOT carry over either.
+      // These heals are modeled as having a duration but should be consumed on the action they are assigned to.
+      const isDurationHealingSingleAction = mitigation.type === 'healing' &&
+        (mitigation.duration && mitigation.duration > 0) &&
+        // exclude pure buff-only entries
+        mitigation.healingType !== 'boost' &&
+        // exclude explicit regens; those heals are applied visually per-action only
+        !mitigation.regenPotency && !mitigation.regenDuration;
 
-      if (isBarrierWithoutRegen || isInstantHealingWithoutRegen || isHealingWithBarrier) {
+      if (isBarrierWithoutRegen || isInstantHealingWithoutRegen || isHealingWithBarrier || isDurationHealingSingleAction) {
         // These abilities should ONLY affect the boss action they're assigned to
         // They should NEVER carry over to subsequent actions, regardless of duration
         // For healing+barrier abilities like Succor/Adloquium: BOTH healing AND barrier are consumed immediately
@@ -84,10 +100,11 @@ export const findActiveMitigationsAtTime = (assignments, bossActions, mitigation
           ...assignedMitigation,
           sourceActionId: action.id,
           sourceActionName: action.name,
-          sourceActionTime: action.time,
+          sourceActionTime: startTime,
           remainingDuration: endTime - targetTime
         });
       }
+
     }
   }
 

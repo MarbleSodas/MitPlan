@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { Trash2 } from 'lucide-react';
 import {
@@ -9,7 +9,8 @@ import {
   getRoleSharedAbilityCount,
   calculateTotalMitigation,
   calculateMitigatedDamage,
-  calculateBarrierAmount
+  calculateBarrierAmount,
+  getHealingPotency,
 } from '../../../utils';
 import {
   useFilterContext,
@@ -578,21 +579,21 @@ const MobileMitigationSelector = ({
       // Find the mitigation in the current assignments to get its tank position
       const currentAssignments = assignments[bossAction.id] || [];
       const assignedMitigation = currentAssignments.find(m => m.id === mitigationId);
-      
+
       // Get the full mitigation data
       const fullMitigation = mitigations.find(m => m.id === mitigationId);
 
       // Use the tank position from the assigned mitigation if available
       let positionToRemove = tankPosition || (assignedMitigation && assignedMitigation.tankPosition) || null;
-      
+
       // If it's a tank-specific ability, make sure we're removing it with the correct tank position
       if (fullMitigation && fullMitigation.target === 'self' && fullMitigation.forTankBusters && !fullMitigation.forRaidWide) {
         const mainTankJob = tankPositions?.mainTank;
         const offTankJob = tankPositions?.offTank;
-        
+
         const canMainTankUse = mainTankJob && fullMitigation.jobs.includes(mainTankJob);
         const canOffTankUse = offTankJob && fullMitigation.jobs.includes(offTankJob);
-        
+
         // Override positionToRemove if we can determine the correct tank based on job compatibility
         if (canMainTankUse && !canOffTankUse) {
           positionToRemove = 'mainTank';
@@ -1063,31 +1064,86 @@ const MobileMitigationSelector = ({
               // Combine both types of mitigations
               const allMitigations = [...filteredDirectMitigations, ...filteredActiveMitigations];
 
-              // Calculate barrier mitigations
-              const barrierMitigations = allMitigations.filter(m => m.type === 'barrier');
+
+	              // Build full mitigation objects for direct assignments (preserve assignment metadata)
+	              const directMitigationsFull = filteredDirectMitigations.map(assignment => {
+	                const full = mitigationAbilities.find(m => m.id === assignment.id);
+	                if (!full) return null;
+	                return { ...full, ...assignment };
+	              }).filter(Boolean);
+
+              // Calculate barrier mitigations - DIRECT ASSIGNMENTS ONLY (do not inherit by duration)
+              const barrierMitigations = filteredDirectMitigations.filter(m => m.type === 'barrier' || (m.type === 'healing' && (m.barrierPotency || m.barrierFlatPotency)));
+
+              // Compute per-job healing potency bonuses present on this action (for healing-based barriers)
+              const healingBuffsByJob = useMemo(() => {
+                const buffs = {};
+                filteredDirectMitigations.forEach(a => {
+                  const job = Array.isArray(a.jobs) && a.jobs.length > 0 ? a.jobs[0] : null;
+                  if (!job) return;
+                  const bonus = a.healingPotencyBonus || null;
+                  let value = 0;
+                  let stackMode = 'multiplicative';
+                  if (bonus) {
+                    if (typeof bonus === 'number') {
+                      value = bonus;
+                    } else if (typeof bonus === 'object' && bonus.value !== undefined) {
+                      value = bonus.value;
+                      if (bonus.stackMode) stackMode = bonus.stackMode;
+                    }
+                    if (!buffs[job]) buffs[job] = { additive: 0, multiplicative: 1 };
+                    if (stackMode === 'additive') {
+                      buffs[job].additive += value;
+                    } else {
+                      buffs[job].multiplicative *= (1 + value);
+                    }
+                  }
+                });
+                return buffs;
+              }, [filteredDirectMitigations]);
+
+              const computeHealingModifierForAbility = (ability) => {
+                const job = Array.isArray(ability.jobs) && ability.jobs.length > 0 ? ability.jobs[0] : null;
+                if (!job || !healingBuffsByJob[job]) return 1;
+                const add = healingBuffsByJob[job].additive || 0;
+                const mult = healingBuffsByJob[job].multiplicative || 1;
+                return (1 + add) * mult;
+              };
+
+              const maybeAdjustHealingBarrier = (mitigation) => {
+                if ((mitigation.scaleBarrierWithHealing || mitigation.type === 'healing') && mitigation.barrierFlatPotency && mitigation.barrierFlatPotency > 0) {
+                  const modifier = computeHealingModifierForAbility(mitigation);
+                  if (modifier !== 1) {
+                    return { ...mitigation, barrierFlatPotency: mitigation.barrierFlatPotency * modifier };
+                  }
+                }
+                return mitigation;
+              };
+
 
               // Calculate mitigation percentage
               const mitigationPercentage = calculateTotalMitigation(allMitigations, bossAction.damageType, bossLevel);
               const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
 
               // Calculate barrier amounts for party and tank
+              const healingPotencyPer100 = getHealingPotency(bossLevel);
               const partyBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
-                if (!mitigation.barrierPotency) return total;
+                if (!(mitigation.barrierPotency > 0 || mitigation.barrierFlatPotency > 0)) return total;
 
                 // Only count party-wide barriers for party health bar
                 if (mitigation.target === 'party') {
-                  return total + calculateBarrierAmount(mitigation, baseHealth.party);
+                  return total + calculateBarrierAmount(maybeAdjustHealingBarrier(mitigation), baseHealth.party, healingPotencyPer100);
                 }
 
                 return total;
               }, 0);
 
               const tankBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
-                if (!mitigation.barrierPotency) return total;
+                if (!(mitigation.barrierPotency > 0 || mitigation.barrierFlatPotency > 0)) return total;
 
                 // Count both tank-specific and party-wide barriers for tank health bar
                 if (mitigation.target === 'party' || mitigation.targetsTank) {
-                  return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+                  return total + calculateBarrierAmount(maybeAdjustHealingBarrier(mitigation), baseHealth.tank, healingPotencyPer100);
                 }
 
                 return total;
@@ -1198,8 +1254,8 @@ const MobileMitigationSelector = ({
 
                   return false;
                 }).reduce((total, mitigation) => {
-                  if (!mitigation.barrierPotency) return total;
-                  return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+                  if (!(mitigation.barrierPotency > 0 || mitigation.barrierFlatPotency > 0)) return total;
+                  return total + calculateBarrierAmount(maybeAdjustHealingBarrier(mitigation), baseHealth.tank, healingPotencyPer100);
                 }, 0) : tankBarrierAmount;
 
               // Calculate barrier amounts for off tank
@@ -1231,8 +1287,8 @@ const MobileMitigationSelector = ({
 
                   return false;
                 }).reduce((total, mitigation) => {
-                  if (!mitigation.barrierPotency) return total;
-                  return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+                  if (!(mitigation.barrierPotency > 0 || mitigation.barrierFlatPotency > 0)) return total;
+                  return total + calculateBarrierAmount(maybeAdjustHealingBarrier(mitigation), baseHealth.tank, healingPotencyPer100);
                 }, 0) : tankBarrierAmount;
 
               return (
@@ -1256,8 +1312,8 @@ const MobileMitigationSelector = ({
                         {/* Main Tank - show "N/A" if no tank is selected */}
                         <HealthBar
                           label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
-                          maxHealth={baseHealth.tank}
-                          currentHealth={baseHealth.tank}
+                          maxHealth={Math.round(baseHealth.tank * (1 + (directMitigationsFull.reduce((sum, a) => sum + ((a.maxHpIncrease || 0) * ((a.target === 'party' || a.target === 'area' || a.tankPosition === 'shared' || a.tankPosition === 'mainTank') ? 1 : 0))), 0)))}
+                          currentHealth={Math.round(baseHealth.tank * (1 + (directMitigationsFull.reduce((sum, a) => sum + ((a.maxHpIncrease || 0) * ((a.target === 'party' || a.target === 'area' || a.tankPosition === 'shared' || a.tankPosition === 'mainTank') ? 1 : 0))), 0)))}
                           damageAmount={mainTankMitigatedDamage}
                           barrierAmount={mainTankBarrierAmount}
                           isTankBuster={true}
@@ -1268,8 +1324,8 @@ const MobileMitigationSelector = ({
                         {/* Off Tank - show "N/A" if no tank is selected */}
                         <HealthBar
                           label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
-                          maxHealth={baseHealth.tank}
-                          currentHealth={baseHealth.tank}
+                          maxHealth={Math.round(baseHealth.tank * (1 + (directMitigationsFull.reduce((sum, a) => sum + ((a.maxHpIncrease || 0) * ((a.target === 'party' || a.target === 'area' || a.tankPosition === 'shared' || a.tankPosition === 'offTank') ? 1 : 0))), 0)))}
+                          currentHealth={Math.round(baseHealth.tank * (1 + (directMitigationsFull.reduce((sum, a) => sum + ((a.maxHpIncrease || 0) * ((a.target === 'party' || a.target === 'area' || a.tankPosition === 'shared' || a.tankPosition === 'offTank') ? 1 : 0))), 0)))}
                           damageAmount={offTankMitigatedDamage}
                           barrierAmount={offTankBarrierAmount}
                           isTankBuster={true}
@@ -1281,8 +1337,8 @@ const MobileMitigationSelector = ({
                       // For single-target tank busters, only show the Main Tank health bar
                       <HealthBar
                         label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
-                        maxHealth={baseHealth.tank}
-                        currentHealth={baseHealth.tank}
+                        maxHealth={Math.round(baseHealth.tank * (1 + (directMitigationsFull.reduce((sum, a) => sum + ((a.maxHpIncrease || 0) * ((a.target === 'party' || a.target === 'area' || a.tankPosition === 'shared' || a.tankPosition === 'mainTank') ? 1 : 0))), 0)))}
+                        currentHealth={Math.round(baseHealth.tank * (1 + (directMitigationsFull.reduce((sum, a) => sum + ((a.maxHpIncrease || 0) * ((a.target === 'party' || a.target === 'area' || a.tankPosition === 'shared' || a.tankPosition === 'mainTank') ? 1 : 0))), 0)))}
                         damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
                         barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
                         isTankBuster={true}

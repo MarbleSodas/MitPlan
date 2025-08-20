@@ -93,12 +93,21 @@ const HealthBar = ({
   barrierAmount = 0,
   isTankBuster = false,
   tankPosition = null,
-  isDualTankBuster = false
+  isDualTankBuster = false,
+  applyBarrierFirst = false,
+  mitigationPercentage = 0
 }) => {
   // Calculate percentages for display
   const healthPercentage = Math.max(0, Math.min(100, (currentHealth / maxHealth) * 100));
   const barrierPercentage = Math.max(0, Math.min(100, (barrierAmount / maxHealth) * 100));
-  const damagePercentage = Math.max(0, Math.min(100, (damageAmount / maxHealth) * 100));
+
+  // Determine damage to health depending on calculation mode
+  const rawDamage = damageAmount || 0;
+  const healthLost = applyBarrierFirst
+    ? Math.max(0, (rawDamage - barrierAmount) * (1 - (mitigationPercentage || 0)))
+    : rawDamage; // legacy mode expects already-mitigated damage passed in
+
+  const damagePercentage = Math.max(0, Math.min(100, (healthLost / maxHealth) * 100));
 
   // Calculate where damage overlay should start
   const damageStartPercentage = Math.max(0, healthPercentage - damagePercentage);

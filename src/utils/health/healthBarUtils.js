@@ -44,15 +44,31 @@ export const calculateMitigatedDamage = (rawDamage, mitigationPercentage) => {
 
 /**
  * Calculate the barrier amount based on ability potency and max health
- * 
+ * Supports two representations:
+ * - barrierPotency: fraction of max HP (e.g., 0.15 for 15%)
+ * - barrierFlatPotency: healing potency to convert to HP using healingPotencyPer100
+ *
  * @param {Object} ability - The barrier ability
  * @param {number} maxHealth - The maximum health value
+ * @param {number} [healingPotencyPer100] - Healing amount per 100 potency (optional)
  * @returns {number} - The barrier amount
  */
-export const calculateBarrierAmount = (ability, maxHealth) => {
-  if (!ability || !ability.barrierPotency || !maxHealth) return 0;
-  
-  return maxHealth * ability.barrierPotency;
+export const calculateBarrierAmount = (ability, maxHealth, healingPotencyPer100 = null) => {
+  if (!ability || !maxHealth) return 0;
+
+  let amount = 0;
+
+  // Percentage of max HP component
+  if (ability.barrierPotency && ability.barrierPotency > 0) {
+    amount += maxHealth * ability.barrierPotency;
+  }
+
+  // Flat potency component -> absolute HP (if we know the conversion)
+  if (ability.barrierFlatPotency && ability.barrierFlatPotency > 0 && healingPotencyPer100) {
+    amount += (ability.barrierFlatPotency / 100) * healingPotencyPer100;
+  }
+
+  return amount;
 };
 
 /**
@@ -145,7 +161,35 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
 
   let totalHealing = 0;
 
+  // Compute per-job healing potency bonuses present on this action
+  const buffsByJob = {};
+  healingAbilities.forEach(a => {
+    const job = Array.isArray(a.jobs) && a.jobs.length > 0 ? a.jobs[0] : null;
+    if (!job) return;
+    const bonus = a.healingPotencyBonus || null;
+    let value = 0;
+    let stackMode = 'multiplicative';
+    if (bonus) {
+      if (typeof bonus === 'number') {
+        value = bonus;
+      } else if (typeof bonus === 'object' && bonus.value !== undefined) {
+        value = bonus.value;
+        if (bonus.stackMode) stackMode = bonus.stackMode;
+      }
+      if (!buffsByJob[job]) buffsByJob[job] = { additive: 0, multiplicative: 1 };
+      if (stackMode === 'additive') {
+        buffsByJob[job].additive += value;
+      } else {
+        buffsByJob[job].multiplicative *= (1 + value);
+      }
+    }
+  });
+
   healingAbilities.forEach(ability => {
+    // If an ability increases max HP, also apply an instant heal equal to the amount increased
+    if (ability.maxHpIncrease && ability.maxHpIncrease > 0 && maxHealth > 0) {
+      totalHealing += maxHealth * ability.maxHpIncrease;
+    }
     // Process abilities that have healing components (type: 'healing') or regen effects
     if (ability.type === 'healing' || (ability.regenPotency && ability.regenPotency > 0)) {
       let instantHealingPotency = 0;
@@ -189,13 +233,23 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
         // Full heal abilities like Benediction restore all HP
         totalHealing += maxHealth;
       } else if (ability.healingType === 'boost') {
-        // Healing boost abilities don't provide direct healing
-        // They would enhance other healing abilities, but we'll skip for now
+        // Healing boost abilities don't provide direct healing; accounted for as buffs above
         return;
       } else {
+        // Determine job-based healing modifier for this ability
+        const job = Array.isArray(ability.jobs) && ability.jobs.length > 0 ? ability.jobs[0] : null;
+        let modifier = 1;
+        if (job && buffsByJob[job]) {
+          // Apply additive and multiplicative as per FFXIV stacking conventions
+          // First apply additive bonuses to potency, then multiplicative multiplier
+          const add = buffsByJob[job].additive || 0; // e.g., +0.20
+          const mult = buffsByJob[job].multiplicative || 1; // e.g., 1.10 * 1.05
+          modifier = (1 + add) * mult;
+        }
+
         // Calculate instant healing component
         if (instantHealingPotency > 0) {
-          totalHealing += (instantHealingPotency / 100) * healingPotencyPer100;
+          totalHealing += ((instantHealingPotency * modifier) / 100) * healingPotencyPer100;
         }
 
         // Calculate regen healing component if present
@@ -203,7 +257,9 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
           // Assuming 3-second ticks for most regen effects in FFXIV
           const tickInterval = 3;
           const totalTicks = Math.floor(ability.regenDuration / tickInterval);
-          const regenHealing = (regenHealingPotency / 100) * healingPotencyPer100 * totalTicks;
+
+          // Apply modifier to total regen potency (per-action only)
+          const regenHealing = ((regenHealingPotency * modifier) / 100) * healingPotencyPer100 * totalTicks;
           totalHealing += regenHealing;
         }
       }

@@ -198,7 +198,8 @@ export const mitigationAbilities = [
     target: 'self', // Can only be used on self
     forTankBusters: true,
     forRaidWide: false,
-    count: 1 // Has 1 charge
+    count: 1, // Has 1 charge
+    upgradedBy: 'guardian' // Replaced by Guardian at level 92
   },
   {
     id: 'passage',
@@ -418,6 +419,7 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/thrill_of_battle.png',
     type: 'mitigation',
     mitigationValue: 0.20, // Effective mitigation through HP increase
+    maxHpIncrease: 0.20, // Visual max HP increase for health bars
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -736,12 +738,13 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/divine_benison.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.15, // Approximately 15% of max HP based on 500 potency
+    barrierFlatPotency: 500, // Official: absorbs damage equivalent to a heal of 500 potency
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
+    scaleBarrierWithHealing: true, // This shield scales with healing potency buffs
     upgradedBy: 'divine_caress' // This ability is replaced by Divine Caress at level 100
   },
   {
@@ -762,7 +765,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Increases caster's healing magic potency
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
   },
   {
     id: 'liturgy_of_the_bell',
@@ -977,12 +982,15 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/divine_caress.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.20, // Approximately 20% of max HP
+    barrierFlatPotency: 400, // Official: barrier equivalent to a heal of 400 potency (plus instant heal)
+    healingPotency: 400, // Official: restores HP with 400 potency
+    healingType: 'instant',
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    targetsTank: true
+    targetsTank: true,
+    scaleBarrierWithHealing: true // This shield scales with healing potency buffs
   },
   {
     id: 'aetherflow',
@@ -1061,7 +1069,7 @@ export const mitigationAbilities = [
     type: 'healing',
     healingPotency: 300,
     healingType: 'instant',
-    barrierPotency: 0.18, // 180% of healing as barrier
+    barrierFlatPotency: 540, // 180% of healing as barrier → 300 * 1.8 = 540 potency
     mitigationValue: 0,
     damageType: 'both',
     target: 'single',
@@ -1083,7 +1091,7 @@ export const mitigationAbilities = [
     type: 'healing',
     healingPotency: 200,
     healingType: 'instant',
-    barrierPotency: 0.16, // 160% of healing as barrier
+    barrierFlatPotency: 320, // 160% of healing as barrier → 200 * 1.6 = 320 potency
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
@@ -1180,6 +1188,28 @@ export const mitigationAbilities = [
     consumesAetherflow: true
   },
   {
+    id: 'protraction',
+    name: 'Protraction',
+    description: 'Increases target\'s maximum HP by 10% and increases HP recovery via healing actions by 10%. Also restores HP by the amount increased.',
+    levelRequirement: 86,
+    levelDescriptions: {
+      86: 'Increases target\'s maximum HP by 10% and increases HP recovery via healing actions by 10% for 10s. Also restores HP by the amount increased.'
+    },
+    duration: 10,
+    cooldown: 60,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Protraction.png',
+    type: 'mitigation',
+    mitigationValue: 0.10, // Model as effective 10% mitigation (EHP increase)
+    maxHpIncrease: 0.10, // Visual max HP increase for health bars
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    count: 1
+  },
+  {
     id: 'fey_illumination',
     name: 'Fey/Seraphic Illumination',
     description: 'Increases healing potency by 10% and reduces magic damage taken by party members by 5% for 20s',
@@ -1190,9 +1220,6 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 120,
     count: 1,
-    levelCharges: {
-      80: 2 // Has 2 charges at level 80
-    },
     jobs: ['SCH'],
     icon: '/abilities-gamerescape/fey_illumination.png',
     type: 'mitigation',
@@ -1200,7 +1227,54 @@ export const mitigationAbilities = [
     damageType: 'magical',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Healing potency bonus for Scholar heals on same action
+    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' }
+  },
+  {
+    id: 'summon_seraph',
+    name: 'Summon Seraph',
+    description: 'Summons Seraph to fight at your side. Seraph uses Seraphic Veil and grants access to Consolation.',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Summons Seraph to fight at your side for 22s. Grants access to Consolation.'
+    },
+    duration: 22,
+    cooldown: 120,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Summon_Seraph.png',
+    type: 'utility',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    count: 1
+  },
+  {
+    id: 'consolation',
+    name: 'Consolation',
+    description: 'Restores own HP and the HP of all nearby party members. Also grants a barrier.',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Restores HP of all nearby party members with 200 potency and grants a barrier equivalent to 200 potency. 2 charges. Usable while Seraph is summoned.'
+    },
+    duration: 30,
+    cooldown: 30,
+    count: 2,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Consolation.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    barrierFlatPotency: 200,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    scaleBarrierWithHealing: true,
+    requiresActiveWindow: { abilityId: 'summon_seraph' }
   },
   {
     id: 'expedient',
@@ -1238,7 +1312,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Increases Scholar healing potency
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
   },
 
   {
@@ -1322,7 +1398,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Increases AST healing potency for the caster's healing actions
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
   },
 
   // ASTROLOGIAN HEALING ABILITIES
@@ -1471,12 +1549,13 @@ export const mitigationAbilities = [
     icon: '/abilities-official/celestial_intersection.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.15, // Approximately 15% of max HP
+    barrierFlatPotency: 400, // Official: absorbs damage equivalent to a heal of 400 potency
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    targetsTank: true
+    targetsTank: true,
+    scaleBarrierWithHealing: true
   },
   {
     id: 'sun_sign',
@@ -1537,7 +1616,77 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
+    forRaidWide: true,
+    barrierFlatPotency: 300, // Official: barrier equivalent to a heal of 300 potency
+    scaleBarrierWithHealing: true
+  },
+  {
+    id: 'eukrasian_diagnosis',
+    name: 'Eukrasian Diagnosis',
+    description: 'Restores target\'s HP and erects a barrier equal to 180% of the HP restored',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores target\'s HP with 300 potency and erects a barrier equal to 180% of the HP restored'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/eukrasian_diagnosis.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
+    mitigationValue: 0,
+    barrierFlatPotency: 540, // Barrier equals 180% of HP restored → 300 * 1.8 = 540 potency
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true
+  },
+  {
+    id: 'eukrasian_prognosis',
+    name: 'Eukrasian Prognosis',
+    description: 'Restores own HP and the HP of all nearby party members and erects a barrier equal to 160% of the HP restored',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores party HP with 200 potency and erects a barrier equal to 160% of the HP restored'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/eukrasian_prognosis.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    mitigationValue: 0,
+    barrierFlatPotency: 320, // Barrier equals 160% of HP restored → 200 * 1.6 = 320 potency
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
     forRaidWide: true
+  },
+  {
+    id: 'eukrasian_prognosis_ii',
+    name: 'Eukrasian Prognosis II',
+    description: 'Restores party HP and erects a stronger barrier than Eukrasian Prognosis',
+    levelRequirement: 100,
+    levelDescriptions: {
+      100: 'Restores party HP with 200 potency and erects a barrier stronger than Eukrasian Prognosis'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/eukrasian_prognosis_ii.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    mitigationValue: 0,
+    barrierFlatPotency: 448, // Stronger than EP: 320 * 1.4 = 448 potency (approximation)
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    upgradedFrom: 'eukrasian_prognosis'
   },
   {
     id: 'haima',
@@ -1553,11 +1702,12 @@ export const mitigationAbilities = [
     icon: '/abilities-official/haima.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.30, // Approximately 30% of max HP (multiple barriers)
+    barrierFlatPotency: 300, // Healing-based barrier per stack (5 stacks total). For single-hit visualization, use 1 stack.
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
+    scaleBarrierWithHealing: true,
     targetsTank: true
   },
   {
@@ -1574,11 +1724,12 @@ export const mitigationAbilities = [
     icon: '/abilities-official/panhaima.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.20, // Approximately 20% of max HP (multiple barriers)
+    barrierFlatPotency: 200, // Healing-based barrier per stack (5 stacks total). For single-hit visualization, use 1 stack.
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    scaleBarrierWithHealing: true
   },
   {
     id: 'taurochole',
@@ -1619,7 +1770,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'self',
     forTankBusters: false,
-    forRaidWide: false
+    forRaidWide: false,
+    // Increases SGE healing potency for caster's next healing spell
+    healingPotencyBonus: { value: 0.50, stackMode: 'multiplicative' }
   },
   {
     id: 'philosophia',
@@ -1640,7 +1793,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Increases SGE healing potency for duration
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
   },
 
   // SAGE HEALING ABILITIES

@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import React, { useEffect } from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { RealtimeAppProvider } from '../../contexts/RealtimeAppProvider';
@@ -86,11 +87,11 @@ const PerformanceTestComponent = ({ tracker, onStateChange }) => {
   const tankContext = useTankPositionContext();
   const mitigationContext = useRealtimeMitigationContext();
 
-  React.useEffect(() => {
+  useEffect(() => {
     tracker.trackRender();
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (onStateChange) {
       onStateChange({
         planContext,

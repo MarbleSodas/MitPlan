@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
@@ -103,6 +103,49 @@ const ButtonGroup = styled.div`
     flex-direction: column;
     width: 100%;
     gap: 0.75rem;
+  }
+`;
+
+// Resizable split between timeline and mitigation list
+const Resizer = styled.div`
+  display: none;
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    display: flex;
+  }
+  align-items: stretch;
+  justify-content: center;
+  width: 10px;
+  cursor: col-resize;
+  user-select: none;
+  margin: 0 6px;
+  position: relative;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: ${props => props.theme.colors.border};
+    border-radius: 1px;
+  }
+
+  &:after {
+    content: '⋮';
+    font-size: 12px;
+    opacity: 0.7;
+    z-index: 1;
+  }
+`;
+
+const SplitLayout = styled.div`
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: ${props => props.theme.spacing.medium};
+
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    gap: ${props => props.theme.spacing.responsive.medium};
   }
 `;
 
@@ -231,8 +274,67 @@ const PlanningInterface = ({ onSave, saving }) => {
     checkAbilityAvailability,
     getActiveMitigations,
     pendingAssignments,
-    isInitialized
+    updateMitigationPrecast,
   } = useEnhancedMitigation();
+
+  // Split pane ratio state (timeline/mitigation)
+  const { planId } = useParams();
+  const splitContainerRef = useRef(null);
+  const [splitRatio, setSplitRatio] = useState(() => {
+    try {
+      const key = `plannerSplitRatio:${planId || 'default'}`;
+      const v = sessionStorage.getItem(key);
+      const parsed = v ? parseFloat(v) : NaN;
+      return Number.isFinite(parsed) ? Math.min(0.8, Math.max(0.4, parsed)) : 0.66;
+    } catch {
+      return 0.66;
+    }
+  });
+  useEffect(() => {
+    try {
+      const key = `plannerSplitRatio:${planId || 'default'}`;
+      sessionStorage.setItem(key, String(splitRatio));
+    } catch {}
+  }, [splitRatio, planId]);
+
+  const draggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const startRatioRef = useRef(splitRatio);
+
+
+  const onResizerMouseDown = useCallback((e) => {
+    // Prevent starting a DnD-kit drag from the handle
+    e.preventDefault();
+    e.stopPropagation();
+    if (!splitContainerRef.current) return;
+    draggingRef.current = true;
+    startXRef.current = e.clientX;
+    startRatioRef.current = splitRatio;
+
+    const onMove = (ev) => {
+      if (!draggingRef.current || !splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      if (!rect.width) return;
+      const delta = (ev.clientX - startXRef.current) / rect.width;
+      let next = startRatioRef.current + delta;
+      // Clamp to keep reasonable min/max widths
+      next = Math.max(0.4, Math.min(0.8, next));
+      setSplitRatio(next);
+    };
+
+    const onUp = () => {
+      draggingRef.current = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [splitRatio]);
+
+  const timelinePercent = Math.round(splitRatio * 100);
+  const mitigationPercent = 100 - timelinePercent;
+
   const { showAllMitigations, filterMitigations } = useFilterContext();
   const { tankPositions } = useTankPositionContext();
   const { openTankSelectionModal } = useTankSelectionModalContext();
@@ -437,8 +539,8 @@ const PlanningInterface = ({ onSave, saving }) => {
         <HealingPotencyInput />
       </ControlsContainer>
 
-      <MainContent>
-        <TimelineContainer>
+      <MainContent ref={splitContainerRef}>
+        <TimelineContainer style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }}>
           <BossActionsList>
             {sortedBossActions.map(action => {
               const isSelected = selectedBossAction?.id === action.id;
@@ -466,6 +568,8 @@ const PlanningInterface = ({ onSave, saving }) => {
                     selectedJobs={selectedJobs}
                     currentBossLevel={currentBossLevel}
                     isMobile={isMobile}
+                    onUpdatePrecast={updateMitigationPrecast}
+
                     onRemoveMitigation={removeMitigation}
                   />
                 </BossActionItem>
@@ -476,7 +580,9 @@ const PlanningInterface = ({ onSave, saving }) => {
         </TimelineContainer>
 
         {!isMobile && (
-          <MitigationContainer>
+          <>
+            <Resizer onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" />
+            <MitigationContainer style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}>
             <MitigationList>
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
@@ -513,6 +619,7 @@ const PlanningInterface = ({ onSave, saving }) => {
               })}
             </MitigationList>
           </MitigationContainer>
+          </>
         )}
       </MainContent>
 

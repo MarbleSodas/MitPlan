@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback, use
 import { mitigationAbilities } from '../data';
 import { CooldownManager, getCooldownManager, updateCooldownManager } from '../utils/cooldown/cooldownManager';
 import { initializeCooldownSystem } from '../utils/cooldown';
-import { findActiveMitigationsAtTime } from '../utils';
+import { findActiveMitigationsAtTime, getAbilityDurationForLevel } from '../utils';
 import { useBossContext } from './BossContext';
 import { useTankPositionContext } from './TankPositionContext';
 import { useRealtimePlan } from './RealtimePlanContext';
@@ -668,34 +668,71 @@ export const EnhancedMitigationProvider = ({ children }) => {
     }
   }, [isInitialized, updateAssignmentsRealtime, assignments]);
 
+  const updateMitigationPrecast = useCallback(async (bossActionId, mitigationId, tankPosition = null, precastSeconds = 0) => {
+    if (!isInitialized || !updateAssignmentsRealtime) {
+      console.warn('[EnhancedMitigationContext] Cannot update precast: not initialized');
+      return false;
+    }
+
+    // Clamp to ability duration when possible
+    const ability = mitigationAbilities.find(m => m.id === mitigationId);
+    const duration = ability ? getAbilityDurationForLevel(ability, currentBossLevel) : null;
+    const raw = Number(precastSeconds) || 0;
+    const clamped = Math.max(0, duration != null ? Math.min(raw, duration) : raw);
+
+    const updated = { ...assignments };
+    const actionAssignments = Array.isArray(updated[bossActionId]) ? [...updated[bossActionId]] : [];
+
+    let changed = false;
+    const nextActionAssignments = actionAssignments.map(a => {
+      if (a.id === mitigationId && (!tankPosition || a.tankPosition === tankPosition)) {
+        changed = true;
+        return { ...a, precastSeconds: clamped };
+      }
+      return a;
+    });
+
+    if (!changed) return false;
+
+    updated[bossActionId] = nextActionAssignments;
+    try {
+      await updateAssignmentsRealtime(updated);
+      return true;
+    } catch (e) {
+      console.error('[EnhancedMitigationContext] Failed to update precastSeconds', e);
+      return false;
+    }
+  }, [assignments, isInitialized, updateAssignmentsRealtime]);
+
   // Context value
   const contextValue = useMemo(() => ({
     // Cooldown checking
     checkAbilityAvailability,
     checkMultipleAbilities,
     getAvailableAbilities,
-    
+
     // Assignment management
     addMitigation,
     removeMitigation,
     getActiveMitigations,
+    updateMitigationPrecast,
 
     // Pending assignments
     pendingAssignments,
     addPendingAssignment,
     removePendingAssignment,
     hasPendingAssignment,
-    
+
     // Data access
     assignments: assignments || {},
     selectedJobs: selectedJobs || {},
     currentBossActions: currentBossActions || [],
     currentBossLevel: currentBossLevel || 90,
     tankPositions: tankPositions || {},
-    
+
     // Manager access (for advanced use cases)
     cooldownManager,
-    
+
     // Status
     isInitialized
   }), [
@@ -705,6 +742,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
     addMitigation,
     removeMitigation,
     getActiveMitigations,
+    updateMitigationPrecast,
     pendingAssignments,
     addPendingAssignment,
     removePendingAssignment,

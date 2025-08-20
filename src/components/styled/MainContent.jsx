@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 const MainContent = styled.main`
   display: flex;
-  gap: ${props => props.theme.spacing.large};
+  gap: ${props => props.theme.spacing.medium};
   width: 100%;
 
   @media (max-width: ${props => props.theme.breakpoints.tablet}) {

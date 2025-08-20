@@ -209,10 +209,12 @@ export class CooldownManager {
 
       mitigations.forEach((mitigation, index) => {
         if (mitigation.id === abilityId) {
+          const precast = Number(mitigation.precastSeconds || 0);
+          const usageTime = Math.max(0, bossAction.time - (isNaN(precast) ? 0 : precast));
           usages.push(new AbilityUsage({
             abilityId,
             bossActionId,
-            time: bossAction.time,
+            time: usageTime,
             actionName: bossAction.name,
             tankPosition: mitigation.tankPosition || null,
             instanceId: mitigation.instanceId || index,
@@ -332,6 +334,36 @@ export class CooldownManager {
             sharedCooldownGroup: ability.sharedCooldownGroup || null
           });
         }
+      }
+    }
+
+    // If this ability requires an active window from another ability (e.g., Consolation → Summon Seraph), enforce it
+    if (ability.requiresActiveWindow && ability.requiresActiveWindow.abilityId) {
+      const windowAbilityId = ability.requiresActiveWindow.abilityId;
+      const windowAbility = mitigationAbilities.find(m => m.id === windowAbilityId);
+      if (!windowAbility) {
+        return new AbilityAvailability({ abilityId: ability.id, isAvailable: false, reason: 'window_ability_missing' });
+      }
+      // Find a usage of the window ability whose duration covers targetTime
+      const windowUsages = this.getAbilityUsageHistory(windowAbilityId);
+      const windowActive = windowUsages.some(u => {
+        const duration = getAbilityCooldownForLevel(windowAbility, this.bossLevel); // placeholder, replaced below
+        return false;
+      });
+      // Proper duration check using ability duration helper
+      const getWindowDuration = (ab) => {
+        try {
+          // Lazy import to avoid circular deps in top-level
+          const { getAbilityDurationForLevel } = require('../abilities/abilityUtils');
+          return getAbilityDurationForLevel(ab, this.bossLevel);
+        } catch (e) {
+          return ab.duration || 0;
+        }
+      };
+      const windowDuration = getWindowDuration(windowAbility);
+      const isWithinWindow = this.getAbilityUsageHistory(windowAbilityId).some(u => (u.time <= targetTime && (u.time + windowDuration) >= targetTime));
+      if (!isWithinWindow) {
+        return new AbilityAvailability({ abilityId: ability.id, isAvailable: false, reason: 'requires_active_window' });
       }
     }
 

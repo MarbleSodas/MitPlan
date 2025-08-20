@@ -289,6 +289,8 @@ const EnhancedMitigationItem = memo(({
             <>Duration: {getAbilityDurationForLevel(mitigation, currentBossLevel)}s | </>
           )}
           Cooldown: {getAbilityCooldownForLevel(mitigation, currentBossLevel)}s
+          {mitigation.barrierPotency ? ` | Barrier: ${Math.round(mitigation.barrierPotency * 100)}% max HP` : ''}
+          {mitigation.barrierFlatPotency ? ` | Barrier: ${mitigation.barrierFlatPotency} potency` : ''}
         </small>
       </MitigationDescription>
 
