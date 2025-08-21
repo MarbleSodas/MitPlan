@@ -10,16 +10,6 @@ const MitigationContainer = styled.div`
   height: calc(100vh - 100px);
   min-height: 500px;
 
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    padding: ${props => props.theme.spacing.responsive.medium};
-    border-radius: ${props => props.theme.borderRadius.responsive.medium};
-    height: calc(100vh - 90px);
-    min-height: 450px;
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    display: none;
-  }
 `;
 
 export default MitigationContainer;

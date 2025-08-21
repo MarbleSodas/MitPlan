@@ -1,12 +1,9 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import AuthForm from '../auth';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
-import { useAuth } from '../../contexts/AuthContext';
 
 const LandingContainer = styled.div`
   min-height: 100vh;
@@ -27,15 +24,6 @@ const TopNavigation = styled.div`
   align-items: center;
   gap: 0.5rem;
 
-  @media (max-width: 768px) {
-    top: 1rem;
-    right: 1rem;
-    gap: 0.5rem;
-  }
-
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-  }
 `;
 
 const MainContent = styled.div`
@@ -53,11 +41,6 @@ const ContentWrapper = styled.div`
   gap: 4rem;
   align-items: center;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    text-align: center;
-  }
 `;
 
 const HeroSection = styled.div`
@@ -139,37 +122,8 @@ const AuthSection = styled.div`
   padding: 2rem;
 `;
 
-const DemoSection = styled.div`
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(102, 126, 234, 0.2);
-`;
 
-const DemoButton = styled.button`
-  padding: 0.75rem 2rem;
-  background: transparent;
-  color: #667eea;
-  border: 2px solid #667eea;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #667eea;
-    color: white;
-  }
-`;
-
-const LandingPage = ({ onAuthSuccess, onDemoMode }) => {
-  const navigate = useNavigate();
-  const { enableAnonymousMode } = useAuth();
-
-  const handleAnonymousMode = () => {
-    enableAnonymousMode();
-    navigate('/anonymous');
-  };
+const LandingPage = ({ onAuthSuccess }) => {
 
   const features = [
     'Plan mitigation strategies for FFXIV raids',

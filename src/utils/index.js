@@ -43,8 +43,6 @@ export {
 } from './storage/storageUtils';
 
 export {
-  isMobileDevice,
-  isTouchDevice
 } from './device/deviceUtils';
 
 export {

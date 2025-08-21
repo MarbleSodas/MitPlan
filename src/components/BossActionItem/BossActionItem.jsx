@@ -14,8 +14,7 @@ import {
   calculateBarrierAmount,
   getHealingPotency,
   calculateHealingAmount,
-  calculateHealthAfterHealing,
-  isTouchDevice
+  calculateHealthAfterHealing
 } from '../../utils';
 
 
@@ -58,9 +57,6 @@ const BossAction = styled.div`
   display: flex;
   flex-direction: column;
   margin-bottom: ${props => props.theme.spacing.medium};
-  -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
-  touch-action: manipulation; /* Optimize for touch */
-  user-select: none; /* Prevent text selection on touch */
 
   /* Desktop hover effect */
   @media (hover: hover) and (pointer: fine) {
@@ -357,8 +353,6 @@ const MitigationPercentage = styled.div`
   margin-bottom: 12px;
   border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)'};
   user-select: none; /* Prevent text selection */
-  min-height: 36px; /* Ensure minimum touch target size */
-  min-width: 100px; /* Ensure minimum touch target width */
 
   &::before {
     content: '🛡️';
@@ -406,8 +400,6 @@ const MultiHitIndicator = styled.div`
   margin-bottom: 12px;
   border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 102, 0, 0.2)'};
   user-select: none; /* Prevent text selection */
-  min-height: 36px; /* Ensure minimum touch target size */
-  min-width: 100px; /* Ensure minimum touch target width */
 
   &::before {
     content: '💥';
@@ -454,7 +446,7 @@ const BossActionItem = memo(({
 }) => {
   // State for touch feedback
   const [isTouched, setIsTouched] = useState(false);
-  const isTouch = isTouchDevice();
+  const isTouch = false;
 
   // Tank position context
   const { tankPositions } = useTankPositionContext();
@@ -931,9 +923,6 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       $hasAssignments={hasAssignments}
       $isTouched={isTouched}
       onClick={handleClick}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchCancel}
     >
       <ActionTime>{action.time} seconds</ActionTime>
       <ContentContainer $hasAssignments={hasAssignments}>

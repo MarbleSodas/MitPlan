@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useRealtimeBossContext } from '../../../contexts/RealtimeBossContext';
 
@@ -17,11 +17,6 @@ const Container = styled.div`
   border-radius: ${props => props.theme.borderRadius.medium};
   font-size: ${props => props.theme.fontSizes.small};
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 4px 8px;
-    gap: 0.375rem;
-    font-size: ${props => props.theme.fontSizes.xsmall};
-  }
 `;
 
 const Label = styled.span`
@@ -56,10 +51,6 @@ const PotencyInput = styled.input`
     border-color: #ef4444;
   }
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 3px 6px;
-    width: 60px;
-  }
 `;
 
 const HealingPotencyInput = () => {

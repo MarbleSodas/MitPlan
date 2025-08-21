@@ -13,32 +13,6 @@ const TimelineContainer = styled.div`
   display: flex;
   flex-direction: column;
 
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    padding: ${props => props.theme.spacing.responsive.medium};
-    border-radius: ${props => props.theme.borderRadius.responsive.medium};
-    height: calc(100vh - 90px);
-    min-height: 450px;
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.responsive.small};
-    border-radius: ${props => props.theme.borderRadius.responsive.small};
-    height: calc(100vh - 80px);
-    min-height: 400px;
-    margin-bottom: ${props => props.theme.spacing.responsive.medium};
-    flex: 1;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    padding: ${props => props.theme.spacing.xsmall};
-    border-radius: ${props => props.theme.borderRadius.small};
-    height: calc(100vh - 70px);
-    min-height: 350px;
-    margin-bottom: ${props => props.theme.spacing.small};
-  }
 `;
 
 export default TimelineContainer;

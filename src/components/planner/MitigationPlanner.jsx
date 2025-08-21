@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCollaboration } from '../../contexts/CollaborationContext';
 import { RealtimePlanProvider } from '../../contexts/RealtimePlanContext';
 import AppProvider from '../../contexts/AppProvider';
-import { useDeviceDetection } from '../../hooks';
+
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
@@ -24,7 +24,7 @@ import BossSelector from '../../features/bosses/BossSelector/BossSelector';
 import BossActionItem from '../BossActionItem/BossActionItem';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
-import MobileMitigationSelector from '../mobile/MobileMitigationSelector';
+
 import FilterToggle from '../common/FilterToggle';
 import TankSelectionModal from '../common/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
@@ -62,9 +62,6 @@ const PlannerContainer = styled.div`
   background: ${props => props.theme?.colors?.background || '#f5f5f5'};
   padding: 2rem;
 
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
 `;
 
 const Header = styled.div`
@@ -75,11 +72,6 @@ const Header = styled.div`
   padding-bottom: 1rem;
   border-bottom: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
 `;
 
 const Title = styled.h1`
@@ -88,10 +80,6 @@ const Title = styled.h1`
   font-weight: 600;
   margin: 0;
 
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-    text-align: center;
-  }
 `;
 
 const ButtonGroup = styled.div`
@@ -99,19 +87,11 @@ const ButtonGroup = styled.div`
   gap: 0.5rem;
   align-items: center;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    width: 100%;
-    gap: 0.75rem;
-  }
 `;
 
 // Resizable split between timeline and mitigation list
 const Resizer = styled.div`
-  display: none;
-  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
-    display: flex;
-  }
+  display: flex;
   align-items: stretch;
   justify-content: center;
   width: 10px;
@@ -144,9 +124,6 @@ const SplitLayout = styled.div`
   width: 100%;
   gap: ${props => props.theme.spacing.medium};
 
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    gap: ${props => props.theme.spacing.responsive.medium};
-  }
 `;
 
 const BackButton = styled.button`
@@ -203,11 +180,6 @@ const ControlsContainer = styled.div`
   border-radius: 8px;
   border: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
 
-  @media (max-width: 768px) {
-    padding: 0.75rem;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
 `;
 
 const LoadingMessage = styled.div`
@@ -259,7 +231,6 @@ const ReadOnlyBanner = styled.div`
 
 // Planning interface component that gets data from real-time contexts
 const PlanningInterface = ({ onSave, saving }) => {
-  const { isMobile } = useDeviceDetection();
 
   // Get real-time plan data
   const { realtimePlan, loading, error } = useRealtimePlan();
@@ -567,7 +538,6 @@ const PlanningInterface = ({ onSave, saving }) => {
                     getActiveMitigations={getActiveMitigations}
                     selectedJobs={selectedJobs}
                     currentBossLevel={currentBossLevel}
-                    isMobile={isMobile}
                     onUpdatePrecast={updateMitigationPrecast}
 
                     onRemoveMitigation={removeMitigation}
@@ -579,8 +549,7 @@ const PlanningInterface = ({ onSave, saving }) => {
           </BossActionsList>
         </TimelineContainer>
 
-        {!isMobile && (
-          <>
+        <>
             <Resizer onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" />
             <MitigationContainer style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}>
             <MitigationList>
@@ -620,21 +589,8 @@ const PlanningInterface = ({ onSave, saving }) => {
             </MitigationList>
           </MitigationContainer>
           </>
-        )}
       </MainContent>
 
-      {isMobile && selectedBossAction && (
-        <MobileMitigationSelector
-          mitigations={filteredMitigations}
-          bossAction={selectedBossAction}
-          assignments={assignments}
-          onAssignMitigation={addMitigation}
-          onRemoveMitigation={removeMitigation}
-          checkAbilityAvailability={checkAbilityAvailability}
-          bossLevel={currentBossLevel}
-          selectedJobs={selectedJobs}
-        />
-      )}
 
       <DragOverlay>
         {activeMitigation && (

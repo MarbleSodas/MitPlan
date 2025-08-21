@@ -15,11 +15,6 @@ const AuthContainer = styled.div`
   background: transparent;
   border-radius: 16px;
 
-  @media (max-width: 480px) {
-    margin: 1rem;
-    padding: 1.25rem 1rem;
-    border-radius: 12px;
-  }
 `;
 
 const Title = styled.h2`
@@ -31,10 +26,6 @@ const Title = styled.h2`
   line-height: 1.2;
   letter-spacing: -0.025em;
 
-  @media (max-width: 480px) {
-    font-size: 1.375rem;
-    margin-bottom: 1.25rem;
-  }
 `;
 
 const Form = styled.form`
@@ -80,10 +71,6 @@ const Input = styled.input`
     cursor: not-allowed;
   }
 
-  @media (max-width: 480px) {
-    padding: 0.75rem 0.875rem;
-    font-size: 16px; /* Prevents zoom on iOS */
-  }
 `;
 
 const Button = styled.button`
@@ -129,10 +116,6 @@ const Button = styled.button`
     box-shadow: 0 0 0 4px ${props => props.theme?.colors?.primary || '#3b82f6'}30;
   }
 
-  @media (max-width: 480px) {
-    padding: 0.75rem 1rem;
-    min-height: 42px;
-  }
 `;
 
 const SecondaryButton = styled(Button)`

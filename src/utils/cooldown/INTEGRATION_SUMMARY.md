@@ -42,7 +42,7 @@ The Enhanced Cooldown System has been successfully integrated into the MitPlan a
 - ✅ **EnhancedMitigationItem**: New component with cooldown state display
 - ✅ **EnhancedAetherflowGauge**: Enhanced Aetherflow stack display
 - ✅ **EnhancedChargeCounter**: New charge/instance counter component
-- ✅ **MobileMitigationSelector**: Updated for mobile compatibility
+- ❌ Mobile Mitigation Selector: Removed as the app is now desktop-only
 - ✅ **BossActionItem**: Updated to use enhanced system
 - ✅ **ChargeCounter**: Backward compatible with enhanced system
 - ✅ **AetherflowGauge**: Updated to use enhanced Aetherflow tracking
@@ -84,7 +84,7 @@ Enhanced Cooldown System
 - ✅ Multi-charge abilities show correct counts
 - ✅ Role-shared abilities show instance counts
 - ✅ Drag and drop respects availability
-- ✅ Mobile selector works correctly
+- ❌ Mobile selector removed (desktop-only)
 - ✅ Real-time collaboration functional
 - ✅ Aetherflow system integrated
 - ✅ Performance acceptable
@@ -139,7 +139,7 @@ Enhanced Cooldown System
 
 ### Completed Migrations
 - ✅ **MitigationPlanner**: Fully migrated to enhanced system
-- ✅ **MobileMitigationSelector**: Updated for enhanced availability checking
+- ❌ Mobile Mitigation Selector: Removed (desktop-only)
 - ✅ **BossActionItem**: Updated to use enhanced Aetherflow
 - ✅ **ChargeCounter**: Backward compatible with enhanced system
 - ✅ **AetherflowGauge**: Enhanced with new tracking system

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
 import Tooltip from '../common/Tooltip/Tooltip';
@@ -18,11 +18,6 @@ const GaugeContainer = styled.div`
   max-width: 300px;
   transition: all 0.3s ease;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 6px;
-    margin: 8px 0;
-    max-width: 250px;
-  }
 `;
 
 // Title for the gauge
@@ -35,11 +30,6 @@ const GaugeTitle = styled.div`
   color: ${props => props.theme.colors.text};
   font-size: ${props => props.theme.fontSizes.medium};
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
-    gap: 6px;
-    margin-bottom: 6px;
-  }
 `;
 
 // Icon for the gauge
@@ -52,10 +42,6 @@ const GaugeIcon = styled.div`
     width: 24px;
     height: 24px;
 
-    @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-      width: 20px;
-      height: 20px;
-    }
   }
 `;
 
@@ -65,10 +51,6 @@ const StacksContainer = styled.div`
   gap: 8px;
   margin-top: 6px;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    gap: 6px;
-    margin-top: 4px;
-  }
 `;
 
 // Individual stack indicator
@@ -81,10 +63,6 @@ const StackIndicator = styled.div`
   transition: all 0.3s ease;
   box-shadow: ${props => props.$active ? '0 0 8px 3px rgba(46, 204, 64, 0.4)' : 'none'}; /* Green glow */
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 22px;
-    height: 22px;
-  }
 `;
 
 // Cooldown text
@@ -94,10 +72,6 @@ const CooldownText = styled.div`
   margin-top: 4px;
   opacity: 0.8;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.xsmall};
-    margin-top: 2px;
-  }
 `;
 
 /**

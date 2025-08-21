@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import {
@@ -10,7 +10,7 @@ import {
   isMitigationAvailable
 } from '../../utils';
 import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
-import { useTankPositionContext } from '../../contexts';
+// import { useTankPositionContext } from '../../contexts';
 
 const AssignedMitigationsContainer = styled.div`
   position: absolute;
@@ -343,12 +343,11 @@ const AssignedMitigations = ({
   getActiveMitigations,
   selectedJobs,
   currentBossLevel,
-  isMobile,
   onRemoveMitigation,
   onUpdatePrecast
 }) => {
   // Get tank position context
-  const { tankPositions } = useTankPositionContext();
+  // const { tankPositions } = useTankPositionContext();
 
   // Get directly assigned mitigations
   const directMitigations = (assignments && assignments[action.id]) || [];
@@ -421,7 +420,7 @@ const AssignedMitigations = ({
                   flex: '1 1 auto',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: isMobile ? 'nowrap' : 'normal',
+                  whiteSpace: 'normal',
                   minWidth: 0,
                   display: 'flex',
                   alignItems: 'center'
@@ -501,9 +500,9 @@ const AssignedMitigations = ({
                   <MitigationIcon>
                     {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
                       <img src={fullMitigation.icon} alt={fullMitigation.name} style={{
-                        maxHeight: isMobile ? '12px' : '18px',
-                        maxWidth: isMobile ? '12px' : '18px',
-                        opacity: isMobile ? 0.8 : 0.7,
+                        maxHeight: '18px',
+                        maxWidth: '18px',
+                        opacity: 0.7,
                         display: 'block'
                       }} /> :
                       fullMitigation.icon
@@ -513,7 +512,7 @@ const AssignedMitigations = ({
                     flex: 1,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: isMobile ? 'nowrap' : 'normal',
+                    whiteSpace: 'normal',
                     display: 'flex',
                     alignItems: 'center'
                   }}>
@@ -525,8 +524,8 @@ const AssignedMitigations = ({
                     )}
                   </span>
                   <small style={{
-                    fontSize: isMobile ? '8px' : '9px',
-                    opacity: isMobile ? 0.9 : 0.8,
+                    fontSize: '9px',
+                    opacity: 0.8,
                     flexShrink: 0
                   }}>{mitigation.remainingDuration.toFixed(1)}s</small>
                 </InheritedMitigationItem>
