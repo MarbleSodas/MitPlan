@@ -15,6 +15,7 @@ import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
 import HealingPotencyInput from '../common/HealingPotencyInput/HealingPotencyInput';
+import PrecastToggle from '../common/PrecastToggle';
 import Footer from '../layout/Footer';
 
 
@@ -507,6 +508,7 @@ const PlanningInterface = ({ onSave, saving }) => {
 
       <ControlsContainer>
         <FilterToggle />
+        <PrecastToggle />
         <HealingPotencyInput />
       </ControlsContainer>
 

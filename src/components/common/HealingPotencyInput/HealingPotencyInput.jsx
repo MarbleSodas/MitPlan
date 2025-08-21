@@ -32,14 +32,14 @@ const LevelDisplay = styled.span`
 `;
 
 const PotencyInput = styled.input`
-  padding: 4px 8px;
+  padding: 2px 2px;
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   background: ${props => props.theme.colors.background};
   color: ${props => props.theme.colors.text};
   font-size: inherit;
   transition: border-color 0.2s ease;
-  width: 70px;
+  width: 60px;
   text-align: center;
 
   &:focus {

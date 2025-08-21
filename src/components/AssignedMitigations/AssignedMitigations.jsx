@@ -10,6 +10,7 @@ import {
   isMitigationAvailable
 } from '../../utils';
 import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
+import { useFilterContext } from '../../contexts';
 // import { useTankPositionContext } from '../../contexts';
 
 const AssignedMitigationsContainer = styled.div`
@@ -222,14 +223,28 @@ const MitigationIcon = styled.span`
 `;
 
 const PrecastInput = styled.input`
-  width: 48px;
-  font-size: 11px;
-  padding: 2px 4px;
-  margin-left: 6px;
-  border: 1px solid ${props => props.theme.colors.border};
+  width: 42px;
+  font-size: 12px;
+  padding: 1px 1px !important;
+  border: 1px solid ${props => props.theme.colors.border} !important;
   border-radius: 4px;
   background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'white'};
   color: inherit;
+  text-align: center;
+  transition: border-color 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+  
+  /* Hide default number input steppers for a clean look */
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 `;
 
 const RemoveButton = styled.button`
@@ -346,6 +361,7 @@ const AssignedMitigations = ({
   onRemoveMitigation,
   onUpdatePrecast
 }) => {
+  const { showPrecastOptions } = useFilterContext();
   // Get tank position context
   // const { tankPositions } = useTankPositionContext();
 
@@ -394,8 +410,8 @@ const AssignedMitigations = ({
 
         // Compute tooltip content directly (no useMemo)
         let tooltipContent = `${displayMitigation.name}${displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' ? ` (${displayMitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: ${getAbilityDescriptionForLevel(displayMitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(displayMitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(displayMitigation, currentBossLevel)}s${getAbilityChargeCount(displayMitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(displayMitigation, currentBossLevel)}` : ''}${displayMitigation.barrierPotency ? `, Barrier: ${Math.round(displayMitigation.barrierPotency * 100)}% max HP` : ''}${displayMitigation.barrierFlatPotency ? `, Barrier: ${displayMitigation.barrierFlatPotency} potency` : ''})${displayMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) * 100}%`}` : ''}`;
-        // Include precast in tooltip if present
-        if ((displayMitigation.precastSeconds || 0) > 0) {
+        // Include precast in tooltip if present and the UI is showing precast
+        if (showPrecastOptions && (displayMitigation.precastSeconds || 0) > 0) {
           tooltipContent += `\nPrecast: ${Number(displayMitigation.precastSeconds).toFixed(1)}s before`;
         }
 
@@ -432,35 +448,43 @@ const AssignedMitigations = ({
                     {displayMitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
                   </TankPositionBadge>
                 )}
-                {getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
-                  <>
-                    <span style={{ marginLeft: 6, opacity: 0.8 }}>precast</span>
-                    <span style={{ marginLeft: 4, opacity: 0.6, fontSize: 10 }}>
-                      max {getAbilityDurationForLevel(displayMitigation, currentBossLevel)}s
-                    </span>
-                    <PrecastInput
-                      type="number"
-                      min={0}
-                      max={getAbilityDurationForLevel(displayMitigation, currentBossLevel) || undefined}
-                      step={0.5}
-                      value={Number(displayMitigation.precastSeconds || 0)}
-                      onChange={(e) => {
-                        const raw = Number(e.target.value || 0);
-                        const dur = getAbilityDurationForLevel(displayMitigation, currentBossLevel) || 0;
-                        const clamped = Math.max(0, Math.min(raw, dur));
+              </span>
+              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                {showPrecastOptions && getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
+                  <PrecastInput
+                    type="number"
+                    min={0}
+                    max={getAbilityDurationForLevel(displayMitigation, currentBossLevel) || undefined}
+                    value={(displayMitigation.precastSeconds === 0 || displayMitigation.precastSeconds == null) ? '' : displayMitigation.precastSeconds}
+                    onChange={(e) => {
+                      const valStr = e.target.value;
+                      if (valStr === '') {
                         onUpdatePrecast && onUpdatePrecast(
                           action.id,
                           displayMitigation.id,
                           displayMitigation.tankPosition,
-                          clamped
+                          0
                         );
-                      }}
-                      title="Seconds to precast before boss action (max = ability duration)"
-                    />
-                  </>
+                        return;
+                      }
+                      const raw = parseFloat(valStr);
+                      if (isNaN(raw)) {
+                        return;
+                      }
+                      const dur = getAbilityDurationForLevel(displayMitigation, currentBossLevel) || 0;
+                      const clamped = Math.max(0, Math.min(raw, dur));
+                      onUpdatePrecast && onUpdatePrecast(
+                        action.id,
+                        displayMitigation.id,
+                        displayMitigation.tankPosition,
+                        clamped
+                      );
+                    }}
+                    inputMode="decimal"
+                    placeholder=""
+                    title="Seconds to precast before boss action (max = ability duration)"
+                  />
                 )}
-              </span>
-              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <RemoveButton
                   onClick={(e) => {
                     // Prevent event bubbling

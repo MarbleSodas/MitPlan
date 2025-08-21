@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
 
-// Create a context for the filter state
+// Create a context for the filter and controls state
 const FilterContext = createContext();
 
 /**
@@ -18,12 +18,27 @@ export const FilterProvider = ({ children }) => {
     return savedValue !== null ? savedValue : false;
   });
 
+  // Initialize precast visibility (default to true/showing)
+  const [showPrecastOptions, setShowPrecastOptions] = useState(() => {
+    const saved = loadFromLocalStorage('mitPlanShowPrecastOptions', null);
+    return saved !== null ? saved : true;
+  });
+
   // Toggle the filter state
   const toggleFilterMode = useCallback(() => {
     setShowAllMitigations(prev => {
       const newValue = !prev;
       saveToLocalStorage('mitPlanFilterShowAll', newValue);
       return newValue;
+    });
+  }, []);
+
+  // Toggle precast options visibility
+  const togglePrecastOptions = useCallback(() => {
+    setShowPrecastOptions(prev => {
+      const next = !prev;
+      saveToLocalStorage('mitPlanShowPrecastOptions', next);
+      return next;
     });
   }, []);
 
@@ -68,7 +83,9 @@ export const FilterProvider = ({ children }) => {
   const contextValue = {
     showAllMitigations,
     toggleFilterMode,
-    filterMitigations
+    filterMitigations,
+    showPrecastOptions,
+    togglePrecastOptions,
   };
 
   return (
