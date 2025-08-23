@@ -351,10 +351,10 @@ export class CooldownManager {
         return false;
       });
       // Proper duration check using ability duration helper
-      const getWindowDuration = (ab) => {
+      const getWindowDuration = async (ab) => {
         try {
           // Lazy import to avoid circular deps in top-level
-          const { getAbilityDurationForLevel } = require('../abilities/abilityUtils');
+          const { getAbilityDurationForLevel } = await import('../abilities/abilityUtils'); // dynamic import returns module; destructuring works in ESM env
           return getAbilityDurationForLevel(ab, this.bossLevel);
         } catch (e) {
           return ab.duration || 0;
@@ -373,7 +373,7 @@ export class CooldownManager {
     } else if (totalCharges > 1) {
       return this._checkMultiChargeAvailabilityEnhanced(ability, targetTime, targetBossActionId, options);
     } else {
-      return this._checkSingleChargeAvailability(ability, targetTime, targetBossActionId, options);
+      return this._checkSingleChargeAvailabilityEnhanced(ability, targetTime, targetBossActionId, options);
     }
   }
 
@@ -583,7 +583,7 @@ export class CooldownManager {
   /**
    * Check availability for single-charge abilities
    */
-  _checkSingleChargeAvailability(ability, targetTime, targetBossActionId, options) {
+  _checkSingleChargeAvailabilityEnhanced(ability, targetTime, targetBossActionId, options) {
     // Use shared cooldown usage history if the ability has a shared cooldown group
     const usageHistory = ability.sharedCooldownGroup
       ? this._getSharedCooldownUsageHistory(ability, targetTime)

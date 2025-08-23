@@ -698,9 +698,9 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     if (mitigation.consumesAetherflow) {
       // If we have access to the Aetherflow context, check if we can use the ability
       if (aetherflowContextRef.current) {
-        const { useAetherflowStack } = aetherflowContextRef.current;
-        // Use an Aetherflow stack
-        useAetherflowStack();
+        // The Aetherflow context provides imperative methods; calling them here is safe.
+        // This is NOT invoking a React Hook; it's calling a function exposed by the context.
+        aetherflowContextRef.current.useAetherflowStack();
       }
     }
 

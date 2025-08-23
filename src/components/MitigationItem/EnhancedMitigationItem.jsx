@@ -188,7 +188,6 @@ const EnhancedMitigationItem = memo(({
 }) => {
   // Get enhanced mitigation context
   const { checkAbilityAvailability, hasPendingAssignment } = useEnhancedMitigation();
-  const { tankPositions } = useTankPositionContext();
 
   // Check availability if we have a selected boss action
   const availability = useMemo(() => {

@@ -13,8 +13,7 @@ import {
   calculateMitigatedDamage,
   calculateBarrierAmount,
   getHealingPotency,
-  calculateHealingAmount,
-  calculateHealthAfterHealing
+  calculateHealingAmount
 } from '../../utils';
 
 
@@ -445,7 +444,7 @@ const BossActionItem = memo(({
   children
 }) => {
   // State for touch feedback
-  const [isTouched, setIsTouched] = useState(false);
+  const [isTouched] = useState(false);
   const isTouch = false;
 
   // Tank position context
@@ -454,17 +453,6 @@ const BossActionItem = memo(({
 
 
   // Touch event handlers
-  const handleTouchStart = useCallback(() => {
-    setIsTouched(true);
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    setIsTouched(false);
-  }, []);
-
-  const handleTouchCancel = useCallback(() => {
-    setIsTouched(false);
-  }, []);
 
   // Click handler with touch optimization
   const handleClick = useCallback((e) => {
@@ -605,7 +593,7 @@ const BossActionItem = memo(({
   };
 
   // Get general mitigation info (for display in the UI)
-  const { allMitigations, barrierMitigations, hasMitigations } = calculateMitigationInfo();
+  const { allMitigations, hasMitigations } = calculateMitigationInfo();
 
 
 
@@ -638,7 +626,7 @@ const BossActionItem = memo(({
 
   // Calculate general mitigation percentage (for display in the UI)
   const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
-  const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
+
 
 
 
@@ -661,9 +649,8 @@ const BossActionItem = memo(({
   const mainTankMitigationPercentage = calculateTotalMitigation(mainTankMitigations, action.damageType, currentBossLevel);
   const offTankMitigationPercentage = calculateTotalMitigation(offTankMitigations, action.damageType, currentBossLevel);
 
-  // Calculate the mitigated damage for each tank
-  const mainTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage);
-  const offTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage);
+  // Calculate the mitigated damage for each tank (values unused in UI; omit to reduce warnings)
+
   // For health bar visuals, restrict shields and heals to abilities assigned to THIS action only
   // Build direct-only mitigations (full ability objects) from assignments for this action
   const directMitigationsFull = (assignments[action.id] || [])

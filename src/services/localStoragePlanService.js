@@ -273,15 +273,6 @@ class LocalStoragePlanService {
   }
 
   /**
-   * Check if current user can edit a plan
-   * NOTE: Universal access enabled - all users can edit all plans
-   */
-  canEditPlan(planId) {
-    // Universal access: all users can edit all plans
-    return true;
-  }
-
-  /**
    * Export all plans for migration
    */
   exportPlansForMigration() {

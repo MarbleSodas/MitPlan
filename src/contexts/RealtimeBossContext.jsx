@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useMemo } from '
 import { useRealtimePlan } from './RealtimePlanContext';
 import { bossActionsMap, bosses } from '../data';
 import { processMultiHitTankBusters } from '../utils';
-import { autoAssignTankBusterMitigations, shouldTriggerAutoAssignment } from '../utils/mitigation/autoAssignmentUtils';
+// import { autoAssignTankBusterMitigations, shouldTriggerAutoAssignment } from '../utils/mitigation/autoAssignmentUtils';
 
 // Create the context
 const RealtimeBossContext = createContext();

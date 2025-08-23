@@ -193,8 +193,7 @@ export const generateMitigationBreakdown = (mitigations, damageType = 'both', bo
     return 'No mitigation applied';
   }
 
-  // Check if any mitigations have sourceActionId (inherited mitigations)
-  const hasInheritedMitigations = mitigations.some(m => m.sourceActionId);
+  // Note: breakdown handles both direct and inherited mitigations uniformly
 
   const totalMitigation = calculateTotalMitigation(mitigations, damageType, bossLevel);
   let breakdown = `Total mitigation: ${formatMitigation(totalMitigation)}\n\nBreakdown:`;
@@ -263,7 +262,7 @@ export const isMitigationAvailable = (mitigation, selectedJobs) => {
   // Check if any of the jobs that can use this ability are selected
   return mitigation.jobs.some(jobId => {
     // Find which role this job belongs to
-    for (const [roleKey, jobs] of Object.entries(selectedJobs)) {
+    for (const [, jobs] of Object.entries(selectedJobs)) {
       // Handle both optimized format (array of job IDs) and full format (array of job objects)
       if (Array.isArray(jobs)) {
         // Check if it's an array of strings (optimized format from Firebase)

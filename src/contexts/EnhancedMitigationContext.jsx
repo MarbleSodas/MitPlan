@@ -1,15 +1,15 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getAbilityDurationForLevel } from '../utils/abilities/abilityUtils';
 import { mitigationAbilities } from '../data';
 import { CooldownManager, getCooldownManager, updateCooldownManager } from '../utils/cooldown/cooldownManager';
 import { initializeCooldownSystem } from '../utils/cooldown';
-import { findActiveMitigationsAtTime, getAbilityDurationForLevel } from '../utils';
+import { findActiveMitigationsAtTime } from '../utils';
 import { useBossContext } from './BossContext';
 import { useTankPositionContext } from './TankPositionContext';
 import { useRealtimePlan } from './RealtimePlanContext';
 
 // Import realtime contexts for flexibility
 import { useRealtimeBossContext } from './RealtimeBossContext';
-import { useRealtimeJobContext } from './RealtimeJobContext';
 import { useJobContext } from './JobContext';
 import { useMitigationContext } from './MitigationContext';
 
@@ -271,7 +271,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
         selectedJobs,
         tankPositions,
         assignments,
-        enableValidation: process.env.NODE_ENV === 'development', // Enable validation in development
+        enableValidation: (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'development'), // Enable validation in development
         enableRealtimeSync: true
       });
 
@@ -480,13 +480,15 @@ export const EnhancedMitigationProvider = ({ children }) => {
       };
 
       // Update assignments immediately to prevent duplicate detection
-      setAssignments(updatedAssignments);
+      updateAssignmentsRealtime(updatedAssignments);
 
       // Update the cooldown manager with the new assignments and clear cache
       if (cooldownManagerRef.current) {
         cooldownManagerRef.current.update({ assignments: updatedAssignments });
         // Clear the usage history cache to ensure fresh availability check
-        cooldownManagerRef.current.usageHistoryCache.clear();
+        if (cooldownManagerRef.current.usageHistoryCache) {
+          cooldownManagerRef.current.usageHistoryCache.clear();
+        }
       }
 
       // Wait for the state update to propagate
@@ -820,7 +822,7 @@ export const LegacyEnhancedMitigationProvider = ({ children }) => {
         selectedJobs,
         tankPositions,
         assignments,
-        enableValidation: process.env.NODE_ENV === 'development', // Enable validation in development
+        enableValidation: (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'development'), // Enable validation in development
         enableRealtimeSync: false // Disable real-time sync for legacy mode
       });
 
@@ -928,7 +930,8 @@ export const LegacyEnhancedMitigationProvider = ({ children }) => {
     addMitigation,
     removeMitigation,
     getActiveMitigations,
-    handleTankPositionChange,
+    // Legacy provider doesn’t support tank position change registration
+    handleTankPositionChange: undefined,
 
     // Pending assignments
     pendingAssignments,
@@ -948,7 +951,8 @@ export const LegacyEnhancedMitigationProvider = ({ children }) => {
 
     // Status
     isInitialized,
-    forceUpdateCounter
+    // Legacy provider does not expose a forceUpdateCounter
+    forceUpdateCounter: 0
   }), [
     checkAbilityAvailability,
     checkMultipleAbilities,
@@ -956,7 +960,6 @@ export const LegacyEnhancedMitigationProvider = ({ children }) => {
     addMitigation,
     removeMitigation,
     getActiveMitigations,
-    handleTankPositionChange,
     pendingAssignments,
     addPendingAssignment,
     removePendingAssignment,
@@ -967,8 +970,7 @@ export const LegacyEnhancedMitigationProvider = ({ children }) => {
     currentBossLevel,
     tankPositions,
     cooldownManager,
-    isInitialized,
-    forceUpdateCounter
+    isInitialized
   ]);
 
   return (
