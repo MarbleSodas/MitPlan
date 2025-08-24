@@ -9,7 +9,8 @@ import { mitigationAbilities } from '../../data';
 import {
   getAbilityCooldownForLevel,
   getAbilityChargeCount,
-  getRoleSharedAbilityCount
+  getRoleSharedAbilityCount,
+  getAbilityDurationForLevel
 } from '../abilities/abilityUtils';
 import { ChargesTracker, getChargesTracker, updateChargesTracker } from './chargesTracker';
 import { InstancesTracker, getInstancesTracker, updateInstancesTracker } from './instancesTracker';
@@ -346,23 +347,10 @@ export class CooldownManager {
         return new AbilityAvailability({ abilityId: ability.id, isAvailable: false, reason: 'window_ability_missing' });
       }
       // Find a usage of the window ability whose duration covers targetTime
-      const windowUsages = this.getAbilityUsageHistory(windowAbilityId);
-      const windowActive = windowUsages.some(u => {
-        const duration = getAbilityCooldownForLevel(windowAbility, this.bossLevel); // placeholder, replaced below
-        return false;
-      });
-      // Proper duration check using ability duration helper
-      const getWindowDuration = async (ab) => {
-        try {
-          // Lazy import to avoid circular deps in top-level
-          const { getAbilityDurationForLevel } = await import('../abilities/abilityUtils'); // dynamic import returns module; destructuring works in ESM env
-          return getAbilityDurationForLevel(ab, this.bossLevel);
-        } catch (e) {
-          return ab.duration || 0;
-        }
-      };
-      const windowDuration = getWindowDuration(windowAbility);
-      const isWithinWindow = this.getAbilityUsageHistory(windowAbilityId).some(u => (u.time <= targetTime && (u.time + windowDuration) >= targetTime));
+      const windowDuration = getAbilityDurationForLevel(windowAbility, this.bossLevel) || windowAbility.duration || 0;
+      const isWithinWindow = this.getAbilityUsageHistory(windowAbilityId).some(u => (
+        u.time <= targetTime && (u.time + windowDuration) >= targetTime
+      ));
       if (!isWithinWindow) {
         return new AbilityAvailability({ abilityId: ability.id, isAvailable: false, reason: 'requires_active_window' });
       }

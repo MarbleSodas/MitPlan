@@ -856,6 +856,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   // - abilities that provide healing potency bonuses (healingPotencyBonus)
   const directHealingAbilitiesAll = directMitigationsFull.filter(m => (
     m.type === 'healing' ||
+    (m.healingPotency && m.healingPotency > 0) ||
     (m.regenPotency && m.regenPotency > 0) ||
     (m.healingPotencyBonus !== undefined) ||
     // Include max HP increase abilities so their instant heal (amount increased) is applied

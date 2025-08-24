@@ -190,8 +190,8 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
     if (ability.maxHpIncrease && ability.maxHpIncrease > 0 && maxHealth > 0) {
       totalHealing += maxHealth * ability.maxHpIncrease;
     }
-    // Process abilities that have healing components (type: 'healing') or regen effects
-    if (ability.type === 'healing' || (ability.regenPotency && ability.regenPotency > 0)) {
+    // Process abilities that have healing components (type: 'healing') or explicit healing potency or regen effects
+    if (ability.type === 'healing' || (ability.healingPotency && ability.healingPotency > 0) || (ability.regenPotency && ability.regenPotency > 0)) {
       let instantHealingPotency = 0;
       let regenHealingPotency = 0;
 
