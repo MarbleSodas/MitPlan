@@ -209,8 +209,9 @@ export class CooldownManager {
 
       mitigations.forEach((mitigation, index) => {
         if (mitigation.id === abilityId) {
-          const precast = Number(mitigation.precastSeconds || 0);
-          const usageTime = Math.max(0, bossAction.time - (isNaN(precast) ? 0 : precast));
+          let precast = Number(mitigation.precastSeconds);
+          if (!Number.isFinite(precast) || precast < 0) precast = 0;
+          const usageTime = Math.max(0, bossAction.time - precast);
           usages.push(new AbilityUsage({
             abilityId,
             bossActionId,
@@ -536,7 +537,9 @@ export class CooldownManager {
     }
 
     // If stacks are available, check normal cooldown
-    return this._checkSingleChargeAvailability(ability, targetTime, targetBossActionId, options);
+    const usages = this.getAbilityUsageHistory(ability.id).filter(u => u.time <= targetTime);
+    const cooldownDuration = getAbilityCooldownForLevel(ability, this.bossLevel);
+    return this._checkSingleChargeAvailability(ability, usages, targetTime, cooldownDuration);
   }
 
   /**
