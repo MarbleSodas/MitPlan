@@ -28,7 +28,8 @@ export const createPlan = async (userId, planData) => {
         'dancing-green-m5s': 'Dancing Green (M5S)',
         'sugar-riot': 'Sugar Riot (M6S)',
         'brute-abominator-m7s': 'Brute Abominator (M7S)',
-        'howling-blade-m8s': 'Howling Blade (M8S)'
+        'howling-blade-m8s': 'Howling Blade (M8S)',
+        'necron': 'Necron'
       };
       return bossNames[bossId] || 'Unknown Boss';
     };

@@ -13,7 +13,7 @@ export const bossActionsMap = {
   'sugar-riot': sugarRiotActions,
   'dancing-green-m5s': dancingGreenActions,
   lala: lalaActions,
-  statice: staticeActions,
+    statice: staticeActions,
   'brute-abominator-m7s': bruteAbominatorActions,
   'howling-blade-m8s': howlingBladeActions,
   necron: necronActions,
