@@ -1,7 +1,8 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
+import HealingHealthBar from '../common/HealingHealthBar';
 import TankMitigationDisplay from '../common/TankMitigationDisplay';
 import EnhancedAetherflowGauge from '../common/EnhancedAetherflowGauge/EnhancedAetherflowGauge.jsx';
 import {
@@ -11,7 +12,8 @@ import {
   isMitigationAvailable,
   calculateMitigatedDamage,
   calculateBarrierAmount,
-  isTouchDevice
+  getHealingPotency,
+  calculateHealingAmount
 } from '../../utils';
 
 
@@ -33,7 +35,7 @@ const BossAction = styled.div`
   padding-top: 40px; /* Fixed padding at top for time indicator */
 
   /* Desktop padding - optimized for 1920x1080, 1440x900, 2560x1440 */
-  padding-right: ${props => props.$hasAssignments ? 'clamp(210px, 15vw, 290px)' : props.theme.spacing.medium};
+  padding-right: ${props => props.$hasAssignments ? 'clamp(240px, 18vw, 320px)' : props.theme.spacing.medium};
   box-shadow: ${props => props.theme.shadows.small};
   position: relative;
   border-left: 4px solid ${props => {
@@ -54,9 +56,6 @@ const BossAction = styled.div`
   display: flex;
   flex-direction: column;
   margin-bottom: ${props => props.theme.spacing.medium};
-  -webkit-tap-highlight-color: transparent; /* Remove default mobile tap highlight */
-  touch-action: manipulation; /* Optimize for touch */
-  user-select: none; /* Prevent text selection on touch */
 
   /* Desktop hover effect */
   @media (hover: hover) and (pointer: fine) {
@@ -76,12 +75,12 @@ const BossAction = styled.div`
 
   /* Large desktop styles (2560x1440 and above) */
   @media (min-width: ${props => props.theme.breakpoints.largeDesktop}) {
-    padding-right: ${props => props.$hasAssignments ? '0px' : props.theme.spacing.medium};
+    padding-right: ${props => props.$hasAssignments ? 'clamp(260px, 16vw, 340px)' : props.theme.spacing.medium};
   }
 
   /* Standard desktop styles (1200px to 1440px) */
   @media (max-width: ${props => props.theme.breakpoints.largeDesktop}) and (min-width: ${props => props.theme.breakpoints.desktop}) {
-    padding-right: ${props => props.$hasAssignments ? '0px' : props.theme.spacing.medium};
+    padding-right: ${props => props.$hasAssignments ? 'clamp(220px, 15vw, 300px)' : props.theme.spacing.medium};
   }
 
   /* Large tablet styles (992px to 1200px) */
@@ -97,7 +96,7 @@ const BossAction = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
     padding: ${props => props.theme.spacing.responsive.medium};
     padding-top: 40px;
-    padding-right: ${props => props.$hasAssignments ? 'clamp(150px, 22vw, 190px)' : props.theme.spacing.responsive.medium};
+    padding-right: ${props => props.$hasAssignments ? 'clamp(170px, 24vw, 220px)' : props.theme.spacing.responsive.medium};
     min-height: 130px;
     border-radius: ${props => props.theme.borderRadius.responsive.medium};
   }
@@ -106,7 +105,7 @@ const BossAction = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.responsive.small};
     padding-top: 35px;
-    padding-right: ${props => props.$hasAssignments ? 'clamp(110px, 25vw, 150px)' : props.theme.spacing.responsive.small};
+    padding-right: ${props => props.$hasAssignments ? 'clamp(120px, 30vw, 180px)' : props.theme.spacing.responsive.small};
     min-height: 120px;
     margin-bottom: ${props => props.theme.spacing.responsive.small};
     position: relative;
@@ -117,7 +116,7 @@ const BossAction = styled.div`
   @media (max-width: ${props => props.theme.breakpoints.mobile}) {
     padding: ${props => props.theme.spacing.responsive.small};
     padding-top: 30px;
-    padding-right: ${props => props.$hasAssignments ? 'clamp(90px, 30vw, 130px)' : props.theme.spacing.responsive.small};
+    padding-right: ${props => props.$hasAssignments ? 'clamp(100px, 34vw, 150px)' : props.theme.spacing.responsive.small};
     min-height: 110px;
     margin-bottom: ${props => props.theme.spacing.responsive.small};
     position: relative;
@@ -353,8 +352,6 @@ const MitigationPercentage = styled.div`
   margin-bottom: 12px;
   border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)'};
   user-select: none; /* Prevent text selection */
-  min-height: 36px; /* Ensure minimum touch target size */
-  min-width: 100px; /* Ensure minimum touch target width */
 
   &::before {
     content: '🛡️';
@@ -402,8 +399,6 @@ const MultiHitIndicator = styled.div`
   margin-bottom: 12px;
   border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 102, 0, 0.2)'};
   user-select: none; /* Prevent text selection */
-  min-height: 36px; /* Ensure minimum touch target size */
-  min-width: 100px; /* Ensure minimum touch target width */
 
   &::before {
     content: '💥';
@@ -449,8 +444,8 @@ const BossActionItem = memo(({
   children
 }) => {
   // State for touch feedback
-  const [isTouched, setIsTouched] = useState(false);
-  const isTouch = isTouchDevice();
+  const [isTouched] = useState(false);
+  const isTouch = false;
 
   // Tank position context
   const { tankPositions } = useTankPositionContext();
@@ -458,17 +453,6 @@ const BossActionItem = memo(({
 
 
   // Touch event handlers
-  const handleTouchStart = useCallback(() => {
-    setIsTouched(true);
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    setIsTouched(false);
-  }, []);
-
-  const handleTouchCancel = useCallback(() => {
-    setIsTouched(false);
-  }, []);
 
   // Click handler with touch optimization
   const handleClick = useCallback((e) => {
@@ -609,7 +593,7 @@ const BossActionItem = memo(({
   };
 
   // Get general mitigation info (for display in the UI)
-  const { allMitigations, barrierMitigations, hasMitigations } = calculateMitigationInfo();
+  const { allMitigations, hasMitigations } = calculateMitigationInfo();
 
 
 
@@ -642,7 +626,7 @@ const BossActionItem = memo(({
 
   // Calculate general mitigation percentage (for display in the UI)
   const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
-  const mitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mitigationPercentage);
+
 
 
 
@@ -665,67 +649,119 @@ const BossActionItem = memo(({
   const mainTankMitigationPercentage = calculateTotalMitigation(mainTankMitigations, action.damageType, currentBossLevel);
   const offTankMitigationPercentage = calculateTotalMitigation(offTankMitigations, action.damageType, currentBossLevel);
 
-  // Calculate the mitigated damage for each tank
-  const mainTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, mainTankMitigationPercentage);
-  const offTankMitigatedDamage = calculateMitigatedDamage(unmitigatedDamage, offTankMitigationPercentage);
-  // Calculate barrier amounts for party and tanks
-  const partyBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
-    if (!mitigation.barrierPotency) return total;
+  // Calculate the mitigated damage for each tank (values unused in UI; omit to reduce warnings)
 
-    // Only count party-wide barriers for party health bar
-    if (mitigation.target === 'party') {
-      return total + calculateBarrierAmount(mitigation, baseHealth.party);
+  // For health bar visuals, restrict shields and heals to abilities assigned to THIS action only
+  // Build direct-only mitigations (full ability objects) from assignments for this action
+  const directMitigationsFull = (assignments[action.id] || [])
+    .map(assignment => {
+      const fullMitigation = mitigationAbilities.find(m => m.id === assignment.id);
+      if (!fullMitigation) return null;
+      return { ...fullMitigation, ...assignment };
+    })
+    .filter(mitigation => mitigation && isMitigationAvailable(mitigation, selectedJobs));
+
+  // Compute per-job healing potency bonuses present on this action (for healing-based barriers)
+  const healingBuffsByJob = useMemo(() => {
+    const buffs = {};
+    directMitigationsFull.forEach(a => {
+      const job = Array.isArray(a.jobs) && a.jobs.length > 0 ? a.jobs[0] : null;
+      if (!job) return;
+      const bonus = a.healingPotencyBonus || null;
+      let value = 0;
+      let stackMode = 'multiplicative';
+      if (bonus) {
+        if (typeof bonus === 'number') {
+          value = bonus;
+        } else if (typeof bonus === 'object' && bonus.value !== undefined) {
+          value = bonus.value;
+          if (bonus.stackMode) stackMode = bonus.stackMode;
+        }
+        if (!buffs[job]) buffs[job] = { additive: 0, multiplicative: 1 };
+        if (stackMode === 'additive') {
+          buffs[job].additive += value;
+        } else {
+          buffs[job].multiplicative *= (1 + value);
+        }
+      }
+    });
+    return buffs;
+  }, [directMitigationsFull]);
+
+  const computeHealingModifierForAbility = (ability) => {
+    const job = Array.isArray(ability.jobs) && ability.jobs.length > 0 ? ability.jobs[0] : null;
+    if (!job || !healingBuffsByJob[job]) return 1;
+    const add = healingBuffsByJob[job].additive || 0;
+    const mult = healingBuffsByJob[job].multiplicative || 1;
+    return (1 + add) * mult;
+  };
+
+  const withAdjustedBarrierPotency = (mitigation) => {
+    // Only scale healing-based barriers. We detect those as either explicit flag or type 'healing'
+    if ((mitigation.scaleBarrierWithHealing || mitigation.type === 'healing') && mitigation.barrierFlatPotency && mitigation.barrierFlatPotency > 0) {
+      const modifier = computeHealingModifierForAbility(mitigation);
+      if (modifier !== 1) {
+        return { ...mitigation, barrierFlatPotency: mitigation.barrierFlatPotency * modifier };
+      }
+    }
+    return mitigation;
+  };
+  // Include healing abilities that grant barriers (e.g., Adloquium, Succor)
+const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'barrier' || (m.type === 'healing' && (m.barrierPotency || m.barrierFlatPotency)));
+
+  // Calculate barrier amounts for party and tanks (direct-only)
+  const healingPotencyPer100 = getHealingPotency(currentBossLevel);
+  const partyBarrierAmount = directBarrierMitigations.reduce((total, mitigation) => {
+    // accept both % and flat potency barriers
+
+    // Only count party/area barriers for party health bar
+    if (mitigation.target === 'party' || mitigation.target === 'area') {
+      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.party, healingPotencyPer100);
     }
 
     return total;
   }, 0);
 
-  // Generic tank barrier amount for when no tank positions are assigned
-  const tankBarrierAmount = barrierMitigations.reduce((total, mitigation) => {
-    if (!mitigation.barrierPotency) return total;
-
-    // For party-wide barriers, include for all tanks
-    if (mitigation.target === 'party') {
-      return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+  // Generic tank barrier amount for when no tank positions are assigned (direct-only)
+  const tankBarrierAmount = directBarrierMitigations.reduce((total, mitigation) => {
+    // Party/area barriers apply to tanks as well
+    if (mitigation.target === 'party' || mitigation.target === 'area') {
+      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
     }
 
-    // For self-targeting barriers, only include if they're assigned to a tank
+    // For self-targeting barriers, only include if explicitly shared (unknown target tank in generic case)
     if (mitigation.target === 'self' && mitigation.tankPosition) {
-      // Since we don't know which tank this is for in the generic case,
-      // only include if it's marked as shared
       if (mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
       }
       return total;
     }
 
-    // For single-target barriers, only include if they're assigned to a tank
+    // For single-target barriers, only include if explicitly shared (unknown target tank in generic case)
     if (mitigation.target === 'single' && mitigation.tankPosition) {
-      // Since we don't know which tank this is for in the generic case,
-      // only include if it's marked as shared
       if (mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
       }
       return total;
     }
 
-    // For other barriers that target tanks
+    // For other barriers that explicitly target tanks
     if (mitigation.targetsTank) {
-      return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
     }
 
     return total;
   }, 0);
 
-  // Calculate barrier amounts for main tank using the same filtering logic as for mitigations
+  // Calculate barrier amounts for main tank using direct-only barriers
   const mainTankBarrierAmount = action.isTankBuster && tankPositions.mainTank ?
-    mainTankMitigationInfo.barrierMitigations.reduce((total, mitigation) => {
-      if (!mitigation.barrierPotency) return total;
+    directBarrierMitigations.reduce((total, mitigation) => {
+      if (!(mitigation.barrierPotency > 0 || mitigation.barrierFlatPotency > 0)) return total;
 
       // For self-targeting barriers, only include if they match this tank position
       if (mitigation.target === 'self') {
         if (mitigation.tankPosition === 'mainTank') {
-          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
         }
         return total;
       }
@@ -733,33 +769,33 @@ const BossActionItem = memo(({
       // For single-target barriers, only include if they're targeted at this tank
       if (mitigation.target === 'single') {
         if (mitigation.tankPosition === 'mainTank') {
-          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
         }
         return total;
       }
 
-      // For party-wide barriers, include for all tanks
+      // For party-wide/area barriers, include for all tanks
       if (mitigation.target === 'party' || mitigation.target === 'area') {
-        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
       }
 
       // Include barriers specifically for this tank position
       if (mitigation.tankPosition === 'mainTank' || mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
       }
 
       return total;
     }, 0) : tankBarrierAmount;
 
-  // Calculate barrier amounts for off tank using the same filtering logic as for mitigations
+  // Calculate barrier amounts for off tank using direct-only barriers
   const offTankBarrierAmount = action.isTankBuster && tankPositions.offTank ?
-    offTankMitigationInfo.barrierMitigations.reduce((total, mitigation) => {
-      if (!mitigation.barrierPotency) return total;
+    directBarrierMitigations.reduce((total, mitigation) => {
+      if (!(mitigation.barrierPotency > 0 || mitigation.barrierFlatPotency > 0)) return total;
 
       // For self-targeting barriers, only include if they match this tank position
       if (mitigation.target === 'self') {
         if (mitigation.tankPosition === 'offTank') {
-          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
         }
         return total;
       }
@@ -767,23 +803,104 @@ const BossActionItem = memo(({
       // For single-target barriers, only include if they're targeted at this tank
       if (mitigation.target === 'single') {
         if (mitigation.tankPosition === 'offTank') {
-          return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
         }
         return total;
       }
 
-      // For party-wide barriers, include for all tanks
+      // For party-wide/area barriers, include for all tanks
       if (mitigation.target === 'party' || mitigation.target === 'area') {
-        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
       }
 
       // Include barriers specifically for this tank position
       if (mitigation.tankPosition === 'offTank' || mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(mitigation, baseHealth.tank);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
       }
 
       return total;
     }, 0) : tankBarrierAmount;
+
+  // Compute visual max HP increases from direct assignments
+  const computeHpIncreaseForTank = (tankPos) => {
+    return directMitigationsFull.reduce((sum, mitigation) => {
+      const inc = mitigation.maxHpIncrease || 0;
+      if (!inc) return sum;
+
+      if (mitigation.target === 'party' || mitigation.target === 'area') return sum + inc; // affects everyone
+      if (mitigation.tankPosition === 'shared') return sum + inc; // shared applies to both
+
+      if (mitigation.target === 'self') {
+        return mitigation.tankPosition === tankPos ? sum + inc : sum;
+      }
+      if (mitigation.target === 'single') {
+        return mitigation.tankPosition === tankPos ? sum + inc : sum;
+      }
+      return sum;
+    }, 0);
+  };
+
+  const mainTankHpIncrease = computeHpIncreaseForTank('mainTank');
+  const offTankHpIncrease = computeHpIncreaseForTank('offTank');
+
+  const mainTankMaxHealthEffective = Math.round(baseHealth.tank * (1 + mainTankHpIncrease));
+  const offTankMaxHealthEffective = Math.round(baseHealth.tank * (1 + offTankHpIncrease));
+
+  // Calculate healing amounts (direct-only)
+  const healingPotency = getHealingPotency(currentBossLevel);
+
+  // Direct healing abilities and healing potency buffs assigned to this action
+  // Include:
+  // - healing abilities (type === 'healing')
+  // - abilities with regen effects (regenPotency)
+  // - abilities that provide healing potency bonuses (healingPotencyBonus)
+  const directHealingAbilitiesAll = directMitigationsFull.filter(m => (
+    m.type === 'healing' ||
+    (m.regenPotency && m.regenPotency > 0) ||
+    (m.healingPotencyBonus !== undefined) ||
+    // Include max HP increase abilities so their instant heal (amount increased) is applied
+    (m.maxHpIncrease && m.maxHpIncrease > 0)
+  ));
+
+  // Party healing: include party/area heals, plus any healing potency buffs present on this action (regardless of target)
+  const partyHealingAbilities = directHealingAbilitiesAll.filter(m => (
+    (m.target === 'party' || m.target === 'area') || (m.healingPotencyBonus !== undefined)
+  ));
+
+  // Tank-specific healing abilities for each tank (include party/area heals as they benefit both)
+  const mainTankHealingAbilities = directHealingAbilitiesAll.filter(m => {
+    if (m.target === 'self') return m.tankPosition === 'mainTank';
+    if (m.target === 'single') return m.tankPosition === 'mainTank';
+    if (m.target === 'party' || m.target === 'area') return true;
+    if (m.tankPosition === 'mainTank' || m.tankPosition === 'shared') return true;
+    return false;
+  });
+
+  const offTankHealingAbilities = directHealingAbilitiesAll.filter(m => {
+    if (m.target === 'self') return m.tankPosition === 'offTank';
+    if (m.target === 'single') return m.tankPosition === 'offTank';
+    if (m.target === 'party' || m.target === 'area') return true;
+    if (m.tankPosition === 'offTank' || m.tankPosition === 'shared') return true;
+    return false;
+  });
+
+  // Include any healing potency buff abilities to ensure they influence calculations for tanks
+  const healingBuffs = directHealingAbilitiesAll.filter(m => m.healingPotencyBonus !== undefined);
+  const dedupById = (arr) => {
+    const seen = new Set();
+    return arr.filter(item => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  };
+  const mainTankHealingWithBuffs = dedupById([...mainTankHealingAbilities, ...healingBuffs]);
+  const offTankHealingWithBuffs = dedupById([...offTankHealingAbilities, ...healingBuffs]);
+
+  // Calculate healing amounts
+  const partyHealingAmount = calculateHealingAmount(partyHealingAbilities, healingPotency, currentBossLevel, baseHealth.party);
+  const mainTankHealingAmount = calculateHealingAmount(mainTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
+  const offTankHealingAmount = calculateHealingAmount(offTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
 
   return (
     <BossAction
@@ -793,9 +910,6 @@ const BossActionItem = memo(({
       $hasAssignments={hasAssignments}
       $isTouched={isTouched}
       onClick={handleClick}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchCancel}
     >
       <ActionTime>{action.time} seconds</ActionTime>
       <ContentContainer $hasAssignments={hasAssignments}>
@@ -870,11 +984,24 @@ const BossActionItem = memo(({
                     {/* Main Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
-                        maxHealth={baseHealth.tank}
-                        currentHealth={baseHealth.tank}
-                        damageAmount={mainTankMitigatedDamage}
+                        label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
+                        maxHealth={mainTankMaxHealthEffective}
+                        currentHealth={mainTankMaxHealthEffective}
+                        damageAmount={unmitigatedDamage}
                         barrierAmount={mainTankBarrierAmount}
+                        isTankBuster={true}
+                        tankPosition="mainTank"
+                        isDualTankBuster={true}
+                        applyBarrierFirst={true}
+                        mitigationPercentage={mainTankMitigationPercentage}
+                      />
+                      {/* Main Tank Healing Health Bar - Always show */}
+                      <HealingHealthBar
+                        label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                        maxHealth={mainTankMaxHealthEffective}
+                        remainingHealth={Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - mainTankBarrierAmount) * (1 - mainTankMitigationPercentage))}
+                        healingAmount={mainTankHealingAmount}
+                        barrierAmount={0} // Barriers are already accounted for in remaining health
                         isTankBuster={true}
                         tankPosition="mainTank"
                         isDualTankBuster={true}
@@ -885,26 +1012,53 @@ const BossActionItem = memo(({
                     </div>
 
                     {/* Off Tank - show "N/A" if no tank is selected */}
-                    <HealthBar
-                      label={`Off Tank (${tankPositions.offTank || 'N/A'})`}
-                      maxHealth={baseHealth.tank}
-                      currentHealth={baseHealth.tank}
-                      damageAmount={offTankMitigatedDamage}
-                      barrierAmount={offTankBarrierAmount}
-                      isTankBuster={true}
-                      tankPosition="offTank"
-                      isDualTankBuster={true}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <HealthBar
+                        label={`Off Tank After Damage (${tankPositions.offTank || 'N/A'})`}
+                        maxHealth={offTankMaxHealthEffective}
+                        currentHealth={offTankMaxHealthEffective}
+                        damageAmount={unmitigatedDamage}
+                        barrierAmount={offTankBarrierAmount}
+                        isTankBuster={true}
+                        tankPosition="offTank"
+                        isDualTankBuster={true}
+                        applyBarrierFirst={true}
+                        mitigationPercentage={offTankMitigationPercentage}
+                      />
+                      {/* Off Tank Healing Health Bar - Always show */}
+                      <HealingHealthBar
+                        label={`Off Tank After Healing (${tankPositions.offTank || 'N/A'})`}
+                        maxHealth={offTankMaxHealthEffective}
+                        remainingHealth={Math.max(0, offTankMaxHealthEffective - Math.max(0, unmitigatedDamage - offTankBarrierAmount) * (1 - offTankMitigationPercentage))}
+                        healingAmount={offTankHealingAmount}
+                        barrierAmount={0} // Barriers are already accounted for in remaining health
+                        isTankBuster={true}
+                        tankPosition="offTank"
+                        isDualTankBuster={true}
+                      />
+                    </div>
                   </>
                 ) : (
                   /* For single-target tank busters, only show the Main Tank health bar */
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <HealthBar
-                      label={`Main Tank (${tankPositions.mainTank || 'N/A'})`}
-                      maxHealth={baseHealth.tank}
-                      currentHealth={baseHealth.tank}
-                      damageAmount={tankPositions.mainTank ? mainTankMitigatedDamage : mitigatedDamage}
+                      label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
+                      maxHealth={mainTankMaxHealthEffective}
+                      currentHealth={mainTankMaxHealthEffective}
+                      damageAmount={unmitigatedDamage}
                       barrierAmount={tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount}
+                      isTankBuster={true}
+                      tankPosition="mainTank"
+                      applyBarrierFirst={true}
+                      mitigationPercentage={tankPositions.mainTank ? mainTankMitigationPercentage : mitigationPercentage}
+                    />
+                    {/* Main Tank Healing Health Bar for single tank busters - Always show */}
+                    <HealingHealthBar
+                      label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                      maxHealth={mainTankMaxHealthEffective}
+                      remainingHealth={Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - (tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount)) * (1 - (tankPositions.mainTank ? mainTankMitigationPercentage : mitigationPercentage)))}
+                      healingAmount={mainTankHealingAmount}
+                      barrierAmount={0} // Barriers are already accounted for in remaining health
                       isTankBuster={true}
                       tankPosition="mainTank"
                     />
@@ -917,11 +1071,22 @@ const BossActionItem = memo(({
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <HealthBar
-                  label="Party Health"
+                  label="Party After Damage"
                   maxHealth={baseHealth.party}
                   currentHealth={baseHealth.party}
-                  damageAmount={mitigatedDamage}
+                  damageAmount={unmitigatedDamage}
                   barrierAmount={partyBarrierAmount}
+                  isTankBuster={false}
+                  applyBarrierFirst={true}
+                  mitigationPercentage={mitigationPercentage}
+                />
+                {/* Party Healing Health Bar - Always show */}
+                <HealingHealthBar
+                  label="Party After Healing"
+                  maxHealth={baseHealth.party}
+                  remainingHealth={Math.max(0, baseHealth.party - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage))}
+                  healingAmount={partyHealingAmount}
+                  barrierAmount={0} // Barriers are already accounted for in remaining health
                   isTankBuster={false}
                 />
                 {isSelected && isScholarSelected && (
@@ -932,6 +1097,8 @@ const BossActionItem = memo(({
           </div>
         </>
       )}
+
+
 
       {/* Display Aetherflow gauge if Scholar is selected and this is the selected boss action */}
       {/* (Moved next to tank health bar for tank busters) */}

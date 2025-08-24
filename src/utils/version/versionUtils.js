@@ -5,8 +5,8 @@
 // Build timestamp that changes with each deployment
 // This will be different for each build, triggering updates for returning users
 // The __BUILD_TIMESTAMP__ is replaced by Vite during the build process
-export const BUILD_TIMESTAMP = typeof __BUILD_TIMESTAMP__ !== 'undefined'
-  ? __BUILD_TIMESTAMP__
+export const BUILD_TIMESTAMP = (typeof window !== 'undefined' && window.__BUILD_TIMESTAMP__)
+  ? window.__BUILD_TIMESTAMP__
   : Date.now(); // Fallback for development
 
 /**

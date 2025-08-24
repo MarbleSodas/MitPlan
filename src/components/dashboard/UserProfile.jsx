@@ -18,10 +18,6 @@ const ProfileContainer = styled.div`
     background-color: ${props => props.theme?.colors?.backgroundSecondary || 'rgba(0, 0, 0, 0.05)'};
   }
 
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-    padding: 0.375rem;
-  }
 `;
 
 const UserAvatar = styled.div`
@@ -37,11 +33,6 @@ const UserAvatar = styled.div`
   font-size: 0.875rem;
   flex-shrink: 0;
 
-  @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
-    font-size: 0.8rem;
-  }
 `;
 
 const UserInfo = styled.div`
@@ -58,9 +49,6 @@ const DisplayName = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
 
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
-  }
 `;
 
 
@@ -75,10 +63,6 @@ const EditIcon = styled(Edit3)`
     opacity: 1;
   }
 
-  @media (max-width: 768px) {
-    width: 12px;
-    height: 12px;
-  }
 `;
 
 // Modal styles

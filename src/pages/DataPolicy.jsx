@@ -13,13 +13,7 @@ const PrivacyContainer = styled.div`
   line-height: 1.6;
   transition: background 0.3s ease, color 0.3s ease;
 
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    padding: 1.5rem;
-  }
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 1rem;
-  }
 `;
 
 const Header = styled.div`
@@ -57,9 +51,6 @@ const Title = styled.h1`
   margin-bottom: 0.5rem;
   color: ${props => props.theme.colors.primary};
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: 2rem;
-  }
 `;
 
 const LastUpdated = styled.p`

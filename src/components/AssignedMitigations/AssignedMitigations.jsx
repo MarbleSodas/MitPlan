@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import {
@@ -10,11 +10,12 @@ import {
   isMitigationAvailable
 } from '../../utils';
 import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
-import { useTankPositionContext } from '../../contexts';
+import { useFilterContext } from '../../contexts';
+// import { useTankPositionContext } from '../../contexts';
 
 const AssignedMitigationsContainer = styled.div`
   position: absolute;
-  top: 35px;
+  top: 30px;
   right: 0;
   display: flex;
   flex-direction: column;
@@ -31,15 +32,15 @@ const AssignedMitigationsContainer = styled.div`
   box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
 
   /* Desktop styles - optimized for 1920x1080, 1440x900, 2560x1440 */
-  width: clamp(200px, 15vw, 280px);
-  min-width: 200px;
-  max-width: 280px;
+  width: clamp(220px, 16vw, 300px);
+  min-width: 220px;
+  max-width: 320px;
 
   /* Large desktop styles (2560x1440 and above) */
   @media (min-width: ${props => props.theme.breakpoints.largeDesktop}) {
-    width: clamp(240px, 12vw, 320px);
+    width: clamp(240px, 15vw, 320px);
     min-width: 240px;
-    max-width: 320px;
+    max-width: 340px;
     padding: 10px 12px;
     gap: 8px;
     font-size: ${props => props.theme.fontSizes.medium};
@@ -47,25 +48,25 @@ const AssignedMitigationsContainer = styled.div`
 
   /* Standard desktop styles (1200px to 1440px) */
   @media (max-width: ${props => props.theme.breakpoints.largeDesktop}) and (min-width: ${props => props.theme.breakpoints.desktop}) {
-    width: clamp(180px, 16vw, 240px);
-    min-width: 180px;
-    max-width: 240px;
+    width: clamp(220px, 17vw, 300px);
+    min-width: 220px;
+    max-width: 320px;
   }
 
   /* Large tablet styles (992px to 1200px) */
   @media (max-width: ${props => props.theme.breakpoints.desktop}) and (min-width: ${props => props.theme.breakpoints.largeTablet}) {
-    width: clamp(160px, 18vw, 200px);
-    min-width: 160px;
-    max-width: 200px;
-    padding: 5px 7px;
-    gap: 5px;
+    width: clamp(180px, 22vw, 240px);
+    min-width: 180px;
+    max-width: 240px;
+    padding: 5px 6px;
+    gap: 4px;
   }
 
   /* Tablet styles (768px to 992px) */
   @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    width: clamp(140px, 22vw, 180px);
-    min-width: 140px;
-    max-width: 180px;
+    width: clamp(160px, 26vw, 220px);
+    min-width: 160px;
+    max-width: 220px;
     padding: 4px 6px;
     gap: 4px;
   }
@@ -221,6 +222,31 @@ const MitigationIcon = styled.span`
   }
 `;
 
+const PrecastInput = styled.input`
+  width: 42px;
+  font-size: 12px;
+  padding: 1px 1px !important;
+  border: 1px solid ${props => props.theme.colors.border} !important;
+  border-radius: 4px;
+  background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'white'};
+  color: inherit;
+  text-align: center;
+  transition: border-color 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+  
+  /* Hide default number input steppers for a clean look */
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+`;
+
 const RemoveButton = styled.button`
   cursor: pointer;
   font-size: 18px;
@@ -332,11 +358,12 @@ const AssignedMitigations = ({
   getActiveMitigations,
   selectedJobs,
   currentBossLevel,
-  isMobile,
-  onRemoveMitigation
+  onRemoveMitigation,
+  onUpdatePrecast
 }) => {
+  const { showPrecastOptions } = useFilterContext();
   // Get tank position context
-  const { tankPositions } = useTankPositionContext();
+  // const { tankPositions } = useTankPositionContext();
 
   // Get directly assigned mitigations
   const directMitigations = (assignments && assignments[action.id]) || [];
@@ -382,7 +409,12 @@ const AssignedMitigations = ({
         const displayMitigation = { ...fullMitigation, ...mitigation };
 
         // Compute tooltip content directly (no useMemo)
-        const tooltipContent = `${displayMitigation.name}${displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' ? ` (${displayMitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: ${getAbilityDescriptionForLevel(displayMitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(displayMitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(displayMitigation, currentBossLevel)}s${getAbilityChargeCount(displayMitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(displayMitigation, currentBossLevel)}` : ''})${displayMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) * 100}%`}` : ''}`;
+        let tooltipContent = `${displayMitigation.name}${displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' ? ` (${displayMitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: ${getAbilityDescriptionForLevel(displayMitigation, currentBossLevel)} (Duration: ${getAbilityDurationForLevel(displayMitigation, currentBossLevel)}s, Cooldown: ${getAbilityCooldownForLevel(displayMitigation, currentBossLevel)}s${getAbilityChargeCount(displayMitigation, currentBossLevel) > 1 ? `, Charges: ${getAbilityChargeCount(displayMitigation, currentBossLevel)}` : ''}${displayMitigation.barrierPotency ? `, Barrier: ${Math.round(displayMitigation.barrierPotency * 100)}% max HP` : ''}${displayMitigation.barrierFlatPotency ? `, Barrier: ${displayMitigation.barrierFlatPotency} potency` : ''})${displayMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(displayMitigation, currentBossLevel) * 100}%`}` : ''}`;
+        // Include precast in tooltip if present and the UI is showing precast
+        if (showPrecastOptions && (displayMitigation.precastSeconds || 0) > 0) {
+          tooltipContent += `\nPrecast: ${Number(displayMitigation.precastSeconds).toFixed(1)}s before`;
+        }
+
         return (
           <Tooltip
             key={displayMitigation.id}
@@ -404,7 +436,7 @@ const AssignedMitigations = ({
                   flex: '1 1 auto',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: isMobile ? 'nowrap' : 'normal',
+                  whiteSpace: 'normal',
                   minWidth: 0,
                   display: 'flex',
                   alignItems: 'center'
@@ -417,7 +449,42 @@ const AssignedMitigations = ({
                   </TankPositionBadge>
                 )}
               </span>
-              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                {showPrecastOptions && getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
+                  <PrecastInput
+                    type="number"
+                    min={0}
+                    max={getAbilityDurationForLevel(displayMitigation, currentBossLevel) || undefined}
+                    value={(displayMitigation.precastSeconds === 0 || displayMitigation.precastSeconds == null) ? '' : displayMitigation.precastSeconds}
+                    onChange={(e) => {
+                      const valStr = e.target.value;
+                      if (valStr === '') {
+                        onUpdatePrecast && onUpdatePrecast(
+                          action.id,
+                          displayMitigation.id,
+                          displayMitigation.tankPosition,
+                          0
+                        );
+                        return;
+                      }
+                      const raw = parseFloat(valStr);
+                      if (isNaN(raw)) {
+                        return;
+                      }
+                      const dur = getAbilityDurationForLevel(displayMitigation, currentBossLevel) || 0;
+                      const clamped = Math.max(0, Math.min(raw, dur));
+                      onUpdatePrecast && onUpdatePrecast(
+                        action.id,
+                        displayMitigation.id,
+                        displayMitigation.tankPosition,
+                        clamped
+                      );
+                    }}
+                    inputMode="decimal"
+                    placeholder=""
+                    title="Seconds to precast before boss action (max = ability duration)"
+                  />
+                )}
                 <RemoveButton
                   onClick={(e) => {
                     // Prevent event bubbling
@@ -451,15 +518,15 @@ const AssignedMitigations = ({
             return (
               <Tooltip
                 key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
-                content={`${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s\n${fullMitigation.mitigationValue ? `Mitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
+                content={`${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s${fullMitigation.barrierPotency ? `\nBarrier: ${Math.round(fullMitigation.barrierPotency * 100)}% max HP` : ''}${fullMitigation.barrierFlatPotency ? `\nBarrier: ${fullMitigation.barrierFlatPotency} potency` : ''}${fullMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
               >
                 <InheritedMitigationItem>
                   <MitigationIcon>
                     {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
                       <img src={fullMitigation.icon} alt={fullMitigation.name} style={{
-                        maxHeight: isMobile ? '12px' : '18px',
-                        maxWidth: isMobile ? '12px' : '18px',
-                        opacity: isMobile ? 0.8 : 0.7,
+                        maxHeight: '18px',
+                        maxWidth: '18px',
+                        opacity: 0.7,
                         display: 'block'
                       }} /> :
                       fullMitigation.icon
@@ -469,7 +536,7 @@ const AssignedMitigations = ({
                     flex: 1,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: isMobile ? 'nowrap' : 'normal',
+                    whiteSpace: 'normal',
                     display: 'flex',
                     alignItems: 'center'
                   }}>
@@ -481,8 +548,8 @@ const AssignedMitigations = ({
                     )}
                   </span>
                   <small style={{
-                    fontSize: isMobile ? '8px' : '9px',
-                    opacity: isMobile ? 0.9 : 0.8,
+                    fontSize: '9px',
+                    opacity: 0.8,
                     flexShrink: 0
                   }}>{mitigation.remainingDuration.toFixed(1)}s</small>
                 </InheritedMitigationItem>

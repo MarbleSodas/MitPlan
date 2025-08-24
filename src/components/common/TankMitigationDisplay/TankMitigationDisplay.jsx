@@ -28,10 +28,6 @@ const TankPositionLabel = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-    min-width: 100px;
-  }
 `;
 
 // Mitigation percentage display with shield icon
@@ -55,26 +51,7 @@ const MitigationPercentage = styled.div`
     margin-right: 6px;
   }
 
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-    padding: 6px 10px;
-    min-height: 34px;
-  }
 
-  /* Mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-    padding: 5px 8px;
-    min-height: 32px;
-  }
-
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
-    padding: 4px 6px;
-    min-height: 30px;
-  }
 `;
 
 /**

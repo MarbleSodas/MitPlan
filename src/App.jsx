@@ -198,7 +198,7 @@ const AppContent = () => {
           </AnonymousAllowedRoute>
         }
       />
-
+      
       {/* Legal pages - accessible to all users */}
       <Route
         path="/privacy-policy"

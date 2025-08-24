@@ -6,7 +6,7 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, get, update, serverTimestamp } from 'firebase/database';
+import { getDatabase, ref, get, update } from 'firebase/database';
 import { firebaseConfig } from './firebase-config.js';
 
 // Initialize Firebase

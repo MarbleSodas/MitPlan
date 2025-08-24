@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { useRealtimePlan } from './RealtimePlanContext';
 import { useRealtimeBossContext } from './RealtimeBossContext';
 import { useRealtimeJobContext } from './RealtimeJobContext';
@@ -27,7 +27,7 @@ export const RealtimeMitigationProvider = ({ children }) => {
   const { sortedBossActions, currentBossLevel } = useRealtimeBossContext();
   const { selectedJobs } = useRealtimeJobContext();
   const { user } = useAuth();
-  const { sessionId, isOwnChange } = useCollaboration();
+  const { sessionId } = useCollaboration();
 
   const [activeMitigation, setActiveMitigation] = useState(null);
   const [localAssignments, setLocalAssignments] = useState({});
@@ -54,9 +54,7 @@ export const RealtimeMitigationProvider = ({ children }) => {
 
     // Get ability properties
     const cooldownDuration = getAbilityCooldownForLevel(mitigation, currentBossLevel);
-    const totalCharges = getAbilityChargeCount(mitigation, currentBossLevel);
     const isRoleShared = mitigation.isRoleShared;
-    const roleSharedCount = isRoleShared ? getRoleSharedAbilityCount(mitigation, selectedJobs) : 1;
 
     // Find all assignments of this mitigation before the target time
     const previousAssignments = [];

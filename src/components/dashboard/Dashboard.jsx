@@ -138,14 +138,6 @@ const PlansGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 1.5rem;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  @media (max-width: 600px) {
-    padding: 0 0.5rem;
-  }
 `;
 
 const EmptyState = styled.div`

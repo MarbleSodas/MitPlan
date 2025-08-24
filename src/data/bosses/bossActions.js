@@ -12,11 +12,12 @@ import necronActions from './necron_actions.json';
 export const bossActionsMap = {
   'sugar-riot': sugarRiotActions,
   'dancing-green-m5s': dancingGreenActions,
-  'lala': lalaActions,
-  'statice': staticeActions,
+  lala: lalaActions,
+    statice: staticeActions,
   'brute-abominator-m7s': bruteAbominatorActions,
   'howling-blade-m8s': howlingBladeActions,
-  'necron': necronActions,
+  necron: necronActions,
+  // Inline data for Ketuduke kept for now
   ketuduke: [
     {
       id: 'tidal_roar_1',
@@ -199,68 +200,72 @@ export const bossActionsMap = {
       icon: '💀'
     },
   ],
-  lala: [
-    {
-      id: 'inferno_theorem_1',
-      name: 'Inferno Theorem',
-      time: 10, // 0 + 10
-      description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
-      unmitigatedDamage: '~86,253',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🔥'
-    },
-    {
-      id: 'radiance_1',
-      name: 'Radiance',
-      time: 46, // 1 + 9
-      description: 'Party-wide magical damage that is applied during mechanics',
-      unmitigatedDamage: '~25,840',
-      damageType: 'magical',
-      importance: 'low',
-      icon: '🔥'
-    },
-    {
-      id: 'radiance_2',
-      name: 'Radiance',
-      time: 55, // 1 + 9
-      description: 'Party-wide magical damage that is applied during mechanics',
-      unmitigatedDamage: '~25,376',
-      damageType: 'magical',
-      importance: 'low',
-      icon: '🔥'
-    },
-    {
-      id: 'targeted_light_1',
-      name: 'Targeted Light',
-      time: 60,
-      description: 'Moderate party-wide magical damage with knockback. Players must face their character so their safe side is towards the boss when considering rotation, or they will take heavy damage and be knocked back.',
-      unmitigatedDamage: '~38,987',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🔦'
-    },
-    {
-      id: 'strategic_strike_1',
-      name: 'Strategic Strike',
-      time: 71, // 62 + 9
-      description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
-      unmitigatedDamage: '~59,825 per hit',
-      damageType: 'physical',
-      importance: 'high',
-      icon: '🛡️',
-      isTankBuster: true
-    },
-    {
-      id: 'symmetric_surge_1',
-      name: 'Symmetric Surge',
-      time: 107, // 98 + 9
-      description: 'Pair stacks. Part of the Planar Tactics mechanic.',
-      unmitigatedDamage: '~50,880',
-      damageType: 'magical',
-      importance: 'low',
-      icon: '💥'
-    },
+  // 'lala' key already provided above via imported JSON; keeping inline data here would duplicate keys in object literal.
+  // If inline data is desired, merge it into the imported JSON file instead.
+  // Removing duplicate 'lala' entry to satisfy ESLint no-dupe-keys.
+  // lala: [
+  /*
+  //   {
+  //     id: 'inferno_theorem_1',
+  //     name: 'Inferno Theorem',
+  //     time: 10, // 0 + 10
+  //     description: 'High party-wide magical damage that should be heavily mitigated. This is Lala\'s signature attack and one of the most dangerous raid-wide abilities.',
+  //     unmitigatedDamage: '~86,253',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🔥'
+  //   },
+  //   {
+  //     id: 'radiance_1',
+  //     name: 'Radiance',
+  //     time: 46, // 1 + 9
+  //     description: 'Party-wide magical damage that is applied during mechanics',
+  //     unmitigatedDamage: '~25,840',
+  //     damageType: 'magical',
+  //     importance: 'low',
+  //     icon: '🔥'
+  //   },
+  //   {
+  //     id: 'radiance_2',
+  //     name: 'Radiance',
+  //     time: 55, // 1 + 9
+  //     description: 'Party-wide magical damage that is applied during mechanics',
+  //     unmitigatedDamage: '~25,376',
+  //     damageType: 'magical',
+  //     importance: 'low',
+  //     icon: '🔥'
+  //   },
+  //   {
+  //     id: 'targeted_light_1',
+  //     name: 'Targeted Light',
+  //     time: 60,
+  //     description: 'Moderate party-wide magical damage with knockback. Players must face their character so their safe side is towards the boss when considering rotation, or they will take heavy damage and be knocked back.',
+  //     unmitigatedDamage: '~38,987',
+  //     damageType: 'magical',
+  //     importance: 'medium',
+  //     icon: '🔦'
+  //   },
+  //   {
+  //     id: 'strategic_strike_1',
+  //     name: 'Strategic Strike',
+  //     time: 71, // 62 + 9
+  //     description: 'A telegraphed, three-hit physical tankbuster that deals very high damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
+  //     unmitigatedDamage: '~59,825 per hit',
+  //     damageType: 'physical',
+  //     importance: 'high',
+  //     icon: '🛡️',
+  //     isTankBuster: true
+  //   },
+  //   {
+  //     id: 'symmetric_surge_1',
+  //     name: 'Symmetric Surge',
+  //     time: 107, // 98 + 9
+  //     description: 'Pair stacks. Part of the Planar Tactics mechanic.',
+  //     unmitigatedDamage: '~50,880',
+  //     damageType: 'magical',
+  //     importance: 'low',
+  //     icon: '💥'
+  //   },
     {
       id: 'inferno_theorem_2',
       name: 'Inferno Theorem',
@@ -384,150 +389,153 @@ export const bossActionsMap = {
       importance: 'critical',
       icon: '💀'
     },
-  ],
-  statice: [
-    {
-      id: 'aero_iv_1',
-      name: 'Aero IV',
-      time: 10, // 1 + 9
-      description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
-      unmitigatedDamage: '~73,035',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌪️'
-    },
-    {
-      id: 'trapshooting_1',
-      name: 'Trapshooting',
-      time: 38, // 29 + 9
-      description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~67,362',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎯'
-    },
-    {
-      id: 'trapshooting_2',
-      name: 'Trapshooting',
-      time: 70, // 61 + 9
-      description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~69,361',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎯'
-    },
-    {
-      id: 'trapshooting_3',
-      name: 'Trapshooting + Uncommon Ground',
-      time: 120, // 111 + 9
-      description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~93,193',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎯'
-    },
-    {
-      id: 'trapshooting_4',
-      name: 'Trapshooting',
-      time: 160, // 151 + 9
-      description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~67,193',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎯'
-    },
-    {
-      id: 'aero_iv_2',
-      name: 'Aero IV',
-      time: 168, // 159 + 9
-      description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
-      unmitigatedDamage: '~73,556',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌪️'
-    },
-    {
-      id: 'fireworks_1',
-      name: 'Fireworks',
-      time: 200, // 191 + 9
-      description: 'Moderate to high party-wide magical damage. Part of a complex mechanic involving tethered adds, chain markers, and spread/stack positions that must be resolved correctly.',
-      unmitigatedDamage: '~60,798',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🎆'
-    },
-    {
-      id: 'shocking_abandon_1',
-      name: 'Shocking Abandon',
-      time: 208, // 199 + 9
-      description: 'Telegraphed tankbuster that deals very high physical damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
-      unmitigatedDamage: '~267,868',
-      damageType: 'physical',
-      importance: 'high',
-      icon: '🛡️',
-      isTankBuster: true
-    },
-    {
-      id: 'fireworks_2',
-      name: 'Fireworks + Uncommon Ground',
-      time: 236, // 227 + 9
-      description: 'Moderate to high party-wide magical damage. Part of the Pinwheeling Dartboard mechanic where players must navigate rotating AoEs while resolving debuffs.',
-      unmitigatedDamage: '~85,226',
-      damageType: 'magical',
-      importance: 'medium',
-      icon: '🎆'
-    },
-    {
-      id: 'aero_iv_3',
-      name: 'Aero IV',
-      time: 249, // 240 + 9
-      description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
-      unmitigatedDamage: '~71,716',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌪️'
-    },
-    {
-      id: 'trapshooting_5',
-      name: 'Trapshooting',
-      time: 288, // 279 + 9
-      description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~65,847',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎯'
-    },
-    {
-      id: 'trapshooting_6',
-      name: 'Trapshooting',
-      time: 315, // 306 + 9
-      description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
-      unmitigatedDamage: '~65,847',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🎯'
-    },
-    {
-      id: 'aero_iv_4',
-      name: 'Aero IV',
-      time: 331, // 322 + 9
-      description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
-      unmitigatedDamage: '~73,540',
-      damageType: 'magical',
-      importance: 'high',
-      icon: '🌪️'
-    },
-    {
-      id: 'aero_iv_enrage',
-      name: 'Aero IV (enrage)',
-      time: 340,
-      description: 'Wipe',
-      unmitigatedDamage: 'N/A',
-      damageType: 'magical',
-      importance: 'critical',
-      icon: '💀'
-    },
-  ],
+  */
+  // 'statice' key already provided above via imported JSON; removing duplicate inline entry.
+  // statice: [
+  //   {
+  //     id: 'aero_iv_1',
+  //     name: 'Aero IV',
+  //     time: 10, // 1 + 9
+  //     description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
+  //     unmitigatedDamage: '~73,035',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🌪️'
+  //   },
+  //   {
+  //     id: 'trapshooting_1',
+  //     name: 'Trapshooting',
+  //     time: 38, // 29 + 9
+  //     description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
+  //     unmitigatedDamage: '~67,362',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🎯'
+  //   },
+  //   {
+  //     id: 'trapshooting_2',
+  //     name: 'Trapshooting',
+  //     time: 70, // 61 + 9
+  //     description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
+  //     unmitigatedDamage: '~69,361',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🎯'
+  //   },
+  //   {
+  //     id: 'trapshooting_3',
+  //     name: 'Trapshooting + Uncommon Ground',
+  //     time: 120, // 111 + 9
+  //     description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
+  //     unmitigatedDamage: '~93,193',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🎯'
+  //   },
+  //   {
+  //     id: 'trapshooting_4',
+  //     name: 'Trapshooting',
+  //     time: 160, // 151 + 9
+  //     description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
+  //     unmitigatedDamage: '~67,193',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🎯'
+  //   },
+  //   {
+  //     id: 'aero_iv_2',
+  //     name: 'Aero IV',
+  //     time: 168, // 159 + 9
+  //     description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
+  //     unmitigatedDamage: '~73,556',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🌪️'
+  //   },
+  //   {
+  //     id: 'fireworks_1',
+  //     name: 'Fireworks',
+  //     time: 200, // 191 + 9
+  //     description: 'Moderate to high party-wide magical damage. Part of a complex mechanic involving tethered adds, chain markers, and spread/stack positions that must be resolved correctly.',
+  //     unmitigatedDamage: '~60,798',
+  //     damageType: 'magical',
+  //     importance: 'medium',
+  //     icon: '🎆'
+  //   },
+  //   {
+  //     id: 'shocking_abandon_1',
+  //     name: 'Shocking Abandon',
+  //     time: 208, // 199 + 9
+  //     description: 'Telegraphed tankbuster that deals very high physical damage. Requires heavy mitigation or an invulnerability cooldown to survive.',
+  //     unmitigatedDamage: '~267,868',
+  //     damageType: 'physical',
+  //     importance: 'high',
+  //     icon: '🛡️',
+  //     isTankBuster: true
+  //   },
+  //   {
+  //     id: 'fireworks_2',
+  //     name: 'Fireworks + Uncommon Ground',
+  //     time: 236, // 227 + 9
+  //     description: 'Moderate to high party-wide magical damage. Part of the Pinwheeling Dartboard mechanic where players must navigate rotating AoEs while resolving debuffs.',
+  //     unmitigatedDamage: '~85,226',
+  //     damageType: 'magical',
+  //     importance: 'medium',
+  //     icon: '🎆'
+  //   },
+  //   {
+  //     id: 'aero_iv_3',
+  //     name: 'Aero IV',
+  //     time: 249, // 240 + 9
+  //     description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
+  //     unmitigatedDamage: '~71,716',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🌪️'
+  //   },
+  //   {
+  //     id: 'trapshooting_5',
+  //     name: 'Trapshooting',
+  //     time: 288, // 279 + 9
+  //     description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
+  //     unmitigatedDamage: '~65,847',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🎯'
+  //   },
+  //   {
+  //     id: 'trapshooting_6',
+  //     name: 'Trapshooting',
+  //     time: 315, // 306 + 9
+  //     description: 'Party-wide magical damage with stack or spread mechanics. Players must position correctly based on assigned debuffs to avoid lethal damage.',
+  //     unmitigatedDamage: '~65,847',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🎯'
+  //   },
+  //   {
+  //     id: 'aero_iv_4',
+  //     name: 'Aero IV',
+  //     time: 331, // 322 + 9
+  //     description: 'High party-wide magical damage that should be heavily mitigated. This is Statice\'s signature attack and appears multiple times throughout the fight.',
+  //     unmitigatedDamage: '~73,540',
+  //     damageType: 'magical',
+  //     importance: 'high',
+  //     icon: '🌪️'
+  //   },
+  //   {
+  //     id: 'aero_iv_enrage',
+  //     name: 'Aero IV (enrage)',
+  //     time: 340,
+  //     description: 'Wipe',
+  //     unmitigatedDamage: 'N/A',
+  //     damageType: 'magical',
+  //     importance: 'critical',
+  //     icon: '💀'
+  //   },
+
+  // ],
+  /*
   'dancing-green-m5s': [
     {
       id: 'deep_cut_1',
@@ -828,6 +836,7 @@ export const bossActionsMap = {
       icon: '💀'
     }
   ]
+*/
 };
 
 // For backward compatibility

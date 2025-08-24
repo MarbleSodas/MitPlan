@@ -188,7 +188,6 @@ const EnhancedMitigationItem = memo(({
 }) => {
   // Get enhanced mitigation context
   const { checkAbilityAvailability, hasPendingAssignment } = useEnhancedMitigation();
-  const { tankPositions } = useTankPositionContext();
 
   // Check availability if we have a selected boss action
   const availability = useMemo(() => {
@@ -285,8 +284,12 @@ const EnhancedMitigationItem = memo(({
       <MitigationDescription>
         {getAbilityDescriptionForLevel(mitigation, currentBossLevel)}<br />
         <small>
-          Duration: {getAbilityDurationForLevel(mitigation, currentBossLevel)}s |
+          {getAbilityDurationForLevel(mitigation, currentBossLevel) > 0 && (
+            <>Duration: {getAbilityDurationForLevel(mitigation, currentBossLevel)}s | </>
+          )}
           Cooldown: {getAbilityCooldownForLevel(mitigation, currentBossLevel)}s
+          {mitigation.barrierPotency ? ` | Barrier: ${Math.round(mitigation.barrierPotency * 100)}% max HP` : ''}
+          {mitigation.barrierFlatPotency ? ` | Barrier: ${mitigation.barrierFlatPotency} potency` : ''}
         </small>
       </MitigationDescription>
 

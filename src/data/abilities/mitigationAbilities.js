@@ -30,6 +30,15 @@
  * - When present, this ability shares its cooldown with other abilities in the same group
  * - When one ability in the group is used, all abilities in the group go on cooldown
  * - Example: Bloodwhetting and Nascent Flash share the same cooldown group
+ *
+ * healingPotency property:
+ * - For healing abilities, specifies the instant healing potency
+ * - For abilities with regen effects, this is only the instant component
+ *
+ * regenPotency property:
+ * - For abilities with regen effects, specifies the healing potency per tick
+ * - Total regen healing = (duration / 3) * regenPotency
+ * - Total healing = healingPotency + total regen healing
  */
 
 export const mitigationAbilities = [
@@ -189,7 +198,8 @@ export const mitigationAbilities = [
     target: 'self', // Can only be used on self
     forTankBusters: true,
     forRaidWide: false,
-    count: 1 // Has 1 charge
+    count: 1, // Has 1 charge
+    upgradedBy: 'guardian' // Replaced by Guardian at level 92
   },
   {
     id: 'passage',
@@ -247,6 +257,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/holy_sheltron.png',
     type: 'mitigation',
     mitigationValue: 0.15,
+    regenPotency: 250, // 250 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -272,6 +284,8 @@ export const mitigationAbilities = [
       62: 0.10, // At level 62, mitigation is 10%
       82: 0.10  // At level 82, mitigation is 10% with healing over time
     },
+    regenPotency: 250, // 250 potency per tick for healing over time (level 82+)
+    regenDuration: 12, // Healing over time lasts for 12s at level 82+
     damageType: 'both',
     target: 'single', // Can be cast on another player
     forTankBusters: true, // Commonly used for tank busters
@@ -358,6 +372,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/bloodwhetting.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 400, // 400 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -379,6 +395,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/nascent_flash.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 400, // 400 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'single', // Can be cast on another player
     forTankBusters: true, // Commonly used for tank busters
@@ -401,6 +419,7 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/thrill_of_battle.png',
     type: 'mitigation',
     mitigationValue: 0.20, // Effective mitigation through HP increase
+    maxHpIncrease: 0.20, // Visual max HP increase for health bars
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -608,6 +627,8 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/heart_of_corundum.png',
     type: 'mitigation',
     mitigationValue: 0.15,
+    regenPotency: 250, // 250 potency per tick for healing over time
+    regenDuration: 8,
     damageType: 'both',
     target: 'single', // Can be cast on self or another player
     forTankBusters: true, // Commonly used for tank busters
@@ -668,8 +689,13 @@ export const mitigationAbilities = [
     cooldown: 60,
     count: 2, // Has 2 charges
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/aurora.png',
+    icon: '/abilities-official/aurora.png',
     type: 'healing',
+    healingPotency: 0, // Pure regen, no instant healing
+    regenPotency: 200, // 200 potency per tick
+    healingType: 'regen',
+    regenDuration: 18,
+    // Total healing = 0 + (18/3 * 200) = 1200 potency
     mitigationValue: 0,
     damageType: 'both',
     target: 'single',
@@ -712,12 +738,13 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/divine_benison.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.15, // Approximately 15% of max HP based on 500 potency
+    barrierFlatPotency: 500, // Official: absorbs damage equivalent to a heal of 500 potency
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
+    scaleBarrierWithHealing: true, // This shield scales with healing potency buffs
     upgradedBy: 'divine_caress' // This ability is replaced by Divine Caress at level 100
   },
   {
@@ -738,7 +765,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Increases caster's healing magic potency
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
   },
   {
     id: 'liturgy_of_the_bell',
@@ -751,13 +780,172 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 180,
     jobs: ['WHM'],
-    icon: '/abilities-gamerescape/liturgy_of_the_bell.png',
+    icon: '/abilities-official/liturgy_of_the_bell.png',
     type: 'healing',
+    healingPotency: 400, // Estimated healing potency
+    healingType: 'triggered',
     mitigationValue: 0, // Healing, not direct mitigation
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
     forRaidWide: true
+  },
+
+  // WHITE MAGE HEALING ABILITIES
+  {
+    id: 'cure',
+    name: 'Cure',
+    description: 'Restores target\'s HP',
+    levelRequirement: 2,
+    levelDescriptions: {
+      2: 'Restores target\'s HP with 500 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-official/cure.png',
+    type: 'healing',
+    healingPotency: 500,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'cure_ii',
+    name: 'Cure II',
+    description: 'Restores target\'s HP',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores target\'s HP with 800 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-official/cure_ii.png',
+    type: 'healing',
+    healingPotency: 800,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'medica',
+    name: 'Medica',
+    description: 'Restores own HP and the HP of all nearby party members',
+    levelRequirement: 10,
+    levelDescriptions: {
+      10: 'Restores own HP and the HP of all nearby party members with 400 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-official/medica.png',
+    type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'medica_ii',
+    name: 'Medica II',
+    description: 'Restores own HP and the HP of all nearby party members and grants regen',
+    levelRequirement: 50,
+    levelDescriptions: {
+      50: 'Restores own HP and the HP of all nearby party members with 250 potency and grants 150 potency regen for 15s'
+    },
+    duration: 15,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-official/medica_ii.png',
+    type: 'healing',
+    healingPotency: 250, // Instant healing component
+    regenPotency: 150, // 150 potency per tick
+    healingType: 'instant',
+    regenDuration: 15,
+    // Total healing = 250 + (15/3 * 150) = 250 + 750 = 1000 potency
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'regen',
+    name: 'Regen',
+    description: 'Grants healing over time to target',
+    levelRequirement: 35,
+    levelDescriptions: {
+      35: 'Grants healing over time with 250 potency over 18s'
+    },
+    duration: 18,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-official/regen.png',
+    type: 'healing',
+    healingPotency: 0, // Pure regen, no instant healing
+    regenPotency: 250, // 250 potency per tick
+    healingType: 'regen',
+    regenDuration: 18,
+    // Total healing = 0 + (18/3 * 250) = 1500 potency
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'benediction',
+    name: 'Benediction',
+    description: 'Restores all of target\'s HP',
+    levelRequirement: 50,
+    levelDescriptions: {
+      50: 'Restores all of target\'s HP'
+    },
+    duration: 0,
+    cooldown: 180,
+    jobs: ['WHM'],
+    icon: '/abilities-official/benediction.png',
+    type: 'healing',
+    healingPotency: 0, // Full heal
+    healingType: 'fullHeal',
+    isFullHeal: true,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'tetragrammaton',
+    name: 'Tetragrammaton',
+    description: 'Restores target\'s HP',
+    levelRequirement: 60,
+    levelDescriptions: {
+      60: 'Restores target\'s HP with 700 potency'
+    },
+    duration: 0,
+    cooldown: 60,
+    count: 2,
+    jobs: ['WHM'],
+    icon: '/abilities-official/tetragrammaton.png',
+    type: 'healing',
+    healingPotency: 700,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
   },
   {
     id: 'aquaveil',
@@ -794,12 +982,15 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/divine_caress.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.20, // Approximately 20% of max HP
+    barrierFlatPotency: 400, // Official: barrier equivalent to a heal of 400 potency (plus instant heal)
+    healingPotency: 400, // Official: restores HP with 400 potency
+    healingType: 'instant',
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    targetsTank: true
+    targetsTank: true,
+    scaleBarrierWithHealing: true // This shield scales with healing potency buffs
   },
   {
     id: 'aetherflow',
@@ -841,23 +1032,91 @@ export const mitigationAbilities = [
     forRaidWide: false,
     consumesAetherflow: true
   },
+  // SCHOLAR HEALING ABILITIES
+  {
+    id: 'physick',
+    name: 'Physick',
+    description: 'Restores target\'s HP',
+    levelRequirement: 4,
+    levelDescriptions: {
+      4: 'Restores target\'s HP with 450 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['SCH'],
+    icon: '/abilities-official/physick.png',
+    type: 'healing',
+    healingPotency: 450,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'adloquium',
+    name: 'Adloquium',
+    description: 'Restores target\'s HP and grants barrier',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores target\'s HP with 300 potency and grants barrier equivalent to 180% of healing done'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SCH'],
+    icon: '/abilities-official/adloquium.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
+    barrierFlatPotency: 540, // 180% of healing as barrier → 300 * 1.8 = 540 potency
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'succor',
+    name: 'Succor',
+    description: 'Restores own HP and the HP of all nearby party members and grants barrier',
+    levelRequirement: 35,
+    levelDescriptions: {
+      35: 'Restores own HP and the HP of all nearby party members with 200 potency and grants barrier equivalent to 160% of healing done'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SCH'],
+    icon: '/abilities-official/succor.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    barrierFlatPotency: 320, // 160% of healing as barrier → 200 * 1.6 = 320 potency
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
   {
     id: 'lustrate',
     name: 'Lustrate',
     description: 'Restores target\'s HP',
     levelRequirement: 45,
     levelDescriptions: {
-      45: 'Restores target\'s HP'
+      45: 'Restores target\'s HP with 600 potency'
     },
-    duration: 0, // Not a buff
-    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    duration: 0,
+    cooldown: 1,
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/lustrate.png',
+    icon: '/abilities-official/lustrate.png',
     type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
     mitigationValue: 0,
     damageType: 'both',
     target: 'single',
-    forTankBusters: false,
+    forTankBusters: true,
     forRaidWide: false,
     consumesAetherflow: true
   },
@@ -867,18 +1126,20 @@ export const mitigationAbilities = [
     description: 'Restores HP of all nearby party members',
     levelRequirement: 52,
     levelDescriptions: {
-      52: 'Restores HP of all nearby party members'
+      52: 'Restores HP of all nearby party members with 400 potency'
     },
-    duration: 0, // Not a buff
-    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    duration: 0,
+    cooldown: 30,
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/indomitability.png',
+    icon: '/abilities-official/indomitability.png',
     type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: false,
+    forRaidWide: true,
     consumesAetherflow: true
   },
   {
@@ -887,17 +1148,19 @@ export const mitigationAbilities = [
     description: 'Grants healing effect that activates when HP falls below 50% or effect expires',
     levelRequirement: 62,
     levelDescriptions: {
-      62: 'Grants healing effect that activates when HP falls below 50% or effect expires'
+      62: 'Grants healing effect that activates when HP falls below 50% or effect expires with 800 potency'
     },
     duration: 45,
-    cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
+    cooldown: 45,
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/excogitation.png',
+    icon: '/abilities-official/excogitation.png',
     type: 'healing',
+    healingPotency: 800,
+    healingType: 'triggered',
     mitigationValue: 0,
     damageType: 'both',
     target: 'single',
-    forTankBusters: false,
+    forTankBusters: true,
     forRaidWide: false,
     consumesAetherflow: true
   },
@@ -916,11 +1179,35 @@ export const mitigationAbilities = [
     icon: '/abilities-gamerescape/sacred_soil.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 100, // 100 potency per tick for regen (level 78+)
+    regenDuration: 15,
     damageType: 'both',
     target: 'area',
     forTankBusters: true,
     forRaidWide: true,
     consumesAetherflow: true
+  },
+  {
+    id: 'protraction',
+    name: 'Protraction',
+    description: 'Increases target\'s maximum HP by 10% and increases HP recovery via healing actions by 10%. Also restores HP by the amount increased.',
+    levelRequirement: 86,
+    levelDescriptions: {
+      86: 'Increases target\'s maximum HP by 10% and increases HP recovery via healing actions by 10% for 10s. Also restores HP by the amount increased.'
+    },
+    duration: 10,
+    cooldown: 60,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Protraction.png',
+    type: 'mitigation',
+    mitigationValue: 0.10, // Model as effective 10% mitigation (EHP increase)
+    maxHpIncrease: 0.10, // Visual max HP increase for health bars
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    count: 1
   },
   {
     id: 'fey_illumination',
@@ -933,9 +1220,6 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 120,
     count: 1,
-    levelCharges: {
-      80: 2 // Has 2 charges at level 80
-    },
     jobs: ['SCH'],
     icon: '/abilities-gamerescape/fey_illumination.png',
     type: 'mitigation',
@@ -943,7 +1227,54 @@ export const mitigationAbilities = [
     damageType: 'magical',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Healing potency bonus for Scholar heals on same action
+    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' }
+  },
+  {
+    id: 'summon_seraph',
+    name: 'Summon Seraph',
+    description: 'Summons Seraph to fight at your side. Seraph uses Seraphic Veil and grants access to Consolation.',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Summons Seraph to fight at your side for 22s. Grants access to Consolation.'
+    },
+    duration: 22,
+    cooldown: 120,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Summon_Seraph.png',
+    type: 'utility',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    count: 1
+  },
+  {
+    id: 'consolation',
+    name: 'Consolation',
+    description: 'Restores own HP and the HP of all nearby party members. Also grants a barrier.',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Restores HP of all nearby party members with 200 potency and grants a barrier equivalent to 200 potency. 2 charges. Usable while Seraph is summoned.'
+    },
+    duration: 30,
+    cooldown: 30,
+    count: 2,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Consolation.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    barrierFlatPotency: 200,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    scaleBarrierWithHealing: true,
+    requiresActiveWindow: { abilityId: 'summon_seraph' }
   },
   {
     id: 'expedient',
@@ -981,7 +1312,9 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    // Increases Scholar healing potency
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
   },
 
   {
@@ -995,9 +1328,11 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 60,
     jobs: ['AST'],
-    icon: '/abilities-gamerescape/collective_unconscious.png',
+    icon: '/abilities-official/collective_unconscious.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 100, // 100 potency per tick for regen
+    regenDuration: 15,
     damageType: 'both',
     target: 'area',
     forTankBusters: false,
@@ -1014,7 +1349,7 @@ export const mitigationAbilities = [
     duration: 8,
     cooldown: 60,
     jobs: ['AST'],
-    icon: '/abilities-gamerescape/exaltation.png',
+    icon: '/abilities-official/exaltation.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -1034,8 +1369,10 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 180,
     jobs: ['AST'],
-    icon: '/abilities-gamerescape/macrocosmos.png',
+    icon: '/abilities-official/macrocosmos.png',
     type: 'healing',
+    healingPotency: 400, // Base healing plus recorded damage
+    healingType: 'triggered',
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
@@ -1053,8 +1390,144 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 120,
     jobs: ['AST'],
-    icon: '/abilities-gamerescape/neutral_sect.png',
+    icon: '/abilities-official/neutral_sect.png',
     type: 'healing',
+    healingPotency: 0, // Healing boost, not direct healing
+    healingType: 'boost',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    // Increases AST healing potency for the caster's healing actions
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
+  },
+
+  // ASTROLOGIAN HEALING ABILITIES
+  {
+    id: 'benefic',
+    name: 'Benefic',
+    description: 'Restores target\'s HP',
+    levelRequirement: 2,
+    levelDescriptions: {
+      2: 'Restores target\'s HP with 500 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/abilities-official/benefic.png',
+    type: 'healing',
+    healingPotency: 500,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'benefic_ii',
+    name: 'Benefic II',
+    description: 'Restores target\'s HP',
+    levelRequirement: 26,
+    levelDescriptions: {
+      26: 'Restores target\'s HP with 800 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/abilities-official/benefic_ii.png',
+    type: 'healing',
+    healingPotency: 800,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'helios',
+    name: 'Helios',
+    description: 'Restores own HP and the HP of all nearby party members',
+    levelRequirement: 10,
+    levelDescriptions: {
+      10: 'Restores own HP and the HP of all nearby party members with 400 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/abilities-official/helios.png',
+    type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'essential_dignity',
+    name: 'Essential Dignity',
+    description: 'Restores target\'s HP with potency that increases as target\'s HP decreases',
+    levelRequirement: 15,
+    levelDescriptions: {
+      15: 'Restores target\'s HP with 400-900 potency based on current HP'
+    },
+    duration: 0,
+    cooldown: 40,
+    count: 3,
+    jobs: ['AST'],
+    icon: '/abilities-official/essential_dignity.png',
+    type: 'healing',
+    healingPotency: 650, // Average potency
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'aspected_benefic',
+    name: 'Aspected Benefic',
+    description: 'Restores target\'s HP and grants regen',
+    levelRequirement: 34,
+    levelDescriptions: {
+      34: 'Restores target\'s HP with 250 potency and grants 250 potency regen for 15s'
+    },
+    duration: 15,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/abilities-official/aspected_benefic.png',
+    type: 'healing',
+    healingPotency: 250, // Instant healing component
+    regenPotency: 250, // 250 potency per tick
+    healingType: 'instant',
+    regenDuration: 15,
+    // Total healing = 250 + (15/3 * 250) = 250 + 1250 = 1500 potency
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'earthly_star',
+    name: 'Earthly Star',
+    description: 'Deploys a star that heals when detonated',
+    levelRequirement: 62,
+    levelDescriptions: {
+      62: 'Deploys a star that heals with 540-720 potency when detonated'
+    },
+    duration: 20,
+    cooldown: 60,
+    jobs: ['AST'],
+    icon: '/abilities-official/earthly_star.png',
+    type: 'healing',
+    healingPotency: 630, // Average of 540-720
+    healingType: 'triggered',
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
@@ -1073,15 +1546,16 @@ export const mitigationAbilities = [
     cooldown: 30,
     count: 2, // Has 2 charges
     jobs: ['AST'],
-    icon: '/abilities-gamerescape/celestial_intersection.png',
+    icon: '/abilities-official/celestial_intersection.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.15, // Approximately 15% of max HP
+    barrierFlatPotency: 400, // Official: absorbs damage equivalent to a heal of 400 potency
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    targetsTank: true
+    targetsTank: true,
+    scaleBarrierWithHealing: true
   },
   {
     id: 'sun_sign',
@@ -1094,7 +1568,7 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 1,
     jobs: ['AST'],
-    icon: '/abilities-gamerescape/sun_sign.png',
+    icon: '/abilities-official/sun_sign.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -1114,9 +1588,11 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 30,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/kerachole.png',
+    icon: '/abilities-official/kerachole.png',
     type: 'mitigation',
     mitigationValue: 0.10,
+    regenPotency: 100, // 100 potency per tick for regen (level 78+)
+    regenDuration: 15,
     damageType: 'both',
     target: 'area',
     forTankBusters: false,
@@ -1134,13 +1610,83 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 120,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/holos.png',
+    icon: '/abilities-official/holos.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
+    forRaidWide: true,
+    barrierFlatPotency: 300, // Official: barrier equivalent to a heal of 300 potency
+    scaleBarrierWithHealing: true
+  },
+  {
+    id: 'eukrasian_diagnosis',
+    name: 'Eukrasian Diagnosis',
+    description: 'Restores target\'s HP and erects a barrier equal to 180% of the HP restored',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores target\'s HP with 300 potency and erects a barrier equal to 180% of the HP restored'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/eukrasian_diagnosis.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
+    mitigationValue: 0,
+    barrierFlatPotency: 540, // Barrier equals 180% of HP restored → 300 * 1.8 = 540 potency
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true
+  },
+  {
+    id: 'eukrasian_prognosis',
+    name: 'Eukrasian Prognosis',
+    description: 'Restores own HP and the HP of all nearby party members and erects a barrier equal to 160% of the HP restored',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores party HP with 200 potency and erects a barrier equal to 160% of the HP restored'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/eukrasian_prognosis.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    mitigationValue: 0,
+    barrierFlatPotency: 320, // Barrier equals 160% of HP restored → 200 * 1.6 = 320 potency
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
     forRaidWide: true
+  },
+  {
+    id: 'eukrasian_prognosis_ii',
+    name: 'Eukrasian Prognosis II',
+    description: 'Restores party HP and erects a stronger barrier than Eukrasian Prognosis',
+    levelRequirement: 100,
+    levelDescriptions: {
+      100: 'Restores party HP with 200 potency and erects a barrier stronger than Eukrasian Prognosis'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/eukrasian_prognosis_ii.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    mitigationValue: 0,
+    barrierFlatPotency: 448, // Stronger than EP: 320 * 1.4 = 448 potency (approximation)
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    upgradedFrom: 'eukrasian_prognosis'
   },
   {
     id: 'haima',
@@ -1153,14 +1699,15 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 120,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/haima.png',
+    icon: '/abilities-official/haima.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.30, // Approximately 30% of max HP (multiple barriers)
+    barrierFlatPotency: 300, // Healing-based barrier per stack (5 stacks total). For single-hit visualization, use 1 stack.
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
+    scaleBarrierWithHealing: true,
     targetsTank: true
   },
   {
@@ -1174,14 +1721,15 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 120,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/panhaima.png',
+    icon: '/abilities-official/panhaima.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
-    barrierPotency: 0.20, // Approximately 20% of max HP (multiple barriers)
+    barrierFlatPotency: 200, // Healing-based barrier per stack (5 stacks total). For single-hit visualization, use 1 stack.
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    scaleBarrierWithHealing: true
   },
   {
     id: 'taurochole',
@@ -1194,7 +1742,7 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 45,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/taurochole.png',
+    icon: '/abilities-official/taurochole.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -1214,13 +1762,17 @@ export const mitigationAbilities = [
     duration: 30,
     cooldown: 90,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/zoe.png',
+    icon: '/abilities-official/zoe.png',
     type: 'healing',
+    healingPotency: 0, // Healing boost, not direct healing
+    healingType: 'boost',
     mitigationValue: 0,
     damageType: 'both',
     target: 'self',
     forTankBusters: false,
-    forRaidWide: false
+    forRaidWide: false,
+    // Increases SGE healing potency for caster's next healing spell
+    healingPotencyBonus: { value: 0.50, stackMode: 'multiplicative' }
   },
   {
     id: 'philosophia',
@@ -1233,13 +1785,127 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 180,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/philosophia.png',
+    icon: '/abilities-official/philosophia.png',
     type: 'healing',
+    healingPotency: 0, // Healing boost, not direct healing
+    healingType: 'boost',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    // Increases SGE healing potency for duration
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
+  },
+
+  // SAGE HEALING ABILITIES
+  {
+    id: 'diagnosis',
+    name: 'Diagnosis',
+    description: 'Restores target\'s HP',
+    levelRequirement: 2,
+    levelDescriptions: {
+      2: 'Restores target\'s HP with 450 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/diagnosis.png',
+    type: 'healing',
+    healingPotency: 450,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'prognosis',
+    name: 'Prognosis',
+    description: 'Restores own HP and the HP of all nearby party members',
+    levelRequirement: 10,
+    levelDescriptions: {
+      10: 'Restores own HP and the HP of all nearby party members with 300 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-official/prognosis.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
     forRaidWide: true
+  },
+  {
+    id: 'druochole',
+    name: 'Druochole',
+    description: 'Restores target\'s HP',
+    levelRequirement: 45,
+    levelDescriptions: {
+      45: 'Restores target\'s HP with 600 potency'
+    },
+    duration: 0,
+    cooldown: 1,
+    jobs: ['SGE'],
+    icon: '/abilities-official/druochole.png',
+    type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
+    consumesAddersgall: true,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
+  },
+  {
+    id: 'ixochole',
+    name: 'Ixochole',
+    description: 'Restores own HP and the HP of all nearby party members',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Restores own HP and the HP of all nearby party members with 400 potency'
+    },
+    duration: 0,
+    cooldown: 30,
+    jobs: ['SGE'],
+    icon: '/abilities-official/ixochole.png',
+    type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
+    consumesAddersgall: true,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'taurochole',
+    name: 'Taurochole',
+    description: 'Restores target\'s HP and reduces damage taken',
+    levelRequirement: 62,
+    levelDescriptions: {
+      62: 'Restores target\'s HP with 700 potency and reduces damage taken by 10% for 15s'
+    },
+    duration: 15,
+    cooldown: 45,
+    jobs: ['SGE'],
+    icon: '/abilities-official/taurochole.png',
+    type: 'healing',
+    healingPotency: 700,
+    healingType: 'instant',
+    consumesAddersgall: true,
+    mitigationValue: 0.10, // Also provides mitigation
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false
   },
 
   // DPS role abilities
@@ -1329,7 +1995,7 @@ export const mitigationAbilities = [
     duration: 15,
     cooldown: 120,
     jobs: ['BRD'],
-    icon: '/abilities-gamerescape/natures_minne.png',
+    icon: '/abilities-official/natures_minne.png',
     type: 'healing',
     mitigationValue: 0,
     damageType: 'both',

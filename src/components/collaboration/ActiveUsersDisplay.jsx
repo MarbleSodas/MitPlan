@@ -13,15 +13,6 @@ const ActiveUsersContainer = styled.div`
   box-shadow: ${props => props.theme?.shadows?.small || '0 1px 3px rgba(0, 0, 0, 0.1)'};
   transition: all 0.2s ease;
 
-  @media (max-width: ${props => props.theme?.breakpoints?.tablet || '768px'}) {
-    padding: 0.75rem 1rem;
-    gap: 0.5rem;
-  }
-
-  @media (max-width: ${props => props.theme?.breakpoints?.mobile || '480px'}) {
-    padding: 0.5rem 0.75rem;
-    gap: 0.375rem;
-  }
 `;
 
 const UsersLabel = styled.span`
@@ -30,9 +21,6 @@ const UsersLabel = styled.span`
   color: ${props => props.theme?.colors?.text || '#333333'};
   white-space: nowrap;
 
-  @media (max-width: ${props => props.theme?.breakpoints?.mobile || '480px'}) {
-    font-size: 0.8rem;
-  }
 `;
 
 const AvatarsContainer = styled.div`
@@ -41,9 +29,6 @@ const AvatarsContainer = styled.div`
   gap: 0.5rem;
   flex-wrap: wrap;
 
-  @media (max-width: ${props => props.theme?.breakpoints?.mobile || '480px'}) {
-    gap: 0.375rem;
-  }
 `;
 
 const UserAvatar = styled.div`
@@ -69,17 +54,6 @@ const UserAvatar = styled.div`
     box-shadow: ${props => props.theme?.shadows?.medium || '0 2px 4px rgba(0, 0, 0, 0.1)'};
   }
 
-  @media (max-width: ${props => props.theme?.breakpoints?.tablet || '768px'}) {
-    width: 32px;
-    height: 32px;
-    font-size: 0.8rem;
-  }
-
-  @media (max-width: ${props => props.theme?.breakpoints?.mobile || '480px'}) {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
-  }
 `;
 
 const Tooltip = styled.div`
@@ -128,17 +102,6 @@ const OverflowIndicator = styled.div`
   border: 2px solid ${props => props.theme?.colors?.cardBackground || '#ffffff'};
   box-shadow: ${props => props.theme?.shadows?.small || '0 1px 3px rgba(0, 0, 0, 0.1)'};
 
-  @media (max-width: ${props => props.theme?.breakpoints?.tablet || '768px'}) {
-    width: 32px;
-    height: 32px;
-    font-size: 0.7rem;
-  }
-
-  @media (max-width: ${props => props.theme?.breakpoints?.mobile || '480px'}) {
-    width: 28px;
-    height: 28px;
-    font-size: 0.65rem;
-  }
 `;
 
 const EmptyState = styled.div`
@@ -146,9 +109,6 @@ const EmptyState = styled.div`
   color: ${props => props.theme?.colors?.textSecondary || '#666666'};
   font-style: italic;
 
-  @media (max-width: ${props => props.theme?.breakpoints?.mobile || '480px'}) {
-    font-size: 0.8rem;
-  }
 `;
 
 // Generate a consistent color for a user based on their ID

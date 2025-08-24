@@ -180,8 +180,7 @@ export const getUserAccessiblePlans = async (userId, isAnonymous = false) => {
           ownerId: planData.ownerId,
           accessedByData: planData.accessedBy,
           currentUserId: userId,
-          userId: planData.userId,
-          currentUserId: userId
+          userId: planData.userId
         });
 
         // Universal access: include ALL plans

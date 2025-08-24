@@ -147,7 +147,6 @@ const TankSelectionModal = ({
   onClose,
   mitigationName,
   mitigation,
-  bossAction,
   mainTankJob,
   offTankJob,
   onSelectMainTank,

@@ -21,14 +21,6 @@ const Card = styled.div`
     transform: translateY(-2px);
   }
 
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-  }
-
-  @media (max-width: 600px) {
-    padding: 1rem;
-    border-radius: 8px;
-  }
 `;
 
 const CardHeader = styled.div`
@@ -134,14 +126,6 @@ const CardActions = styled.div`
   gap: 0.75rem;
   margin-top: 1rem;
 
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-  }
-
-  @media (max-width: 600px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
 `;
 
 const Button = styled.button`
@@ -159,18 +143,6 @@ const Button = styled.button`
   white-space: nowrap;
   flex: 1;
 
-  @media (max-width: 768px) {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    min-height: 40px;
-  }
-
-  @media (max-width: 600px) {
-    flex: none;
-    width: 100%;
-    min-height: 48px;
-    font-size: 0.9rem;
-  }
 
   &:disabled {
     opacity: 0.6;
@@ -188,9 +160,6 @@ const PrimaryButton = styled(Button)`
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
   }
 
-  @media (max-width: 600px) {
-    order: -1;
-  }
 `;
 
 const SecondaryButton = styled(Button)`
@@ -219,9 +188,6 @@ const DangerButton = styled(Button)`
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
   }
 
-  @media (max-width: 600px) {
-    order: 1;
-  }
 `;
 
 const MetaInfo = styled.div`

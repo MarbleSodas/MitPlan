@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, createContext, useContext } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Check, X, AlertCircle, Info } from 'lucide-react';
 

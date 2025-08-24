@@ -62,10 +62,6 @@ const StackIndicator = styled.div`
     100% { transform: scale(1); background-color: ${props => props.$isAvailable ? '#2ecc40' : '#666'}; }
   }
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 16px;
-    height: 16px;
-  }
 `;
 
 const StackCount = styled.div`

@@ -1,19 +1,22 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
-import { usePlan } from '../../contexts/PlanContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCollaboration } from '../../contexts/CollaborationContext';
-import { RealtimePlanProvider } from '../../contexts/RealtimePlanContext';
-import AppProvider from '../../contexts/AppProvider';
-import { useDeviceDetection } from '../../hooks';
+import { mitigationAbilities } from '../../data';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
+import { getAvailableAbilities } from '../../utils';
+// import { useAutoAssignment } from '../../hooks/useAutoAssignment';
+import { useNavigate } from 'react-router-dom';
+
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
+import HealingPotencyInput from '../common/HealingPotencyInput/HealingPotencyInput';
+import PrecastToggle from '../common/PrecastToggle';
 import Footer from '../layout/Footer';
 
 
@@ -23,7 +26,7 @@ import BossSelector from '../../features/bosses/BossSelector/BossSelector';
 import BossActionItem from '../BossActionItem/BossActionItem';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
-import MobileMitigationSelector from '../mobile/MobileMitigationSelector';
+
 import FilterToggle from '../common/FilterToggle';
 import TankSelectionModal from '../common/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
@@ -52,18 +55,15 @@ import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext'
 import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 
 // Import utilities
-import { mitigationAbilities } from '../../data';
-import { isMitigationAvailable, getAvailableAbilities } from '../../utils';
-import { useAutoAssignment } from '../../hooks/useAutoAssignment';
+// import { mitigationAbilities } from '../../data';
+// import { isMitigationAvailable, getAvailableAbilities } from '../../utils';
+// import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 
 const PlannerContainer = styled.div`
   min-height: 100vh;
   background: ${props => props.theme?.colors?.background || '#f5f5f5'};
   padding: 2rem;
 
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
 `;
 
 const Header = styled.div`
@@ -74,11 +74,6 @@ const Header = styled.div`
   padding-bottom: 1rem;
   border-bottom: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
 `;
 
 const Title = styled.h1`
@@ -87,10 +82,6 @@ const Title = styled.h1`
   font-weight: 600;
   margin: 0;
 
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-    text-align: center;
-  }
 `;
 
 const ButtonGroup = styled.div`
@@ -98,12 +89,37 @@ const ButtonGroup = styled.div`
   gap: 0.5rem;
   align-items: center;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    width: 100%;
-    gap: 0.75rem;
+`;
+
+// Resizable split between timeline and mitigation list
+const Resizer = styled.div`
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 10px;
+  cursor: col-resize;
+  user-select: none;
+  margin: 0 6px;
+  position: relative;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: ${props => props.theme.colors.border};
+    border-radius: 1px;
+  }
+
+  &:after {
+    content: '⋮';
+    font-size: 12px;
+    opacity: 0.7;
+    z-index: 1;
   }
 `;
+
 
 const BackButton = styled.button`
   padding: 0.75rem 1.5rem;
@@ -152,25 +168,15 @@ const ControlsContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
   padding: 1rem;
   background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
   border-radius: 8px;
   border: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
 
-  @media (max-width: 768px) {
-    padding: 0.75rem;
-  }
 `;
 
-const LoadingMessage = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  font-size: 1.1rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-`;
 
 const ErrorMessage = styled.div`
   background: ${props => props.theme?.colors?.errorBackground || '#fef2f2'};
@@ -181,45 +187,15 @@ const ErrorMessage = styled.div`
   margin-bottom: 2rem;
 `;
 
-const ReadOnlyBanner = styled.div`
-  background: ${props => props.theme?.colors?.warning || '#fff3cd'};
-  color: ${props => props.theme?.colors?.warningText || '#856404'};
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  border: 1px solid ${props => props.theme?.colors?.warningBorder || '#ffeaa7'};
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-
-  button {
-    background: ${props => props.theme?.colors?.primary || '#3399ff'};
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-
-    &:hover {
-      background: ${props => props.theme?.colors?.primaryHover || '#2980ff'};
-    }
-  }
-`;
-
 // Planning interface component that gets data from real-time contexts
-const PlanningInterface = ({ onSave, saving }) => {
-  const { isMobile } = useDeviceDetection();
+const PlanningInterface = () => {
 
   // Get real-time plan data
-  const { realtimePlan, loading, error } = useRealtimePlan();
+  const { loading, error } = useRealtimePlan();
 
   // Get real-time contexts - ALWAYS call all hooks before any early returns
   const { currentBossId, setCurrentBossId, sortedBossActions, selectedBossAction, toggleBossActionSelection, currentBossLevel } = useRealtimeBossContext();
-  const { selectedJobs, toggleJobSelection } = useRealtimeJobContext();
+  const { selectedJobs } = useRealtimeJobContext();
   const {
     assignments,
     addMitigation,
@@ -227,12 +203,72 @@ const PlanningInterface = ({ onSave, saving }) => {
     checkAbilityAvailability,
     getActiveMitigations,
     pendingAssignments,
-    isInitialized
+    updateMitigationPrecast,
   } = useEnhancedMitigation();
-  const { showAllMitigations, filterMitigations } = useFilterContext();
+
+  // Split pane ratio state (timeline/mitigation)
+  const { planId } = useParams();
+  const splitContainerRef = useRef(null);
+  const [splitRatio, setSplitRatio] = useState(() => {
+    try {
+      const key = `plannerSplitRatio:${planId || 'default'}`;
+      const v = sessionStorage.getItem(key);
+      const parsed = v ? parseFloat(v) : NaN;
+      return Number.isFinite(parsed) ? Math.min(0.8, Math.max(0.4, parsed)) : 0.66;
+    } catch {
+      return 0.66;
+    }
+  });
+  useEffect(() => {
+    try {
+      const key = `plannerSplitRatio:${planId || 'default'}`;
+      sessionStorage.setItem(key, String(splitRatio));
+    } catch {
+      // ignore sessionStorage write errors (e.g., privacy mode)
+    }
+  }, [splitRatio, planId]);
+
+  const draggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const startRatioRef = useRef(splitRatio);
+
+
+  const onResizerMouseDown = useCallback((e) => {
+    // Prevent starting a DnD-kit drag from the handle
+    e.preventDefault();
+    e.stopPropagation();
+    if (!splitContainerRef.current) return;
+    draggingRef.current = true;
+    startXRef.current = e.clientX;
+    startRatioRef.current = splitRatio;
+
+    const onMove = (ev) => {
+      if (!draggingRef.current || !splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      if (!rect.width) return;
+      const delta = (ev.clientX - startXRef.current) / rect.width;
+      let next = startRatioRef.current + delta;
+      // Clamp to keep reasonable min/max widths
+      next = Math.max(0.4, Math.min(0.8, next));
+      setSplitRatio(next);
+    };
+
+    const onUp = () => {
+      draggingRef.current = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [splitRatio]);
+
+  const timelinePercent = Math.round(splitRatio * 100);
+  const mitigationPercent = 100 - timelinePercent;
+
+  const { filterMitigations } = useFilterContext();
   const { tankPositions } = useTankPositionContext();
   const { openTankSelectionModal } = useTankSelectionModalContext();
-  const { triggerAutoAssignment, canAutoAssign } = useAutoAssignment(currentBossLevel);
 
   // Local state for drag and drop
   const [activeMitigation, setActiveMitigation] = useState(null);
@@ -282,6 +318,7 @@ const PlanningInterface = ({ onSave, saving }) => {
   }, [availableMitigations, setActiveMitigation]);
 
   const handleDragEnd = useCallback((event) => {
+    console.log('[MitigationPlanner] handleDragEnd called:', event);
     const { active, over } = event;
 
     if (!over) {
@@ -360,8 +397,25 @@ const PlanningInterface = ({ onSave, saving }) => {
     );
 
     if (availability.canAssign()) {
+      // DEBUG: Log mitigation assignment
+      console.log('[MitigationPlanner] Calling addMitigation:', {
+        bossActionId: targetBossAction.id,
+        bossActionName: targetBossAction.name,
+        mitigationId: mitigation.id,
+        mitigationName: mitigation.name,
+        mitigationType: mitigation.type
+      });
+
       // Use the enhanced addMitigation with real-time sync
       addMitigation(targetBossAction.id, mitigation);
+    } else {
+      console.log('[MitigationPlanner] Cannot assign mitigation - availability check failed:', {
+        bossActionId: targetBossAction.id,
+        bossActionName: targetBossAction.name,
+        mitigationId: mitigation.id,
+        mitigationName: mitigation.name,
+        availabilityReason: availability.getUnavailabilityReason ? availability.getUnavailabilityReason() : 'Unknown'
+      });
     }
 
     setActiveMitigation(null);
@@ -412,10 +466,12 @@ const PlanningInterface = ({ onSave, saving }) => {
 
       <ControlsContainer>
         <FilterToggle />
+        <PrecastToggle />
+        <HealingPotencyInput />
       </ControlsContainer>
 
-      <MainContent>
-        <TimelineContainer>
+      <MainContent ref={splitContainerRef}>
+        <TimelineContainer style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }}>
           <BossActionsList>
             {sortedBossActions.map(action => {
               const isSelected = selectedBossAction?.id === action.id;
@@ -442,7 +498,8 @@ const PlanningInterface = ({ onSave, saving }) => {
                     getActiveMitigations={getActiveMitigations}
                     selectedJobs={selectedJobs}
                     currentBossLevel={currentBossLevel}
-                    isMobile={isMobile}
+                    onUpdatePrecast={updateMitigationPrecast}
+
                     onRemoveMitigation={removeMitigation}
                   />
                 </BossActionItem>
@@ -452,8 +509,9 @@ const PlanningInterface = ({ onSave, saving }) => {
           </BossActionsList>
         </TimelineContainer>
 
-        {!isMobile && (
-          <MitigationContainer>
+        <>
+            <Resizer onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" />
+            <MitigationContainer style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}>
             <MitigationList>
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
@@ -490,21 +548,9 @@ const PlanningInterface = ({ onSave, saving }) => {
               })}
             </MitigationList>
           </MitigationContainer>
-        )}
+          </>
       </MainContent>
 
-      {isMobile && selectedBossAction && (
-        <MobileMitigationSelector
-          mitigations={filteredMitigations}
-          bossAction={selectedBossAction}
-          assignments={assignments}
-          onAssignMitigation={addMitigation}
-          onRemoveMitigation={removeMitigation}
-          checkAbilityAvailability={checkAbilityAvailability}
-          bossLevel={currentBossLevel}
-          selectedJobs={selectedJobs}
-        />
-      )}
 
       <DragOverlay>
         {activeMitigation && (
@@ -529,7 +575,7 @@ const PlanningInterface = ({ onSave, saving }) => {
 const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = false, isAnonymous = false }) => {
   const { planId: routePlanId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAnonymousMode, anonymousUser, enableAnonymousMode } = useAuth();
+  const { isAuthenticated, isAnonymousMode, enableAnonymousMode } = useAuth();
   // Remove collaboration context usage from here - it will be moved to MitigationPlannerContent
 
   const [saving, setSaving] = useState(false);
@@ -583,29 +629,10 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
       await new Promise(resolve => setTimeout(resolve, 500));
       console.log('Real-time plan is automatically saved');
       // Show success toast (if toast system is available)
-      if (typeof addToast === 'function') {
-        addToast({
-          type: 'success',
-          title: 'Plan saved!',
-          message: 'Your plan has been saved successfully.',
-          duration: 3000
-        });
-      } else {
-        alert('Plan saved successfully!');
-      }
+      alert('Plan saved successfully!');
     } catch (error) {
       console.error('Error with save operation:', error);
-      // Show error toast (if toast system is available)
-      if (typeof addToast === 'function') {
-        addToast({
-          type: 'error',
-          title: 'Save failed',
-          message: 'Failed to save plan. Please try again.',
-          duration: 4000
-        });
-      } else {
-        alert('Failed to save plan. Please try again.');
-      }
+      alert('Failed to save plan. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -632,7 +659,6 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
 const MitigationPlannerContent = ({
   planId,
   isSharedPlan,
-  isAnonymousSession,
   isAuthenticated,
   handleBack,
   handleSave,

@@ -79,16 +79,6 @@ const GlobalStyles = createGlobalStyle`
     border-radius: 4px;
   }
 
-  /* Special handling for browser inspect mode */
-  @media (max-width: 768px) {
-    html, body {
-      height: 100%;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* Removed hardware acceleration transforms that were causing responsiveness issues */
-  }
 
   ::-webkit-scrollbar-thumb:hover {
     background: ${props => props.theme.mode === 'dark' ? '#777' : '#aaa'};

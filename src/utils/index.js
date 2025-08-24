@@ -29,7 +29,10 @@ export {
   calculateBarrierAmount,
   calculateRemainingHealth,
   formatHealth,
-  formatPercentage
+  formatPercentage,
+  getHealingPotency,
+  calculateHealingAmount,
+  calculateHealthAfterHealing
 } from './health/healthBarUtils';
 
 export {
@@ -40,8 +43,6 @@ export {
 } from './storage/storageUtils';
 
 export {
-  isMobileDevice,
-  isTouchDevice
 } from './device/deviceUtils';
 
 export {

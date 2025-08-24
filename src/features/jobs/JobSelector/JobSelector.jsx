@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import styled from 'styled-components';
-import { ffxivJobs } from '../../../data';
+
 import { useRealtimeJobContext } from '../../../contexts/RealtimeJobContext';
 
 const Container = styled.div`

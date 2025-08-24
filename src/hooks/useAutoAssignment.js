@@ -98,10 +98,11 @@ export const useAutoAssignment = (bossLevel = 90) => {
    * @param {Object} bossAction - The boss action
    * @returns {Array} - Array of recommended mitigations
    */
-  const getRecommendedMitigations = useCallback((tankJobId, bossAction) => {
+  const getRecommendedMitigations = useCallback(async (tankJobId, bossAction) => {
     if (!tankJobId || !bossAction || !checkAbilityAvailability) return [];
 
-    const { getRecommendedTankMitigations } = require('../utils/mitigation/autoAssignmentUtils');
+    // Lazy import to avoid circular deps
+    const { getRecommendedTankMitigations } = await import('../utils/mitigation/autoAssignmentUtils');
     const recommended = getRecommendedTankMitigations(tankJobId, bossLevel);
 
     // Filter by availability

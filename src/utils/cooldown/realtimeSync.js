@@ -242,14 +242,15 @@ export class RealtimeCooldownSync {
       case 'merge':
         return this.mergeSnapshots(conflict.oldSnapshot, conflict.newSnapshot);
         
-      case 'custom':
+      case 'custom': {
         const handler = this.conflictHandlers.get(conflict.type);
         if (handler) {
           return handler(conflict);
         }
         // Fall back to latest_wins if no custom handler
         return conflict.newSnapshot;
-        
+      }
+
       default:
         console.warn('[RealtimeCooldownSync] Unknown conflict resolution strategy:', strategy);
         return conflict.newSnapshot;
