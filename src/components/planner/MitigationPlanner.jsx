@@ -326,8 +326,15 @@ const PlanningInterface = () => {
       return;
     }
 
-    // Find the target boss action from the drop target ID
-    const targetBossAction = sortedBossActions?.find(action => action.id === over.id);
+    // Prefer action object from droppable data when available
+    let targetBossAction = over?.data?.current?.action || null;
+
+    // Fallback: extract original action id from droppable id of form `${action.id}__${idx}`
+    if (!targetBossAction) {
+      const overId = over.id;
+      const originalId = typeof overId === 'string' && overId.includes('__') ? overId.split('__')[0] : overId;
+      targetBossAction = sortedBossActions?.find(action => action.id === originalId) || null;
+    }
 
     if (!targetBossAction) {
       setActiveMitigation(null);
@@ -473,12 +480,13 @@ const PlanningInterface = () => {
       <MainContent ref={splitContainerRef}>
         <TimelineContainer style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }}>
           <BossActionsList>
-            {sortedBossActions.map(action => {
+            {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
+              const droppableId = `${action.id}__${idx}`; // ensure uniqueness even if IDs repeat in data
               return (
                 <Droppable
-                  key={action.id}
-                  id={action.id}
+                  key={droppableId}
+                  id={droppableId}
                   data={{ type: 'bossAction', action }}
                   disableDrop={!isSelected}
                   isSelected={isSelected}
@@ -499,7 +507,6 @@ const PlanningInterface = () => {
                     selectedJobs={selectedJobs}
                     currentBossLevel={currentBossLevel}
                     onUpdatePrecast={updateMitigationPrecast}
-
                     onRemoveMitigation={removeMitigation}
                   />
                 </BossActionItem>

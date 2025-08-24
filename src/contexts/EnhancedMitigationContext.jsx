@@ -676,10 +676,12 @@ export const EnhancedMitigationProvider = ({ children }) => {
       return false;
     }
 
-    // Clamp to ability duration when possible
+    // Normalize and clamp input
+    let raw = Number(precastSeconds);
+    if (!Number.isFinite(raw) || raw < 0) raw = 0;
+
     const ability = mitigationAbilities.find(m => m.id === mitigationId);
     const duration = ability ? getAbilityDurationForLevel(ability, currentBossLevel) : null;
-    const raw = Number(precastSeconds) || 0;
     const clamped = Math.max(0, duration != null ? Math.min(raw, duration) : raw);
 
     const updated = { ...assignments };
@@ -704,7 +706,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
       console.error('[EnhancedMitigationContext] Failed to update precastSeconds', e);
       return false;
     }
-  }, [assignments, isInitialized, updateAssignmentsRealtime]);
+  }, [assignments, isInitialized, updateAssignmentsRealtime, currentBossLevel]);
 
   // Context value
   const contextValue = useMemo(() => ({

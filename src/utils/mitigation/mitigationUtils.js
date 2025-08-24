@@ -52,8 +52,9 @@ export const findActiveMitigationsAtTime = (assignments, bossActions, mitigation
       const duration = getAbilityDurationForLevel(mitigation, bossLevel);
 
       // Calculate when this mitigation starts (support precast) and ends
-      const precast = Number(assignedMitigation.precastSeconds || 0);
-      const startTime = Math.max(0, action.time - (isNaN(precast) ? 0 : precast));
+      let precast = Number(assignedMitigation.precastSeconds);
+      if (!Number.isFinite(precast) || precast < 0) precast = 0;
+      const startTime = Math.max(0, action.time - precast);
       const endTime = startTime + duration;
 
       // Only count windows that have started by the target time

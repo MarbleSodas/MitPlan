@@ -453,11 +453,18 @@ const AssignedMitigations = ({
                 {showPrecastOptions && getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
                   <PrecastInput
                     type="number"
+                    step="0.1"
                     min={0}
                     max={getAbilityDurationForLevel(displayMitigation, currentBossLevel) || undefined}
-                    value={(displayMitigation.precastSeconds === 0 || displayMitigation.precastSeconds == null) ? '' : displayMitigation.precastSeconds}
+                    value={(() => {
+                      const v = displayMitigation.precastSeconds;
+                      // Render empty for 0, null/undefined, or non-finite values to avoid React warnings
+                      if (v === 0 || v == null || !Number.isFinite(Number(v))) return '';
+                      return String(v);
+                    })()}
                     onChange={(e) => {
                       const valStr = e.target.value;
+                      // Allow clearing the field without errors and persist as 0
                       if (valStr === '') {
                         onUpdatePrecast && onUpdatePrecast(
                           action.id,
@@ -467,8 +474,10 @@ const AssignedMitigations = ({
                         );
                         return;
                       }
-                      const raw = parseFloat(valStr);
-                      if (isNaN(raw)) {
+                      // Coerce to number safely
+                      const raw = Number(valStr);
+                      if (!Number.isFinite(raw)) {
+                        // Ignore transient non-numeric states (e.g., '-')
                         return;
                       }
                       const dur = getAbilityDurationForLevel(displayMitigation, currentBossLevel) || 0;
