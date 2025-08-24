@@ -559,7 +559,7 @@ export const autoAssignSingleTargetMitigation = (
 
   // Assign the mitigation
   try {
-    const result = addMitigation(bossAction.id, mitigation, decision.assignment.targetPosition);
+    addMitigation(bossAction.id, mitigation, decision.assignment.targetPosition);
 
     console.log('[SingleTargetAssignment] Auto-assigned:', {
       mitigation: mitigation.name,
