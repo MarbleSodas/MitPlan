@@ -97,7 +97,7 @@ export const RealtimeMitigationProvider = ({ children }) => {
   }, [sortedBossActions, localAssignments, currentBossLevel, selectedJobs]);
 
   // Add mitigation with real-time sync and conflict resolution
-  const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
+  const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared', options = {}) => {
     // Check if anonymous user has proper session for collaborative editing
     if (!user && (!sessionId || sessionId === 'unknown')) {
       console.warn('[RealtimeMitigationContext] Anonymous user attempting assignment without proper session');
@@ -112,12 +112,21 @@ export const RealtimeMitigationProvider = ({ children }) => {
     }
 
     const timestamp = Date.now();
+
+    // Compute role-shared instance and caster
+    const abilityDef = mitigationAbilities.find(a => a.id === mitigation.id);
+    const isRoleShared = !!abilityDef?.isRoleShared;
+    const casterJobId = options?.casterJobId || null;
+    const instanceId = isRoleShared ? `${mitigation.id}_${casterJobId || timestamp}` : null;
+
     const mitigationWithMetadata = {
       ...mitigation,
       tankPosition,
       assignedBy: user?.uid || 'anonymous',
       assignedAt: timestamp,
-      sessionId: sessionId || 'unknown'
+      sessionId: sessionId || 'unknown',
+      casterJobId,
+      instanceId
     };
 
     // Check if this is an Aetherflow-consuming ability and clear cache immediately for real-time UI updates

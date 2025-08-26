@@ -223,21 +223,20 @@ const MitigationIcon = styled.span`
 `;
 
 const PrecastInput = styled.input`
-  width: 42px;
-  font-size: 12px;
-  padding: 1px 1px !important;
+  width: 28px;
+  padding: 0 0;
   border: 1px solid ${props => props.theme.colors.border} !important;
   border-radius: 4px;
   background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'white'};
-  color: inherit;
+  // color: inherit;
   text-align: center;
   transition: border-color 0.2s ease;
-  
+
   &:focus {
     outline: none;
     border-color: ${props => props.theme.colors.primary};
   }
-  
+
   /* Hide default number input steppers for a clean look */
   -moz-appearance: textfield;
   &::-webkit-outer-spin-button,
@@ -322,6 +321,20 @@ const RemoveButton = styled.button`
     font-size: 16px;
     margin-left: 3px;
   }
+`;
+
+
+const CasterBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(150, 150, 150, 0.25)' : 'rgba(150, 150, 150, 0.2)'};
+  color: ${props => props.theme.colors.text};
 `;
 
 const TankPositionBadge = styled.span`
@@ -443,6 +456,12 @@ const AssignedMitigations = ({
                 }}
               >
                 {displayMitigation.name}
+                {displayMitigation.casterJobId && (
+                  <CasterBadge>
+                    {displayMitigation.casterJobId}
+                  </CasterBadge>
+                )}
+
                 {displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' && (
                   <TankPositionBadge $position={displayMitigation.tankPosition}>
                     {displayMitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
@@ -550,6 +569,12 @@ const AssignedMitigations = ({
                     alignItems: 'center'
                   }}>
                     {fullMitigation.name}
+                    {mitigation.casterJobId && (
+                      <CasterBadge>
+                        {mitigation.casterJobId}
+                      </CasterBadge>
+                    )}
+
                     {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
                       <TankPositionBadge $position={mitigation.tankPosition}>
                         {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}

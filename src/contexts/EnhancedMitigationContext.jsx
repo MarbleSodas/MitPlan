@@ -442,7 +442,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
   /**
    * Add a mitigation to a boss action with enhanced conflict resolution
    */
-  const addMitigation = useCallback(async (bossActionId, mitigation, tankPosition = null) => {
+  const addMitigation = useCallback(async (bossActionId, mitigation, tankPosition = null, options = {}) => {
     if (!isInitialized || !updateAssignmentsRealtime) {
       console.warn('[EnhancedMitigationContext] Cannot add mitigation: not initialized');
       return false;
@@ -516,15 +516,21 @@ export const EnhancedMitigationProvider = ({ children }) => {
 
     try {
       // Create the mitigation assignment object with enhanced metadata
+      const abilityDef = mitigationAbilities.find(a => a.id === mitigation.id);
+      const isRoleShared = !!abilityDef?.isRoleShared;
+      const casterJobId = options?.casterJobId || null;
+      const instanceId = isRoleShared ? `${mitigation.id}_${casterJobId || Date.now()}` : null;
+
       const mitigationAssignment = {
         id: mitigation.id,
         name: mitigation.name,
         tankPosition: tankPosition || 'shared',
         assignedAt: Date.now(),
         assignedBy: 'current_user', // This could be enhanced with actual user info
+        casterJobId,
         // Add metadata for conflict resolution
         chargeIndex: preAvailability.availableCharges > 1 ? (preAvailability.totalCharges - preAvailability.availableCharges) : 0,
-        instanceId: preAvailability.isRoleShared ? `${mitigation.id}_${Date.now()}` : null,
+        instanceId,
         cooldownManagerVersion: cooldownManagerRef.current?.lastCacheUpdate || Date.now()
       };
 
@@ -552,7 +558,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
       }
 
       // Check if this is an Aetherflow-consuming ability and clear cache immediately for real-time UI updates
-      const ability = mitigationAbilities.find(a => a.id === mitigation.id);
+      const ability = abilityDef;
       if (ability && ability.consumesAetherflow && cooldownManagerRef.current?.aetherflowTracker) {
         console.log('[EnhancedMitigationContext] Clearing Aetherflow cache before adding stack-consuming ability:', ability.name);
         cooldownManagerRef.current.aetherflowTracker.clearCache();
@@ -583,7 +589,8 @@ export const EnhancedMitigationProvider = ({ children }) => {
         mitigationId: mitigation.id,
         tankPosition,
         chargeIndex: mitigationAssignment.chargeIndex,
-        instanceId: mitigationAssignment.instanceId
+        instanceId: mitigationAssignment.instanceId,
+        casterJobId: mitigationAssignment.casterJobId
       });
 
       return true;

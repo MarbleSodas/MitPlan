@@ -7,6 +7,7 @@ import { TankPositionProvider } from './TankPositionContext';
 import { FilterProvider } from './FilterContext';
 import { TankSelectionModalProvider } from './TankSelectionModalContext';
 import { CollaborationProvider } from './CollaborationContext';
+import { ClassSelectionModalProvider } from './ClassSelectionModalContext.jsx';
 
 /**
  * Real-time App Provider that wraps all the real-time contexts
@@ -22,9 +23,11 @@ export const RealtimeAppProvider = ({ children, planId }) => {
             <TankPositionProvider>
               <EnhancedMitigationProvider>
                 <FilterProvider>
-                  <TankSelectionModalProvider>
-                    {children}
-                  </TankSelectionModalProvider>
+                  <ClassSelectionModalProvider>
+                    <TankSelectionModalProvider>
+                      {children}
+                    </TankSelectionModalProvider>
+                  </ClassSelectionModalProvider>
                 </FilterProvider>
               </EnhancedMitigationProvider>
             </TankPositionProvider>

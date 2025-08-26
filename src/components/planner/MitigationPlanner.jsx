@@ -46,6 +46,7 @@ import {
   useTankPositionContext,
   useTankSelectionModalContext
 } from '../../contexts';
+import { useClassSelectionModalContext } from '../../contexts/ClassSelectionModalContext.jsx';
 
 // Import real-time contexts
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
@@ -268,6 +269,8 @@ const PlanningInterface = () => {
 
   const { filterMitigations } = useFilterContext();
   const { tankPositions } = useTankPositionContext();
+  const { openClassSelectionModal } = useClassSelectionModalContext();
+
   const { openTankSelectionModal } = useTankSelectionModalContext();
 
   // Local state for drag and drop
@@ -387,7 +390,20 @@ const PlanningInterface = () => {
       }, mitigation, targetBossAction);
       setActiveMitigation(null);
       return;
-    } else if (assignmentDecision.assignment) {
+    }
+
+    // BEFORE any auto-assignment for area/party abilities, handle multi-class caster selection
+    if (Array.isArray(mitigation.jobs) && mitigation.jobs.length > 1) {
+      openClassSelectionModal(mitigation, targetBossAction, (jobId) => {
+        // If exactly one eligible caster was present, jobId will be that caster. If none or multi, jobId is null or chosen.
+        const options = jobId ? { casterJobId: jobId } : {};
+        addMitigation(targetBossAction.id, mitigation, 'shared', options);
+      });
+      setActiveMitigation(null);
+      return;
+    }
+
+    if (assignmentDecision.assignment) {
       console.log('[MitigationPlanner] Auto-assigning based on decision:', assignmentDecision.assignment);
       // Auto-assign based on the decision
       addMitigation(targetBossAction.id, mitigation, assignmentDecision.assignment.targetPosition);
@@ -413,8 +429,15 @@ const PlanningInterface = () => {
         mitigationType: mitigation.type
       });
 
-      // Use the enhanced addMitigation with real-time sync
-      addMitigation(targetBossAction.id, mitigation);
+      // If ability is multi-class, prompt for caster selection
+      if (Array.isArray(mitigation.jobs) && mitigation.jobs.length > 1) {
+        openClassSelectionModal(mitigation, targetBossAction, (jobId) => {
+          addMitigation(targetBossAction.id, mitigation, 'shared', { casterJobId: jobId });
+        });
+      } else {
+        // Use the enhanced addMitigation with real-time sync
+        addMitigation(targetBossAction.id, mitigation);
+      }
     } else {
       console.log('[MitigationPlanner] Cannot assign mitigation - availability check failed:', {
         bossActionId: targetBossAction.id,

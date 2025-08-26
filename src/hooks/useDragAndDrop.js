@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { mitigationAbilities } from '../data';
 import { useTankSelectionModalContext } from '../contexts/TankSelectionModalContext';
+import { useClassSelectionModalContext } from '../contexts/ClassSelectionModalContext.jsx';
 import { isDualTankBusterAction } from '../utils/boss/bossActionUtils';
 import { determineMitigationAssignment } from '../utils/mitigation/autoAssignmentUtils';
 
@@ -28,8 +29,11 @@ const useDragAndDrop = ({
   // Get the tank selection modal context
   const { openTankSelectionModal } = useTankSelectionModalContext();
 
+  // Multi-class caster selection modal
+  const { openClassSelectionModal } = useClassSelectionModalContext();
+
   // Process mitigation assignment after all checks
-  const processMitigationAssignment = useCallback((selectedBossAction, mitigation, tankPosition = 'shared') => {
+  const processMitigationAssignment = useCallback((selectedBossAction, mitigation, tankPosition = 'shared', casterJobId = null) => {
     // Create the pending assignment object
     const newPendingAssignment = {
       bossActionId: selectedBossAction.id,
@@ -45,11 +49,11 @@ const useDragAndDrop = ({
     setPendingAssignments(prev => [...prev, newPendingAssignment]);
 
     // Then add the mitigation to the boss action with the appropriate tank position
-    const result = addMitigation(selectedBossAction.id, mitigation, tankPosition);
+    const result = addMitigation(selectedBossAction.id, mitigation, tankPosition, { casterJobId });
 
     if (result && result.conflicts && result.conflicts.removedCount > 0) {
       // Log about removed future assignments only if there are conflicts
-      console.log(`Added ${mitigation.name} to ${selectedBossAction.name} for ${tankPosition}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
+      console.log(`Added ${mitigation.name} to ${selectedBossAction.name} for ${tankPosition}${casterJobId ? ` by ${casterJobId}` : ''}. Removed ${result.conflicts.removedCount} future assignments that would be on cooldown.`);
     }
   }, [addMitigation, addPendingAssignment, setPendingAssignments]);
 
@@ -130,6 +134,17 @@ const useDragAndDrop = ({
           setActiveMitigation(null);
           return;
         }
+
+        // If ability can be cast by multiple jobs and more than one is currently selected, prompt for class selection
+        if (Array.isArray(mitigation.jobs) && mitigation.jobs.length > 1) {
+          openClassSelectionModal(mitigation, selectedBossAction, (jobId) => {
+            // If exactly one eligible caster was present, jobId will be that caster. If none or multi, jobId is null or chosen.
+            processMitigationAssignment(selectedBossAction, mitigation, tankPosition, jobId || null);
+          });
+          setActiveMitigation(null);
+          return;
+        }
+
 
         // Process the mitigation assignment with the determined tank position
         processMitigationAssignment(selectedBossAction, mitigation, tankPosition);

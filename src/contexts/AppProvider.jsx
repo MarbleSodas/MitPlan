@@ -6,6 +6,7 @@ import { LegacyEnhancedMitigationProvider } from './EnhancedMitigationContext.js
 import { FilterProvider } from './FilterContext.jsx';
 import { TankPositionProvider } from './TankPositionContext.jsx';
 import { TankSelectionModalProvider } from './TankSelectionModalContext.jsx';
+import { ClassSelectionModalProvider } from './ClassSelectionModalContext.jsx';
 import BossContext from './BossContext.jsx';
 import JobContext from './JobContext.jsx';
 
@@ -19,14 +20,16 @@ const AppProvider = ({ children }) => {
       <BossProvider>
         <JobProvider>
           <TankPositionProvider>
-            {/* EnhancedMitigationProvider automatically gets data from other contexts */}
-            <LegacyEnhancedMitigationProvider>
-              <FilterProvider>
-                <TankSelectionModalProvider>
-                  {children}
-                </TankSelectionModalProvider>
-              </FilterProvider>
-            </LegacyEnhancedMitigationProvider>
+            <ClassSelectionModalProvider>
+              <TankSelectionModalProvider>
+                {/* EnhancedMitigationProvider automatically gets data from other contexts */}
+                <LegacyEnhancedMitigationProvider>
+                  <FilterProvider>
+                    {children}
+                  </FilterProvider>
+                </LegacyEnhancedMitigationProvider>
+              </TankSelectionModalProvider>
+            </ClassSelectionModalProvider>
           </TankPositionProvider>
         </JobProvider>
       </BossProvider>

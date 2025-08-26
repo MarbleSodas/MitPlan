@@ -9,6 +9,8 @@ export { default as TankPositionContext, TankPositionProvider, useTankPositionCo
 export { default as AppProvider } from './AppProvider.jsx';
 export { TankSelectionModalProvider, useTankSelectionModalContext } from './TankSelectionModalContext.jsx';
 
+export { ClassSelectionModalProvider, useClassSelectionModalContext } from './ClassSelectionModalContext.jsx';
+
 // Enhanced Mitigation System (NEW - Recommended)
 export { EnhancedMitigationProvider, LegacyEnhancedMitigationProvider, useEnhancedMitigation } from './EnhancedMitigationContext.jsx';
 

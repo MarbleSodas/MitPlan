@@ -195,12 +195,11 @@ button:disabled, .button:disabled {
 
 /* Form styles */
 input, select, textarea {
-  width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  /* width: 100%;
+  padding: 2px;
   border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-md);
-  transition: border-color var(--transition-fast);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-fast); */
 }
 
 input:focus, select:focus, textarea:focus {
