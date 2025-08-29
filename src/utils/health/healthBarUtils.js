@@ -266,6 +266,24 @@ export const calculateHealingAmount = (healingAbilities, healingPotencyPer100, b
     }
   });
 
+  // Eudaimonia (Philosophia): add 150 potency heal per Sage spell cast on this action
+  try {
+    const hasPhilosophia = healingAbilities.some(a => a && a.id === 'philosophia');
+    if (hasPhilosophia) {
+      const sageSpellCount = healingAbilities.filter(a => a && Array.isArray(a.jobs) && a.jobs.includes('SGE') && a.isSpell === true).length;
+      if (sageSpellCount > 0) {
+        const basePotency = 150 * sageSpellCount;
+        let modifier = 1;
+        if (buffsByJob['SGE']) {
+          const add = buffsByJob['SGE'].additive || 0;
+          const mult = buffsByJob['SGE'].multiplicative || 1;
+          modifier = (1 + add) * mult;
+        }
+        totalHealing += ((basePotency * modifier) / 100) * healingPotencyPer100;
+      }
+    }
+  } catch (e) {}
+
   return totalHealing;
 };
 

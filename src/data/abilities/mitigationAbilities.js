@@ -877,6 +877,30 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
+    forRaidWide: true,
+    upgradedBy: 'medica_iii' // Replaced by Medica III at level 96
+  },
+  {
+    id: 'medica_iii',
+    name: 'Medica III',
+    description: 'Restores own HP and the HP of all nearby party members and grants a stronger regen',
+    levelRequirement: 96,
+    levelDescriptions: {
+      96: 'Restores own HP and the HP of all nearby party members with 250 potency and grants 175 potency regen for 15s'
+    },
+    duration: 15,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Medica_III.png',
+    type: 'healing',
+    healingPotency: 250, // Instant heal component remains 250
+    regenPotency: 175, // Upgraded regen potency
+    healingType: 'instant',
+    regenDuration: 15,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
     forRaidWide: true
   },
   {
@@ -1092,6 +1116,29 @@ export const mitigationAbilities = [
     healingPotency: 200,
     healingType: 'instant',
     barrierFlatPotency: 320, // 160% of healing as barrier → 200 * 1.6 = 320 potency
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    upgradedBy: 'concitation' // Replaced by Concitation at level 96
+  },
+  {
+    id: 'concitation',
+    name: 'Concitation',
+    description: 'Restores own HP and the HP of all nearby party members and grants a stronger barrier',
+    levelRequirement: 96,
+    levelDescriptions: {
+      96: 'Restores own HP and the HP of all nearby party members with 200 potency and grants a barrier equivalent to 180% of the HP restored'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Concitation.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    barrierFlatPotency: 360, // 180% of healing as barrier → 200 * 1.8 = 360 potency
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
@@ -1468,6 +1515,54 @@ export const mitigationAbilities = [
     forRaidWide: true
   },
   {
+    id: 'aspected_helios',
+    name: 'Aspected Helios',
+    description: 'Restores own HP and the HP of all nearby party members and grants regen',
+    levelRequirement: 40,
+    levelDescriptions: {
+      40: 'Restores own HP and the HP of all nearby party members with 250 potency and grants 150 potency regen for 15s'
+    },
+    duration: 15,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/abilities-official/aspected_helios.png',
+    type: 'healing',
+    healingPotency: 250,
+    regenPotency: 150,
+    healingType: 'instant',
+    regenDuration: 15,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    upgradedBy: 'helios_conjunction' // Replaced by Helios Conjunction at level 96
+  },
+  {
+    id: 'helios_conjunction',
+    name: 'Helios Conjunction',
+    description: 'Restores own HP and the HP of all nearby party members and grants a stronger regen',
+    levelRequirement: 96,
+    levelDescriptions: {
+      96: 'Restores own HP and the HP of all nearby party members with 250 potency and grants 175 potency regen for 15s'
+    },
+    duration: 15,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Helios_Conjunction.png',
+    type: 'healing',
+    healingPotency: 250,
+    regenPotency: 175,
+    healingType: 'instant',
+    regenDuration: 15,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+
+  {
     id: 'essential_dignity',
     name: 'Essential Dignity',
     description: 'Restores target\'s HP with potency that increases as target\'s HP decreases',
@@ -1635,6 +1730,7 @@ export const mitigationAbilities = [
     type: 'healing',
     healingPotency: 300,
     healingType: 'instant',
+    isSpell: true,
     mitigationValue: 0,
     barrierFlatPotency: 540, // Barrier equals 180% of HP restored → 300 * 1.8 = 540 potency
     damageType: 'both',
@@ -1658,35 +1754,37 @@ export const mitigationAbilities = [
     type: 'healing',
     healingPotency: 200,
     healingType: 'instant',
+    isSpell: true,
     mitigationValue: 0,
     barrierFlatPotency: 320, // Barrier equals 160% of HP restored → 200 * 1.6 = 320 potency
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    upgradedBy: 'eukrasian_prognosis_ii' // Replaced by Eukrasian Prognosis II at level 96 per job guide
   },
   {
     id: 'eukrasian_prognosis_ii',
     name: 'Eukrasian Prognosis II',
     description: 'Restores party HP and erects a stronger barrier than Eukrasian Prognosis',
-    levelRequirement: 100,
+    levelRequirement: 96,
     levelDescriptions: {
-      100: 'Restores party HP with 200 potency and erects a barrier stronger than Eukrasian Prognosis'
+      96: 'Restores party HP with 100 potency and erects a barrier equal to 360% of the HP restored'
     },
     duration: 30,
     cooldown: 2.5,
     jobs: ['SGE'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Eukrasian_Prognosis_II.png',
     type: 'healing',
-    healingPotency: 200,
+    healingPotency: 100,
     healingType: 'instant',
+    isSpell: true,
     mitigationValue: 0,
-    barrierFlatPotency: 448, // Stronger than EP: 320 * 1.4 = 448 potency (approximation)
+    barrierFlatPotency: 360, // 360% of HP restored per job guide at 96
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true,
-    upgradedFrom: 'eukrasian_prognosis'
+    forRaidWide: true
   },
   {
     id: 'haima',
@@ -1780,10 +1878,10 @@ export const mitigationAbilities = [
   {
     id: 'philosophia',
     name: 'Philosophia',
-    description: 'Increases healing magic potency by 20% and grants a barrier that absorbs damage equal to 10% of HP healed',
+    description: 'Increases healing magic potency by 20%. Duration: 20s Additional Effect: Grants self and nearby party members the effect of Eudaimonia, restoring HP after landing spells Duration: 20s',
     levelRequirement: 100,
     levelDescriptions: {
-      100: 'Increases healing magic potency by 20% and grants a barrier that absorbs damage equal to 10% of HP healed for 20s'
+      100: 'Increases healing magic potency by 20%. Duration: 20s Additional Effect: Grants self and nearby party members the effect of Eudaimonia, restoring HP after landing spells Duration: 20s'
     },
     duration: 20,
     cooldown: 180,
@@ -1817,6 +1915,7 @@ export const mitigationAbilities = [
     type: 'healing',
     healingPotency: 450,
     healingType: 'instant',
+    isSpell: true,
     mitigationValue: 0,
     damageType: 'both',
     target: 'single',
@@ -1838,11 +1937,34 @@ export const mitigationAbilities = [
     type: 'healing',
     healingPotency: 300,
     healingType: 'instant',
+    isSpell: true,
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
     forRaidWide: true
+  },
+  {
+    id: 'pneuma',
+    name: 'Pneuma',
+    description: 'Deals unaspected damage in a line and restores HP to self and nearby party members',
+    levelRequirement: 90,
+    levelDescriptions: {
+      90: 'Restores own HP and the HP of all nearby party members with 600 potency'
+    },
+    duration: 0,
+    cooldown: 120,
+    jobs: ['SGE'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Pneuma.png',
+    type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    isSpell: true
   },
   {
     id: 'druochole',
