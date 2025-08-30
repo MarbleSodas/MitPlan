@@ -445,7 +445,7 @@
   {
     "id": "special_bombarian_special",
     "name": "Special Bombarian Special (Enrage)",
-    "time": 670,
+    "time": 570,
     "description": "Enrage wipe mechanic that occurs at 11:10 into the fight.",
     "unmitigatedDamage": "N/A",
     "damageType": "magical",
