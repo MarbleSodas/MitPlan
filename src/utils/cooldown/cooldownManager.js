@@ -536,6 +536,41 @@ export class CooldownManager {
   _checkRoleSharedAvailabilityEnhanced(ability, targetTime, targetBossActionId, options) {
     const instancesState = this.instancesTracker.getInstancesState(ability.id, targetTime);
 
+    // If a specific caster is requested, evaluate availability for that caster's instance only
+    const casterJobId = options?.casterJobId || null;
+    if (casterJobId) {
+      const casterInstance = instancesState.instances.find(inst => inst.jobId === casterJobId);
+      if (casterInstance) {
+        const isAvailable = casterInstance.isAvailableAt(targetTime);
+        return new AbilityAvailability({
+          abilityId: ability.id,
+          isAvailable,
+          reason: isAvailable ? null : 'no_instances',
+          availableCharges: 1,
+          totalCharges: 1,
+          availableInstances: isAvailable ? 1 : 0,
+          totalInstances: 1,
+          nextAvailableTime: isAvailable ? null : casterInstance.nextAvailableTime,
+          isRoleShared: true,
+          sharedCooldownGroup: ability.sharedCooldownGroup || null
+        });
+      }
+      // If the caster isn't part of the selected jobs/instances, treat as unavailable
+      return new AbilityAvailability({
+        abilityId: ability.id,
+        isAvailable: false,
+        reason: 'no_instances',
+        availableCharges: 0,
+        totalCharges: 1,
+        availableInstances: 0,
+        totalInstances: 1,
+        nextAvailableTime: null,
+        isRoleShared: true,
+        sharedCooldownGroup: ability.sharedCooldownGroup || null
+      });
+    }
+
+    // Default behavior: evaluate across all instances
     return new AbilityAvailability({
       abilityId: ability.id,
       isAvailable: instancesState.hasInstancesAvailable(),

@@ -1304,7 +1304,7 @@ export const mitigationAbilities = [
     description: 'Restores own HP and the HP of all nearby party members. Also grants a barrier.',
     levelRequirement: 80,
     levelDescriptions: {
-      80: 'Restores HP of all nearby party members with 200 potency and grants a barrier equivalent to 200 potency. 2 charges. Usable while Seraph is summoned.'
+      80: 'Restores HP of all nearby party members with 250 potency and grants a barrier equivalent to 250 potency. 2 charges. Usable while Seraph is summoned.'
     },
     duration: 30,
     cooldown: 30,
@@ -1312,9 +1312,9 @@ export const mitigationAbilities = [
     jobs: ['SCH'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Consolation.png',
     type: 'healing',
-    healingPotency: 200,
+    healingPotency: 250,
     healingType: 'instant',
-    barrierFlatPotency: 200,
+    barrierFlatPotency: 250,
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
@@ -1326,10 +1326,10 @@ export const mitigationAbilities = [
   {
     id: 'expedient',
     name: 'Expedient',
-    description: 'Increases movement speed and reduces damage taken by 10%',
+    description: 'Increases movement speed for 10s and reduces damage taken by 10%',
     levelRequirement: 90,
     levelDescriptions: {
-      90: 'Increases movement speed and reduces damage taken by 10% for 20s'
+      90: 'Increases movement speed for 10s and reduces damage taken by 10% for 20s'
     },
     duration: 20,
     cooldown: 120,
@@ -1345,10 +1345,10 @@ export const mitigationAbilities = [
   {
     id: 'seraphism',
     name: 'Seraphism',
-    description: 'Increases healing magic potency by 20% and grants a barrier that absorbs damage equal to 10% of HP healed',
+    description: 'Gradually restores the HP of self and all party members within a radius of 50 yalms.',
     levelRequirement: 100,
     levelDescriptions: {
-      100: 'Increases healing magic potency by 20% and grants a barrier that absorbs damage equal to 10% of HP healed for 20s'
+      100: 'Gradually restores the HP of self and all party members within a radius of 50 yalms.'
     },
     duration: 20,
     cooldown: 180,

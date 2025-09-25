@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { mitigationAbilities, ffxivJobs } from '../../../data';
+import { getRoleSharedAbilityCount } from '../../../utils/abilities/abilityUtils';
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
@@ -268,8 +269,14 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     const optimizedAssignments = {};
 
     Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
-      // Store only the mitigation IDs instead of the full objects
-      optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
+      optimizedAssignments[bossActionId] = mitigations.map(mitigation => {
+        const ability = mitigationAbilities.find(m => m.id === mitigation.id) || mitigation;
+        const isMultiInstance = ability?.isRoleShared && getRoleSharedAbilityCount(ability, selectedJobs) > 1;
+        if (isMultiInstance && mitigation.casterJobId) {
+          return { id: mitigation.id, casterJobId: mitigation.casterJobId };
+        }
+        return mitigation.id;
+      });
     });
 
     // Create optimized selectedJobs object with only the selected job IDs
@@ -292,7 +299,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
       id: Date.now().toString(),
       name: planName,
       date: new Date().toISOString(),
-      version: '1.2',
+      version: '1.3',
       bossId,
       assignments: optimizedAssignments,
       selectedJobs: optimizedSelectedJobs
@@ -317,8 +324,14 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     const optimizedAssignments = {};
 
     Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
-      // Store only the mitigation IDs instead of the full objects
-      optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
+      optimizedAssignments[bossActionId] = mitigations.map(mitigation => {
+        const ability = mitigationAbilities.find(m => m.id === mitigation.id) || mitigation;
+        const isMultiInstance = ability?.isRoleShared && getRoleSharedAbilityCount(ability, selectedJobs) > 1;
+        if (isMultiInstance && mitigation.casterJobId) {
+          return { id: mitigation.id, casterJobId: mitigation.casterJobId };
+        }
+        return mitigation.id;
+      });
     });
 
     // Create optimized selectedJobs object with only the selected job IDs
@@ -338,7 +351,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
     // Create the export data
     const exportObj = {
-      version: '1.2',
+      version: '1.3',
       exportDate: new Date().toISOString(),
       bossId,
       assignments: optimizedAssignments,
@@ -371,8 +384,14 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
     const optimizedAssignments = {};
 
     Object.entries(assignments).forEach(([bossActionId, mitigations]) => {
-      // Store only the mitigation IDs instead of the full objects
-      optimizedAssignments[bossActionId] = mitigations.map(mitigation => mitigation.id);
+      optimizedAssignments[bossActionId] = mitigations.map(mitigation => {
+        const ability = mitigationAbilities.find(m => m.id === mitigation.id) || mitigation;
+        const isMultiInstance = ability?.isRoleShared && getRoleSharedAbilityCount(ability, selectedJobs) > 1;
+        if (isMultiInstance && mitigation.casterJobId) {
+          return { id: mitigation.id, casterJobId: mitigation.casterJobId };
+        }
+        return mitigation.id;
+      });
     });
 
     // Create optimized selectedJobs object with only the selected job IDs
@@ -392,7 +411,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
     // Create the plan data
     const planData = {
-      version: '1.2',
+      version: '1.3',
       exportDate: new Date().toISOString(),
       bossId,
       assignments: optimizedAssignments,
@@ -460,15 +479,19 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
           // Reconstruct the full mitigation objects from IDs
           const reconstructedAssignments = {};
 
-          Object.entries(migratedData.assignments).forEach(([bossActionId, mitigationIds]) => {
-            reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-              const mitigation = mitigationAbilities.find(m => m.id === id);
-              if (!mitigation) {
+          Object.entries(migratedData.assignments).forEach(([bossActionId, mitigationItems]) => {
+            reconstructedAssignments[bossActionId] = mitigationItems.map(item => {
+              const id = typeof item === 'string' ? item : (item && item.id);
+              const casterJobId = (item && typeof item === 'object') ? item.casterJobId : undefined;
+              const ability = mitigationAbilities.find(m => m.id === id);
+              if (!ability) {
                 console.warn(`Mitigation with ID ${id} not found`);
                 return null;
               }
-              return mitigation;
-            }).filter(Boolean); // Remove null values
+              const mit = { ...ability };
+              if (casterJobId) mit.casterJobId = casterJobId;
+              return mit;
+            }).filter(Boolean);
           });
 
           // Reconstruct the full job objects if selectedJobs is included
@@ -566,15 +589,19 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
           // Reconstruct the full mitigation objects from IDs
           const reconstructedAssignments = {};
 
-          Object.entries(migratedPlan.assignments).forEach(([bossActionId, mitigationIds]) => {
-            reconstructedAssignments[bossActionId] = mitigationIds.map(id => {
-              const mitigation = mitigationAbilities.find(m => m.id === id);
-              if (!mitigation) {
+          Object.entries(migratedPlan.assignments).forEach(([bossActionId, mitigationItems]) => {
+            reconstructedAssignments[bossActionId] = mitigationItems.map(item => {
+              const id = typeof item === 'string' ? item : (item && item.id);
+              const casterJobId = (item && typeof item === 'object') ? item.casterJobId : undefined;
+              const ability = mitigationAbilities.find(m => m.id === id);
+              if (!ability) {
                 console.warn(`Mitigation with ID ${id} not found`);
                 return null;
               }
-              return mitigation;
-            }).filter(Boolean); // Remove null values
+              const mit = { ...ability };
+              if (casterJobId) mit.casterJobId = casterJobId;
+              return mit;
+            }).filter(Boolean);
           });
 
           // Reconstruct the full job objects if selectedJobs is included
@@ -652,7 +679,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   const handleCopyPlanLinkFromSaved = (plan) => {
     // Create the plan data for sharing
     const planData = {
-      version: '1.2',
+      version: '1.3',
       exportDate: new Date().toISOString(),
       bossId: plan.bossId,
       assignments: plan.assignments,

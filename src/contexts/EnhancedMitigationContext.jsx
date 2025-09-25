@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
-import { getAbilityDurationForLevel } from '../utils/abilities/abilityUtils';
+import { getAbilityDurationForLevel, getAbilityCooldownForLevel, getRoleSharedAbilityCount } from '../utils/abilities/abilityUtils';
 import { mitigationAbilities } from '../data';
 import { CooldownManager, getCooldownManager, updateCooldownManager } from '../utils/cooldown/cooldownManager';
 import { initializeCooldownSystem } from '../utils/cooldown';
@@ -498,7 +498,8 @@ export const EnhancedMitigationProvider = ({ children }) => {
     // Pre-assignment availability check (after removing conflicting assignment)
     const preAvailability = checkAbilityAvailability(mitigation.id, bossAction.time, bossActionId, {
       tankPosition,
-      isBeingAssigned: true
+      isBeingAssigned: true,
+      casterJobId: options?.casterJobId || null
     });
 
     if (!preAvailability.canAssign()) {
@@ -518,21 +519,29 @@ export const EnhancedMitigationProvider = ({ children }) => {
       // Create the mitigation assignment object with enhanced metadata
       const abilityDef = mitigationAbilities.find(a => a.id === mitigation.id);
       const isRoleShared = !!abilityDef?.isRoleShared;
-      const casterJobId = options?.casterJobId || null;
-      const instanceId = isRoleShared ? `${mitigation.id}_${casterJobId || Date.now()}` : null;
+      const isMultiInstance = isRoleShared && getRoleSharedAbilityCount(abilityDef, selectedJobs) > 1;
+      const chosenCasterJobId = options?.casterJobId || null;
+      const effectiveCasterJobId = isMultiInstance ? chosenCasterJobId : null;
+      const instanceId = isRoleShared ? `${mitigation.id}_${effectiveCasterJobId || Date.now()}` : null;
 
+      const cooldownSec = getAbilityCooldownForLevel(mitigation, currentBossLevel);
       const mitigationAssignment = {
         id: mitigation.id,
         name: mitigation.name,
         tankPosition: tankPosition || 'shared',
         assignedAt: Date.now(),
         assignedBy: 'current_user', // This could be enhanced with actual user info
-        casterJobId,
+        // Next available time (seconds into fight timeline). Used to enforce per-caster cooldowns in backend/logs.
+        nextAvailableAt: typeof cooldownSec === 'number' ? (bossAction.time + cooldownSec) : null,
         // Add metadata for conflict resolution
         chargeIndex: preAvailability.availableCharges > 1 ? (preAvailability.totalCharges - preAvailability.availableCharges) : 0,
         instanceId,
         cooldownManagerVersion: cooldownManagerRef.current?.lastCacheUpdate || Date.now()
       };
+      // Only persist caster for abilities with multiple instances (multi-job castable)
+      if (isMultiInstance && effectiveCasterJobId) {
+        mitigationAssignment.casterJobId = effectiveCasterJobId;
+      }
 
       // Get current assignments for this boss action
       const currentAssignments = assignments[bossActionId] || [];
@@ -541,7 +550,8 @@ export const EnhancedMitigationProvider = ({ children }) => {
       const postAvailability = checkAbilityAvailability(mitigation.id, bossAction.time, bossActionId, {
         tankPosition,
         isBeingAssigned: true,
-        excludeCurrentAssignment: false
+        excludeCurrentAssignment: false,
+        casterJobId: options?.casterJobId || null
       });
 
       if (!postAvailability.canAssign()) {
@@ -865,9 +875,9 @@ export const LegacyEnhancedMitigationProvider = ({ children }) => {
 
   // For legacy mode, we'll use the old mitigation context methods
   // but enhance them with cooldown checking
-  const addMitigation = useCallback(async (bossActionId, mitigationData, tankPosition = null) => {
-    // Use the legacy mitigation context's addMitigation method
-    return mitigation.addMitigation(bossActionId, mitigationData, tankPosition);
+  const addMitigation = useCallback(async (bossActionId, mitigationData, tankPosition = null, options = {}) => {
+    // Use the legacy mitigation context's addMitigation method, forwarding options (e.g., casterJobId)
+    return mitigation.addMitigation(bossActionId, mitigationData, tankPosition, options);
   }, [mitigation]);
 
   const removeMitigation = useCallback(async (bossActionId, mitigationId) => {
