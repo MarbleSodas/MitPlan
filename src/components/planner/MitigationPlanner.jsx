@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import styled from 'styled-components';
+
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCollaboration } from '../../contexts/CollaborationContext';
@@ -33,12 +33,6 @@ import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
 import Draggable from '../DragAndDrop/Draggable';
 import Droppable from '../DragAndDrop/Droppable';
 
-// Import styled layout components
-import MainContent from '../styled/MainContent';
-import TimelineContainer from '../styled/TimelineContainer';
-import MitigationContainer from '../styled/MitigationContainer';
-import BossActionsList from '../styled/BossActionsList';
-import MitigationList from '../styled/MitigationList';
 
 // Import contexts
 import {
@@ -60,66 +54,9 @@ import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 // import { isMitigationAvailable, getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 
-const PlannerContainer = styled.div`
-  min-height: 100vh;
-  background: ${props => props.theme?.colors?.background || '#f5f5f5'};
-  padding: 2rem;
 
-`;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
 
-`;
-
-const Title = styled.h1`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 2rem;
-  font-weight: 600;
-  margin: 0;
-
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-
-`;
-
-// Resizable split between timeline and mitigation list
-const Resizer = styled.div`
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  width: 10px;
-  cursor: col-resize;
-  user-select: none;
-  margin: 0 6px;
-  position: relative;
-
-  &:before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    bottom: 8px;
-    width: 2px;
-    background: ${props => props.theme.colors.border};
-    border-radius: 1px;
-  }
-
-  &:after {
-    content: '⋮';
-    font-size: 12px;
-    opacity: 0.7;
-    z-index: 1;
-  }
-`;
 
 
 const BackButton = styled.button`
@@ -158,35 +95,9 @@ const SaveButton = styled.button`
   }
 `;
 
-const SelectorsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const ControlsContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
-  border-radius: 8px;
-  border: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
-
-`;
 
 
-const ErrorMessage = styled.div`
-  background: ${props => props.theme?.colors?.errorBackground || '#fef2f2'};
-  border: 1px solid ${props => props.theme?.colors?.errorBorder || '#fecaca'};
-  color: ${props => props.theme?.colors?.error || '#ef4444'};
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-`;
+
 
 // Planning interface component that gets data from real-time contexts
 const PlanningInterface = () => {
@@ -482,7 +393,7 @@ const PlanningInterface = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <SelectorsContainer>
+      <div className="flex flex-col gap-4 mb-4">
         <BossSelector
           selectedBossId={currentBossId}
           onSelectBoss={setCurrentBossId}
@@ -492,17 +403,17 @@ const PlanningInterface = () => {
           disabled={false}
         />
         <TankPositionSelector />
-      </SelectorsContainer>
+      </div>
 
-      <ControlsContainer>
+      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900">
         <FilterToggle />
         <PrecastToggle />
         <HealingPotencyInput />
-      </ControlsContainer>
+      </div>
 
-      <MainContent ref={splitContainerRef}>
-        <TimelineContainer style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }}>
-          <BossActionsList>
+      <div ref={splitContainerRef} className="flex w-full gap-4">
+        <div style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-white dark:bg-neutral-900 rounded-xl p-4 pb-6 shadow-md overflow-y-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col">
+          <div className="relative flex flex-col p-4 w-full grow">
             {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
               const droppableId = `${action.id}__${idx}`; // ensure uniqueness even if IDs repeat in data
@@ -536,13 +447,15 @@ const PlanningInterface = () => {
               </Droppable>
               );
             })}
-          </BossActionsList>
-        </TimelineContainer>
+          </div>
+        </div>
 
         <>
-            <Resizer onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" />
-            <MitigationContainer style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}>
-            <MitigationList>
+            <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
+              <div className="my-2 w-px bg-gray-300 dark:bg-gray-600" />
+            </div>
+            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-white dark:bg-neutral-900 rounded-xl p-4 shadow-md overflow-y-auto h-[calc(100vh-100px)] min-h-[500px]">
+            <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
                 const availability = selectedBossAction ? checkAbilityAvailability(
@@ -576,10 +489,10 @@ const PlanningInterface = () => {
                   </Draggable>
                 );
               })}
-            </MitigationList>
-          </MitigationContainer>
+            </div>
+          </div>
           </>
-      </MainContent>
+      </div>
 
 
       <DragOverlay>
@@ -747,12 +660,12 @@ const MitigationPlannerContent = ({
 
   return (
     <>
-      <PlannerContainer>
-      <Header>
-        <Title>
+      <div className="min-h-screen p-8 bg-gray-50 dark:bg-neutral-950">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-gray-800">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
           {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
-        </Title>
-        <ButtonGroup>
+        </h1>
+        <div className="flex items-center gap-2">
           {isCollaborating && (
             <CollaboratorsList
               collaborators={collaborators}
@@ -763,19 +676,19 @@ const MitigationPlannerContent = ({
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <SaveButton onClick={handleSave} disabled={saving}>
+          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition">
             {saving ? 'Saving...' : 'Save Plan'}
-          </SaveButton>
-          <BackButton onClick={handleBack}>
+          </button>
+          <button onClick={handleBack} className="px-4 py-2 rounded-lg font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-neutral-800 transition">
             {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
-          </BackButton>
-        </ButtonGroup>
-      </Header>
+          </button>
+        </div>
+      </div>
 
       {error && (
-        <ErrorMessage>
+        <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-600">
           Error: {error}
-        </ErrorMessage>
+        </div>
       )}
 
       {/* Universal access enabled - no read-only restrictions */}
@@ -796,7 +709,7 @@ const MitigationPlannerContent = ({
       />
 
       {/* No longer showing display name modal for anonymous users */}
-    </PlannerContainer>
+    </div>
     <Footer />
   </>
   );

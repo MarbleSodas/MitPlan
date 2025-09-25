@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import styled, { createGlobalStyle } from 'styled-components';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -16,45 +15,14 @@ import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
 // TODO: Restore full app once loading issue is resolved
 
 // Global styles
-const GlobalStyle = createGlobalStyle`
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background: ${props => props.theme?.colors?.background || '#ffffff'};
-    color: ${props => props.theme?.colors?.text || '#333333'};
-  }
-
-  #root {
-    min-height: 100vh;
-  }
-`;
 
 
 
 // Loading component
-const LoadingSpinner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  font-size: 1.1rem;
-  color: ${props => props.theme?.colors?.lightText || '#6b7280'};
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-`;
-
 const LoadingComponent = () => (
-  <LoadingSpinner>
+  <div className="flex items-center justify-center min-h-screen text-[1.1rem] text-gray-500 dark:text-gray-400 bg-white dark:bg-neutral-950">
     Loading...
-  </LoadingSpinner>
+  </div>
 );
 
 // Protected Route component (requires authentication)
@@ -223,7 +191,6 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <Router>
-            <GlobalStyle />
             <AppContent />
           </Router>
         </AuthProvider>

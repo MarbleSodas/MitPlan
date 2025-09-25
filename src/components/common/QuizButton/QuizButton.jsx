@@ -1,40 +1,19 @@
 import React from 'react';
-import styled from 'styled-components';
 
-const QuizLink = styled.a`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-  border-radius: 16px;
-  height: 36px;
-  padding: 0 16px;
-  background-color: #333333; /* Green color for the quiz button */
-  color: white;
-  font-weight: bold;
-  text-decoration: none;
-  box-shadow: ${props => props.theme.shadows.small};
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.medium};
-  }
 
-  &:active {
-    transform: translateY(0);
-  }
-`;
 
 const QuizButton = () => {
   return (
-    <QuizLink
+    <a
       href="https://quiz.xivmitplan.com/"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Take the FFXIV Mitigation Quiz"
+      className="inline-flex h-9 items-center justify-center rounded-[16px] bg-[#333333] px-4 font-bold text-white shadow-sm transition-transform duration-200 ease-in-out hover:-translate-y-0.5 active:translate-y-0"
     >
       Quiz
-    </QuizLink>
+    </a>
   );
 };
 

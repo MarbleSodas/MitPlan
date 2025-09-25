@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 
 // Define light and dark themes
 const lightTheme = {
@@ -199,14 +198,28 @@ export const ThemeProvider = ({ children }) => {
     setIsDarkMode(prevMode => {
       const newMode = !prevMode;
       localStorage.setItem('darkMode', newMode.toString());
-      document.documentElement.setAttribute('data-theme', newMode ? 'dark' : 'light');
+      const root = document.documentElement;
+      if (newMode) {
+        root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
+      } else {
+        root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
+      }
       return newMode;
     });
   };
 
   // Apply theme to document on mount and when theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
   }, [isDarkMode]);
 
   // Listen for system theme changes
@@ -247,9 +260,7 @@ export const ThemeProvider = ({ children }) => {
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      <StyledThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
-        {children}
-      </StyledThemeProvider>
+      {children}
     </ThemeContext.Provider>
   );
 };

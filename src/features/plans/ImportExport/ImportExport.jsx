@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { mitigationAbilities, ffxivJobs } from '../../../data';
 import { getRoleSharedAbilityCount } from '../../../utils/abilities/abilityUtils';
 import {
@@ -9,231 +8,27 @@ import {
 } from '../../../utils';
 import { useToast } from '../../../components/common/Toast';
 
-const Container = styled.div`
-  background-color: ${props => props.theme.colors.secondary};
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: ${props => props.theme.shadows.medium};
-  transition: background-color 0.3s ease;
 
-`;
 
-const TwoColumnLayout = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
 
-  grid-template-columns: 1fr 1fr;
-`;
 
-const Column = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
 
-const Title = styled.h3`
-  margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  padding-bottom: 10px;
-  color: ${props => props.theme.colors.text};
-`;
 
-const Section = styled.div`
-  margin-bottom: 20px;
-`;
 
-const FormGroup = styled.div`
-  margin-bottom: 15px;
-`;
 
-const Label = styled.label`
-  display: block;
-  margin-bottom: 5px;
-  color: ${props => props.theme.colors.text};
-  font-weight: bold;
-`;
 
-const Input = styled.input`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  background-color: ${props => props.theme.colors.cardBackground};
-  color: ${props => props.theme.colors.text};
-  font-size: 14px;
-  transition: border-color 0.2s;
 
-  &:focus {
-    border-color: ${props => props.theme.colors.primary};
-    outline: none;
-  }
-`;
 
-const TextArea = styled.textarea`
-  width: 100%;
-  min-height: 150px;
-  padding: 8px 12px;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  background-color: ${props => props.theme.colors.cardBackground};
-  color: ${props => props.theme.colors.text};
-  font-size: 14px;
-  font-family: monospace;
-  resize: vertical;
-  transition: border-color 0.2s;
 
-  &:focus {
-    border-color: ${props => props.theme.colors.primary};
-    outline: none;
-  }
 
-`;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
 
-`;
 
-const Button = styled.button`
-  padding: 8px 16px;
-  background-color: ${props => props.theme.colors.secondary};
-  color: ${props => props.theme.colors.text};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
 
-  &:hover:not(:disabled) {
-    background-color: ${props => props.theme.colors.primary};
-    color: white;
-  }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 
-`;
 
-const SaveButton = styled(Button)`
-  background-color: #4caf50;
-  color: white;
-  border: none;
 
-  &:hover {
-    background-color: #45a049;
-  }
-
-`;
-
-const ImportButton = styled(Button)`
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  height: 36px; /* Match the height of FileInputLabel */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover:not(:disabled) {
-    background-color: #0b7dda;
-  }
-
-`;
-
-const FileInputLabel = styled.label`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  height: 36px;
-  background-color: ${props => props.theme.colors.secondary};
-  color: ${props => props.theme.colors.text};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: ${props => props.theme.colors.primary};
-    color: white;
-  }
-
-`;
-
-const FileInput = styled.input`
-  display: none;
-`;
-
-const ActionRow = styled.div`
-  margin-bottom: 10px;
-`;
-
-const SavedPlansList = styled.div`
-  margin-top: 10px;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  background-color: ${props => props.theme.colors.cardBackground};
-
-`;
-
-const SavedPlanItem = styled.div`
-  padding: 8px 12px;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'};
-  }
-
-`;
-
-const PlanName = styled.div`
-  flex-grow: 1;
-  color: ${props => props.theme.colors.text};
-`;
-
-const PlanDate = styled.div`
-  font-size: 12px;
-  color: ${props => props.theme.colors.lightText};
-  margin-right: 10px;
-
-`;
-
-const PlanActions = styled.div`
-  display: flex;
-  gap: 5px;
-
-`;
-
-const ActionButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 2px 5px;
-  color: ${props => props.theme.colors.text};
-
-  &:hover {
-    color: ${props => props.theme.colors.primary};
-  }
-
-`;
 
 function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   const { addToast } = useToast();
@@ -711,114 +506,118 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   };
 
   return (
-    <Container>
-      <TwoColumnLayout>
+    <div className="bg-white dark:bg-neutral-900 rounded-lg p-4 md:p-6 shadow-md" data-export-section>
+      <div className="grid gap-5 md:grid-cols-2">
         {/* Left Column - Save & Export */}
-        <Column>
-          <Title>Save Plan</Title>
+        <div className="flex flex-col">
+          <h3 className="mt-0 mb-4 pb-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">Save Plan</h3>
 
-          <Section>
-            <FormGroup>
-              <Label>Plan Name</Label>
-              <Input
+          <div className="mb-5">
+            <div className="mb-4">
+              <label className="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-200">Plan Name</label>
+              <input className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:border-blue-500"
                 type="text"
                 placeholder="Enter a name for your plan"
                 value={planName}
                 onChange={(e) => setPlanName(e.target.value)}
               />
-            </FormGroup>
+            </div>
 
-            <ButtonGroup>
-              <SaveButton onClick={handleSave}>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700" onClick={handleSave}>
                 💾 Save Current Plan
-              </SaveButton>
-              <Button onClick={handleExport}>
+              </button>
+              <button className="px-4 py-2 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={handleExport}>
                 📤 Export to File
-              </Button>
-              <Button onClick={handleCopyPlanLink}>
+              </button>
+              <button className="px-4 py-2 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={handleCopyPlanLink}>
                 📋 Copy Plan
-              </Button>
-            </ButtonGroup>
+              </button>
+            </div>
 
             {exportData && (
               <div>
-                <ActionRow>
-                  <Button onClick={downloadExportFile}>
+                <div className="mb-2">
+                  <button className="px-4 py-2 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={downloadExportFile}>
                     📥 Download File
-                  </Button>
-                </ActionRow>
-                <TextArea
+                  </button>
+                </div>
+                <textarea
+                  className="w-full min-h-[150px] px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 text-sm font-mono focus:outline-none focus:border-blue-500"
                   value={exportData}
                   readOnly
                   onClick={(e) => e.target.select()}
                 />
               </div>
             )}
-          </Section>
+          </div>
 
-          <Section>
-            <Label>Saved Plans</Label>
+          <div className="mb-5">
+            <label className="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-200">Saved Plans</label>
             {savedPlans.length === 0 ? (
               <p>No saved plans yet.</p>
             ) : (
-              <SavedPlansList>
+              <div className="mt-2 max-h-[200px] overflow-y-auto border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900">
                 {savedPlans.map(plan => (
-                  <SavedPlanItem key={plan.id}>
-                    <PlanName>{plan.name}</PlanName>
-                    <PlanDate>{new Date(plan.date).toLocaleDateString()}</PlanDate>
-                    <PlanActions>
-                      <ActionButton onClick={() => handleLoadPlan(plan)} title="Load Plan">
+                  <div key={plan.id} className="px-3 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-800">
+                    <div className="flex-1 text-gray-900 dark:text-gray-100">{plan.name}</div>
+                    <div className="text-xs text-gray-500 mr-2">{new Date(plan.date).toLocaleDateString()}</div>
+                    <div className="flex gap-1">
+                      <button className="px-2 py-1 rounded hover:text-blue-600" onClick={() => handleLoadPlan(plan)} title="Load Plan">
                         📂
-                      </ActionButton>
-                      <ActionButton onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
+                      </button>
+                      <button className="px-2 py-1 rounded hover:text-blue-600" onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
                         📋
-                      </ActionButton>
-                      <ActionButton onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
+                      </button>
+                      <button className="px-2 py-1 rounded hover:text-red-600" onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
                         🗑️
-                      </ActionButton>
-                    </PlanActions>
-                  </SavedPlanItem>
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </SavedPlansList>
+              </div>
             )}
-          </Section>
-        </Column>
+          </div>
+        </div>
 
         {/* Right Column - Import */}
-        <Column>
-          <Title>Import Plan</Title>
+        <div className="flex flex-col">
+          <h3 className="mt-0 mb-4 pb-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">Import Plan</h3>
 
-          <Section>
-            <FormGroup>
-              <Label>Import from File or JSON</Label>
-              <ButtonGroup>
-                <FileInputLabel>
+          <div className="mb-5">
+            <div className="mb-4">
+              <label className="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-200">Import from File or JSON</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <label className="inline-flex items-center justify-center px-4 py-2 h-9 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800">
                   📂 Choose File
-                  <FileInput
+                  <input
+                    className="hidden"
                     type="file"
                     accept=".json"
                     onChange={handleFileImport}
                   />
-                </FileInputLabel>
+                </label>
 
-                <ImportButton
+                <button
+                  className="px-4 py-2 h-9 rounded bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
                   onClick={handleImport}
                   disabled={!importData.trim()}
                 >
                   📥 Import Data
-                </ImportButton>
-              </ButtonGroup>
+                </button>
+              </div>
 
-              <TextArea
+              <textarea
+                className="w-full min-h-[150px] px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 text-sm font-mono focus:outline-none focus:border-blue-500"
                 value={importData}
                 onChange={(e) => setImportData(e.target.value)}
                 placeholder="Paste JSON data here or use the file chooser above"
               />
-            </FormGroup>
-          </Section>
-        </Column>
-      </TwoColumnLayout>
-    </Container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

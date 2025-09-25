@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import styled from 'styled-components';
+
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
@@ -8,249 +8,15 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 
-const AuthContainer = styled.div`
-  max-width: 380px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem;
-  background: transparent;
-  border-radius: 16px;
 
-`;
 
-const Title = styled.h2`
-  text-align: center;
-  margin: 0 0 1.5rem 0;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-weight: 700;
-  font-size: 1.5rem;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
 
-`;
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
 
-const Input = styled.input`
-  padding: 0.75rem 1rem;
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  line-height: 1.5;
-  transition: all 0.2s ease;
-  background: ${props => props.theme?.colors?.inputBackground || '#ffffff'};
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  width: 100%;
-  box-sizing: border-box;
 
-  &:hover {
-    border-color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    box-shadow: 0 0 0 3px ${props => props.theme?.colors?.primary || '#3b82f6'}08;
-  }
 
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    box-shadow: 0 0 0 4px ${props => props.theme?.colors?.primary || '#3b82f6'}20;
-    transform: translateY(-1px);
-  }
 
-  &::placeholder {
-    color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-    font-weight: 400;
-  }
 
-  &:disabled {
-    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
-    border-color: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-    color: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-    cursor: not-allowed;
-  }
-
-`;
-
-const Button = styled.button`
-  padding: 0.75rem 1.25rem;
-  background: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.5;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0.025em;
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
-    transform: translateY(-1px);
-    box-shadow: 0 8px 25px ${props => props.theme?.colors?.primary || '#3b82f6'}40;
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 4px 15px ${props => props.theme?.colors?.primary || '#3b82f6'}30;
-  }
-
-  &:disabled {
-    background: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-    opacity: 0.6;
-  }
-
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 4px ${props => props.theme?.colors?.primary || '#3b82f6'}30;
-  }
-
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  font-weight: 500;
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
-    border-color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    box-shadow: 0 4px 15px ${props => props.theme?.colors?.primary || '#3b82f6'}15;
-  }
-
-  &:active:not(:disabled) {
-    background: ${props => props.theme?.colors?.primary || '#3b82f6'}10;
-  }
-
-  &:disabled {
-    background: transparent;
-    border-color: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-    color: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: ${props => props.theme?.colors?.error || '#ef4444'};
-  text-align: center;
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  background: ${props => props.theme?.colors?.errorBackground || '#fef2f2'};
-  border-radius: 10px;
-  border: 1px solid ${props => props.theme?.colors?.errorBorder || '#fecaca'};
-  font-weight: 500;
-  font-size: 0.875rem;
-  line-height: 1.4;
-  animation: slideIn 0.3s ease;
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const SuccessMessage = styled.div`
-  color: ${props => props.theme?.colors?.success || '#10b981'};
-  text-align: center;
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  background: ${props => props.theme?.colors?.successBackground || '#f0fdf4'};
-  border-radius: 10px;
-  border: 1px solid ${props => props.theme?.colors?.successBorder || '#bbf7d0'};
-  font-weight: 500;
-  font-size: 0.875rem;
-  line-height: 1.4;
-  animation: slideIn 0.3s ease;
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const LinkButton = styled.button`
-  background: none;
-  border: none;
-  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 0.25rem;
-  padding: 0.375rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  position: relative;
-
-  &:hover {
-    color: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
-    background: ${props => props.theme?.colors?.primary || '#3b82f6'}08;
-    text-decoration: underline;
-  }
-
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px ${props => props.theme?.colors?.primary || '#3b82f6'}30;
-  }
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
-`;
-
-const Divider = styled.div`
-  display: flex;
-  align-items: center;
-  margin: 1rem 0;
-
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: ${props => props.theme?.colors?.border || '#e1e5e9'};
-  }
-
-  span {
-    padding: 0 0.75rem;
-    color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-`;
 
 const AuthForm = ({ onSuccess }) => {
   const [mode, setMode] = useState('login'); // 'login', 'register', 'reset'
@@ -343,110 +109,126 @@ const AuthForm = ({ onSuccess }) => {
   };
 
   return (
-    <AuthContainer>
-      <Title>{getTitle()}</Title>
-      <Form onSubmit={handleSubmit}>
+    <div className="max-w-[380px] mx-auto p-6 rounded-2xl">
+      <h2 className="text-center mb-6 text-gray-900 dark:text-gray-100 font-bold text-2xl leading-tight tracking-tight">{getTitle()}</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {mode === 'register' && (
-          <FormGroup>
-            <Input
+          <div className="flex flex-col gap-1.5">
+            <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
               type="text"
               placeholder="Display Name (optional)"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
-          </FormGroup>
+          </div>
         )}
 
-        <FormGroup>
-          <Input
+        <div className="flex flex-col gap-1.5">
+          <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
             type="email"
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </FormGroup>
+        </div>
 
         {mode !== 'reset' && (
-          <FormGroup>
-            <Input
+          <div className="flex flex-col gap-1.5">
+            <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </FormGroup>
+          </div>
         )}
 
         {mode === 'register' && (
-          <FormGroup>
-            <Input
+          <div className="flex flex-col gap-1.5">
+            <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
               type="password"
               placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-          </FormGroup>
+          </div>
         )}
 
-        <ButtonGroup>
-          <Button type="submit" disabled={loading || !isFormValid()}>
+        <div className="flex flex-col gap-3 mt-1">
+          <button type="submit" disabled={loading || !isFormValid()} className="min-h-11 px-5 py-3 rounded-[10px] text-white font-semibold bg-blue-500 hover:bg-blue-600 transition shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-400 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:shadow-[0_0_0_4px_rgba(59,130,246,0.2)]">
             {getButtonText()}
-          </Button>
+          </button>
 
           {mode === 'login' && (
             <>
-              <Divider>
-                <span>or</span>
-              </Divider>
-              <SecondaryButton
+              <div className="flex items-center gap-3 my-4">
+                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">or</span>
+                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+              </div>
+              <button
                 type="button"
                 onClick={() => setMode('register')}
+                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition hover:-translate-y-0.5 active:translate-y-0 disabled:text-gray-400 disabled:border-gray-400"
               >
                 Create New Account
-              </SecondaryButton>
+              </button>
             </>
           )}
 
           {mode === 'register' && (
             <>
-              <Divider>
-                <span>or</span>
-              </Divider>
-              <SecondaryButton
+              <div className="flex items-center gap-3 my-4">
+                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">or</span>
+                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+              </div>
+              <button
                 type="button"
                 onClick={() => setMode('login')}
+                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition hover:-translate-y-0.5 active:translate-y-0 disabled:text-gray-400 disabled:border-gray-400"
               >
                 Already have an account? Sign In
-              </SecondaryButton>
+              </button>
             </>
           )}
 
           {mode === 'reset' && (
-            <SecondaryButton
+            <button
               type="button"
               onClick={() => setMode('login')}
+              className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition hover:-translate-y-0.5 active:translate-y-0 disabled:text-gray-400 disabled:border-gray-400"
             >
               Back to Sign In
-            </SecondaryButton>
+            </button>
           )}
-        </ButtonGroup>
+        </div>
 
         {mode === 'login' && (
-          <LinkButton
+          <button
             type="button"
             onClick={() => setMode('reset')}
+            className="mt-1 inline-flex w-fit items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline rounded-md px-1.5 py-1 focus:outline-none focus:shadow-[0_0_0_3px_rgba(59,130,246,0.2)]"
           >
             Forgot Password?
-          </LinkButton>
+          </button>
         )}
-      </Form>
+      </form>
       
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {success && <SuccessMessage>{success}</SuccessMessage>}
-    </AuthContainer>
+      {error && (
+        <div className="mt-4 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-500">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mt-3 rounded-[10px] border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-600">
+          {success}
+        </div>
+      )}
+    </div>
   );
 };
 

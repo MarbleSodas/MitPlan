@@ -13,214 +13,10 @@ import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js
 import { useFilterContext } from '../../contexts';
 // import { useTankPositionContext } from '../../contexts';
 
-const AssignedMitigationsContainer = styled.div`
-  position: absolute;
-  top: 30px;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-left: 2px solid ${props => props.theme.colors.border};
-  padding: 8px 10px;
-  height: calc(100% - 40px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.8)'};
-  border-bottom-right-radius: ${props => props.theme.borderRadius.medium};
-  -webkit-overflow-scrolling: touch;
-  z-index: 10;
-  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
 
-  /* Desktop styles - optimized for 1920x1080, 1440x900, 2560x1440 */
-  width: clamp(220px, 16vw, 300px);
-  min-width: 220px;
-  max-width: 320px;
 
-  /* Large desktop styles (2560x1440 and above) */
-  @media (min-width: ${props => props.theme.breakpoints.largeDesktop}) {
-    width: clamp(240px, 15vw, 320px);
-    min-width: 240px;
-    max-width: 340px;
-    padding: 10px 12px;
-    gap: 8px;
-    font-size: ${props => props.theme.fontSizes.medium};
-  }
 
-  /* Standard desktop styles (1200px to 1440px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeDesktop}) and (min-width: ${props => props.theme.breakpoints.desktop}) {
-    width: clamp(220px, 17vw, 300px);
-    min-width: 220px;
-    max-width: 320px;
-  }
 
-  /* Large tablet styles (992px to 1200px) */
-  @media (max-width: ${props => props.theme.breakpoints.desktop}) and (min-width: ${props => props.theme.breakpoints.largeTablet}) {
-    width: clamp(180px, 22vw, 240px);
-    min-width: 180px;
-    max-width: 240px;
-    padding: 5px 6px;
-    gap: 4px;
-  }
-
-  /* Tablet styles (768px to 992px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    width: clamp(160px, 26vw, 220px);
-    min-width: 160px;
-    max-width: 220px;
-    padding: 4px 6px;
-    gap: 4px;
-  }
-
-  /* Mobile styles (480px to 768px) */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
-    width: clamp(120px, 30vw, 160px);
-    min-width: 120px;
-    max-width: 160px;
-    top: 30px;
-    padding: 3px 5px;
-    gap: 3px;
-    height: calc(100% - 30px);
-  }
-
-  /* Small mobile styles (below 480px) */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: clamp(110px, 35vw, 140px);
-    min-width: 110px;
-    max-width: 140px;
-    top: 30px;
-    padding: 3px 5px;
-    gap: 3px;
-    height: calc(100% - 30px);
-    touch-action: pan-y;
-    overscroll-behavior: contain;
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.85)'};
-    border-left: 2px solid ${props => props.theme.colors.primary};
-    box-shadow: -2px 0 6px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const AssignedMitigationItem = styled.div`
-  background-color: transparent;
-  border-radius: ${props => props.theme.borderRadius.small};
-  padding: 1px 3px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  border-left: 2px solid ${props => props.theme.colors.primary};
-  color: ${props => props.theme.colors.text};
-  font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-  margin-bottom: 1px;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  /* Removed transition for better performance */
-
-  &:hover {
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.1)' : 'rgba(51, 153, 255, 0.05)'};
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 1px 2px;
-    font-size: 10px;
-    margin-bottom: 1px;
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.1)'};
-    border-radius: 2px;
-    white-space: normal;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-  }
-`;
-
-const InheritedMitigationsContainer = styled.div`
-  margin-top: 10px;
-  border-top: 1px dashed ${props => props.theme.colors.border};
-  padding-top: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.small};
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    margin-top: 6px;
-    padding-top: 3px;
-    gap: 2px;
-  }
-`;
-
-const InheritedMitigationItem = styled.div`
-  background-color: transparent;
-  border-radius: ${props => props.theme.borderRadius.small};
-  padding: 1px 3px;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  border-left: 2px solid ${props => props.theme.colors.lightText};
-  color: ${props => props.theme.colors.lightText};
-  font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-  margin-bottom: 1px;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  opacity: 0.8;
-  font-style: italic;
-  /* Removed transition for better performance */
-
-  &:hover {
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.05)' : 'rgba(51, 153, 255, 0.02)'};
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 1px 2px;
-    font-size: 9px;
-    margin-bottom: 1px;
-    background-color: ${props => props.theme.mode === 'dark' ? 'rgba(150, 150, 150, 0.15)' : 'rgba(150, 150, 150, 0.1)'};
-    border-radius: 2px;
-    white-space: normal;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0.9;
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-  }
-`;
-
-const MitigationIcon = styled.span`
-  margin-right: 4px;
-  vertical-align: middle;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-
-  /* Tablet styles (768px to 992px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    margin-right: 3px;
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-  }
-
-  /* Mobile styles (480px to 768px) */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
-    margin-right: 3px;
-    width: 12px;
-    height: 12px;
-    flex-shrink: 0;
-  }
-
-  /* Small mobile styles (below 480px) */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    margin-right: 2px;
-    width: 11px;
-    height: 11px;
-    flex-shrink: 0;
-  }
-`;
 
 const PrecastInput = styled.input`
   width: 28px;
@@ -411,7 +207,7 @@ const AssignedMitigations = ({
     return null;
   }
   return (
-    <AssignedMitigationsContainer>
+    <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-gray-200 dark:border-gray-700 p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden bg-white/80 dark:bg-black/15 rounded-br-md z-10 shadow-[-3px_0_8px_rgba(0,0,0,0.08)] w-[clamp(220px,16vw,300px)] min-w-[220px] max-w-[320px]">
       {/* Render directly assigned mitigations */}
       {filteredDirectMitigations.map(mitigation => {
         // Find the full mitigation data from the abilities array
@@ -433,8 +229,8 @@ const AssignedMitigations = ({
             key={displayMitigation.id}
             content={tooltipContent}
           >
-            <AssignedMitigationItem>
-              <MitigationIcon>
+            <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[12px] flex items-center border-l-2 border-blue-500 text-gray-900 dark:text-gray-100 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 hover:bg-blue-500/10">
+              <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                 {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
                   <img src={displayMitigation.icon} alt={displayMitigation.name} style={{
                     maxHeight: '100%',
@@ -443,7 +239,7 @@ const AssignedMitigations = ({
                   }} /> :
                   displayMitigation.icon
                 }
-              </MitigationIcon>
+              </span>
               <span
                 style={{
                   flex: '1 1 auto',
@@ -530,14 +326,14 @@ const AssignedMitigations = ({
                   ×
                 </RemoveButton>
               </div>
-            </AssignedMitigationItem>
+            </div>
           </Tooltip>
         );
       })}
 
       {/* Render inherited mitigations from previous boss actions */}
       {filteredActiveMitigations.length > 0 && (
-        <InheritedMitigationsContainer>
+        <div className="mt-2 border-t border-dashed border-gray-300 dark:border-gray-700 pt-1.5 flex flex-col gap-1.5">
           {filteredActiveMitigations.map(mitigation => {
             // Find the full mitigation data
             const fullMitigation = mitigationAbilities.find(a => a.id === mitigation.id);
@@ -548,8 +344,8 @@ const AssignedMitigations = ({
                 key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
                 content={`${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s${fullMitigation.barrierPotency ? `\nBarrier: ${Math.round(fullMitigation.barrierPotency * 100)}% max HP` : ''}${fullMitigation.barrierFlatPotency ? `\nBarrier: ${fullMitigation.barrierFlatPotency} potency` : ''}${fullMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
               >
-                <InheritedMitigationItem>
-                  <MitigationIcon>
+                <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[11px] flex items-center border-l-2 border-gray-500 text-gray-500 dark:text-gray-300 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic hover:bg-blue-500/5">
+                  <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                     {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
                       <img src={fullMitigation.icon} alt={fullMitigation.name} style={{
                         maxHeight: '18px',
@@ -559,7 +355,7 @@ const AssignedMitigations = ({
                       }} /> :
                       fullMitigation.icon
                     }
-                  </MitigationIcon>
+                  </span>
                   <span style={{
                     flex: 1,
                     overflow: 'hidden',
@@ -586,13 +382,13 @@ const AssignedMitigations = ({
                     opacity: 0.8,
                     flexShrink: 0
                   }}>{mitigation.remainingDuration.toFixed(1)}s</small>
-                </InheritedMitigationItem>
+                </div>
               </Tooltip>
             );
           })}
-        </InheritedMitigationsContainer>
+        </div>
       )}
-    </AssignedMitigationsContainer>
+    </div>
   );
 };
 

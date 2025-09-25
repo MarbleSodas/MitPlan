@@ -1,126 +1,10 @@
-import styled from 'styled-components';
+
 import AuthForm from '../auth';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
 
-const LandingContainer = styled.div`
-  min-height: 100vh;
-  background: ${props => props.theme?.colors?.background || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  transition: background 0.3s ease;
-  position: relative;
-`;
-
-const TopNavigation = styled.div`
-  position: absolute;
-  top: 2rem;
-  right: 2rem;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-`;
-
-const MainContent = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ContentWrapper = styled.div`
-  max-width: 1200px;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-
-`;
-
-const HeroSection = styled.div`
-  color: ${props => props.theme?.colors?.text || 'white'};
-`;
-
-const Logo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const LogoIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  background: white;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #667eea;
-`;
-
-const LogoText = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0;
-`;
-
-const Tagline = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 400;
-  margin: 0 0 1.5rem 0;
-  opacity: 0.9;
-`;
-
-const Description = styled.p`
-  font-size: 1.1rem;
-  line-height: 1.6;
-  opacity: 0.8;
-  margin-bottom: 2rem;
-`;
-
-const FeatureList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-
-const FeatureItem = styled.li`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-  opacity: 0.9;
-
-  &::before {
-    content: '✓';
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    flex-shrink: 0;
-  }
-`;
-
-const AuthSection = styled.div`
-  background: transparent;
-  border-radius: 20px;
-  padding: 2rem;
-`;
 
 
 const LandingPage = ({ onAuthSuccess }) => {
@@ -135,36 +19,39 @@ const LandingPage = ({ onAuthSuccess }) => {
   ];
 
   return (
-    <LandingContainer>
-      <TopNavigation>
+    <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex flex-col p-8 relative transition-colors duration-300">
+      <div className="absolute top-8 right-8 z-10 flex items-center gap-2">
         <KofiButton />
         <DiscordButton />
         <ThemeToggle />
-      </TopNavigation>
-      <MainContent>
-        <ContentWrapper>
-        <HeroSection>
-          <Logo>
-            <LogoIcon>M</LogoIcon>
-            <LogoText>MitPlan</LogoText>
-          </Logo>
+      </div>
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-full max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+        <section className="text-white">
+          <div className="mb-8 flex items-center gap-4">
+            <div className="h-[60px] w-[60px] rounded-[12px] bg-white flex items-center justify-center text-[2rem] font-bold text-[#667eea]">M</div>
+            <h1 className="m-0 text-4xl font-bold">MitPlan</h1>
+          </div>
 
-          <Tagline>FFXIV Mitigation Planner</Tagline>
+          <h2 className="m-0 mb-6 text-2xl font-normal opacity-90">FFXIV Mitigation Planner</h2>
 
-          <Description>
+          <p className="mb-8 text-[1.1rem] leading-relaxed opacity-80">
             The ultimate tool for Final Fantasy XIV raiders to plan and optimize
             their mitigation strategies. Create detailed plans, track cooldowns,
             and coordinate with your team for perfect raid execution.
-          </Description>
+          </p>
 
-          <FeatureList>
+          <ul className="list-none p-0 m-0 space-y-4">
             {features.map((feature, index) => (
-              <FeatureItem key={index}>{feature}</FeatureItem>
+              <li key={index} className="flex items-center gap-3 text-base opacity-90">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 font-bold text-white shrink-0">✓</span>
+                {feature}
+              </li>
             ))}
-          </FeatureList>
-        </HeroSection>
+          </ul>
+        </section>
 
-        <AuthSection>
+        <section className="rounded-[20px] p-8 bg-transparent">
           <AuthForm
             onSuccess={onAuthSuccess}
           />
@@ -182,11 +69,11 @@ const LandingPage = ({ onAuthSuccess }) => {
             </p>
           </DemoSection>
           */}
-        </AuthSection>
-        </ContentWrapper>
-      </MainContent>
+        </section>
+        </div>
+      </main>
       <Footer />
-    </LandingContainer>
+    </div>
   );
 };
 

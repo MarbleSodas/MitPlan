@@ -1,129 +1,54 @@
 import React from 'react';
-import styled from 'styled-components';
+
 import { Link } from 'react-router-dom';
 
-const FooterContainer = styled.footer`
-  width: 100%;
-  padding: 2rem 0 1rem 0;
-  margin-top: auto;
-  border-top: 1px solid ${props => props.theme.colors.border};
-  background: ${props => props.theme.colors.background};
-  color: ${props => props.theme.colors.textSecondary};
-  transition: all 0.3s ease;
-
-`;
-
-const FooterContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: 0 1rem;
-    gap: 0.75rem;
-  }
-`;
-
-const FooterLinks = styled.div`
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    gap: 1rem;
-    flex-direction: column;
-  }
-`;
-
-const FooterLink = styled(Link)`
-  color: ${props => props.theme.colors.textSecondary};
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: ${props => props.theme.colors.primary};
-    text-decoration: underline;
-  }
-
-`;
-
-const ExternalLink = styled.a`
-  color: ${props => props.theme.colors.textSecondary};
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: ${props => props.theme.colors.primary};
-    text-decoration: underline;
-  }
-
-`;
-
-const Copyright = styled.div`
-  text-align: center;
-  font-size: 0.8rem;
-  color: ${props => props.theme.colors.textSecondary};
-  opacity: 0.8;
-
-`;
-
-const Divider = styled.span`
-  color: ${props => props.theme.colors.border};
-  font-size: 0.8rem;
-
-`;
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <FooterContainer>
-      <FooterContent>
-        <FooterLinks>
-          <FooterLink to="/privacy-policy">
+    <footer className="w-full pt-8 pb-4 mt-auto border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 transition-colors">
+      <div className="max-w-[1200px] mx-auto px-8 sm:px-4 flex flex-col items-center gap-4 sm:gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-8 sm:flex-col sm:gap-4">
+          <Link to="/privacy-policy" className="text-[0.9rem] text-gray-500 hover:text-[#3399ff] hover:underline transition-colors">
             Privacy Policy
-          </FooterLink>
-          <Divider>•</Divider>
-          <ExternalLink 
-            href="https://github.com/MarbleSodas/MitPlan" 
-            target="_blank" 
+          </Link>
+          <span className="text-xs text-gray-300 dark:text-gray-600">•</span>
+          <a
+            href="https://github.com/MarbleSodas/MitPlan"
+            target="_blank"
             rel="noopener noreferrer"
+            className="text-[0.9rem] text-gray-500 hover:text-[#3399ff] hover:underline transition-colors"
           >
             GitHub
-          </ExternalLink>
-          <Divider>•</Divider>
-          <ExternalLink 
-            href="https://ko-fi.com/marblesodas" 
-            target="_blank" 
+          </a>
+          <span className="text-xs text-gray-300 dark:text-gray-600">•</span>
+          <a
+            href="https://ko-fi.com/marblesodas"
+            target="_blank"
             rel="noopener noreferrer"
+            className="text-[0.9rem] text-gray-500 hover:text-[#3399ff] hover:underline transition-colors"
           >
             Support Us
-          </ExternalLink>
-          <Divider>•</Divider>
-          <ExternalLink
+          </a>
+          <span className="text-xs text-gray-300 dark:text-gray-600">•</span>
+          <a
             href="https://discord.gg/QWvSaUC7zj"
             target="_blank"
             rel="noopener noreferrer"
+            className="text-[0.9rem] text-gray-500 hover:text-[#3399ff] hover:underline transition-colors"
           >
             Discord
-          </ExternalLink>
-        </FooterLinks>
+          </a>
+        </div>
         
-        <Copyright>
+        <div className="text-center text-xs text-gray-500/80">
           © {currentYear} MitPlan. Made for the FFXIV community.
           <br />
           Final Fantasy XIV is a trademark of Square Enix Holdings Co., Ltd.
-        </Copyright>
-      </FooterContent>
-    </FooterContainer>
+        </div>
+      </div>
+    </footer>
   );
 };
 
