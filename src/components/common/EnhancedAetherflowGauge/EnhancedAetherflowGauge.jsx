@@ -46,21 +46,15 @@ const EnhancedAetherflowGauge = memo(({ selectedBossAction, showRefreshButton = 
   };
 
   return (
-    <div className="flex flex-col items-center px-3 py-2 rounded border min-w-[120px]" style={{ backgroundColor: colors.backgroundSecondary, borderColor: colors.border }}>
-      <div className="text-center font-semibold mb-1 text-xs" style={{ color: colors.text }}>Aetherflow</div>
+    <div className="flex flex-col items-center px-3 py-2 rounded border min-w-[120px] bg-[var(--color-cardBackground)] border-[var(--color-border)]">
+      <div className="text-center font-semibold mb-1 text-xs text-[var(--color-text)]">Aetherflow</div>
       <div className="flex gap-1 mb-1">{renderStackIndicators()}</div>
-      <div className="text-center font-semibold mb-1 text-xs" style={{ color: colors.text }}>{aetherflowState.availableStacks}/{aetherflowState.totalStacks} Stacks</div>
+      <div className="text-center font-semibold mb-1 text-xs text-[var(--color-text)]">{aetherflowState.availableStacks}/{aetherflowState.totalStacks} Stacks</div>
       {showRefreshButton && (
         <button
           onClick={onRefreshClick}
           disabled={!aetherflowState.canRefresh || aetherflowState.availableStacks === aetherflowState.totalStacks}
-          className="rounded px-2 py-0.5 text-[10px] font-semibold transition-colors border disabled:opacity-60"
-          style={{
-            backgroundColor: aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? colors.primary : colors.backgroundSecondary,
-            color: aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? colors.buttonText : colors.textSecondary,
-            borderColor: aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? colors.primary : colors.border,
-            cursor: aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? 'pointer' : 'not-allowed',
-          }}
+          className={`rounded px-2 py-0.5 text-[10px] font-semibold transition-colors border disabled:opacity-60 ${aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? 'bg-[var(--color-primary)] text-[var(--color-buttonText)] border-[var(--color-primary)] cursor-pointer' : 'bg-[var(--color-cardBackground)] text-[var(--color-textSecondary)] border-[var(--color-border)] cursor-not-allowed'}`}
           title={aetherflowState.canRefresh ? 'Refresh Aetherflow stacks' : 'Aetherflow on cooldown'}
         >
           Refresh

@@ -370,14 +370,14 @@ const PlanningInterface = () => {
         <TankPositionSelector />
       </div>
 
-      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900">
+      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-cardBackground)]">
         <FilterToggle />
         <PrecastToggle />
         <HealingPotencyInput />
       </div>
 
       <div ref={splitContainerRef} className="flex w-full gap-4">
-        <div style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-white dark:bg-neutral-900 rounded-xl p-4 pb-6 shadow-md overflow-y-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col">
+        <div style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-[var(--color-cardBackground)] rounded-xl p-4 pb-6 shadow-md overflow-y-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col">
           <div className="relative flex flex-col p-4 w-full grow">
             {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
@@ -417,9 +417,9 @@ const PlanningInterface = () => {
 
         <>
             <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
-              <div className="my-2 w-px bg-gray-300 dark:bg-gray-600" />
+              <div className="my-2 w-px bg-[var(--color-border)]" />
             </div>
-            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-white dark:bg-neutral-900 rounded-xl p-4 shadow-md overflow-y-auto h-[calc(100vh-100px)] min-h-[500px]">
+            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-[var(--color-cardBackground)] rounded-xl p-4 shadow-md overflow-y-auto h-[calc(100vh-100px)] min-h-[500px]">
             <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
@@ -625,9 +625,9 @@ const MitigationPlannerContent = ({
 
   return (
     <>
-      <div className="min-h-screen p-8 bg-gray-50 dark:bg-neutral-950">
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-gray-800">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+      <div className="min-h-screen p-8 bg-[var(--color-background)] text-[var(--color-text)]">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-[var(--color-border)]">
+        <h1 className="text-2xl font-semibold text-[var(--color-text)]">
           {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
         </h1>
         <div className="flex items-center gap-2">
@@ -641,10 +641,10 @@ const MitigationPlannerContent = ({
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition">
+          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg font-semibold text-[var(--color-buttonText)] bg-[var(--color-primary)] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition">
             {saving ? 'Saving...' : 'Save Plan'}
           </button>
-          <button onClick={handleBack} className="px-4 py-2 rounded-lg font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-neutral-800 transition">
+          <button onClick={handleBack} className="px-4 py-2 rounded-lg font-semibold text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition">
             {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
           </button>
         </div>

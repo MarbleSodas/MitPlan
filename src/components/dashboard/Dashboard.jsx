@@ -122,7 +122,7 @@ const Dashboard = () => {
     return (
       <>
         <div className="max-w-[1200px] mx-auto p-8">
-          <div className="flex items-center justify-center p-16 text-[1.1rem] text-gray-500">Loading your plans...</div>
+          <div className="flex items-center justify-center p-16 text-[1.1rem] text-[var(--color-textSecondary)]">Loading your plans...</div>
         </div>
         <Footer />
       </>
@@ -133,7 +133,7 @@ const Dashboard = () => {
     <>
       <div className="max-w-[1200px] mx-auto p-8">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="m-0 text-2xl font-semibold text-gray-900 dark:text-gray-100">Mitigation Plans</h1>
+        <h1 className="m-0 text-2xl font-semibold text-[var(--color-text)]">Mitigation Plans</h1>
         <div className="flex items-center gap-2">
           <UserProfile />
           <KofiButton />
@@ -152,24 +152,24 @@ const Dashboard = () => {
       )}
 
       <div className="mb-8 flex flex-wrap gap-4">
-        <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[#3b82f6] px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]">
+        <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[var(--color-primary)] px-6 py-3 font-semibold text-[var(--color-buttonText)] shadow-sm transition-all hover:brightness-110">
           Create New Plan
         </button>
-        <button onClick={handleImportPlan} className="rounded-lg border-2 border-[#3b82f6] px-6 py-3 font-semibold text-[#3b82f6] transition-colors hover:bg-[#3b82f6] hover:text-white">
+        <button onClick={handleImportPlan} className="rounded-lg border-2 border-[var(--color-primary)] px-6 py-3 font-semibold text-[var(--color-primary)] transition-all hover:bg-[var(--color-primary)] hover:text-[var(--color-buttonText)]">
           Import Plan
         </button>
       </div>
 
       {categorizedPlans.totalPlans === 0 ? (
-        <div className="text-center px-8 py-16 text-gray-500 dark:text-gray-400">
-          <h3 className="mb-4 text-2xl text-gray-900 dark:text-gray-100">No Plans Yet</h3>
+        <div className="text-center px-8 py-16 text-[var(--color-textSecondary)]">
+          <h3 className="mb-4 text-2xl text-[var(--color-text)]">No Plans Yet</h3>
           <p className="mb-8 text-base">
             Create your first mitigation plan to get started with optimizing your raid strategies.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button onClick={handleCreatePlanByBoss}>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[#3b82f6] px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]">
               Create Your First Plan
-            </Button>
+            </button>
           </div>
         </div>
       ) : (
@@ -177,12 +177,12 @@ const Dashboard = () => {
           {/* My Plans Section */}
           <section className="mb-12 last:mb-0">
             <div className="mb-6 flex items-center gap-3">
-              <h2 className="m-0 text-xl font-semibold text-gray-900 dark:text-gray-100">My Plans</h2>
-              <span className="rounded-[12px] bg-[#eff6ff] px-3 py-1 text-sm font-semibold text-[#3b82f6]">{categorizedPlans.ownedPlans.length}</span>
+              <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">My Plans</h2>
+              <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{categorizedPlans.ownedPlans.length}</span>
             </div>
 
             {categorizedPlans.ownedPlans.length === 0 ? (
-              <div className="text-center rounded-lg border border-dashed border-gray-200 bg-gray-50 p-8 text-gray-500 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-400">
+              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
                 <p className="m-0 text-sm italic">
                   You haven't created any plans yet. Click "Create New Plan" to get started!
                 </p>
@@ -206,12 +206,12 @@ const Dashboard = () => {
           {user && !user.isAnonymous && (
             <section className="mb-12 last:mb-0">
               <div className="mb-6 flex items-center gap-3">
-                <h2 className="m-0 text-xl font-semibold text-gray-900 dark:text-gray-100">Shared Plans</h2>
-                <span className="rounded-[12px] bg-[#eff6ff] px-3 py-1 text-sm font-semibold text-[#3b82f6]">{categorizedPlans.sharedPlans.length}</span>
+                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Shared Plans</h2>
+                <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{categorizedPlans.sharedPlans.length}</span>
               </div>
 
               {categorizedPlans.sharedPlans.length === 0 ? (
-                <div className="text-center rounded-lg border border-dashed border-gray-200 bg-gray-50 p-8 text-gray-500 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-400">
+                <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
                   <p className="m-0 text-sm italic">
                     No plans have been shared with you yet. Shared plans will appear here when other users give you access.
                   </p>

@@ -67,6 +67,7 @@ const AppContent = () => {
   }
 
   return (
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] transition-colors">
     <Routes>
       {/* Public routes */}
       <Route
@@ -166,7 +167,7 @@ const AppContent = () => {
           </AnonymousAllowedRoute>
         }
       />
-      
+
       {/* Legal pages - accessible to all users */}
       <Route
         path="/privacy-policy"
@@ -179,6 +180,7 @@ const AppContent = () => {
         element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />}
       />
     </Routes>
+    </div>
   );
 };
 

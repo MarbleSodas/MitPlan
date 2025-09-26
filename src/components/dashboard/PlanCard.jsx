@@ -9,7 +9,7 @@ import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 const Card = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-6 shadow transition-all min-w-0 hover:shadow-lg hover:-translate-y-0.5 ${className}`}
+    className={`bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6 shadow transition-all min-w-0 hover:shadow-lg hover:-translate-y-0.5 ${className}`}
   >
     {children}
   </div>
@@ -30,14 +30,14 @@ const PlanName = ({ children, className = '', ...rest }) => (
 const PlanNameInput = ({ className = '', ...rest }) => (
   <input
     {...rest}
-    className={`text-[1.25rem] font-semibold m-0 leading-snug flex-1 min-w-0 bg-white dark:bg-neutral-800 border-2 border-blue-500 rounded px-2 py-1 outline-none focus:border-blue-600 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] ${className}`}
+    className={`text-[1.25rem] font-semibold m-0 leading-snug flex-1 min-w-0 bg-[var(--color-cardBackground)] border-2 border-[var(--color-primary)] rounded px-2 py-1 outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_3px_rgba(51,153,255,0.15)] ${className}`}
   />
 );
 
 const EditButton = ({ children, className = '', ...rest }) => (
   <button
     {...rest}
-    className={`bg-transparent border-0 text-neutral-500 cursor-pointer p-1 rounded flex items-center justify-center transition-colors flex-shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+    className={`bg-transparent border-0 text-[var(--color-textSecondary)] cursor-pointer p-1 rounded flex items-center justify-center transition-colors flex-shrink-0 hover:bg-[var(--select-bg)] hover:text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
   >
     {children}
   </button>
@@ -62,7 +62,7 @@ const CancelButton = (props) => (
 );
 
 const BossName = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`text-sm text-neutral-500 dark:text-neutral-400 mt-2 ${className}`}>{children}</div>
+  <div {...rest} className={`text-sm text-[var(--color-textSecondary)] mt-2 ${className}`}>{children}</div>
 );
 
 const CardActions = ({ children, className = '', ...rest }) => (
@@ -79,11 +79,11 @@ const Button = ({ children, className = '', ...rest }) => (
 );
 
 const PrimaryButton = ({ children, className = '', ...rest }) => (
-  <Button {...rest} className={`bg-blue-500 text-white hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow ${className}`}>{children}</Button>
+  <Button {...rest} className={`bg-[var(--color-primary)] text-[var(--color-buttonText)] hover:brightness-110 hover:-translate-y-0.5 hover:shadow ${className}`}>{children}</Button>
 );
 
 const SecondaryButton = ({ children, className = '', ...rest }) => (
-  <Button {...rest} className={`bg-transparent text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100 hover:-translate-y-0.5 ${className}`}>{children}</Button>
+  <Button {...rest} className={`bg-transparent text-[var(--color-textSecondary)] border border-[var(--color-border)] hover:bg-[var(--select-bg)] hover:text-[var(--color-text)] hover:-translate-y-0.5 ${className}`}>{children}</Button>
 );
 
 const DangerButton = ({ children, className = '', ...rest }) => (
@@ -91,7 +91,7 @@ const DangerButton = ({ children, className = '', ...rest }) => (
 );
 
 const MetaInfo = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex flex-col gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700 text-xs text-neutral-500 dark:text-neutral-400 ${className}`}>{children}</div>
+  <div {...rest} className={`flex flex-col gap-2 mt-4 pt-4 border-t border-[var(--color-border)] text-xs text-[var(--color-textSecondary)] ${className}`}>{children}</div>
 );
 
 const MetaRow = ({ children, className = '', ...rest }) => (
@@ -99,7 +99,7 @@ const MetaRow = ({ children, className = '', ...rest }) => (
 );
 
 const CreatorInfo = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`text-center italic text-blue-500 dark:text-blue-400 font-medium ${className}`}>{children}</div>
+  <div {...rest} className={`text-center italic text-[var(--color-primary)] font-medium ${className}`}>{children}</div>
 );
 
 const ConfirmDialog = ({ children, className = '', ...rest }) => (
@@ -107,11 +107,11 @@ const ConfirmDialog = ({ children, className = '', ...rest }) => (
 );
 
 const ConfirmContent = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`bg-white dark:bg-neutral-800 p-8 rounded-xl max-w-[400px] w-[90%] ${className}`}>{children}</div>
+  <div {...rest} className={`bg-[var(--color-cardBackground)] p-8 rounded-xl max-w-[400px] w-[90%] ${className}`}>{children}</div>
 );
 
 const ConfirmTitle = ({ children, className = '', ...rest }) => (
-  <h3 {...rest} className={`text-neutral-900 dark:text-neutral-100 m-0 mb-4 text-lg font-semibold ${className}`}>{children}</h3>
+  <h3 {...rest} className={`text-[var(--color-text)] m-0 mb-4 text-lg font-semibold ${className}`}>{children}</h3>
 );
 
 const ConfirmActions = ({ children, className = '', ...rest }) => (

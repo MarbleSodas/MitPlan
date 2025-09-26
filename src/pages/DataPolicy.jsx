@@ -5,7 +5,7 @@ import ThemeToggle from '../components/common/ThemeToggle';
 const PrivacyContainer = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-6 py-8 max-w-[800px] mx-auto leading-7 transition-colors ${className}`}
+    className={`min-h-screen bg-[var(--color-background)] text-[var(--color-text)] px-6 py-8 max-w-[800px] mx-auto leading-7 transition-colors ${className}`}
   >
     {children}
   </div>
@@ -14,7 +14,7 @@ const PrivacyContainer = ({ children, className = '', ...rest }) => (
 const Header = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`flex justify-between items-center mb-8 pb-4 border-b border-neutral-200 dark:border-neutral-700 flex-col gap-4 sm:flex-row sm:items-center ${className}`}
+    className={`flex justify-between items-center mb-8 pb-4 border-b border-[var(--color-border)] flex-col gap-4 sm:flex-row sm:items-center ${className}`}
   >
     {children}
   </div>
@@ -23,18 +23,18 @@ const Header = ({ children, className = '', ...rest }) => (
 const BackButton = ({ children, className = '', ...rest }) => (
   <button
     {...rest}
-    className={`bg-transparent border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 px-4 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 ${className}`}
+    className={`bg-transparent border border-[var(--color-border)] text-[var(--color-text)] px-4 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-[var(--select-bg)] ${className}`}
   >
     {children}
   </button>
 );
 
 const Title = ({ children, className = '', ...rest }) => (
-  <h1 {...rest} className={`text-4xl mb-2 text-blue-500 dark:text-blue-400 ${className}`}>{children}</h1>
+  <h1 {...rest} className={`text-4xl mb-2 text-[var(--color-primary)] ${className}`}>{children}</h1>
 );
 
 const LastUpdated = ({ children, className = '', ...rest }) => (
-  <p {...rest} className={`text-neutral-500 dark:text-neutral-400 italic mb-8 ${className}`}>{children}</p>
+  <p {...rest} className={`text-[var(--color-textSecondary)] italic mb-8 ${className}`}>{children}</p>
 );
 
 const Section = ({ children, className = '', ...rest }) => (
@@ -58,7 +58,7 @@ const List = ({ children, className = '', ...rest }) => (
 );
 
 const ContactInfo = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`bg-white dark:bg-neutral-800 p-6 rounded-lg border border-neutral-200 dark:border-neutral-700 mt-8 ${className}`}>{children}</div>
+  <div {...rest} className={`bg-[var(--color-cardBackground)] p-6 rounded-lg border border-[var(--color-border)] mt-8 ${className}`}>{children}</div>
 );
 
 const DataPolicy = () => {

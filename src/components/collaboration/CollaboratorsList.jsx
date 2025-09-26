@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Users, Eye, Edit3 } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
 
 // Generate a consistent color for a user based on their ID
 const generateUserColor = (userId) => {
@@ -25,8 +24,6 @@ const getInitials = (displayName) => {
 };
 
 const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = false }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggle = () => setIsOpen(!isOpen);
@@ -45,38 +42,33 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
     <div className="relative inline-block" data-collaborators-container>
       <button
         onClick={handleToggle}
-        className="flex items-center gap-2 rounded-lg text-sm transition"
-        style={{ padding: '0.5rem 0.75rem', background: colors.backgroundSecondary, border: `1px solid ${colors.border}`, color: colors.text }}
-        onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
-        onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
-        onMouseEnter={(e) => e.currentTarget.style.background = colors.backgroundTertiary || '#e9ecef'}
-        onMouseLeave={(e) => e.currentTarget.style.background = colors.backgroundSecondary}
+        className="flex items-center gap-2 rounded-lg text-sm transition px-3 py-2 border bg-[var(--color-cardBackground)] border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--select-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
       >
         <Users size={16} />
         <span>Collaborators</span>
-        <span className="rounded-full text-white text-xs font-semibold min-w-[1.25rem] text-center px-1" style={{ background: colors.primary }}>
+        <span className="rounded-full text-[var(--color-buttonText)] text-xs font-semibold min-w-[1.25rem] text-center px-1 bg-[var(--color-primary)]">
           {activeCollaborators.length}
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 rounded-lg shadow-md min-w-[250px] max-w-[300px] z-[1000]" style={{ background: colors.background, border: `1px solid ${colors.border}` }}>
-          <div className="px-4 py-3 font-semibold text-sm" style={{ borderBottom: `1px solid ${colors.border}`, color: colors.text }}>
+        <div className="absolute right-0 mt-2 rounded-lg shadow-md min-w-[250px] max-w-[300px] z-[1000] bg-[var(--color-cardBackground)] border border-[var(--color-border)]">
+          <div className="px-4 py-3 font-semibold text-sm border-b border-[var(--color-border)] text-[var(--color-text)]">
             Active Collaborators ({activeCollaborators.length})
           </div>
 
           {activeCollaborators.length === 0 ? (
-            <div className="p-4 text-center text-sm" style={{ color: colors.textSecondary }}>No active collaborators</div>
+            <div className="p-4 text-center text-sm text-[var(--color-textSecondary)]">No active collaborators</div>
           ) : (
             <>
               {currentUser && (
-                <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${colors.border}` }}>
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)]">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(currentUser.userId) }}>
                     {getInitials(currentUser.displayName)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate" style={{ color: colors.text }}>{cleanDisplayName(currentUser.displayName)} (You)</div>
-                    <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: colors.textSecondary }}>
+                    <div className="font-medium text-sm truncate text-[var(--color-text)]">{cleanDisplayName(currentUser.displayName)} (You)</div>
+                    <div className="flex items-center gap-1 text-xs mt-0.5 text-[var(--color-textSecondary)]">
                       <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
                       {isReadOnly ? (<><Eye size={12} /><span>Viewing</span></>) : (<><Edit3 size={12} /><span>Editing</span></>)}
                     </div>
@@ -85,13 +77,13 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
               )}
 
               {otherUsers.map((c) => (
-                <div key={c.sessionId} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${colors.border}` }}>
+                <div key={c.sessionId} className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)]">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(c.userId) }}>
                     {getInitials(c.displayName)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate" style={{ color: colors.text }}>{cleanDisplayName(c.displayName)}</div>
-                    <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: colors.textSecondary }}>
+                    <div className="font-medium text-sm truncate text-[var(--color-text)]">{cleanDisplayName(c.displayName)}</div>
+                    <div className="flex items-center gap-1 text-xs mt-0.5 text-[var(--color-textSecondary)]">
                       <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
                       <Edit3 size={12} />
                       <span>Editing</span>

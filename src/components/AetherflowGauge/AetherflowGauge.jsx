@@ -39,9 +39,8 @@ const AetherflowGauge = ({ selectedBossAction }) => {
 
   return (
     <Tooltip content={tooltipContent}>
-      <div className="flex flex-col items-center my-2 p-2 rounded border w-full max-w-[300px] transition-all"
-           style={{ backgroundColor: theme.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.7)', borderColor: colors.border }}>
-        <div className="flex items-center gap-2 mb-2 font-bold" style={{ color: colors.text }}>
+      <div className="flex flex-col items-center my-2 p-2 rounded border w-full max-w-[300px] transition-all bg-white/70 dark:bg-black/30 border-[var(--color-border)]">
+        <div className="flex items-center gap-2 mb-2 font-bold text-[var(--color-text)]">
           <div className="flex items-center justify-center">
             <img src="/abilities-gamerescape/aetherflow.png" alt="Aetherflow" style={{ width: 24, height: 24 }} />
           </div>

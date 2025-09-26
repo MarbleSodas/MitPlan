@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
-import { useTheme } from '../../contexts/ThemeContext';
 
 const ChargeCounter = ({
   mitigationId,
@@ -9,8 +8,7 @@ const ChargeCounter = ({
   totalCount,
   availableCount,
 }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
+
 
   const { checkAbilityAvailability, pendingAssignments, currentBossActions } = useEnhancedMitigation();
 
@@ -44,14 +42,13 @@ const ChargeCounter = ({
     prevAvailableRef.current = available;
   }, [available, pendingAssignments]);
 
-  const bg = available === 0 ? (colors.error || '#ff5555') : (colors.primary);
+  const bgClass = available === 0 ? 'bg-[var(--color-error)] opacity-80' : 'bg-[var(--color-primary)]';
 
   return (
     <span
       data-mitigation-id={mitigationId}
       data-charge-type={type}
-      className={`inline-block px-1.5 py-[2px] rounded-[10px] ml-1 text-[0.8rem] font-bold transition-all relative ${isFlashing ? 'animate-[flash]' : ''} text-white`}
-      style={{ backgroundColor: bg, opacity: available === 0 ? 0.8 : 1 }}
+      className={`inline-block px-1.5 py-[2px] rounded-[10px] ml-1 text-[0.8rem] font-bold transition-all relative ${isFlashing ? 'animate-[flash]' : ''} text-white ${bgClass}`}
     >
       {available}/{total} {type === 'charges' ? 'Charges' : 'Instances'}
     </span>
