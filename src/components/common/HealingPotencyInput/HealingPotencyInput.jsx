@@ -1,103 +1,50 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { useRealtimeBossContext } from '../../../contexts/RealtimeBossContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 // Default healing potency values for 100 potency heals
 const HEALING_POTENCY_VALUES = {
-  90: 5000,   // Level 90 default healing per 100 potency (placeholder)
-  100: 6000   // Level 100 default healing per 100 potency
+  90: 5000,
+  100: 6000,
 };
 
-const Container = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 6px 12px;
-  background-color: ${props => props.theme.colors.secondary};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  font-size: ${props => props.theme.fontSizes.small};
-
-`;
-
-const Label = styled.span`
-  color: ${props => props.theme.colors.text};
-  white-space: nowrap;
-  font-weight: 500;
-`;
-
-const LevelDisplay = styled.span`
-  color: ${props => props.theme.colors.primary};
-  font-weight: 600;
-  min-width: 20px;
-`;
-
-const PotencyInput = styled.input`
-  padding: 2px 2px;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  background: ${props => props.theme.colors.background};
-  color: ${props => props.theme.colors.text};
-  font-size: inherit;
-  transition: border-color 0.2s ease;
-  width: 60px;
-  text-align: center;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
-
-  &:invalid {
-    border-color: #ef4444;
-  }
-
-`;
-
 const HealingPotencyInput = () => {
-  // Get boss level from context
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const { currentBossLevel } = useRealtimeBossContext();
 
-  // Only track healing potency value, level comes from boss context
   const [healingPotency, setHealingPotency] = useState(HEALING_POTENCY_VALUES[currentBossLevel] || HEALING_POTENCY_VALUES[100]);
 
-  // Handle healing potency change
-  const handleHealingPotencyChange = (newValue) => {
-    setHealingPotency(newValue);
-  };
-
-  // Update healing potency when boss level changes
   useEffect(() => {
     const savedPotency = localStorage.getItem(`mitplan-healing-potency-${currentBossLevel}`);
     if (savedPotency) {
       const potencyNum = parseInt(savedPotency, 10);
-      if (potencyNum > 0) {
-        setHealingPotency(potencyNum);
-      }
+      if (potencyNum > 0) setHealingPotency(potencyNum);
     } else {
-      // Set default for this level if no saved value
       setHealingPotency(HEALING_POTENCY_VALUES[currentBossLevel] || HEALING_POTENCY_VALUES[100]);
     }
   }, [currentBossLevel]);
 
-  // Save to localStorage whenever healing potency changes
   useEffect(() => {
     localStorage.setItem(`mitplan-healing-potency-${currentBossLevel}`, healingPotency.toString());
   }, [healingPotency, currentBossLevel]);
 
   return (
-    <Container>
-      <Label>Healing (Lv.</Label>
-      <LevelDisplay>{currentBossLevel}</LevelDisplay>
-      <Label>per 100 Cure Potency):</Label>
-      <PotencyInput
+    <div className="flex items-center gap-2 rounded-md text-sm" style={{ padding: '6px 12px', backgroundColor: colors.secondary }}>
+      <span className="whitespace-nowrap font-medium" style={{ color: colors.text }}>Healing (Lv.</span>
+      <span className="font-semibold min-w-[20px]" style={{ color: colors.primary }}>{currentBossLevel}</span>
+      <span className="whitespace-nowrap font-medium" style={{ color: colors.text }}>per 100 Cure Potency):</span>
+      <input
         type="number"
         min="1"
         max="99999"
         value={healingPotency}
-        onChange={(e) => handleHealingPotencyChange(Number(e.target.value))}
-        placeholder={HEALING_POTENCY_VALUES[currentBossLevel] || HEALING_POTENCY_VALUES[100]}
+        onChange={(e) => setHealingPotency(Number(e.target.value))}
+        placeholder={(HEALING_POTENCY_VALUES[currentBossLevel] || HEALING_POTENCY_VALUES[100]).toString()}
+        className="w-[60px] text-center rounded text-sm"
+        style={{ padding: '2px', border: `1px solid ${colors.border}`, background: colors.background, color: colors.text }}
       />
-    </Container>
+    </div>
   );
 };
 

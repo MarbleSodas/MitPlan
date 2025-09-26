@@ -59,41 +59,6 @@ import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 
 
 
-const BackButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: transparent;
-  color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primary || '#3399ff'};
-    color: white;
-  }
-`;
-
-const SaveButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: ${props => props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primaryDark || '#2980b9'};
-  }
-
-  &:disabled {
-    background: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-    cursor: not-allowed;
-  }
-`;
 
 
 

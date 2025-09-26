@@ -180,6 +180,52 @@ const darkTheme = {
 // Create the context
 const ThemeContext = createContext();
 
+// Apply theme values as CSS variables on :root for Tailwind arbitrary-var usage
+const applyThemeVariables = (themeObj) => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const set = (name, value) => root.style.setProperty(name, String(value));
+
+  // Colors
+  const c = themeObj.colors || {};
+  Object.entries(c).forEach(([k, v]) => set(`--color-${k}`, v));
+
+  // Spacing
+  const s = themeObj.spacing || {};
+  Object.entries(s).forEach(([k, v]) => {
+    if (typeof v === 'object' && v) {
+      Object.entries(v).forEach(([rk, rv]) => set(`--space-r-${rk}`, rv));
+    } else {
+      set(`--space-${k}`, v);
+    }
+  });
+
+  // Font sizes
+  const f = themeObj.fontSizes || {};
+  Object.entries(f).forEach(([k, v]) => {
+    if (typeof v === 'object' && v) {
+      Object.entries(v).forEach(([rk, rv]) => set(`--fs-r-${rk}`, rv));
+    } else {
+      set(`--fs-${k}`, v);
+    }
+  });
+
+  // Border radius
+  const r = themeObj.borderRadius || {};
+  Object.entries(r).forEach(([k, v]) => {
+    if (typeof v === 'object' && v) {
+      Object.entries(v).forEach(([rk, rv]) => set(`--radius-r-${rk}`, rv));
+    } else {
+      set(`--radius-${k}`, v);
+    }
+  });
+
+  // Derived tokens used by components
+  // Selected card background highlight
+  const selectBg = themeObj.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : '#e6f7ff';
+  set('--select-bg', selectBg);
+};
+
 // Create a provider component
 export const ThemeProvider = ({ children }) => {
   // Initialize theme state from localStorage or system preference
@@ -213,6 +259,7 @@ export const ThemeProvider = ({ children }) => {
   // Apply theme to document on mount and when theme changes
   useEffect(() => {
     const root = document.documentElement;
+    const themeObj = isDarkMode ? darkTheme : lightTheme;
     if (isDarkMode) {
       root.classList.add('dark');
       root.setAttribute('data-theme', 'dark');
@@ -220,6 +267,7 @@ export const ThemeProvider = ({ children }) => {
       root.classList.remove('dark');
       root.setAttribute('data-theme', 'light');
     }
+    applyThemeVariables(themeObj);
   }, [isDarkMode]);
 
   // Listen for system theme changes

@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import {
   getAbilityDescriptionForLevel,
@@ -18,148 +17,38 @@ import { useFilterContext } from '../../contexts';
 
 
 
-const PrecastInput = styled.input`
-  width: 28px;
-  padding: 0 0;
-  border: 1px solid ${props => props.theme.colors.border} !important;
-  border-radius: 4px;
-  background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'white'};
-  // color: inherit;
-  text-align: center;
-  transition: border-color 0.2s ease;
+const PrecastInput = ({ className = '', style, ...rest }) => (
+  <input
+    {...rest}
+    className={`w-[28px] px-0 text-center border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 transition-colors focus:border-blue-500 appearance-none ${className}`}
+    style={{ ...(style || {}), MozAppearance: 'textfield' }}
+  />
+);
 
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
-
-  /* Hide default number input steppers for a clean look */
-  -moz-appearance: textfield;
-  &::-webkit-outer-spin-button,
-  &::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-`;
-
-const RemoveButton = styled.button`
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  max-width: 24px;
-  max-height: 24px;
-  border-radius: 50%;
-  border: none;
-  background-color: ${props => props.theme?.colors?.error || '#ef4444'};
-  color: white;
-  /* Removed transition for better performance */
-  padding: 0;
-  margin-left: 6px;
-  line-height: 1;
-  flex-shrink: 0;
-  /* Ensure button is above other elements and can receive clicks */
-  position: relative;
-  z-index: 15; /* Higher z-index to ensure clickability */
-  /* Ensure button stays within container bounds */
-  box-sizing: border-box;
-  /* Touch optimization */
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  user-select: none;
-
-  &:hover {
-    background-color: ${props => props.theme?.colors?.errorHover || '#dc2626'};
-  }
-
-  &:active {
-    background-color: rgba(255, 100, 100, 0.35);
-    transform: scale(0.95);
-  }
-
-  /* Tablet styles (768px to 992px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
-    min-height: 26px;
-    max-width: 26px;
-    max-height: 26px;
-    font-size: 16px;
-    margin-left: 5px;
-  }
-
-  /* Mobile styles (480px to 768px) */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    max-width: 28px;
-    max-height: 28px;
-    font-size: 16px;
-    margin-left: 4px;
-  }
-
-  /* Small mobile styles (below 480px) */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    min-height: 30px;
-    max-width: 30px;
-    max-height: 30px;
-    font-size: 16px;
-    margin-left: 3px;
-  }
-`;
+const RemoveButton = ({ children, className = '', ...rest }) => (
+  <button
+    {...rest}
+    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-red-500 text-white p-0 ml-[6px] leading-none shrink-0 relative z-[15] select-none touch-manipulation hover:bg-red-600 active:bg-red-400 active:scale-95 ${className}`}
+  >
+    {children}
+  </button>
+);
 
 
-const CasterBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 9px;
-  font-weight: 600;
-  padding: 1px 4px;
-  border-radius: 3px;
-  margin-left: 4px;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(150, 150, 150, 0.25)' : 'rgba(150, 150, 150, 0.2)'};
-  color: ${props => props.theme.colors.text};
-`;
+const CasterBadge = ({ children, className = '', ...rest }) => (
+  <span {...rest} className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1 py-[1px] rounded ml-1 bg-neutral-300/40 dark:bg-neutral-600/40 text-neutral-800 dark:text-neutral-100 ${className}`}>{children}</span>
+);
 
-const TankPositionBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: bold;
-  padding: 1px 3px;
-  border-radius: 3px;
-  margin-left: 4px;
-  background-color: ${props => {
-    if (props.$position === 'mainTank') {
-      return props.theme.mode === 'dark' ? 'rgba(0, 150, 255, 0.3)' : 'rgba(0, 150, 255, 0.2)';
-    } else if (props.$position === 'offTank') {
-      return props.theme.mode === 'dark' ? 'rgba(100, 200, 255, 0.3)' : 'rgba(100, 200, 255, 0.2)';
-    }
-    return 'transparent';
-  }};
-  color: ${props => props.theme.colors.text};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: 7px;
-    padding: 1px 2px;
-    margin-left: 2px;
-  }
-`;
+const TankPositionBadge = ({ children, className = '', $position, ...rest }) => {
+  const bg = $position === 'mainTank'
+    ? 'bg-blue-500/20 dark:bg-blue-500/30'
+    : $position === 'offTank'
+      ? 'bg-cyan-400/20 dark:bg-cyan-400/30'
+      : 'bg-transparent';
+  return (
+    <span {...rest} className={`inline-flex items-center justify-center text-[9px] font-bold px-[3px] py-[1px] rounded ml-1 uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-100 sm:text-[7px] sm:px-[2px] sm:ml-[2px] ${bg} ${className}`}>{children}</span>
+  );
+};
 
 const AssignedMitigations = ({
   action,

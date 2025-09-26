@@ -5,16 +5,16 @@
  * charges, and instances across the entire application.
  */
 
-import { mitigationAbilities } from '../../data';
+import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
 import {
   getAbilityCooldownForLevel,
   getAbilityChargeCount,
   getRoleSharedAbilityCount,
   getAbilityDurationForLevel
-} from '../abilities/abilityUtils';
-import { ChargesTracker, getChargesTracker, updateChargesTracker } from './chargesTracker';
-import { InstancesTracker, getInstancesTracker, updateInstancesTracker } from './instancesTracker';
-import { AetherflowTracker, getAetherflowTracker, updateAetherflowTracker } from './aetherflowTracker';
+} from '../abilities/abilityUtils.js';
+import { ChargesTracker, getChargesTracker, updateChargesTracker } from './chargesTracker.js';
+import { InstancesTracker, getInstancesTracker, updateInstancesTracker } from './instancesTracker.js';
+import { AetherflowTracker, getAetherflowTracker, updateAetherflowTracker } from './aetherflowTracker.js';
 
 /**
  * Represents the availability status of a mitigation ability

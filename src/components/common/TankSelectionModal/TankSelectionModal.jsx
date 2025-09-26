@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
-import styled from 'styled-components';
 import { X } from 'lucide-react';
 import { ffxivJobs } from '../../../data';
 
@@ -15,119 +14,64 @@ const getOrCreatePortalContainer = () => {
   return container;
 };
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  animation: fadeIn 0.2s ease-out;
+const ModalOverlay = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`fixed inset-0 bg-black/50 flex items-center justify-center z-[10000] ${className}`}>
+    {children}
+  </div>
+);
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-`;
+const ModalContainer = forwardRef(({ children, className = '', ...rest }, ref) => (
+  <div
+    ref={ref}
+    {...rest}
+    className={`relative w-[90%] max-w-[400px] rounded-xl p-5 sm:p-5 bg-white dark:bg-neutral-800 shadow-2xl ${className}`}
+  >
+    {children}
+  </div>
+));
 
-const ModalContainer = styled.div`
-  background-color: ${props => props.theme.colors.secondary};
-  border-radius: ${props => props.theme.borderRadius.large};
-  padding: 20px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: ${props => props.theme.shadows.large};
-  animation: slideIn 0.2s ease-out;
-  position: relative;
+const ModalHeader = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex justify-between items-center mb-4 ${className}`}>
+    {children}
+  </div>
+);
 
-  @keyframes slideIn {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
+const ModalTitle = ({ children, className = '', ...rest }) => (
+  <h3 {...rest} className={`m-0 text-neutral-900 dark:text-neutral-100 text-lg font-semibold ${className}`}>{children}</h3>
+);
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 95%;
-    padding: 16px;
-  }
-`;
+const CloseButton = ({ children, className = '', ...rest }) => (
+  <button
+    {...rest}
+    className={`bg-transparent border-0 cursor-pointer p-1 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors ${className}`}
+  >
+    {children}
+  </button>
+);
 
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
+const ModalContent = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`mb-5 text-neutral-800 dark:text-neutral-200 ${className}`}>{children}</div>
+);
 
-const ModalTitle = styled.h3`
-  margin: 0;
-  color: ${props => props.theme.colors.text};
-  font-size: ${props => props.theme.fontSizes.large};
-`;
+const ButtonContainer = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex justify-between gap-3 ${className}`}>{children}</div>
+);
 
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${props => props.theme.colors.text};
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s;
+const Button = ({ children, className = '', $primary, ...rest }) => {
+  const base = 'flex-1 inline-flex items-center justify-center gap-2 font-bold rounded-md px-4 py-2 transition-transform hover:-translate-y-0.5 shadow-sm';
+  const variant = $primary
+    ? 'bg-blue-500 text-white hover:bg-blue-600'
+    : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-600';
+  return (
+    <button {...rest} className={`${base} ${variant} ${className}`}>
+      {children}
+    </button>
+  );
+};
 
-  &:hover {
-    background-color: ${props => props.theme.colors.hover};
-  }
-`;
-
-const ModalContent = styled.div`
-  margin-bottom: 20px;
-  color: ${props => props.theme.colors.text};
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
-const Button = styled.button`
-  flex: 1;
-  padding: 10px 16px;
-  border-radius: ${props => props.theme.borderRadius.medium};
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: ${props => props.$primary ? props.theme.colors.primary : props.theme.colors.background};
-  color: ${props => props.$primary ? props.theme.colors.buttonText : props.theme.colors.text};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.small};
-    background-color: ${props => props.$primary ? props.theme.colors.primaryHover : props.theme.colors.hover};
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const JobIcon = styled.img`
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: contain;
-`;
+const JobIcon = ({ className = '', ...rest }) => (
+  <img {...rest} className={`w-6 h-6 rounded-full object-contain ${className}`} />
+);
 
 /**
  * Modal component for selecting which tank to apply a mitigation to

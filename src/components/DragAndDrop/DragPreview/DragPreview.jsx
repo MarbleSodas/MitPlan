@@ -1,78 +1,32 @@
 import React from 'react';
-import styled from 'styled-components';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { getAbilityDescriptionForLevel } from '../../../utils';
 
-const DragPreviewContainer = styled.div`
-  background-color: ${props => props.theme.colors.cardBackground};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  padding: ${props => props.theme.spacing.medium};
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  border-left: 4px solid ${props => props.theme.colors.primary};
-  max-width: 300px;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transform: scale(0.9);
-  opacity: 0.9;
-  z-index: 9999;
-`;
-
-const DragPreviewIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-`;
-
-const DragPreviewContent = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const DragPreviewName = styled.div`
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 2px;
-`;
-
-const DragPreviewDescription = styled.div`
-  font-size: 12px;
-  color: ${props => props.theme.colors.lightText};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-`;
-
 const DragPreview = ({ item, currentBossLevel }) => {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   if (!item) return null;
-  
+
   const description = getAbilityDescriptionForLevel(item, currentBossLevel);
-  const truncatedDescription = description.length > 50 
-    ? `${description.substring(0, 50)}...` 
-    : description;
+  const truncatedDescription = description.length > 50 ? `${description.substring(0, 50)}...` : description;
 
   return (
-    <DragPreviewContainer>
-      <DragPreviewIcon>
+    <div
+      className="pointer-events-none flex items-center gap-2 scale-90 opacity-90 shadow-xl z-[9999]"
+      style={{ backgroundColor: colors.cardBackground, borderLeft: `4px solid ${colors.primary}`, borderRadius: theme.borderRadius?.medium, padding: theme.spacing?.medium, maxWidth: 300 }}
+    >
+      <div className="flex items-center justify-center w-6 h-6 shrink-0">
         {typeof item.icon === 'string' && item.icon.startsWith('/') ? (
-          <img 
-            src={item.icon} 
-            alt={item.name} 
-            style={{ maxHeight: '24px', maxWidth: '24px' }} 
-          />
+          <img src={item.icon} alt={item.name} style={{ maxHeight: '24px', maxWidth: '24px' }} />
         ) : (
           item.icon
         )}
-      </DragPreviewIcon>
-      <DragPreviewContent>
-        <DragPreviewName>{item.name}</DragPreviewName>
-        <DragPreviewDescription>{truncatedDescription}</DragPreviewDescription>
-      </DragPreviewContent>
-    </DragPreviewContainer>
+      </div>
+      <div className="flex flex-col">
+        <div className="font-bold text-[14px] mb-[2px]" style={{ color: colors.text }}>{item.name}</div>
+        <div className="text-[12px] whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" style={{ color: colors.lightText }}>{truncatedDescription}</div>
+      </div>
+    </div>
   );
 };
 

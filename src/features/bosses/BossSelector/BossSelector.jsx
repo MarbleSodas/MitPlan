@@ -1,118 +1,36 @@
 import React from 'react';
-import styled from 'styled-components';
 import { bosses } from '../../../data';
 
-const SelectorContainer = styled.div`
-  background-color: ${props => props.theme.colors.secondary};
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: ${props => props.theme.shadows.medium};
-  transition: background-color 0.3s ease;
-`;
-
-const SelectorTitle = styled.h3`
-  margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  padding-bottom: 10px;
-  color: ${props => props.theme.colors.text};
-`;
-
-const BossList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    gap: 8px;
-    justify-content: center;
-  }
-`;
-
-const BossCard = styled.div`
-  background-color: ${props => {
-    if (props.theme.mode === 'dark') {
-      return props.$isSelected ? 'rgba(51, 153, 255, 0.2)' : props.theme.colors.cardBackground;
-    }
-    return props.$isSelected ? '#e6f7ff' : 'white';
-  }};
-  border: 2px solid ${props => props.$isSelected ? props.theme.colors.primary : props.theme.colors.border};
-  border-radius: 6px;
-  padding: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 120px;
-  color: ${props => props.theme.colors.text};
-
-  &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.medium};
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: calc(50% - 8px); /* Two cards per row with gap */
-    padding: 8px;
-
-    &:active {
-      transform: translateY(-1px);
-      box-shadow: ${props => props.theme.shadows.small};
-    }
-  }
-`;
-
-const BossIcon = styled.div`
-  margin-bottom: 5px;
-  text-align: center;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const BossName = styled.div`
-  font-weight: ${props => props.$isSelected ? 'bold' : 'normal'};
-  text-align: center;
-  font-size: 14px;
-`;
-
-const BossLevel = styled.div`
-  text-align: center;
-  font-size: 12px;
-  color: ${props => props.theme.colors.lightText};
-  margin-top: 5px;
-`;
 
 function BossSelector({ selectedBossId, onSelectBoss, disabled = false }) {
+
+
   return (
-    <SelectorContainer>
-      <SelectorTitle>Select Boss</SelectorTitle>
-      <BossList>
-        {bosses.map(boss => (
-          <BossCard
-            key={boss.id}
-            $isSelected={boss.id === selectedBossId}
-            onClick={() => disabled ? () => {} : onSelectBoss(boss.id)}
-            style={{
-              opacity: disabled ? 0.6 : 1,
-              cursor: disabled ? 'not-allowed' : 'pointer'
-            }}
-          >
-              <BossIcon>
-                {typeof boss.icon === 'string' && boss.icon.startsWith('/') ?
-                  <img src={boss.icon} alt={boss.name} style={{ maxHeight: '40px', maxWidth: '40px' }} /> :
+    <div className="rounded-md p-4 mb-5 shadow-md transition-colors bg-[var(--color-secondary)]">
+      <h3 className="m-0 mb-4 pb-2 border-b border-b-[var(--color-border)] text-[var(--color-text)]">Select Boss</h3>
+      <div className="flex flex-wrap gap-2 md:gap-2 justify-start md:justify-start">
+        {bosses.map((boss) => {
+          const isSelected = boss.id === selectedBossId;
+          return (
+            <div
+              key={boss.id}
+              className={`rounded-md p-2 transition-all w-[120px] hover:-translate-y-0.5 hover:shadow-md border-2 text-[var(--color-text)] ${isSelected ? 'bg-[var(--select-bg)] border-[var(--color-primary)] font-bold' : 'bg-[var(--color-cardBackground)] border-[var(--color-border)]'} ${disabled ? 'opacity-60 cursor-not-allowed' : 'opacity-100 cursor-pointer'}`}
+              onClick={() => disabled ? undefined : onSelectBoss(boss.id)}
+            >
+              <div className="mb-1 text-center h-10 flex items-center justify-center">
+                {typeof boss.icon === 'string' && boss.icon.startsWith('/') ? (
+                  <img src={boss.icon} alt={boss.name} className="max-h-10 max-w-10 object-contain" />
+                ) : (
                   boss.icon
-                }
-              </BossIcon>
-              <BossName $isSelected={boss.id === selectedBossId}>
-                {boss.name}
-              </BossName>
-              <BossLevel>Level {boss.level}</BossLevel>
-            </BossCard>
-        ))}
-      </BossList>
-    </SelectorContainer>
+                )}
+              </div>
+              <div className="text-center text-[14px]">{boss.name}</div>
+              <div className="text-center text-[12px] mt-1 text-[var(--color-lightText)]">Level {boss.level}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

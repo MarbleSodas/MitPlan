@@ -1,103 +1,65 @@
 import React from 'react';
-import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/common/ThemeToggle';
 
-const PrivacyContainer = styled.div`
-  min-height: 100vh;
-  background: ${props => props.theme.colors.background};
-  color: ${props => props.theme.colors.text};
-  padding: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
-  line-height: 1.6;
-  transition: background 0.3s ease, color 0.3s ease;
+const PrivacyContainer = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-6 py-8 max-w-[800px] mx-auto leading-7 transition-colors ${className}`}
+  >
+    {children}
+  </div>
+);
 
+const Header = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`flex justify-between items-center mb-8 pb-4 border-b border-neutral-200 dark:border-neutral-700 flex-col gap-4 sm:flex-row sm:items-center ${className}`}
+  >
+    {children}
+  </div>
+);
 
-`;
+const BackButton = ({ children, className = '', ...rest }) => (
+  <button
+    {...rest}
+    className={`bg-transparent border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 px-4 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 ${className}`}
+  >
+    {children}
+  </button>
+);
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
+const Title = ({ children, className = '', ...rest }) => (
+  <h1 {...rest} className={`text-4xl mb-2 text-blue-500 dark:text-blue-400 ${className}`}>{children}</h1>
+);
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-`;
+const LastUpdated = ({ children, className = '', ...rest }) => (
+  <p {...rest} className={`text-neutral-500 dark:text-neutral-400 italic mb-8 ${className}`}>{children}</p>
+);
 
-const BackButton = styled.button`
-  background: transparent;
-  border: 1px solid ${props => props.theme.colors.border};
-  color: ${props => props.theme.colors.text};
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+const Section = ({ children, className = '', ...rest }) => (
+  <section {...rest} className={`mb-8 ${className}`}>{children}</section>
+);
 
-  &:hover {
-    background: ${props => props.theme.colors.hover};
-  }
-`;
+const SectionTitle = ({ children, className = '', ...rest }) => (
+  <h2 {...rest} className={`text-2xl mb-4 ${className}`}>{children}</h2>
+);
 
-const Title = styled.h1`
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  color: ${props => props.theme.colors.primary};
+const SubsectionTitle = ({ children, className = '', ...rest }) => (
+  <h3 {...rest} className={`text-xl mb-3 mt-6 ${className}`}>{children}</h3>
+);
 
-`;
+const Paragraph = ({ children, className = '', ...rest }) => (
+  <p {...rest} className={`mb-4 ${className}`}>{children}</p>
+);
 
-const LastUpdated = styled.p`
-  color: ${props => props.theme.colors.textSecondary};
-  font-style: italic;
-  margin-bottom: 2rem;
-`;
+const List = ({ children, className = '', ...rest }) => (
+  <ul {...rest} className={`mb-4 pl-6 list-disc space-y-2 ${className}`}>{children}</ul>
+);
 
-const Section = styled.section`
-  margin-bottom: 2rem;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: ${props => props.theme.colors.text};
-`;
-
-const SubsectionTitle = styled.h3`
-  font-size: 1.2rem;
-  margin-bottom: 0.75rem;
-  margin-top: 1.5rem;
-  color: ${props => props.theme.colors.text};
-`;
-
-const Paragraph = styled.p`
-  margin-bottom: 1rem;
-  color: ${props => props.theme.colors.text};
-`;
-
-const List = styled.ul`
-  margin-bottom: 1rem;
-  padding-left: 1.5rem;
-  
-  li {
-    margin-bottom: 0.5rem;
-    color: ${props => props.theme.colors.text};
-  }
-`;
-
-const ContactInfo = styled.div`
-  background: ${props => props.theme.colors.cardBackground};
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
-  margin-top: 2rem;
-`;
+const ContactInfo = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`bg-white dark:bg-neutral-800 p-6 rounded-lg border border-neutral-200 dark:border-neutral-700 mt-8 ${className}`}>{children}</div>
+);
 
 const DataPolicy = () => {
   const navigate = useNavigate();

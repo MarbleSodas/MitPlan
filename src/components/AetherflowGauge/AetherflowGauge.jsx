@@ -1,142 +1,34 @@
 import { useEffect, useState } from 'react';
-import styled from 'styled-components';
 import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import Tooltip from '../common/Tooltip/Tooltip';
 
-// Container for the entire gauge
-const GaugeContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 10px 0;
-  padding: 8px;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.7)'};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  border: 1px solid ${props => props.theme.colors.border};
-  box-shadow: ${props => props.theme.shadows.small};
-  width: 100%;
-  max-width: 300px;
-  transition: all 0.3s ease;
-
-`;
-
-// Title for the gauge
-const GaugeTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-weight: bold;
-  color: ${props => props.theme.colors.text};
-  font-size: ${props => props.theme.fontSizes.medium};
-
-`;
-
-// Icon for the gauge
-const GaugeIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  img {
-    width: 24px;
-    height: 24px;
-
-  }
-`;
-
-// Container for the stack indicators
-const StacksContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-
-`;
-
-// Individual stack indicator
-const StackIndicator = styled.div`
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: ${props => props.$active ? '#2ecc40' : props.theme.mode === 'dark' ? '#333' : '#ddd'}; /* Green for active */
-  border: 2px solid ${props => props.$active ? '#27ae60' : props.theme.colors.border}; /* Darker green border */
-  transition: all 0.3s ease;
-  box-shadow: ${props => props.$active ? '0 0 8px 3px rgba(46, 204, 64, 0.4)' : 'none'}; /* Green glow */
-
-`;
-
-// Cooldown text
-const CooldownText = styled.div`
-  font-size: ${props => props.theme.fontSizes.small};
-  color: ${props => props.theme.colors.text};
-  margin-top: 4px;
-  opacity: 0.8;
-
-`;
-
-/**
- * AetherflowGauge component for displaying Scholar's Aetherflow stacks
- * Now uses the Enhanced Mitigation System for improved accuracy
- *
- * @returns {JSX.Element} - Rendered component
- */
 const AetherflowGauge = ({ selectedBossAction }) => {
-  const {
-    cooldownManager,
-    selectedJobs,
-    assignments
-  } = useEnhancedMitigation();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const { cooldownManager, selectedJobs, assignments } = useEnhancedMitigation();
 
-  // Force refresh state to trigger re-renders when assignments change
   const [forceRefresh, setForceRefresh] = useState(0);
+  useEffect(() => { setForceRefresh((p) => p + 1); }, [assignments]);
 
-  // Force refresh when assignments change
-  useEffect(() => {
-    setForceRefresh(prev => prev + 1);
-  }, [assignments]);
-
-  // Check if Scholar is selected (handle both legacy and optimized formats)
   const isScholarSelected = selectedJobs && (
-    selectedJobs['SCH'] || // Direct format
-    (selectedJobs.healer && Array.isArray(selectedJobs.healer)) && (
-      // Optimized format: ["SCH", "WHM"]
-      (typeof selectedJobs.healer[0] === 'string' && selectedJobs.healer.includes('SCH')) ||
-      // Legacy format: [{ id: "SCH", selected: true }]
-      (typeof selectedJobs.healer[0] === 'object' &&
-       selectedJobs.healer.some(job => job && job.id === 'SCH' && job.selected))
+    selectedJobs['SCH'] || (
+      selectedJobs.healer && Array.isArray(selectedJobs.healer) && (
+        (typeof selectedJobs.healer[0] === 'string' && selectedJobs.healer.includes('SCH')) ||
+        (typeof selectedJobs.healer[0] === 'object' && selectedJobs.healer.some(j => j && j.id === 'SCH' && j.selected))
+      )
     )
   );
 
-  // Get Aetherflow state from enhanced system
-  const aetherflowState = cooldownManager?.aetherflowTracker?.getAetherflowState(
-    selectedBossAction?.time || 0
-  ) || {
+  const aetherflowState = cooldownManager?.aetherflowTracker?.getAetherflowState(selectedBossAction?.time || 0) || {
     availableStacks: 0,
     totalStacks: 3,
     canRefresh: false,
-    timeUntilRefresh: 0
+    timeUntilRefresh: 0,
   };
 
-  // If Scholar is not selected, don't render the gauge
-  if (!isScholarSelected) {
-    return null;
-  }
+  if (!isScholarSelected || !cooldownManager?.aetherflowTracker || !selectedBossAction) return null;
 
-  // If cooldown manager isn't ready, don't render yet
-  if (!cooldownManager || !cooldownManager.aetherflowTracker) {
-    return null;
-  }
-
-  // If no boss action is selected, don't render
-  if (!selectedBossAction) {
-    return null;
-  }
-
-  console.log(`[AetherflowGauge] Rendering gauge with ${aetherflowState.availableStacks} stacks`);
-
-
-
-  // Create tooltip content
   const tooltipContent = `
     Aetherflow Stacks: ${aetherflowState.availableStacks}/${aetherflowState.totalStacks}
 
@@ -147,26 +39,25 @@ const AetherflowGauge = ({ selectedBossAction }) => {
 
   return (
     <Tooltip content={tooltipContent}>
-      <GaugeContainer>
-        <GaugeTitle>
-          <GaugeIcon>
-            <img
-              src="/abilities-gamerescape/aetherflow.png"
-              alt="Aetherflow"
-            />
-          </GaugeIcon>
+      <div className="flex flex-col items-center my-2 p-2 rounded border w-full max-w-[300px] transition-all"
+           style={{ backgroundColor: theme.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.7)', borderColor: colors.border }}>
+        <div className="flex items-center gap-2 mb-2 font-bold" style={{ color: colors.text }}>
+          <div className="flex items-center justify-center">
+            <img src="/abilities-gamerescape/aetherflow.png" alt="Aetherflow" style={{ width: 24, height: 24 }} />
+          </div>
           <span>Aetherflow</span>
-        </GaugeTitle>
+        </div>
 
-        <StacksContainer>
-          {[...Array(aetherflowState.totalStacks)].map((_, index) => (
-            <StackIndicator
-              key={index}
-              $active={index < aetherflowState.availableStacks}
-            />
-          ))}
-        </StacksContainer>
-      </GaugeContainer>
+        <div className="flex gap-2 mt-1">
+          {[...Array(aetherflowState.totalStacks)].map((_, index) => {
+            const active = index < aetherflowState.availableStacks;
+            const bg = active ? '#2ecc40' : (theme.mode === 'dark' ? '#333' : '#ddd');
+            const br = active ? '#27ae60' : colors.border;
+            const glow = active ? '0 0 8px 3px rgba(46, 204, 64, 0.4)' : 'none';
+            return <div key={index} className="w-7 h-7 rounded-full transition-all" style={{ backgroundColor: bg, border: `2px solid ${br}`, boxShadow: glow }} />
+          })}
+        </div>
+      </div>
     </Tooltip>
   );
 };

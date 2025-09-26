@@ -1,130 +1,6 @@
 import { useState } from 'react';
-import styled from 'styled-components';
 import { Users, Eye, Edit3 } from 'lucide-react';
-
-const CollaboratorsContainer = styled.div`
-  position: relative;
-  display: inline-block;
-`;
-
-const CollaboratorsButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: ${props => props.theme?.colors?.backgroundSecondary || '#f8f9fa'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  border-radius: 8px;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.backgroundTertiary || '#e9ecef'};
-  }
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  }
-`;
-
-const CollaboratorCount = styled.span`
-  background: ${props => props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-  border-radius: 12px;
-  padding: 0.125rem 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  min-width: 1.25rem;
-  text-align: center;
-`;
-
-const CollaboratorsDropdown = styled.div`
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 250px;
-  max-width: 300px;
-  z-index: 1000;
-`;
-
-const DropdownHeader = styled.div`
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  font-weight: 600;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 0.875rem;
-`;
-
-const CollaboratorItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const CollaboratorAvatar = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: ${props => props.color || '#3399ff'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-  flex-shrink: 0;
-`;
-
-const CollaboratorInfo = styled.div`
-  flex: 1;
-  min-width: 0;
-`;
-
-const CollaboratorName = styled.div`
-  font-weight: 500;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 0.875rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const CollaboratorStatus = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  margin-top: 0.125rem;
-`;
-
-const StatusIcon = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: ${props => props.isActive ? '#10b981' : '#6b7280'};
-`;
-
-const EmptyState = styled.div`
-  padding: 1rem;
-  text-align: center;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  font-size: 0.875rem;
-`;
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Generate a consistent color for a user based on their ID
 const generateUserColor = (userId) => {
@@ -132,57 +8,33 @@ const generateUserColor = (userId) => {
     '#3399ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
     '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
   ];
-  
   let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
+  for (let i = 0; i < userId.length; i++) hash = userId.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Helper function to clean display names (remove quotes if present)
 const cleanDisplayName = (name) => {
   if (!name) return name;
-  // Remove surrounding quotes if present (handles both single and double quotes)
-  if ((name.startsWith('"') && name.endsWith('"')) ||
-      (name.startsWith("'") && name.endsWith("'"))) {
-    return name.slice(1, -1);
-  }
+  if ((name.startsWith('"') && name.endsWith('"')) || (name.startsWith("'") && name.endsWith("'"))) return name.slice(1, -1);
   return name;
 };
 
-// Get initials from display name
 const getInitials = (displayName) => {
   const cleanName = cleanDisplayName(displayName);
-  return cleanName
-    .split(' ')
-    .map(word => word.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  return cleanName.split(' ').map(w => w.charAt(0)).join('').toUpperCase().slice(0, 2);
 };
 
 const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = false }) => {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
-  };
+  const handleToggle = () => setIsOpen(!isOpen);
+  const handleClickOutside = (e) => { if (!e.target.closest('[data-collaborators-container]')) setIsOpen(false); };
 
-  const handleClickOutside = (e) => {
-    if (!e.target.closest('[data-collaborators-container]')) {
-      setIsOpen(false);
-    }
-  };
-
-  // Close dropdown when clicking outside
   if (typeof window !== 'undefined') {
-    if (isOpen) {
-      document.addEventListener('click', handleClickOutside);
-    } else {
-      document.removeEventListener('click', handleClickOutside);
-    }
+    if (isOpen) document.addEventListener('click', handleClickOutside);
+    else document.removeEventListener('click', handleClickOutside);
   }
 
   const activeCollaborators = collaborators.filter(c => c.isActive);
@@ -190,76 +42,68 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
   const otherUsers = activeCollaborators.filter(c => c.sessionId !== currentSessionId);
 
   return (
-    <CollaboratorsContainer data-collaborators-container>
-      <CollaboratorsButton onClick={handleToggle}>
+    <div className="relative inline-block" data-collaborators-container>
+      <button
+        onClick={handleToggle}
+        className="flex items-center gap-2 rounded-lg text-sm transition"
+        style={{ padding: '0.5rem 0.75rem', background: colors.backgroundSecondary, border: `1px solid ${colors.border}`, color: colors.text }}
+        onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+        onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
+        onMouseEnter={(e) => e.currentTarget.style.background = colors.backgroundTertiary || '#e9ecef'}
+        onMouseLeave={(e) => e.currentTarget.style.background = colors.backgroundSecondary}
+      >
         <Users size={16} />
         <span>Collaborators</span>
-        <CollaboratorCount>{activeCollaborators.length}</CollaboratorCount>
-      </CollaboratorsButton>
+        <span className="rounded-full text-white text-xs font-semibold min-w-[1.25rem] text-center px-1" style={{ background: colors.primary }}>
+          {activeCollaborators.length}
+        </span>
+      </button>
 
       {isOpen && (
-        <CollaboratorsDropdown>
-          <DropdownHeader>
+        <div className="absolute right-0 mt-2 rounded-lg shadow-md min-w-[250px] max-w-[300px] z-[1000]" style={{ background: colors.background, border: `1px solid ${colors.border}` }}>
+          <div className="px-4 py-3 font-semibold text-sm" style={{ borderBottom: `1px solid ${colors.border}`, color: colors.text }}>
             Active Collaborators ({activeCollaborators.length})
-          </DropdownHeader>
-          
+          </div>
+
           {activeCollaborators.length === 0 ? (
-            <EmptyState>
-              No active collaborators
-            </EmptyState>
+            <div className="p-4 text-center text-sm" style={{ color: colors.textSecondary }}>No active collaborators</div>
           ) : (
             <>
-              {/* Current user first */}
               {currentUser && (
-                <CollaboratorItem>
-                  <CollaboratorAvatar color={generateUserColor(currentUser.userId)}>
+                <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${colors.border}` }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(currentUser.userId) }}>
                     {getInitials(currentUser.displayName)}
-                  </CollaboratorAvatar>
-                  <CollaboratorInfo>
-                    <CollaboratorName>
-                      {cleanDisplayName(currentUser.displayName)} (You)
-                    </CollaboratorName>
-                    <CollaboratorStatus>
-                      <StatusIcon isActive={true} />
-                      {isReadOnly ? (
-                        <>
-                          <Eye size={12} />
-                          <span>Viewing</span>
-                        </>
-                      ) : (
-                        <>
-                          <Edit3 size={12} />
-                          <span>Editing</span>
-                        </>
-                      )}
-                    </CollaboratorStatus>
-                  </CollaboratorInfo>
-                </CollaboratorItem>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate" style={{ color: colors.text }}>{cleanDisplayName(currentUser.displayName)} (You)</div>
+                    <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: colors.textSecondary }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
+                      {isReadOnly ? (<><Eye size={12} /><span>Viewing</span></>) : (<><Edit3 size={12} /><span>Editing</span></>)}
+                    </div>
+                  </div>
+                </div>
               )}
-              
-              {/* Other users */}
-              {otherUsers.map((collaborator) => (
-                <CollaboratorItem key={collaborator.sessionId}>
-                  <CollaboratorAvatar color={generateUserColor(collaborator.userId)}>
-                    {getInitials(collaborator.displayName)}
-                  </CollaboratorAvatar>
-                  <CollaboratorInfo>
-                    <CollaboratorName>
-                      {cleanDisplayName(collaborator.displayName)}
-                    </CollaboratorName>
-                    <CollaboratorStatus>
-                      <StatusIcon isActive={true} />
+
+              {otherUsers.map((c) => (
+                <div key={c.sessionId} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${colors.border}` }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(c.userId) }}>
+                    {getInitials(c.displayName)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate" style={{ color: colors.text }}>{cleanDisplayName(c.displayName)}</div>
+                    <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: colors.textSecondary }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
                       <Edit3 size={12} />
                       <span>Editing</span>
-                    </CollaboratorStatus>
-                  </CollaboratorInfo>
-                </CollaboratorItem>
+                    </div>
+                  </div>
+                </div>
               ))}
             </>
           )}
-        </CollaboratorsDropdown>
+        </div>
       )}
-    </CollaboratorsContainer>
+    </div>
   );
 };
 

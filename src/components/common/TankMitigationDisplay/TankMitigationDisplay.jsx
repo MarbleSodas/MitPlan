@@ -1,107 +1,46 @@
 import React from 'react';
-import styled from 'styled-components';
 import Tooltip from '../Tooltip/Tooltip';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { formatMitigation, generateMitigationBreakdown, calculateTotalMitigation } from '../../../utils';
 
-// Container for the tank mitigation display
-const MitigationDisplayContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  margin-bottom: 12px;
-`;
-
-// Container for each tank's mitigation display
-const TankMitigationContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-// Tank position label
-const TankPositionLabel = styled.div`
-  font-weight: bold;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  min-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-`;
-
-// Mitigation percentage display with shield icon
-const MitigationPercentage = styled.div`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
-  color: ${props => props.theme.colors.text};
-  font-weight: bold;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  padding: 6px 10px;
-  border-radius: ${props => props.theme.borderRadius.responsive.small};
-  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)'};
-  user-select: none; /* Prevent text selection */
-  min-height: 36px; /* Ensure minimum touch target size */
-  flex: 1;
-
-  &::before {
-    content: '🛡️';
-    margin-right: 6px;
-  }
-
-
-`;
-
-/**
- * Component to display tank-specific mitigation percentages for dual tank busters
- *
- * @param {Object} props - Component props
- * @param {Array} props.mainTankMitigations - Array of mitigation abilities applied to the main tank
- * @param {Array} props.offTankMitigations - Array of mitigation abilities applied to the off tank
- * @param {string} props.damageType - The type of damage ('magical', 'physical', or 'both')
- * @param {number} props.bossLevel - The level of the boss
- * @param {string} props.mainTankJob - The job of the main tank (or 'N/A' if none selected)
- * @param {string} props.offTankJob - The job of the off tank (or 'N/A' if none selected)
- * @returns {JSX.Element} - The rendered component
- */
 const TankMitigationDisplay = ({
   mainTankMitigations,
   offTankMitigations,
   damageType,
   bossLevel,
   mainTankJob,
-  offTankJob
+  offTankJob,
 }) => {
-  return (
-    <MitigationDisplayContainer>
-      {/* Main Tank Mitigation */}
-      <TankMitigationContainer>
-        <TankPositionLabel>Main Tank{mainTankJob ? ` (${mainTankJob})` : ''}:</TankPositionLabel>
-        <Tooltip
-          content={generateMitigationBreakdown(mainTankMitigations, damageType, bossLevel)}
-        >
-          <MitigationPercentage>
-            {formatMitigation(mainTankMitigations.length > 0 ?
-              calculateTotalMitigation(mainTankMitigations, damageType, bossLevel) : 0)}
-          </MitigationPercentage>
-        </Tooltip>
-      </TankMitigationContainer>
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const bg = theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
+  const border = theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)';
 
-      {/* Off Tank Mitigation */}
-      <TankMitigationContainer>
-        <TankPositionLabel>Off Tank{offTankJob ? ` (${offTankJob})` : ''}:</TankPositionLabel>
-        <Tooltip
-          content={generateMitigationBreakdown(offTankMitigations, damageType, bossLevel)}
-        >
-          <MitigationPercentage>
-            {formatMitigation(offTankMitigations.length > 0 ?
-              calculateTotalMitigation(offTankMitigations, damageType, bossLevel) : 0)}
-          </MitigationPercentage>
+  const Pill = ({ value }) => (
+    <div
+      className="inline-flex items-center justify-center font-bold px-2.5 py-1.5 rounded border select-none min-h-9 flex-1 text-base bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/20 dark:border-blue-500/30 text-neutral-900 dark:text-neutral-100"
+    >
+      <span className="mr-1">🛡️</span>
+      {formatMitigation(value)}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-2 mt-2 mb-3">
+      <div className="flex items-center gap-2">
+        <div className="font-bold text-base min-w-[120px] truncate">{`Main Tank${mainTankJob ? ` (${mainTankJob})` : ''}:`}</div>
+        <Tooltip content={generateMitigationBreakdown(mainTankMitigations, damageType, bossLevel)}>
+          <Pill value={mainTankMitigations.length > 0 ? calculateTotalMitigation(mainTankMitigations, damageType, bossLevel) : 0} />
         </Tooltip>
-      </TankMitigationContainer>
-    </MitigationDisplayContainer>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="font-bold text-base min-w-[120px] truncate">{`Off Tank${offTankJob ? ` (${offTankJob})` : ''}:`}</div>
+        <Tooltip content={generateMitigationBreakdown(offTankMitigations, damageType, bossLevel)}>
+          <Pill value={offTankMitigations.length > 0 ? calculateTotalMitigation(offTankMitigations, damageType, bossLevel) : 0} />
+        </Tooltip>
+      </div>
+    </div>
   );
 };
 

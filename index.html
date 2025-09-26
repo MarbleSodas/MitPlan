@@ -27,94 +27,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-        touch-action: manipulation;
-      }
 
-      body {
-        background-color: #f5f5f5;
-        color: #333;
-        transition: background-color 0.3s ease, color 0.3s ease;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        text-size-adjust: 100%;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-
-      /* Improve touch feedback */
-      button, a, [role="button"] {
-        cursor: pointer;
-        touch-action: manipulation;
-      }
-
-      /* Ensure minimum touch target size */
-      button, a, input, select, [role="button"] {
-        min-height: 44px;
-        min-width: 44px;
-      }
-
-      /* Prevent text selection on interactive elements */
-      button, a, [role="button"] {
-        user-select: none;
-        -webkit-user-select: none;
-      }
-
-      /* Loading animation */
-      .loading-spinner {
-        width: 40px;
-        height: 40px;
-        margin: 20px auto;
-        border: 4px solid rgba(51, 153, 255, 0.2);
-        border-top-color: #3399ff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-
-      @media (prefers-color-scheme: dark) {
-        body {
-          background-color: #121212;
-          color: #f5f5f5;
-        }
-
-        .loading-title {
-          color: #3399ff !important;
-        }
-
-        .loading-text {
-          color: #f5f5f5 !important;
-        }
-      }
-
-      /* Safe area insets for notched devices */
-      @supports (padding: max(0px)) {
-        body {
-          padding-left: env(safe-area-inset-left, 0);
-          padding-right: env(safe-area-inset-right, 0);
-          padding-top: env(safe-area-inset-top, 0);
-          padding-bottom: env(safe-area-inset-bottom, 0);
-        }
-      }
-    </style>
   </head>
   <body>
     <div id="root">
       <!-- Initial loading state -->
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 0 20px;">
-        <h1 class="loading-title" style="font-family: sans-serif; color: #3399ff; margin-bottom: 10px;">MitPlan</h1>
-        <div class="loading-spinner"></div>
-        <p class="loading-text" style="font-family: sans-serif; text-align: center;">Loading FFXIV Mitigation Planner...</p>
+      <div class="flex justify-center items-center h-screen flex-col px-5 bg-white text-neutral-900 dark:bg-[#121212] dark:text-[#f5f5f5]">
+        <h1 class="font-sans text-[color:#3399ff] mb-2">MitPlan</h1>
+        <div class="w-10 h-10 my-5 border-4 border-[rgba(51,153,255,0.2)] border-t-[color:#3399ff] rounded-full animate-spin"></div>
+        <p class="font-sans text-center">Loading FFXIV Mitigation Planner...</p>
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>
