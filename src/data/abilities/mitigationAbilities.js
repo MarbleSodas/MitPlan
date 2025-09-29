@@ -780,7 +780,7 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 180,
     jobs: ['WHM'],
-    icon: '/abilities-official/liturgy_of_the_bell.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Liturgy_of_the_Bell.png',
     type: 'healing',
     healingPotency: 400, // Estimated healing potency
     healingType: 'triggered',
@@ -1016,6 +1016,117 @@ export const mitigationAbilities = [
     targetsTank: true,
     scaleBarrierWithHealing: true // This shield scales with healing potency buffs
   },
+
+  {
+    id: 'asylum',
+    name: 'Asylum',
+    description: 'Envelops a designated area in a field of healing.',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Creates a healing area that restores HP over time for 24s'
+    },
+    duration: 24,
+    cooldown: 90,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Asylum.png',
+    type: 'healing',
+    healingPotency: 0,
+    regenPotency: 100,
+    healingType: 'regen',
+    regenDuration: 24,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'area',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'cure_iii',
+    name: 'Cure III',
+    description: 'Restores target and nearby party members\' HP with a potent cure',
+    levelRequirement: 50,
+    levelDescriptions: {
+      50: 'Restores HP of target and nearby party members with 600 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure_III.png',
+    type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'afflatus_solace',
+    name: 'Afflatus Solace',
+    description: 'Restores target\'s HP. Can only be executed while in possession of a Lily.',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Restores target\'s HP with 600 potency. Consumes 1 Lily.'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Solace.png',
+    type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    consumesLily: true
+  },
+  {
+    id: 'afflatus_rapture',
+    name: 'Afflatus Rapture',
+    description: 'Restores own HP and that of all nearby party members. Consumes a Lily.',
+    levelRequirement: 76,
+    levelDescriptions: {
+      76: 'Restores own HP and the HP of all nearby party members with 300 potency. Consumes 1 Lily.'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Rapture.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    consumesLily: true
+  },
+  {
+    id: 'assize',
+    name: 'Assize',
+    description: 'Restores own HP and the HP of all nearby party members.',
+    levelRequirement: 56,
+    levelDescriptions: {
+      56: 'Restores own HP and the HP of all nearby party members with 400 potency'
+    },
+    duration: 0,
+    cooldown: 40,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Assize.png',
+    type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+
   {
     id: 'aetherflow',
     name: 'Aetherflow',

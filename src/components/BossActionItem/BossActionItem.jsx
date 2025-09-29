@@ -20,9 +20,8 @@ import { mitigationAbilities, bosses } from '../../data';
 import { useTankPositionContext } from '../../contexts';
 
 const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, ...rest }) => {
-  const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer';
-  const bg = $isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-white dark:bg-neutral-800';
-  const borderSel = $isSelected ? 'border-blue-500' : 'border-neutral-200 dark:border-neutral-700';
+  const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer bg-[var(--color-cardBackground)] text-[var(--color-text)]';
+  const borderSel = $isSelected ? 'border-blue-500' : 'border-[var(--color-border)]';
   const leftBorder = $importance === 'critical'
     ? 'border-l-4 border-l-red-500'
     : $importance === 'high'
@@ -35,7 +34,7 @@ const BossAction = ({ children, className = '', $isSelected, $importance, $hasAs
     ? 'pr-[clamp(240px,18vw,320px)] 2xl:pr-[clamp(260px,16vw,340px)] xl:pr-[clamp(220px,15vw,300px)] md:pr-[clamp(170px,24vw,220px)] sm:pr-[clamp(120px,30vw,180px)] xs:pr-[clamp(100px,34vw,150px)]'
     : '';
   return (
-    <div {...rest} className={`${base} ${bg} ${borderSel} ${leftBorder} ${hover} ${prAssignments} ${className}`}>
+    <div {...rest} className={`${base} ${borderSel} ${leftBorder} ${hover} ${prAssignments} ${className}`}>
       {children}
     </div>
   );
@@ -45,7 +44,7 @@ const BossAction = ({ children, className = '', $isSelected, $importance, $hasAs
 const ActionTime = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`absolute top-0 left-0 right-0 px-2 h-[30px] flex items-center justify-center text-center font-bold text-neutral-900 dark:text-neutral-100 bg-black/10 dark:bg-black/30 border-b border-neutral-200 dark:border-neutral-700 rounded-t-lg select-none z-[1] text-base sm:text-sm ${className}`}
+    className={`absolute top-0 left-0 right-0 px-2 h-[30px] flex items-center justify-center text-center font-bold text-[var(--color-text)] bg-black/10 dark:bg-black/30 border-b border-[var(--color-border)] rounded-t-lg select-none z-[1] text-base sm:text-sm ${className}`}
   >
     <span className="mr-1">⏱️</span> {children}
   </div>
@@ -65,7 +64,7 @@ const ActionName = ({ children, className = '', ...rest }) => (
 const ActionDescription = ({ children, className = '', ...rest }) => (
   <p
     {...rest}
-    className={`m-0 text-neutral-600 dark:text-neutral-300 text-base md:text-base sm:text-sm min-h-[40px] leading-relaxed pl-0.5 mb-4 break-words hyphens-auto whitespace-normal w-full ${className}`}
+    className={`m-0 text-[var(--color-textSecondary)] text-base md:text-base sm:text-sm min-h-[40px] leading-relaxed pl-0.5 mb-4 break-words hyphens-auto whitespace-normal w-full ${className}`}
   >
     {children}
   </p>
@@ -570,6 +569,58 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   const mainTankHealingAmount = calculateHealingAmount(mainTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
   const offTankHealingAmount = calculateHealingAmount(offTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
 
+  // --- Liturgy of the Bell support (triggered heal per hit and across actions) ---
+  const LITURGY_ID = 'liturgy_of_the_bell';
+  const liturgyAbility = mitigationAbilities.find(m => m.id === LITURGY_ID) || null;
+  const liturgyPotency = liturgyAbility && typeof liturgyAbility.healingPotency === 'number' ? liturgyAbility.healingPotency : 400;
+  const liturgyHealModifier = liturgyAbility ? computeHealingModifierForAbility(liturgyAbility) : 1;
+  const liturgyHealPerStack = ((liturgyPotency * liturgyHealModifier) / 100) * healingPotency;
+  const hitCount = (action.isMultiHit && action.hitCount) ? action.hitCount : 1;
+  const interHitHealsCount = Math.max(0, hitCount - 1);
+
+  // Detect whether Liturgy is active on this action (either directly assigned or inherited from a previous action)
+  const hasLiturgyDirect = directMitigationsFull.some(m => m.id === LITURGY_ID);
+  const hasLiturgyInheritedParty = (typeof getActiveMitigations === 'function' ? (getActiveMitigations(action.id, action.time) || []) : []).some(m => m.id === LITURGY_ID);
+  const hasLiturgyInheritedMT = (typeof getActiveMitigations === 'function' ? (getActiveMitigations(action.id, action.time, 'mainTank') || []) : []).some(m => m.id === LITURGY_ID);
+  const hasLiturgyInheritedOT = (typeof getActiveMitigations === 'function' ? (getActiveMitigations(action.id, action.time, 'offTank') || []) : []).some(m => m.id === LITURGY_ID);
+  const liturgyActiveParty = hasLiturgyDirect || hasLiturgyInheritedParty;
+  const liturgyActiveMT = hasLiturgyDirect || hasLiturgyInheritedMT;
+  const liturgyActiveOT = hasLiturgyDirect || hasLiturgyInheritedOT;
+
+  // Adjust HealingHealthBar inputs to account for triggered heals between hits (all but last)
+  const partyRemainingBase = Math.max(0, baseHealth.party - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage));
+  const partyRemainingAfterDamageWithLiturgy = liturgyActiveParty
+    ? Math.min(baseHealth.party, partyRemainingBase + interHitHealsCount * liturgyHealPerStack)
+    : partyRemainingBase;
+
+  const mainTankRemainingBaseDual = Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - mainTankBarrierAmount) * (1 - mainTankMitigationPercentage));
+  const mainTankRemainingAfterDamageWithLiturgy = liturgyActiveMT
+    ? Math.min(mainTankMaxHealthEffective, mainTankRemainingBaseDual + interHitHealsCount * liturgyHealPerStack)
+    : mainTankRemainingBaseDual;
+
+  const offTankRemainingBaseDual = Math.max(0, offTankMaxHealthEffective - Math.max(0, unmitigatedDamage - offTankBarrierAmount) * (1 - offTankMitigationPercentage));
+  const offTankRemainingAfterDamageWithLiturgy = liturgyActiveOT
+    ? Math.min(offTankMaxHealthEffective, offTankRemainingBaseDual + interHitHealsCount * liturgyHealPerStack)
+    : offTankRemainingBaseDual;
+
+  // For single-target TB path, the applied barrier/mitigation can differ when no MT is selected
+  const singleMainBarrier = tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount;
+  const singleMainMitigation = tankPositions.mainTank ? mainTankMitigationPercentage : mitigationPercentage;
+  const mainTankRemainingBaseSingle = Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - singleMainBarrier) * (1 - singleMainMitigation));
+  const mainTankRemainingAfterDamageWithLiturgySingle = liturgyActiveMT
+    ? Math.min(mainTankMaxHealthEffective, mainTankRemainingBaseSingle + interHitHealsCount * liturgyHealPerStack)
+    : mainTankRemainingBaseSingle;
+
+  // Ensure the final heal from the last hit appears in the After Healing bar even if Liturgy was precast (inherited)
+  const liturgyDirectOnParty = partyHealingAbilities.some(m => m.id === LITURGY_ID);
+  const liturgyDirectOnMainTank = mainTankHealingAbilities.some(m => m.id === LITURGY_ID);
+  const liturgyDirectOnOffTank = offTankHealingAbilities.some(m => m.id === LITURGY_ID);
+
+  const partyHealingAmountAdjusted = partyHealingAmount + ((liturgyActiveParty && !liturgyDirectOnParty) ? liturgyHealPerStack : 0);
+  const mainTankHealingAmountAdjusted = mainTankHealingAmount + ((liturgyActiveMT && !liturgyDirectOnMainTank) ? liturgyHealPerStack : 0);
+  const offTankHealingAmountAdjusted = offTankHealingAmount + ((liturgyActiveOT && !liturgyDirectOnOffTank) ? liturgyHealPerStack : 0);
+
+
   return (
     <BossAction
       $time={action.time}
@@ -652,7 +703,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                     {/* Main Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
+                        label={`MT (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={mainTankMaxHealthEffective}
                         currentHealth={mainTankMaxHealthEffective}
                         damageAmount={unmitigatedDamage}
@@ -665,10 +716,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                       />
                       {/* Main Tank Healing Health Bar - Always show */}
                       <HealingHealthBar
-                        label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                        label={`MT (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={mainTankMaxHealthEffective}
-                        remainingHealth={Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - mainTankBarrierAmount) * (1 - mainTankMitigationPercentage))}
-                        healingAmount={mainTankHealingAmount}
+                        remainingHealth={mainTankRemainingAfterDamageWithLiturgy}
+                        healingAmount={mainTankHealingAmountAdjusted}
                         barrierAmount={0} // Barriers are already accounted for in remaining health
                         isTankBuster={true}
                         tankPosition="mainTank"
@@ -682,7 +733,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                     {/* Off Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Off Tank After Damage (${tankPositions.offTank || 'N/A'})`}
+                        label={`OT (${tankPositions.offTank || 'N/A'})`}
                         maxHealth={offTankMaxHealthEffective}
                         currentHealth={offTankMaxHealthEffective}
                         damageAmount={unmitigatedDamage}
@@ -695,10 +746,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                       />
                       {/* Off Tank Healing Health Bar - Always show */}
                       <HealingHealthBar
-                        label={`Off Tank After Healing (${tankPositions.offTank || 'N/A'})`}
+                        label={`OT (${tankPositions.offTank || 'N/A'})`}
                         maxHealth={offTankMaxHealthEffective}
-                        remainingHealth={Math.max(0, offTankMaxHealthEffective - Math.max(0, unmitigatedDamage - offTankBarrierAmount) * (1 - offTankMitigationPercentage))}
-                        healingAmount={offTankHealingAmount}
+                        remainingHealth={offTankRemainingAfterDamageWithLiturgy}
+                        healingAmount={offTankHealingAmountAdjusted}
                         barrierAmount={0} // Barriers are already accounted for in remaining health
                         isTankBuster={true}
                         tankPosition="offTank"
@@ -710,7 +761,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                   /* For single-target tank busters, only show the Main Tank health bar */
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <HealthBar
-                      label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
+                      label={`MT (${tankPositions.mainTank || 'N/A'})`}
                       maxHealth={mainTankMaxHealthEffective}
                       currentHealth={mainTankMaxHealthEffective}
                       damageAmount={unmitigatedDamage}
@@ -722,10 +773,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                     />
                     {/* Main Tank Healing Health Bar for single tank busters - Always show */}
                     <HealingHealthBar
-                      label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                      label={`MT (${tankPositions.mainTank || 'N/A'})`}
                       maxHealth={mainTankMaxHealthEffective}
-                      remainingHealth={Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - (tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount)) * (1 - (tankPositions.mainTank ? mainTankMitigationPercentage : mitigationPercentage)))}
-                      healingAmount={mainTankHealingAmount}
+                      remainingHealth={mainTankRemainingAfterDamageWithLiturgySingle}
+                      healingAmount={mainTankHealingAmountAdjusted}
                       barrierAmount={0} // Barriers are already accounted for in remaining health
                       isTankBuster={true}
                       tankPosition="mainTank"
@@ -739,7 +790,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <HealthBar
-                  label="Party After Damage"
+                  label="After Damage"
                   maxHealth={baseHealth.party}
                   currentHealth={baseHealth.party}
                   damageAmount={unmitigatedDamage}
@@ -750,10 +801,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                 />
                 {/* Party Healing Health Bar - Always show */}
                 <HealingHealthBar
-                  label="Party After Healing"
+                  label="After Healing"
                   maxHealth={baseHealth.party}
-                  remainingHealth={Math.max(0, baseHealth.party - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage))}
-                  healingAmount={partyHealingAmount}
+                  remainingHealth={partyRemainingAfterDamageWithLiturgy}
+                  healingAmount={partyHealingAmountAdjusted}
                   barrierAmount={0} // Barriers are already accounted for in remaining health
                   isTankBuster={false}
                 />

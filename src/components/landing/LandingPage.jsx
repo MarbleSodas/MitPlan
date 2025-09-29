@@ -19,7 +19,7 @@ const LandingPage = ({ onAuthSuccess }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(135deg,_#667eea_0%,_#764ba2_100%)] flex flex-col p-8 relative transition-colors duration-300">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] flex flex-col p-8 relative transition-colors duration-300">
       <div className="absolute top-8 right-8 z-10 flex items-center gap-2">
         <KofiButton />
         <DiscordButton />
@@ -27,15 +27,15 @@ const LandingPage = ({ onAuthSuccess }) => {
       </div>
       <main className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-        <section className="text-white">
+        <section className="text-[var(--color-text)]">
           <div className="mb-8 flex items-center gap-4">
-            <div className="h-[60px] w-[60px] rounded-[12px] bg-white flex items-center justify-center text-[2rem] font-bold text-[#667eea]">M</div>
+            <div className="h-[60px] w-[60px] rounded-[12px] bg-[var(--select-bg)] border border-[var(--color-border)] flex items-center justify-center text-[2rem] font-bold text-[var(--color-primary)]">M</div>
             <h1 className="m-0 text-4xl font-bold">MitPlan</h1>
           </div>
 
-          <h2 className="m-0 mb-6 text-2xl font-normal opacity-90">FFXIV Mitigation Planner</h2>
+          <h2 className="m-0 mb-6 text-2xl font-normal opacity-90 text-[var(--color-textSecondary)]">FFXIV Mitigation Planner</h2>
 
-          <p className="mb-8 text-[1.1rem] leading-relaxed opacity-80">
+          <p className="mb-8 text-[1.1rem] leading-relaxed text-[var(--color-textSecondary)]">
             The ultimate tool for Final Fantasy XIV raiders to plan and optimize
             their mitigation strategies. Create detailed plans, track cooldowns,
             and coordinate with your team for perfect raid execution.
@@ -44,14 +44,14 @@ const LandingPage = ({ onAuthSuccess }) => {
           <ul className="list-none p-0 m-0 space-y-4">
             {features.map((feature, index) => (
               <li key={index} className="flex items-center gap-3 text-base opacity-90">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 font-bold text-white shrink-0">✓</span>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--select-bg)] font-bold text-[var(--color-primary)] shrink-0">✓</span>
                 {feature}
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="rounded-[20px] p-8 bg-transparent">
+        <section className="rounded-[20px] p-8">
           <AuthForm
             onSuccess={onAuthSuccess}
           />

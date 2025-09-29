@@ -9,7 +9,7 @@ const Footer = () => {
   return (
     <footer className="w-full pt-8 pb-4 mt-auto border-t border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-textSecondary)] transition-colors">
       <div className="max-w-[1200px] mx-auto px-8 sm:px-4 flex flex-col items-center gap-4 sm:gap-3">
-        <div className="flex flex-wrap items-center justify-center gap-8 sm:flex-col sm:gap-4">
+        <div className="w-full flex flex-col md:flex-row md:flex-wrap items-center justify-center md:justify-between gap-4 md:gap-6">
           <Link to="/privacy-policy" className="text-[0.9rem] text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:underline transition-colors">
             Privacy Policy
           </Link>

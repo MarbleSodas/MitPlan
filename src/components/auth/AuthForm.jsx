@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile
@@ -51,6 +51,46 @@ const AuthForm = ({ onSuccess }) => {
 
     return true;
   };
+  // Height transition for mode changes
+  const containerRef = useRef(null);
+  const contentRef = useRef(null);
+  const prevHeightRef = useRef(null);
+  const [containerHeight, setContainerHeight] = useState('auto');
+
+  const animateToMode = (nextMode) => {
+    const el = containerRef.current;
+    if (el) {
+      const h = el.offsetHeight;
+      prevHeightRef.current = h;
+      setContainerHeight(h);
+    }
+    setMode(nextMode);
+  };
+
+  useLayoutEffect(() => {
+    const containerEl = containerRef.current;
+    const contentEl = contentRef.current;
+    if (!containerEl || !contentEl) return;
+
+    const newHeight = contentEl.offsetHeight;
+
+    if (prevHeightRef.current != null) {
+      // Animate from previous height to new height
+      requestAnimationFrame(() => {
+        setContainerHeight(newHeight);
+      });
+
+      const onEnd = () => {
+        setContainerHeight('auto');
+        prevHeightRef.current = null;
+        containerEl.removeEventListener('transitionend', onEnd);
+      };
+      containerEl.addEventListener('transitionend', onEnd);
+    } else {
+      setContainerHeight('auto');
+    }
+  }, [mode]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,16 +106,16 @@ const AuthForm = ({ onSuccess }) => {
         if (password.length < 6) {
           throw new Error('Password must be at least 6 characters');
         }
-        
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        
+
         // Update display name if provided
         if (displayName.trim()) {
           await updateProfile(userCredential.user, {
             displayName: displayName.trim()
           });
         }
-        
+
         onSuccess?.(userCredential.user);
       } else if (mode === 'login') {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -110,11 +150,16 @@ const AuthForm = ({ onSuccess }) => {
 
   return (
     <div className="max-w-[380px] mx-auto p-6 rounded-2xl">
-      <h2 className="text-center mb-6 text-gray-900 dark:text-gray-100 font-bold text-2xl leading-tight tracking-tight">{getTitle()}</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <h2 className="text-center mb-6 text-[var(--color-text)] font-bold text-2xl leading-tight tracking-tight">{getTitle()}</h2>
+      <form onSubmit={handleSubmit}>
+        <div
+          ref={containerRef}
+          style={{ height: containerHeight, overflow: 'hidden', transition: 'height 300ms cubic-bezier(0.2, 0.8, 0.2, 1)', willChange: 'height' }}
+        >
+          <div ref={contentRef} key={mode} className="flex flex-col gap-4">
         {mode === 'register' && (
           <div className="flex flex-col gap-1.5">
-            <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
+            <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
               type="text"
               placeholder="Display Name (optional)"
               value={displayName}
@@ -124,7 +169,7 @@ const AuthForm = ({ onSuccess }) => {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
+          <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
             type="email"
             placeholder="Email address"
             value={email}
@@ -135,7 +180,7 @@ const AuthForm = ({ onSuccess }) => {
 
         {mode !== 'reset' && (
           <div className="flex flex-col gap-1.5">
-            <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
+            <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
               type="password"
               placeholder="Password"
               value={password}
@@ -147,7 +192,7 @@ const AuthForm = ({ onSuccess }) => {
 
         {mode === 'register' && (
           <div className="flex flex-col gap-1.5">
-            <input className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
+            <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
               type="password"
               placeholder="Confirm Password"
               value={confirmPassword}
@@ -158,21 +203,21 @@ const AuthForm = ({ onSuccess }) => {
         )}
 
         <div className="flex flex-col gap-3 mt-1">
-          <button type="submit" disabled={loading || !isFormValid()} className="min-h-11 px-5 py-3 rounded-[10px] text-white font-semibold bg-blue-500 hover:bg-blue-600 transition shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-400 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:shadow-[0_0_0_4px_rgba(59,130,246,0.2)]">
+          <button type="submit" disabled={loading || !isFormValid()} className="min-h-11 px-5 py-3 rounded-[10px] font-semibold bg-[var(--color-primary)] text-[var(--color-buttonText)] hover:brightness-110 transition shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)]">
             {getButtonText()}
           </button>
 
           {mode === 'login' && (
             <>
               <div className="flex items-center gap-3 my-4">
-                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-                <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">or</span>
-                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                <div className="h-px flex-1 bg-[var(--color-border)]" />
+                <span className="px-2 text-xs font-medium text-[var(--color-textSecondary)]">or</span>
+                <div className="h-px flex-1 bg-[var(--color-border)]" />
               </div>
               <button
                 type="button"
-                onClick={() => setMode('register')}
-                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition hover:-translate-y-0.5 active:translate-y-0 disabled:text-gray-400 disabled:border-gray-400"
+                onClick={() => animateToMode('register')}
+                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
               >
                 Create New Account
               </button>
@@ -182,14 +227,14 @@ const AuthForm = ({ onSuccess }) => {
           {mode === 'register' && (
             <>
               <div className="flex items-center gap-3 my-4">
-                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-                <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">or</span>
-                <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                <div className="h-px flex-1 bg-[var(--color-border)]" />
+                <span className="px-2 text-xs font-medium text-[var(--color-textSecondary)]">or</span>
+                <div className="h-px flex-1 bg-[var(--color-border)]" />
               </div>
               <button
                 type="button"
-                onClick={() => setMode('login')}
-                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition hover:-translate-y-0.5 active:translate-y-0 disabled:text-gray-400 disabled:border-gray-400"
+                onClick={() => animateToMode('login')}
+                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
               >
                 Already have an account? Sign In
               </button>
@@ -199,8 +244,8 @@ const AuthForm = ({ onSuccess }) => {
           {mode === 'reset' && (
             <button
               type="button"
-              onClick={() => setMode('login')}
-              className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition hover:-translate-y-0.5 active:translate-y-0 disabled:text-gray-400 disabled:border-gray-400"
+              onClick={() => animateToMode('login')}
+              className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
             >
               Back to Sign In
             </button>
@@ -210,14 +255,16 @@ const AuthForm = ({ onSuccess }) => {
         {mode === 'login' && (
           <button
             type="button"
-            onClick={() => setMode('reset')}
-            className="mt-1 inline-flex w-fit items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline rounded-md px-1.5 py-1 focus:outline-none focus:shadow-[0_0_0_3px_rgba(59,130,246,0.2)]"
+            onClick={() => animateToMode('reset')}
+            className="mt-1 inline-flex w-fit items-center text-sm font-medium text-[var(--color-primary)] hover:brightness-110 hover:underline rounded-md px-1.5 py-1 focus:outline-none focus:shadow-[0_0_0_3px_rgba(51,153,255,0.2)]"
           >
             Forgot Password?
           </button>
         )}
+          </div>
+        </div>
       </form>
-      
+
       {error && (
         <div className="mt-4 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-500">
           {error}

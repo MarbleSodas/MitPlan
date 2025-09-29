@@ -1,7 +1,7 @@
 import React from 'react';
 import Tooltip from '../Tooltip/Tooltip';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { formatHealth, formatPercentage } from '../../../utils';
+import { formatHealth, formatPercentage, formatHealthCompact } from '../../../utils';
 
 /**
  * HealingHealthBar component for displaying health recovery after damage
@@ -56,14 +56,12 @@ const HealingHealthBar = ({
   return (
     <Tooltip content={enhancedTooltipContent}>
       <div
-        className={`flex flex-col w-full my-2 ${isDualTankBuster && tankPosition ? 'pl-2 rounded border-l-4' : ''}`}
+        className={`flex flex-col basis-0 flex-1 min-w-40 w-full my-2 ${isDualTankBuster && tankPosition ? 'pl-2 rounded border-l-4' : ''}`}
         style={dualBusterStyles}
       >
-        <div className="flex justify-between mb-1 text-sm" style={{ color: colors.text }}>
-          <span>{label}</span>
-          <span>
-            {formatHealth(healthAfterHealing)} / {formatHealth(maxHealth)}
-          </span>
+        <div className="flex justify-between items-center mb-1 text-xs tabular-nums min-w-0 overflow-hidden" style={{ color: colors.text, opacity: 0.7 }}>
+          <span className="truncate">{label}</span>
+          <span className="whitespace-nowrap">&nbsp;{formatHealthCompact(healthAfterHealing)} / {formatHealthCompact(maxHealth)}</span>
         </div>
 
         <div className="w-full h-4 rounded overflow-hidden relative bg-gray-200 dark:bg-gray-700">

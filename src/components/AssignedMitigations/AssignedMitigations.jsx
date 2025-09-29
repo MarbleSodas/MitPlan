@@ -20,7 +20,7 @@ import { useFilterContext } from '../../contexts';
 const PrecastInput = ({ className = '', style, ...rest }) => (
   <input
     {...rest}
-    className={`w-[28px] px-0 text-center border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 transition-colors focus:border-blue-500 appearance-none ${className}`}
+    className={`w-10 text-center border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 transition-colors focus:border-blue-500 appearance-none ${className}`}
     style={{ ...(style || {}), MozAppearance: 'textfield' }}
   />
 );
@@ -28,7 +28,7 @@ const PrecastInput = ({ className = '', style, ...rest }) => (
 const RemoveButton = ({ children, className = '', ...rest }) => (
   <button
     {...rest}
-    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-red-500 text-white p-0 ml-[6px] leading-none shrink-0 relative z-[15] select-none touch-manipulation hover:bg-red-600 active:bg-red-400 active:scale-95 ${className}`}
+    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-red-500 text-white p-0 ml-[4px] leading-none shrink-0 relative z-[15] select-none touch-manipulation hover:bg-red-600 active:bg-red-400 active:scale-95 ${className}`}
   >
     {children}
   </button>
@@ -212,7 +212,7 @@ const AssignedMitigations = ({
                   }}
                   aria-label={`Remove ${displayMitigation.name}`}
                 >
-                  ×
+                  x
                 </RemoveButton>
               </div>
             </div>
