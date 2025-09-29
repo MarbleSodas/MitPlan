@@ -18,6 +18,7 @@ import {
 
 import { mitigationAbilities, bosses } from '../../data';
 import { useTankPositionContext } from '../../contexts';
+import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 
 const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, ...rest }) => {
   const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer bg-[var(--color-cardBackground)] text-[var(--color-text)]';
@@ -278,6 +279,12 @@ const BossActionItem = memo(({
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
   const baseHealth = currentBoss ? currentBoss.baseHealth : { party: 80000, tank: 120000 };
+  const { realtimePlan } = useRealtimePlan();
+  const healthSettings = realtimePlan?.healthSettings || {};
+  const mainTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.mainTank) || baseHealth.tank;
+  const offTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.offTank) || baseHealth.tank;
+  const partyBaseMaxHealth = (healthSettings.partyMinHealth) || baseHealth.party;
+
 
   // Parse the unmitigated damage value
   const parseUnmitigatedDamage = () => {
@@ -382,7 +389,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
 
     // Only count party/area barriers for party health bar
     if (mitigation.target === 'party' || mitigation.target === 'area') {
-      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.party, healingPotencyPer100);
+      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), partyBaseMaxHealth, healingPotencyPer100);
     }
 
     return total;
@@ -427,7 +434,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For self-targeting barriers, only include if they match this tank position
       if (mitigation.target === 'self') {
         if (mitigation.tankPosition === 'mainTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
@@ -435,19 +442,19 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For single-target barriers, only include if they're targeted at this tank
       if (mitigation.target === 'single') {
         if (mitigation.tankPosition === 'mainTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
 
       // For party-wide/area barriers, include for all tanks
       if (mitigation.target === 'party' || mitigation.target === 'area') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
       }
 
       // Include barriers specifically for this tank position
       if (mitigation.tankPosition === 'mainTank' || mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
       }
 
       return total;
@@ -461,7 +468,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For self-targeting barriers, only include if they match this tank position
       if (mitigation.target === 'self') {
         if (mitigation.tankPosition === 'offTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
@@ -469,19 +476,19 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For single-target barriers, only include if they're targeted at this tank
       if (mitigation.target === 'single') {
         if (mitigation.tankPosition === 'offTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
 
       // For party-wide/area barriers, include for all tanks
       if (mitigation.target === 'party' || mitigation.target === 'area') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
       }
 
       // Include barriers specifically for this tank position
       if (mitigation.tankPosition === 'offTank' || mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
       }
 
       return total;
@@ -509,8 +516,8 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   const mainTankHpIncrease = computeHpIncreaseForTank('mainTank');
   const offTankHpIncrease = computeHpIncreaseForTank('offTank');
 
-  const mainTankMaxHealthEffective = Math.round(baseHealth.tank * (1 + mainTankHpIncrease));
-  const offTankMaxHealthEffective = Math.round(baseHealth.tank * (1 + offTankHpIncrease));
+  const mainTankMaxHealthEffective = Math.round(mainTankBaseMaxHealth * (1 + mainTankHpIncrease));
+  const offTankMaxHealthEffective = Math.round(offTankBaseMaxHealth * (1 + offTankHpIncrease));
 
   // Calculate healing amounts (direct-only)
   const healingPotency = getHealingPotency(currentBossLevel);
@@ -565,9 +572,9 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   const offTankHealingWithBuffs = dedupById([...offTankHealingAbilities, ...healingBuffs]);
 
   // Calculate healing amounts
-  const partyHealingAmount = calculateHealingAmount(partyHealingAbilities, healingPotency, currentBossLevel, baseHealth.party);
-  const mainTankHealingAmount = calculateHealingAmount(mainTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
-  const offTankHealingAmount = calculateHealingAmount(offTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
+  const partyHealingAmount = calculateHealingAmount(partyHealingAbilities, healingPotency, currentBossLevel, partyBaseMaxHealth);
+  const mainTankHealingAmount = calculateHealingAmount(mainTankHealingWithBuffs, healingPotency, currentBossLevel, mainTankBaseMaxHealth);
+  const offTankHealingAmount = calculateHealingAmount(offTankHealingWithBuffs, healingPotency, currentBossLevel, offTankBaseMaxHealth);
 
   // --- Liturgy of the Bell support (triggered heal per hit and across actions) ---
   const LITURGY_ID = 'liturgy_of_the_bell';
@@ -588,9 +595,9 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   const liturgyActiveOT = hasLiturgyDirect || hasLiturgyInheritedOT;
 
   // Adjust HealingHealthBar inputs to account for triggered heals between hits (all but last)
-  const partyRemainingBase = Math.max(0, baseHealth.party - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage));
+  const partyRemainingBase = Math.max(0, partyBaseMaxHealth - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage));
   const partyRemainingAfterDamageWithLiturgy = liturgyActiveParty
-    ? Math.min(baseHealth.party, partyRemainingBase + interHitHealsCount * liturgyHealPerStack)
+    ? Math.min(partyBaseMaxHealth, partyRemainingBase + interHitHealsCount * liturgyHealPerStack)
     : partyRemainingBase;
 
   const mainTankRemainingBaseDual = Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - mainTankBarrierAmount) * (1 - mainTankMitigationPercentage));
@@ -791,8 +798,8 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <HealthBar
                   label="After Damage"
-                  maxHealth={baseHealth.party}
-                  currentHealth={baseHealth.party}
+                  maxHealth={partyBaseMaxHealth}
+                  currentHealth={partyBaseMaxHealth}
                   damageAmount={unmitigatedDamage}
                   barrierAmount={partyBarrierAmount}
                   isTankBuster={false}
@@ -802,7 +809,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                 {/* Party Healing Health Bar - Always show */}
                 <HealingHealthBar
                   label="After Healing"
-                  maxHealth={baseHealth.party}
+                  maxHealth={partyBaseMaxHealth}
                   remainingHealth={partyRemainingAfterDamageWithLiturgy}
                   healingAmount={partyHealingAmountAdjusted}
                   barrierAmount={0} // Barriers are already accounted for in remaining health

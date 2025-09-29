@@ -132,6 +132,7 @@ const TankSelectionModal = ({
     };
   }, [isOpen, onClose]);
 
+
   if (!isOpen) return null;
 
   // Helper function to get job icon
@@ -183,11 +184,11 @@ const TankSelectionModal = ({
         <ButtonContainer>
           <Button onClick={onSelectMainTank} $primary>
             {mainTankIcon && <JobIcon src={mainTankIcon} alt={mainTankJob} />}
-            Main Tank ({mainTankJob})
+            Select Main Tank
           </Button>
           <Button onClick={onSelectOffTank}>
             {offTankIcon && <JobIcon src={offTankIcon} alt={offTankJob} />}
-            Off Tank ({offTankJob})
+            Select Off Tank
           </Button>
         </ButtonContainer>
       </ModalContainer>

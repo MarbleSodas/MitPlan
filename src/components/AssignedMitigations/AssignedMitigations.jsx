@@ -212,7 +212,7 @@ const AssignedMitigations = ({
                   }}
                   aria-label={`Remove ${displayMitigation.name}`}
                 >
-                  x
+                  ×
                 </RemoveButton>
               </div>
             </div>

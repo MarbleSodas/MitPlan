@@ -10,6 +10,9 @@ import { getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 import { useNavigate } from 'react-router-dom';
 
+
+import { Maximize2, Minimize2 } from 'lucide-react';
+
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
@@ -32,6 +35,7 @@ import TankSelectionModal from '../common/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
 import Draggable from '../DragAndDrop/Draggable';
 import Droppable from '../DragAndDrop/Droppable';
+import PartyMinHealthInput from '../common/PartyMinHealthInput/PartyMinHealthInput';
 
 
 // Import contexts
@@ -151,6 +155,41 @@ const PlanningInterface = () => {
 
   // Local state for drag and drop
   const [activeMitigation, setActiveMitigation] = useState(null);
+
+
+	  // Fullscreen overlay state and handlers for timeline + mitigations
+	  const [fsMounted, setFsMounted] = useState(false);
+	  const [fsOpen, setFsOpen] = useState(false);
+	  const openFullscreen = useCallback(() => {
+	    if (fsMounted) return;
+	    setFsMounted(true);
+	    // Next frame to allow transition from opacity-0 to 100
+	    requestAnimationFrame(() => setFsOpen(true));
+	  }, [fsMounted]);
+	  const closeFullscreen = useCallback(() => {
+	    setFsOpen(false);
+	    // Unmount after transition ends
+	    setTimeout(() => setFsMounted(false), 300);
+	  }, []);
+	  // ESC to exit fullscreen
+	  useEffect(() => {
+	    if (!fsMounted) return;
+	    const onKeyDown = (e) => {
+	      if (e.key === 'Escape') {
+	        e.preventDefault();
+	        closeFullscreen();
+	      }
+	    };
+	    window.addEventListener('keydown', onKeyDown);
+	    return () => window.removeEventListener('keydown', onKeyDown);
+	  }, [fsMounted, closeFullscreen]);
+	  // Lock page scroll when fullscreen is mounted
+	  useEffect(() => {
+	    if (!fsMounted) return;
+	    const prev = document.body.style.overflow;
+	    document.body.style.overflow = 'hidden';
+	    return () => { document.body.style.overflow = prev; };
+	  }, [fsMounted]);
 
   // Enhanced boss action selection with disabled auto-assignment
   const handleBossActionSelection = useCallback((action) => {
@@ -373,8 +412,23 @@ const PlanningInterface = () => {
       <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-cardBackground)]">
         <FilterToggle />
         <PrecastToggle />
+        <PartyMinHealthInput />
         <HealingPotencyInput />
       </div>
+
+      {/* Fullscreen toggle row above the split panels */}
+      <div className="flex items-center justify-end mb-2">
+        <button
+          type="button"
+          onClick={openFullscreen}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-[var(--color-border)] text-[var(--color-text)] bg-[var(--color-cardBackground)] hover:bg-[var(--select-bg)] transition"
+          aria-label="Enter fullscreen for timeline and mitigations"
+          title="Enter fullscreen"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+      </div>
+
 
       <div ref={splitContainerRef} className="flex w-full gap-4">
         <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-[var(--color-cardBackground)] rounded-xl p-4 pb-6 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
@@ -458,6 +512,114 @@ const PlanningInterface = () => {
           </div>
           </>
       </div>
+
+	      {/* Fullscreen overlay rendering both timeline and mitigations */}
+	      {fsMounted && (
+	        <div
+	          className={`fixed inset-0 z-[100] flex items-stretch justify-center bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${fsOpen ? 'opacity-100' : 'opacity-0'}`}
+	          role="dialog"
+	          aria-modal="true"
+	        >
+	          {/* Click blocker to prevent background interaction */}
+	          <div className="absolute inset-0" onClick={closeFullscreen} />
+	          <div className={`relative m-4 flex w-[min(1800px,100%)] max-w-[100%] gap-4 rounded-xl bg-[var(--color-cardBackground)] p-4 shadow-2xl transition-transform duration-300 ${fsOpen ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.99]'}`}
+	               onClick={(e) => e.stopPropagation()}>
+	            {/* Exit button */}
+	            <button
+	              type="button"
+	              onClick={closeFullscreen}
+	              className="absolute right-3 top-3 inline-flex items-center justify-center h-8 w-8 rounded-md text-[var(--color-buttonText)] bg-[var(--color-primary)] hover:brightness-110 transition z-50"
+	              aria-label="Exit fullscreen"
+	              title="Exit fullscreen (Esc)"
+	            >
+	              <Minimize2 className="h-4 w-4" />
+	            </button>
+	            {/* Two independently scrollable columns */}
+	            <div className="flex w-full gap-4 h-[calc(100vh-64px)]">
+	              {/* Timeline column */}
+	              <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
+	                   className="rounded-xl p-4 pb-6 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-full min-h-[400px] flex flex-col min-w-0 bg-[var(--color-cardBackground)]">
+	                <div className="relative flex flex-col p-4 w-full grow">
+	                  {sortedBossActions.map((action, idx) => {
+	                    const isSelected = selectedBossAction?.id === action.id;
+	                    const droppableId = `${action.id}__${idx}__fs`; // ensure uniqueness in fullscreen
+	                    return (
+	                      <Droppable
+	                        key={droppableId}
+	                        id={droppableId}
+	                        data={{ type: 'bossAction', action }}
+	                        disableDrop={!isSelected}
+	                        isSelected={isSelected}
+	                      >
+	                        <BossActionItem
+	                          action={action}
+	                          isSelected={selectedBossAction?.id === action.id}
+	                          assignments={assignments}
+	                          getActiveMitigations={getActiveMitigations}
+	                          selectedJobs={selectedJobs}
+	                          currentBossLevel={currentBossLevel}
+	                          onClick={() => handleBossActionSelection(action)}
+	                        >
+	                          <AssignedMitigations
+	                            action={action}
+	                            assignments={assignments}
+	                            getActiveMitigations={getActiveMitigations}
+	                            selectedJobs={selectedJobs}
+	                            currentBossLevel={currentBossLevel}
+	                            onUpdatePrecast={updateMitigationPrecast}
+	                            onRemoveMitigation={removeMitigation}
+	                          />
+	                        </BossActionItem>
+	                      </Droppable>
+	                    );
+	                  })}
+	                </div>
+	              </div>
+	              {/* Vertical resizer visual only (no drag in fullscreen) */}
+	              <div className="mx-1 w-2 flex items-stretch justify-center select-none">
+	                <div className="my-2 w-px bg-[var(--color-border)]" />
+	              </div>
+	              {/* Mitigations column */}
+	              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
+	                   className="rounded-xl p-4 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-y h-full min-h-[400px] min-w-0 bg-[var(--color-cardBackground)]">
+	                <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
+	                  {filteredMitigations.map(mitigation => {
+	                    const availability = selectedBossAction ? checkAbilityAvailability(
+	                      mitigation.id,
+	                      selectedBossAction.time,
+	                      selectedBossAction.id,
+	                      { isBeingAssigned: false }
+	                    ) : { isAvailable: true, canAssign: () => true };
+	                    const isDisabled = !availability.canAssign();
+	                    const cooldownReason = availability.getUnavailabilityReason ? availability.getUnavailabilityReason() : null;
+	                    return (
+	                      <Draggable
+	                        key={`${mitigation.id}__fs`}
+	                        id={`${mitigation.id}__fs`}
+	                        data={{ type: 'mitigation', mitigation }}
+	                        isDisabled={isDisabled}
+	                        cooldownReason={cooldownReason}
+	                      >
+	                        <MitigationItem
+	                          mitigation={mitigation}
+	                          isDisabled={isDisabled}
+	                          cooldownReason={cooldownReason}
+	                          currentBossLevel={currentBossLevel}
+	                          selectedBossAction={selectedBossAction}
+	                          selectedJobs={selectedJobs}
+	                          checkAbilityAvailability={checkAbilityAvailability}
+	                          pendingAssignments={pendingAssignments}
+	                        />
+	                      </Draggable>
+	                    );
+	                  })}
+	                </div>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
+	      )}
+
 
 
       <DragOverlay>
