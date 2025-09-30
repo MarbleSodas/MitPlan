@@ -29,6 +29,7 @@ export {
   calculateBarrierAmount,
   calculateRemainingHealth,
   formatHealth,
+  formatHealthCompact,
   formatPercentage,
   getHealingPotency,
   calculateHealingAmount,

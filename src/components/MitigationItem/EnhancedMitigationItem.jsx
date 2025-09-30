@@ -1,6 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import styled from 'styled-components';
-import { 
+import {
   getAbilityDescriptionForLevel,
   getAbilityDurationForLevel,
   getAbilityCooldownForLevel,
@@ -10,173 +9,56 @@ import {
 import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext';
 import { useTankPositionContext } from '../../contexts/TankPositionContext';
 
-// Styled components
-const MitigationItemContainer = styled.div`
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px;
-  margin: 8px;
-  border-radius: 8px;
-  background-color: ${props => {
-    if (props.$isDisabled) {
-      return props.theme.colors.backgroundSecondary;
-    }
-    return props.theme.colors.background;
-  }};
-  border: 2px solid ${props => {
-    if (props.$isDisabled) {
-      return props.theme.colors.border;
-    }
-    return props.theme.colors.primary;
-  }};
-  border-left: 4px solid ${props => {
-    if (props.$isDisabled) {
-      return props.theme?.colors?.error || '#ff5555';
-    }
-    return props.theme?.colors?.primary || '#3399ff';
-  }};
-  cursor: ${props => props.$isDisabled ? 'not-allowed' : 'grab'};
-  opacity: ${props => props.$isDisabled ? 0.6 : 1};
-  transition: all 0.3s ease;
-  min-width: 120px;
-  max-width: 180px;
+// Tailwind components
+const MitigationItemContainer = ({ children, className = '', $isDisabled, $isDragging, ...rest }) => {
+  const base = 'group relative flex flex-col items-center p-3 m-2 rounded-lg transition-all min-w-[120px] max-w-[180px]';
+  const state = $isDisabled
+    ? 'cursor-not-allowed opacity-60 border-2 border-neutral-300 dark:border-neutral-600 border-l-4 border-l-red-500 bg-neutral-50 dark:bg-neutral-800'
+    : 'cursor-grab opacity-100 border-2 border-blue-500/50 dark:border-blue-400/40 border-l-4 border-l-blue-500 bg-white dark:bg-neutral-800 hover:-translate-y-0.5 hover:shadow';
+  const responsive = 'sm:min-w-[100px] sm:max-w-[140px] sm:p-2 sm:m-1';
+  return (
+    <div {...rest} className={`${base} ${state} ${responsive} ${className}`}>
+      {children}
+    </div>
+  );
+};
 
-  &:hover {
-    transform: ${props => props.$isDisabled ? 'none' : 'translateY(-2px)'};
-    box-shadow: ${props => props.$isDisabled ? 'none' : '0 4px 12px rgba(0, 0, 0, 0.15)'};
-  }
+const MitigationIcon = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`w-12 h-12 mb-2 flex items-center justify-center rounded-md bg-neutral-100 dark:bg-neutral-700 sm:w-10 sm:h-10 ${className}`}>
+    {children}
+  </div>
+);
 
-  &:active {
-    transform: ${props => props.$isDisabled ? 'none' : 'translateY(0)'};
-  }
+const MitigationName = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`font-semibold text-sm sm:text-xs text-neutral-900 dark:text-neutral-100 text-center mb-1 leading-tight ${className}`}>{children}</div>
+);
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    min-width: 100px;
-    max-width: 140px;
-    padding: 8px;
-    margin: 4px;
-  }
-`;
+const MitigationDescription = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`text-xs text-neutral-600 dark:text-neutral-300 text-center leading-snug sm:text-[10px] ${className}`}>{children}</div>
+);
 
-const MitigationIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background-color: ${props => props.theme.colors.backgroundSecondary};
-  
-  img {
-    width: 40px;
-    height: 40px;
-    border-radius: 4px;
-  }
+const CooldownOverlay = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`absolute inset-0 bg-black/80 text-white flex items-center justify-center rounded-lg text-xs font-semibold text-center p-1 leading-tight ${className}`}>{children}</div>
+);
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 40px;
-    height: 40px;
-    
-    img {
-      width: 32px;
-      height: 32px;
-    }
-  }
-`;
+const StatusIndicators = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex gap-1 mt-1 flex-wrap justify-center ${className}`}>{children}</div>
+);
 
-const MitigationName = styled.div`
-  font-weight: 600;
-  font-size: ${props => props.theme.fontSizes.small};
-  color: ${props => props.theme.colors.text};
-  text-align: center;
-  margin-bottom: 4px;
-  line-height: 1.2;
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.xsmall};
-  }
-`;
-
-const MitigationDescription = styled.div`
-  font-size: ${props => props.theme.fontSizes.xsmall};
-  color: ${props => props.theme.colors.textSecondary};
-  text-align: center;
-  line-height: 1.3;
-
-  small {
-    font-size: ${props => props.theme.fontSizes.xxsmall};
-    opacity: 0.8;
-  }
-
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.xxsmall};
-    
-    small {
-      font-size: 10px;
-    }
-  }
-`;
-
-const CooldownOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: ${props => props.theme.fontSizes.xsmall};
-  font-weight: 600;
-  text-align: center;
-  padding: 4px;
-  line-height: 1.2;
-`;
-
-const StatusIndicators = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-top: 4px;
-  flex-wrap: wrap;
-  justify-content: center;
-`;
-
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: bold;
-  color: white;
-  background-color: ${props => {
-    switch (props.$type) {
-      case 'charges':
-        return props.$available === 0 ? '#ff5555' : '#4CAF50';
-      case 'instances':
-        return props.$available === 0 ? '#ff5555' : '#2196F3';
-      case 'aetherflow':
-        return props.$available === 0 ? '#ff5555' : '#9C27B0';
-      default:
-        return '#666';
-    }
-  }};
-  
-  &.flash-update {
-    animation: flash 0.5s;
-  }
-
-  @keyframes flash {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-  }
-`;
+const StatusBadge = ({ children, className = '', $type, $available, ...rest }) => {
+  const color = $type === 'charges'
+    ? ($available === 0 ? 'bg-red-500' : 'bg-emerald-600')
+    : $type === 'instances'
+      ? ($available === 0 ? 'bg-red-500' : 'bg-blue-600')
+      : $type === 'aetherflow'
+        ? ($available === 0 ? 'bg-red-500' : 'bg-purple-600')
+        : 'bg-neutral-500';
+  return (
+    <span {...rest} className={`inline-block px-[6px] py-[2px] rounded-[10px] text-[10px] font-bold text-white ${color} ${className}`}>
+      {children}
+    </span>
+  );
+};
 
 const EnhancedMitigationItem = memo(({
   mitigation,
@@ -227,10 +109,10 @@ const EnhancedMitigationItem = memo(({
     if (availability.totalCharges <= 1) return null;
 
     return (
-      <StatusBadge 
-        $type="charges" 
+      <StatusBadge
+        $type="charges"
         $available={availability.availableCharges}
-        className={isPending ? 'flash-update' : ''}
+        className={isPending ? 'animate-pulse' : ''}
       >
         {availability.availableCharges}/{availability.totalCharges} Charges
       </StatusBadge>
@@ -242,10 +124,10 @@ const EnhancedMitigationItem = memo(({
     if (!availability.isRoleShared || availability.totalInstances <= 1) return null;
 
     return (
-      <StatusBadge 
-        $type="instances" 
+      <StatusBadge
+        $type="instances"
         $available={availability.availableInstances}
-        className={isPending ? 'flash-update' : ''}
+        className={isPending ? 'animate-pulse' : ''}
       >
         {availability.availableInstances}/{availability.totalInstances} Instances
       </StatusBadge>

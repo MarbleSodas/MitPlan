@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import styled from 'styled-components';
+
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCollaboration } from '../../contexts/CollaborationContext';
@@ -9,6 +9,9 @@ import { determineMitigationAssignment } from '../../utils/mitigation/autoAssign
 import { getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 import { useNavigate } from 'react-router-dom';
+
+
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
@@ -32,13 +35,8 @@ import TankSelectionModal from '../common/TankSelectionModal';
 import TankPositionSelector from '../TankPositionSelector/TankPositionSelector';
 import Draggable from '../DragAndDrop/Draggable';
 import Droppable from '../DragAndDrop/Droppable';
+import PartyMinHealthInput from '../common/PartyMinHealthInput/PartyMinHealthInput';
 
-// Import styled layout components
-import MainContent from '../styled/MainContent';
-import TimelineContainer from '../styled/TimelineContainer';
-import MitigationContainer from '../styled/MitigationContainer';
-import BossActionsList from '../styled/BossActionsList';
-import MitigationList from '../styled/MitigationList';
 
 // Import contexts
 import {
@@ -60,133 +58,15 @@ import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 // import { isMitigationAvailable, getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 
-const PlannerContainer = styled.div`
-  min-height: 100vh;
-  background: ${props => props.theme?.colors?.background || '#f5f5f5'};
-  padding: 2rem;
-
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
-
-`;
-
-const Title = styled.h1`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 2rem;
-  font-weight: 600;
-  margin: 0;
-
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-
-`;
-
-// Resizable split between timeline and mitigation list
-const Resizer = styled.div`
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  width: 10px;
-  cursor: col-resize;
-  user-select: none;
-  margin: 0 6px;
-  position: relative;
-
-  &:before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    bottom: 8px;
-    width: 2px;
-    background: ${props => props.theme.colors.border};
-    border-radius: 1px;
-  }
-
-  &:after {
-    content: '⋮';
-    font-size: 12px;
-    opacity: 0.7;
-    z-index: 1;
-  }
-`;
 
 
-const BackButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: transparent;
-  color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primary || '#3399ff'};
-    color: white;
-  }
-`;
-
-const SaveButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: ${props => props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primaryDark || '#2980b9'};
-  }
-
-  &:disabled {
-    background: ${props => props.theme?.colors?.disabled || '#9ca3af'};
-    cursor: not-allowed;
-  }
-`;
-
-const SelectorsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const ControlsContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
-  border-radius: 8px;
-  border: 1px solid ${props => props.theme?.colors?.border || '#dddddd'};
-
-`;
 
 
-const ErrorMessage = styled.div`
-  background: ${props => props.theme?.colors?.errorBackground || '#fef2f2'};
-  border: 1px solid ${props => props.theme?.colors?.errorBorder || '#fecaca'};
-  color: ${props => props.theme?.colors?.error || '#ef4444'};
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-`;
+
+
+
+
+
 
 // Planning interface component that gets data from real-time contexts
 const PlanningInterface = () => {
@@ -276,6 +156,41 @@ const PlanningInterface = () => {
   // Local state for drag and drop
   const [activeMitigation, setActiveMitigation] = useState(null);
 
+
+	  // Fullscreen overlay state and handlers for timeline + mitigations
+	  const [fsMounted, setFsMounted] = useState(false);
+	  const [fsOpen, setFsOpen] = useState(false);
+	  const openFullscreen = useCallback(() => {
+	    if (fsMounted) return;
+	    setFsMounted(true);
+	    // Next frame to allow transition from opacity-0 to 100
+	    requestAnimationFrame(() => setFsOpen(true));
+	  }, [fsMounted]);
+	  const closeFullscreen = useCallback(() => {
+	    setFsOpen(false);
+	    // Unmount after transition ends
+	    setTimeout(() => setFsMounted(false), 300);
+	  }, []);
+	  // ESC to exit fullscreen
+	  useEffect(() => {
+	    if (!fsMounted) return;
+	    const onKeyDown = (e) => {
+	      if (e.key === 'Escape') {
+	        e.preventDefault();
+	        closeFullscreen();
+	      }
+	    };
+	    window.addEventListener('keydown', onKeyDown);
+	    return () => window.removeEventListener('keydown', onKeyDown);
+	  }, [fsMounted, closeFullscreen]);
+	  // Lock page scroll when fullscreen is mounted
+	  useEffect(() => {
+	    if (!fsMounted) return;
+	    const prev = document.body.style.overflow;
+	    document.body.style.overflow = 'hidden';
+	    return () => { document.body.style.overflow = prev; };
+	  }, [fsMounted]);
+
   // Enhanced boss action selection with disabled auto-assignment
   const handleBossActionSelection = useCallback((action) => {
     const wasSelected = selectedBossAction?.id === action.id;
@@ -314,7 +229,11 @@ const PlanningInterface = () => {
   // Drag and drop handlers - MUST be called before early returns
   const handleDragStart = useCallback((event) => {
     const { active } = event;
-    const mitigation = availableMitigations.find(m => m.id === active.id);
+    // Extract the actual mitigation ID by removing the __fs suffix if present
+    const activeId = typeof active.id === 'string' && active.id.endsWith('__fs')
+      ? active.id.slice(0, -4) // Remove '__fs' suffix
+      : active.id;
+    const mitigation = availableMitigations.find(m => m.id === activeId);
     if (mitigation) {
       setActiveMitigation(mitigation);
     }
@@ -332,7 +251,7 @@ const PlanningInterface = () => {
     // Prefer action object from droppable data when available
     let targetBossAction = over?.data?.current?.action || null;
 
-    // Fallback: extract original action id from droppable id of form `${action.id}__${idx}`
+    // Fallback: extract original action id from droppable id of form `${action.id}__${idx}` or `${action.id}__${idx}__fs`
     if (!targetBossAction) {
       const overId = over.id;
       const originalId = typeof overId === 'string' && overId.includes('__') ? overId.split('__')[0] : overId;
@@ -359,7 +278,12 @@ const PlanningInterface = () => {
     }
     */
 
-    const mitigation = availableMitigations.find(m => m.id === active.id);
+    // Extract the actual mitigation ID by removing the __fs suffix if present
+    const activeId = typeof active.id === 'string' && active.id.endsWith('__fs')
+      ? active.id.slice(0, -4) // Remove '__fs' suffix
+      : active.id;
+
+    const mitigation = availableMitigations.find(m => m.id === activeId);
     if (!mitigation) {
       setActiveMitigation(null);
       return;
@@ -482,7 +406,7 @@ const PlanningInterface = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <SelectorsContainer>
+      <div className="flex flex-col gap-4 mb-4">
         <BossSelector
           selectedBossId={currentBossId}
           onSelectBoss={setCurrentBossId}
@@ -492,17 +416,32 @@ const PlanningInterface = () => {
           disabled={false}
         />
         <TankPositionSelector />
-      </SelectorsContainer>
+      </div>
 
-      <ControlsContainer>
+      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-cardBackground)]">
         <FilterToggle />
         <PrecastToggle />
+        <PartyMinHealthInput />
         <HealingPotencyInput />
-      </ControlsContainer>
+      </div>
 
-      <MainContent ref={splitContainerRef}>
-        <TimelineContainer style={{ flex: '0 0 auto', width: `${timelinePercent}%`, minWidth: '40%', maxWidth: '80%' }}>
-          <BossActionsList>
+      {/* Fullscreen toggle row above the split panels */}
+      <div className="flex items-center justify-end mb-2">
+        <button
+          type="button"
+          onClick={openFullscreen}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-[var(--color-border)] text-[var(--color-text)] bg-[var(--color-cardBackground)] hover:bg-[var(--select-bg)] transition"
+          aria-label="Enter fullscreen for timeline and mitigations"
+          title="Enter fullscreen"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+      </div>
+
+
+      <div ref={splitContainerRef} className="flex w-full gap-4">
+        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-[var(--color-cardBackground)] rounded-xl p-4 pb-6 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+          <div className="relative flex flex-col p-4 w-full grow">
             {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
               const droppableId = `${action.id}__${idx}`; // ensure uniqueness even if IDs repeat in data
@@ -536,13 +475,15 @@ const PlanningInterface = () => {
               </Droppable>
               );
             })}
-          </BossActionsList>
-        </TimelineContainer>
+          </div>
+        </div>
 
         <>
-            <Resizer onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" />
-            <MitigationContainer style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}>
-            <MitigationList>
+            <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
+              <div className="my-2 w-px bg-[var(--color-border)]" />
+            </div>
+            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-[var(--color-cardBackground)] rounded-xl p-4 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] min-w-0">
+            <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
                 const availability = selectedBossAction ? checkAbilityAvailability(
@@ -576,10 +517,118 @@ const PlanningInterface = () => {
                   </Draggable>
                 );
               })}
-            </MitigationList>
-          </MitigationContainer>
+            </div>
+          </div>
           </>
-      </MainContent>
+      </div>
+
+	      {/* Fullscreen overlay rendering both timeline and mitigations */}
+	      {fsMounted && (
+	        <div
+	          className={`fixed inset-0 z-[100] flex items-stretch justify-center bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${fsOpen ? 'opacity-100' : 'opacity-0'}`}
+	          role="dialog"
+	          aria-modal="true"
+	        >
+	          {/* Click blocker to prevent background interaction */}
+	          <div className="absolute inset-0" onClick={closeFullscreen} />
+	          <div className={`relative m-4 flex w-[min(1800px,100%)] max-w-[100%] gap-4 rounded-xl bg-[var(--color-cardBackground)] p-4 shadow-2xl transition-transform duration-300 ${fsOpen ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.99]'}`}
+	               onClick={(e) => e.stopPropagation()}>
+	            {/* Exit button */}
+	            <button
+	              type="button"
+	              onClick={closeFullscreen}
+	              className="absolute right-3 top-3 inline-flex items-center justify-center h-8 w-8 rounded-md text-[var(--color-buttonText)] bg-[var(--color-primary)] hover:brightness-110 transition z-50"
+	              aria-label="Exit fullscreen"
+	              title="Exit fullscreen (Esc)"
+	            >
+	              <Minimize2 className="h-4 w-4" />
+	            </button>
+	            {/* Two independently scrollable columns */}
+	            <div className="flex w-full gap-4 h-[calc(100vh-64px)]">
+	              {/* Timeline column */}
+	              <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
+	                   className="rounded-xl p-4 pb-6 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-full min-h-[400px] flex flex-col min-w-0 bg-[var(--color-cardBackground)]">
+	                <div className="relative flex flex-col p-4 w-full grow">
+	                  {sortedBossActions.map((action, idx) => {
+	                    const isSelected = selectedBossAction?.id === action.id;
+	                    const droppableId = `${action.id}__${idx}__fs`; // ensure uniqueness in fullscreen
+	                    return (
+	                      <Droppable
+	                        key={droppableId}
+	                        id={droppableId}
+	                        data={{ type: 'bossAction', action }}
+	                        disableDrop={!isSelected}
+	                        isSelected={isSelected}
+	                      >
+	                        <BossActionItem
+	                          action={action}
+	                          isSelected={selectedBossAction?.id === action.id}
+	                          assignments={assignments}
+	                          getActiveMitigations={getActiveMitigations}
+	                          selectedJobs={selectedJobs}
+	                          currentBossLevel={currentBossLevel}
+	                          onClick={() => handleBossActionSelection(action)}
+	                        >
+	                          <AssignedMitigations
+	                            action={action}
+	                            assignments={assignments}
+	                            getActiveMitigations={getActiveMitigations}
+	                            selectedJobs={selectedJobs}
+	                            currentBossLevel={currentBossLevel}
+	                            onUpdatePrecast={updateMitigationPrecast}
+	                            onRemoveMitigation={removeMitigation}
+	                          />
+	                        </BossActionItem>
+	                      </Droppable>
+	                    );
+	                  })}
+	                </div>
+	              </div>
+	              {/* Vertical resizer visual only (no drag in fullscreen) */}
+	              <div className="mx-1 w-2 flex items-stretch justify-center select-none">
+	                <div className="my-2 w-px bg-[var(--color-border)]" />
+	              </div>
+	              {/* Mitigations column */}
+	              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
+	                   className="rounded-xl p-4 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-y h-full min-h-[400px] min-w-0 bg-[var(--color-cardBackground)]">
+	                <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
+	                  {filteredMitigations.map(mitigation => {
+	                    const availability = selectedBossAction ? checkAbilityAvailability(
+	                      mitigation.id,
+	                      selectedBossAction.time,
+	                      selectedBossAction.id,
+	                      { isBeingAssigned: false }
+	                    ) : { isAvailable: true, canAssign: () => true };
+	                    const isDisabled = !availability.canAssign();
+	                    const cooldownReason = availability.getUnavailabilityReason ? availability.getUnavailabilityReason() : null;
+	                    return (
+	                      <Draggable
+	                        key={`${mitigation.id}__fs`}
+	                        id={`${mitigation.id}__fs`}
+	                        data={{ type: 'mitigation', mitigation }}
+	                        isDisabled={isDisabled}
+	                        cooldownReason={cooldownReason}
+	                      >
+	                        <MitigationItem
+	                          mitigation={mitigation}
+	                          isDisabled={isDisabled}
+	                          cooldownReason={cooldownReason}
+	                          currentBossLevel={currentBossLevel}
+	                          selectedBossAction={selectedBossAction}
+	                          selectedJobs={selectedJobs}
+	                          checkAbilityAvailability={checkAbilityAvailability}
+	                          pendingAssignments={pendingAssignments}
+	                        />
+	                      </Draggable>
+	                    );
+	                  })}
+	                </div>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
+	      )}
+
 
 
       <DragOverlay>
@@ -747,12 +796,12 @@ const MitigationPlannerContent = ({
 
   return (
     <>
-      <PlannerContainer>
-      <Header>
-        <Title>
+      <div className="min-h-screen p-8 bg-[var(--color-background)] text-[var(--color-text)]">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-[var(--color-border)]">
+        <h1 className="text-2xl font-semibold text-[var(--color-text)]">
           {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
-        </Title>
-        <ButtonGroup>
+        </h1>
+        <div className="flex items-center gap-2">
           {isCollaborating && (
             <CollaboratorsList
               collaborators={collaborators}
@@ -763,19 +812,19 @@ const MitigationPlannerContent = ({
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <SaveButton onClick={handleSave} disabled={saving}>
+          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg font-semibold text-[var(--color-buttonText)] bg-[var(--color-primary)] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition">
             {saving ? 'Saving...' : 'Save Plan'}
-          </SaveButton>
-          <BackButton onClick={handleBack}>
+          </button>
+          <button onClick={handleBack} className="px-4 py-2 rounded-lg font-semibold text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition">
             {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
-          </BackButton>
-        </ButtonGroup>
-      </Header>
+          </button>
+        </div>
+      </div>
 
       {error && (
-        <ErrorMessage>
+        <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-600">
           Error: {error}
-        </ErrorMessage>
+        </div>
       )}
 
       {/* Universal access enabled - no read-only restrictions */}
@@ -796,7 +845,7 @@ const MitigationPlannerContent = ({
       />
 
       {/* No longer showing display name modal for anonymous users */}
-    </PlannerContainer>
+    </div>
     <Footer />
   </>
   );

@@ -1,5 +1,4 @@
 import { memo, useState, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
 import Tooltip from '../common/Tooltip/Tooltip';
 import HealthBar from '../common/HealthBar';
 import HealingHealthBar from '../common/HealingHealthBar';
@@ -19,419 +18,87 @@ import {
 
 import { mitigationAbilities, bosses } from '../../data';
 import { useTankPositionContext } from '../../contexts';
+import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 
-const BossAction = styled.div`
-  background-color: ${props => {
-    if (props.$isSelected) {
-      return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
-    }
-    if (props.$isTouched) {
-      return props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.15)' : 'rgba(51, 153, 255, 0.05)';
-    }
-    return props.theme.colors.cardBackground;
-  }};
-  border-radius: ${props => props.theme.borderRadius.responsive.medium};
-  padding: ${props => props.theme.spacing.medium};
-  padding-top: 40px; /* Fixed padding at top for time indicator */
+const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, ...rest }) => {
+  const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer bg-[var(--color-cardBackground)] text-[var(--color-text)]';
+  const borderSel = $isSelected ? 'border-blue-500' : 'border-[var(--color-border)]';
+  const leftBorder = $importance === 'critical'
+    ? 'border-l-4 border-l-red-500'
+    : $importance === 'high'
+      ? 'border-l-4 border-l-orange-500'
+      : $importance === 'medium'
+        ? 'border-l-4 border-l-amber-500'
+        : 'border-l-4 border-l-green-500';
+  const hover = 'hover:shadow-md hover:border-blue-500';
+  const prAssignments = $hasAssignments
+    ? 'pr-[clamp(240px,18vw,320px)] 2xl:pr-[clamp(260px,16vw,340px)] xl:pr-[clamp(220px,15vw,300px)] md:pr-[clamp(170px,24vw,220px)] sm:pr-[clamp(120px,30vw,180px)] xs:pr-[clamp(100px,34vw,150px)]'
+    : '';
+  return (
+    <div {...rest} className={`${base} ${borderSel} ${leftBorder} ${hover} ${prAssignments} ${className}`}>
+      {children}
+    </div>
+  );
+};
 
-  /* Desktop padding - optimized for 1920x1080, 1440x900, 2560x1440 */
-  padding-right: ${props => props.$hasAssignments ? 'clamp(240px, 18vw, 320px)' : props.theme.spacing.medium};
-  box-shadow: ${props => props.theme.shadows.small};
-  position: relative;
-  border-left: 4px solid ${props => {
-    switch(props.$importance) {
-      case 'critical': return props.theme.colors.critical;
-      case 'high': return props.theme.colors.high;
-      case 'medium': return props.theme.colors.medium;
-      default: return props.theme.colors.low;
-    }
-  }};
-  transition: all 0.2s ease;
-  color: ${props => props.theme.colors.text};
-  border: ${props => props.$isSelected ? `2px solid ${props.theme.colors.primary}` : '1px solid ${props.theme.colors.border}'};
-  cursor: pointer;
-  width: 100%; /* Full width */
-  min-height: 140px; /* Minimum height for all boss action cards */
-  height: auto; /* Allow height to grow based on content */
-  display: flex;
-  flex-direction: column;
-  margin-bottom: ${props => props.theme.spacing.medium};
 
-  /* Desktop hover effect */
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      box-shadow: ${props => props.theme.shadows.hover};
-      /* Removed transform animation for better performance */
-      border-color: ${props => props.theme.colors.primary};
-    }
-  }
+const ActionTime = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`absolute top-0 left-0 right-0 px-2 h-[30px] flex items-center justify-center text-center font-bold text-[var(--color-text)] bg-black/10 dark:bg-black/30 border-b border-[var(--color-border)] rounded-t-lg select-none z-[1] text-base sm:text-sm ${className}`}
+  >
+    <span className="mr-1">⏱️</span> {children}
+  </div>
+);
 
-  /* Touch feedback */
-  &:active {
-    /* Removed transform scale for better performance */
-    box-shadow: ${props => props.theme.shadows.active};
-    opacity: 0.95;
-  }
 
-  /* Large desktop styles (2560x1440 and above) */
-  @media (min-width: ${props => props.theme.breakpoints.largeDesktop}) {
-    padding-right: ${props => props.$hasAssignments ? 'clamp(260px, 16vw, 340px)' : props.theme.spacing.medium};
-  }
+const ActionIcon = ({ children, className = '', ...rest }) => (
+  <span {...rest} className={`inline-flex items-center justify-center w-8 h-8 mr-3 shrink-0 select-none md:w-[30px] md:h-[30px] md:mr-[10px] sm:w-7 sm:h-7 sm:mr-2 xs:w-6 xs:h-6 xs:mr-1.5 ${className}`}>{children}</span>
+);
 
-  /* Standard desktop styles (1200px to 1440px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeDesktop}) and (min-width: ${props => props.theme.breakpoints.desktop}) {
-    padding-right: ${props => props.$hasAssignments ? 'clamp(220px, 15vw, 300px)' : props.theme.spacing.medium};
-  }
 
-  /* Large tablet styles (992px to 1200px) */
-  @media (max-width: ${props => props.theme.breakpoints.desktop}) and (min-width: ${props => props.theme.breakpoints.largeTablet}) {
-    padding: ${props => props.theme.spacing.responsive.medium};
-    padding-top: 40px;
-    padding-right: ${props => props.$hasAssignments ? '0px' : props.theme.spacing.responsive.medium};
-    min-height: 130px;
-    border-radius: ${props => props.theme.borderRadius.responsive.medium};
-  }
+const ActionName = ({ children, className = '', ...rest }) => (
+  <h3 {...rest} className={`m-0 font-bold select-none break-words hyphens-auto leading-snug w-full text-xl md:text-lg sm:text-base ${className}`}>{children}</h3>
+);
 
-  /* Tablet styles (768px to 992px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    padding: ${props => props.theme.spacing.responsive.medium};
-    padding-top: 40px;
-    padding-right: ${props => props.$hasAssignments ? 'clamp(170px, 24vw, 220px)' : props.theme.spacing.responsive.medium};
-    min-height: 130px;
-    border-radius: ${props => props.theme.borderRadius.responsive.medium};
-  }
 
-  /* Mobile styles (480px to 768px) */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.responsive.small};
-    padding-top: 35px;
-    padding-right: ${props => props.$hasAssignments ? 'clamp(120px, 30vw, 180px)' : props.theme.spacing.responsive.small};
-    min-height: 120px;
-    margin-bottom: ${props => props.theme.spacing.responsive.small};
-    position: relative;
-    border-radius: ${props => props.theme.borderRadius.responsive.small};
-  }
+const ActionDescription = ({ children, className = '', ...rest }) => (
+  <p
+    {...rest}
+    className={`m-0 text-[var(--color-textSecondary)] text-base md:text-base sm:text-sm min-h-[40px] leading-relaxed pl-0.5 mb-4 break-words hyphens-auto whitespace-normal w-full ${className}`}
+  >
+    {children}
+  </p>
+);
 
-  /* Small mobile styles (below 480px) */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.responsive.small};
-    padding-top: 30px;
-    padding-right: ${props => props.$hasAssignments ? 'clamp(100px, 34vw, 150px)' : props.theme.spacing.responsive.small};
-    min-height: 110px;
-    margin-bottom: ${props => props.theme.spacing.responsive.small};
-    position: relative;
-    border-radius: ${props => props.theme.borderRadius.responsive.small};
-  }
-`;
 
-const ActionTime = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 8px;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  font-weight: bold;
-  color: ${props => props.theme.colors.text};
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  border-top-left-radius: ${props => props.theme.borderRadius.responsive.medium};
-  border-top-right-radius: ${props => props.theme.borderRadius.responsive.medium};
-  text-align: center;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none; /* Prevent text selection */
-  z-index: 1; /* Ensure it's above other elements */
+const ContentContainer = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex items-start my-[10px] w-full max-w-full ${className}`}>{children}</div>
+);
 
-  &::before {
-    content: '⏱️';
-    margin-right: 5px;
-    font-size: 1em;
-  }
 
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-    padding: 8px;
-    height: 28px;
-    border-top-left-radius: ${props => props.theme.borderRadius.responsive.medium};
-    border-top-right-radius: ${props => props.theme.borderRadius.responsive.medium};
-  }
+const TextContainer = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex-1 min-w-0 break-words ${className}`}>{children}</div>
+);
 
-  /* Mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-    padding: 6px;
-    height: 24px;
-    border-top-left-radius: ${props => props.theme.borderRadius.responsive.small};
-    border-top-right-radius: ${props => props.theme.borderRadius.responsive.small};
-  }
+const MitigationPercentage = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`inline-flex items-center justify-center bg-blue-500/10 dark:bg-blue-500/20 text-neutral-800 dark:text-neutral-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mb-3 border border-blue-500/20 dark:border-blue-500/30 select-none ${className}`}
+  >
+    <span className="mr-1">🛡️</span> {children}
+  </div>
+);
 
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
-    padding: 4px;
-    height: 22px;
-    border-top-left-radius: ${props => props.theme.borderRadius.small};
-    border-top-right-radius: ${props => props.theme.borderRadius.small};
-  }
-`;
+const MultiHitIndicator = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`inline-flex items-center justify-center bg-orange-500/10 dark:bg-orange-500/20 text-neutral-800 dark:text-neutral-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mr-2.5 mb-3 border border-orange-500/20 dark:border-orange-500/30 select-none ${className}`}
+  >
+    <span className="mr-1">💥</span> {children}
+  </div>
+);
 
-const ActionIcon = styled.span`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-right: 12px;
-  flex-shrink: 0;
-  user-select: none; /* Prevent text selection */
-
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    width: 30px;
-    height: 30px;
-    margin-right: 10px;
-  }
-
-  /* Mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    width: 28px;
-    height: 28px;
-    margin-right: 8px;
-  }
-
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    width: 24px;
-    height: 24px;
-    margin-right: 6px;
-  }
-`;
-
-const ActionName = styled.h3`
-  margin: 0;
-  font-size: ${props => props.theme.fontSizes.responsive.large};
-  font-weight: bold;
-  user-select: none;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
-  line-height: 1.4;
-  width: 100%;
-
-  /* Tablet styles (768px to 992px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-  }
-
-  /* Mobile styles (480px to 768px) */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-  }
-
-  /* Small mobile styles (below 480px) */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-  }
-`;
-
-const ActionDescription = styled.p`
-  margin: 0;
-  color: ${props => props.theme.colors.lightText};
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-  min-height: 40px;
-  line-height: 1.5;
-  padding-left: 2px;
-  margin-bottom: ${props => props.theme.spacing.medium};
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
-  white-space: normal;
-  width: 100%;
-
-  /* Tablet styles (768px to 992px) */
-  @media (max-width: ${props => props.theme.breakpoints.largeTablet}) and (min-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-    min-height: 36px;
-    line-height: 1.4;
-    margin-bottom: ${props => props.theme.spacing.responsive.medium};
-  }
-
-  /* Mobile styles (480px to 768px) */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) and (min-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-    min-height: 34px;
-    line-height: 1.4;
-    margin-bottom: ${props => props.theme.spacing.responsive.medium};
-  }
-
-  /* Small mobile styles (below 480px) */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-    min-height: 30px;
-    line-height: 1.3;
-    margin-bottom: ${props => props.theme.spacing.responsive.small};
-  }
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  align-items: flex-start;
-  margin: 10px 0;
-  width: 100%;
-  max-width: 100%;
-
-  /* Ensure content never overlaps with mitigations */
-  ${props => props.$hasAssignments && `
-    width: calc(100% - clamp(210px, 15vw, 290px));
-    max-width: calc(100% - clamp(210px, 15vw, 290px));
-
-    /* Large desktop styles (2560x1440 and above) */
-    @media (min-width: ${props.theme.breakpoints.largeDesktop}) {
-      width: calc(100% - clamp(250px, 12vw, 330px));
-      max-width: calc(100% - clamp(250px, 12vw, 330px));
-    }
-
-    /* Standard desktop styles (1200px to 1440px) */
-    @media (max-width: ${props.theme.breakpoints.largeDesktop}) and (min-width: ${props.theme.breakpoints.desktop}) {
-      width: calc(100% - clamp(190px, 16vw, 250px));
-      max-width: calc(100% - clamp(190px, 16vw, 250px));
-    }
-
-    /* Large tablet styles (992px to 1200px) */
-    @media (max-width: ${props.theme.breakpoints.desktop}) and (min-width: ${props.theme.breakpoints.largeTablet}) {
-      width: calc(100% - clamp(170px, 18vw, 210px));
-      max-width: calc(100% - clamp(170px, 18vw, 210px));
-    }
-
-    /* Tablet styles (768px to 992px) */
-    @media (max-width: ${props.theme.breakpoints.largeTablet}) and (min-width: ${props.theme.breakpoints.tablet}) {
-      width: calc(100% - clamp(150px, 22vw, 190px));
-      max-width: calc(100% - clamp(150px, 22vw, 190px));
-    }
-
-    /* Mobile styles (480px to 768px) */
-    @media (max-width: ${props.theme.breakpoints.tablet}) and (min-width: ${props.theme.breakpoints.mobile}) {
-      width: calc(100% - clamp(110px, 25vw, 150px));
-      max-width: calc(100% - clamp(110px, 25vw, 150px));
-    }
-
-    /* Small mobile styles (below 480px) */
-    @media (max-width: ${props.theme.breakpoints.mobile}) {
-      width: calc(100% - clamp(90px, 30vw, 130px));
-      max-width: calc(100% - clamp(90px, 30vw, 130px));
-    }
-  `}
-`;
-
-const TextContainer = styled.div`
-  flex: 1;
-  min-width: 0; /* Allows flex item to shrink below content size */
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
-`;
-
-const MitigationPercentage = styled.div`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)'};
-  color: ${props => props.theme.colors.text};
-  font-weight: bold;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  padding: 6px 10px;
-  border-radius: ${props => props.theme.borderRadius.responsive.small};
-  margin-top: 8px;
-  margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)'};
-  user-select: none; /* Prevent text selection */
-
-  &::before {
-    content: '🛡️';
-    margin-right: 6px;
-  }
-
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-    padding: 6px 10px;
-    min-height: 34px;
-  }
-
-  /* Mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-    padding: 5px 8px;
-    margin-top: 6px;
-    margin-bottom: 10px;
-    min-height: 32px;
-  }
-
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
-    padding: 4px 6px;
-    margin-top: 4px;
-    margin-bottom: 8px;
-    min-height: 30px;
-  }
-`;
-
-const MultiHitIndicator = styled.div`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 0, 0.2)' : 'rgba(255, 102, 0, 0.1)'};
-  color: ${props => props.theme.colors.text};
-  font-weight: bold;
-  font-size: ${props => props.theme.fontSizes.responsive.medium};
-  padding: 6px 10px;
-  border-radius: ${props => props.theme.borderRadius.responsive.small};
-  margin-top: 8px;
-  margin-right: 10px;
-  margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.mode === 'dark' ? 'rgba(255, 102, 0, 0.3)' : 'rgba(255, 102, 0, 0.2)'};
-  user-select: none; /* Prevent text selection */
-
-  &::before {
-    content: '💥';
-    margin-right: 6px;
-  }
-
-  /* Tablet styles */
-  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-    padding: 6px 10px;
-    min-height: 34px;
-  }
-
-  /* Mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    font-size: ${props => props.theme.fontSizes.responsive.small};
-    padding: 5px 8px;
-    margin-top: 6px;
-    margin-right: 8px;
-    margin-bottom: 10px;
-    min-height: 32px;
-  }
-
-  /* Small mobile styles */
-  @media (max-width: ${props => props.theme.breakpoints.smallMobile}) {
-    font-size: ${props => props.theme.fontSizes.small};
-    padding: 4px 6px;
-    margin-top: 4px;
-    margin-right: 6px;
-    margin-bottom: 8px;
-    min-height: 30px;
-  }
-`;
 
 const BossActionItem = memo(({
   action,
@@ -612,6 +279,12 @@ const BossActionItem = memo(({
   // Get the current boss's base health values
   const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
   const baseHealth = currentBoss ? currentBoss.baseHealth : { party: 80000, tank: 120000 };
+  const { realtimePlan } = useRealtimePlan();
+  const healthSettings = realtimePlan?.healthSettings || {};
+  const mainTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.mainTank) || baseHealth.tank;
+  const offTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.offTank) || baseHealth.tank;
+  const partyBaseMaxHealth = (healthSettings.partyMinHealth) || baseHealth.party;
+
 
   // Parse the unmitigated damage value
   const parseUnmitigatedDamage = () => {
@@ -716,7 +389,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
 
     // Only count party/area barriers for party health bar
     if (mitigation.target === 'party' || mitigation.target === 'area') {
-      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.party, healingPotencyPer100);
+      return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), partyBaseMaxHealth, healingPotencyPer100);
     }
 
     return total;
@@ -761,7 +434,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For self-targeting barriers, only include if they match this tank position
       if (mitigation.target === 'self') {
         if (mitigation.tankPosition === 'mainTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
@@ -769,19 +442,19 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For single-target barriers, only include if they're targeted at this tank
       if (mitigation.target === 'single') {
         if (mitigation.tankPosition === 'mainTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
 
       // For party-wide/area barriers, include for all tanks
       if (mitigation.target === 'party' || mitigation.target === 'area') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
       }
 
       // Include barriers specifically for this tank position
       if (mitigation.tankPosition === 'mainTank' || mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), mainTankBaseMaxHealth, healingPotencyPer100);
       }
 
       return total;
@@ -795,7 +468,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For self-targeting barriers, only include if they match this tank position
       if (mitigation.target === 'self') {
         if (mitigation.tankPosition === 'offTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
@@ -803,19 +476,19 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       // For single-target barriers, only include if they're targeted at this tank
       if (mitigation.target === 'single') {
         if (mitigation.tankPosition === 'offTank') {
-          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+          return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
         }
         return total;
       }
 
       // For party-wide/area barriers, include for all tanks
       if (mitigation.target === 'party' || mitigation.target === 'area') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
       }
 
       // Include barriers specifically for this tank position
       if (mitigation.tankPosition === 'offTank' || mitigation.tankPosition === 'shared') {
-        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), baseHealth.tank, healingPotencyPer100);
+        return total + calculateBarrierAmount(withAdjustedBarrierPotency(mitigation), offTankBaseMaxHealth, healingPotencyPer100);
       }
 
       return total;
@@ -843,8 +516,8 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   const mainTankHpIncrease = computeHpIncreaseForTank('mainTank');
   const offTankHpIncrease = computeHpIncreaseForTank('offTank');
 
-  const mainTankMaxHealthEffective = Math.round(baseHealth.tank * (1 + mainTankHpIncrease));
-  const offTankMaxHealthEffective = Math.round(baseHealth.tank * (1 + offTankHpIncrease));
+  const mainTankMaxHealthEffective = Math.round(mainTankBaseMaxHealth * (1 + mainTankHpIncrease));
+  const offTankMaxHealthEffective = Math.round(offTankBaseMaxHealth * (1 + offTankHpIncrease));
 
   // Calculate healing amounts (direct-only)
   const healingPotency = getHealingPotency(currentBossLevel);
@@ -899,9 +572,61 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
   const offTankHealingWithBuffs = dedupById([...offTankHealingAbilities, ...healingBuffs]);
 
   // Calculate healing amounts
-  const partyHealingAmount = calculateHealingAmount(partyHealingAbilities, healingPotency, currentBossLevel, baseHealth.party);
-  const mainTankHealingAmount = calculateHealingAmount(mainTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
-  const offTankHealingAmount = calculateHealingAmount(offTankHealingWithBuffs, healingPotency, currentBossLevel, baseHealth.tank);
+  const partyHealingAmount = calculateHealingAmount(partyHealingAbilities, healingPotency, currentBossLevel, partyBaseMaxHealth);
+  const mainTankHealingAmount = calculateHealingAmount(mainTankHealingWithBuffs, healingPotency, currentBossLevel, mainTankBaseMaxHealth);
+  const offTankHealingAmount = calculateHealingAmount(offTankHealingWithBuffs, healingPotency, currentBossLevel, offTankBaseMaxHealth);
+
+  // --- Liturgy of the Bell support (triggered heal per hit and across actions) ---
+  const LITURGY_ID = 'liturgy_of_the_bell';
+  const liturgyAbility = mitigationAbilities.find(m => m.id === LITURGY_ID) || null;
+  const liturgyPotency = liturgyAbility && typeof liturgyAbility.healingPotency === 'number' ? liturgyAbility.healingPotency : 400;
+  const liturgyHealModifier = liturgyAbility ? computeHealingModifierForAbility(liturgyAbility) : 1;
+  const liturgyHealPerStack = ((liturgyPotency * liturgyHealModifier) / 100) * healingPotency;
+  const hitCount = (action.isMultiHit && action.hitCount) ? action.hitCount : 1;
+  const interHitHealsCount = Math.max(0, hitCount - 1);
+
+  // Detect whether Liturgy is active on this action (either directly assigned or inherited from a previous action)
+  const hasLiturgyDirect = directMitigationsFull.some(m => m.id === LITURGY_ID);
+  const hasLiturgyInheritedParty = (typeof getActiveMitigations === 'function' ? (getActiveMitigations(action.id, action.time) || []) : []).some(m => m.id === LITURGY_ID);
+  const hasLiturgyInheritedMT = (typeof getActiveMitigations === 'function' ? (getActiveMitigations(action.id, action.time, 'mainTank') || []) : []).some(m => m.id === LITURGY_ID);
+  const hasLiturgyInheritedOT = (typeof getActiveMitigations === 'function' ? (getActiveMitigations(action.id, action.time, 'offTank') || []) : []).some(m => m.id === LITURGY_ID);
+  const liturgyActiveParty = hasLiturgyDirect || hasLiturgyInheritedParty;
+  const liturgyActiveMT = hasLiturgyDirect || hasLiturgyInheritedMT;
+  const liturgyActiveOT = hasLiturgyDirect || hasLiturgyInheritedOT;
+
+  // Adjust HealingHealthBar inputs to account for triggered heals between hits (all but last)
+  const partyRemainingBase = Math.max(0, partyBaseMaxHealth - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage));
+  const partyRemainingAfterDamageWithLiturgy = liturgyActiveParty
+    ? Math.min(partyBaseMaxHealth, partyRemainingBase + interHitHealsCount * liturgyHealPerStack)
+    : partyRemainingBase;
+
+  const mainTankRemainingBaseDual = Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - mainTankBarrierAmount) * (1 - mainTankMitigationPercentage));
+  const mainTankRemainingAfterDamageWithLiturgy = liturgyActiveMT
+    ? Math.min(mainTankMaxHealthEffective, mainTankRemainingBaseDual + interHitHealsCount * liturgyHealPerStack)
+    : mainTankRemainingBaseDual;
+
+  const offTankRemainingBaseDual = Math.max(0, offTankMaxHealthEffective - Math.max(0, unmitigatedDamage - offTankBarrierAmount) * (1 - offTankMitigationPercentage));
+  const offTankRemainingAfterDamageWithLiturgy = liturgyActiveOT
+    ? Math.min(offTankMaxHealthEffective, offTankRemainingBaseDual + interHitHealsCount * liturgyHealPerStack)
+    : offTankRemainingBaseDual;
+
+  // For single-target TB path, the applied barrier/mitigation can differ when no MT is selected
+  const singleMainBarrier = tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount;
+  const singleMainMitigation = tankPositions.mainTank ? mainTankMitigationPercentage : mitigationPercentage;
+  const mainTankRemainingBaseSingle = Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - singleMainBarrier) * (1 - singleMainMitigation));
+  const mainTankRemainingAfterDamageWithLiturgySingle = liturgyActiveMT
+    ? Math.min(mainTankMaxHealthEffective, mainTankRemainingBaseSingle + interHitHealsCount * liturgyHealPerStack)
+    : mainTankRemainingBaseSingle;
+
+  // Ensure the final heal from the last hit appears in the After Healing bar even if Liturgy was precast (inherited)
+  const liturgyDirectOnParty = partyHealingAbilities.some(m => m.id === LITURGY_ID);
+  const liturgyDirectOnMainTank = mainTankHealingAbilities.some(m => m.id === LITURGY_ID);
+  const liturgyDirectOnOffTank = offTankHealingAbilities.some(m => m.id === LITURGY_ID);
+
+  const partyHealingAmountAdjusted = partyHealingAmount + ((liturgyActiveParty && !liturgyDirectOnParty) ? liturgyHealPerStack : 0);
+  const mainTankHealingAmountAdjusted = mainTankHealingAmount + ((liturgyActiveMT && !liturgyDirectOnMainTank) ? liturgyHealPerStack : 0);
+  const offTankHealingAmountAdjusted = offTankHealingAmount + ((liturgyActiveOT && !liturgyDirectOnOffTank) ? liturgyHealPerStack : 0);
+
 
   return (
     <BossAction
@@ -985,7 +710,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                     {/* Main Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
+                        label={`MT (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={mainTankMaxHealthEffective}
                         currentHealth={mainTankMaxHealthEffective}
                         damageAmount={unmitigatedDamage}
@@ -998,10 +723,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                       />
                       {/* Main Tank Healing Health Bar - Always show */}
                       <HealingHealthBar
-                        label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                        label={`MT (${tankPositions.mainTank || 'N/A'})`}
                         maxHealth={mainTankMaxHealthEffective}
-                        remainingHealth={Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - mainTankBarrierAmount) * (1 - mainTankMitigationPercentage))}
-                        healingAmount={mainTankHealingAmount}
+                        remainingHealth={mainTankRemainingAfterDamageWithLiturgy}
+                        healingAmount={mainTankHealingAmountAdjusted}
                         barrierAmount={0} // Barriers are already accounted for in remaining health
                         isTankBuster={true}
                         tankPosition="mainTank"
@@ -1015,7 +740,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                     {/* Off Tank - show "N/A" if no tank is selected */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <HealthBar
-                        label={`Off Tank After Damage (${tankPositions.offTank || 'N/A'})`}
+                        label={`OT (${tankPositions.offTank || 'N/A'})`}
                         maxHealth={offTankMaxHealthEffective}
                         currentHealth={offTankMaxHealthEffective}
                         damageAmount={unmitigatedDamage}
@@ -1028,10 +753,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                       />
                       {/* Off Tank Healing Health Bar - Always show */}
                       <HealingHealthBar
-                        label={`Off Tank After Healing (${tankPositions.offTank || 'N/A'})`}
+                        label={`OT (${tankPositions.offTank || 'N/A'})`}
                         maxHealth={offTankMaxHealthEffective}
-                        remainingHealth={Math.max(0, offTankMaxHealthEffective - Math.max(0, unmitigatedDamage - offTankBarrierAmount) * (1 - offTankMitigationPercentage))}
-                        healingAmount={offTankHealingAmount}
+                        remainingHealth={offTankRemainingAfterDamageWithLiturgy}
+                        healingAmount={offTankHealingAmountAdjusted}
                         barrierAmount={0} // Barriers are already accounted for in remaining health
                         isTankBuster={true}
                         tankPosition="offTank"
@@ -1043,7 +768,7 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                   /* For single-target tank busters, only show the Main Tank health bar */
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <HealthBar
-                      label={`Main Tank After Damage (${tankPositions.mainTank || 'N/A'})`}
+                      label={`MT (${tankPositions.mainTank || 'N/A'})`}
                       maxHealth={mainTankMaxHealthEffective}
                       currentHealth={mainTankMaxHealthEffective}
                       damageAmount={unmitigatedDamage}
@@ -1055,10 +780,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                     />
                     {/* Main Tank Healing Health Bar for single tank busters - Always show */}
                     <HealingHealthBar
-                      label={`Main Tank After Healing (${tankPositions.mainTank || 'N/A'})`}
+                      label={`MT (${tankPositions.mainTank || 'N/A'})`}
                       maxHealth={mainTankMaxHealthEffective}
-                      remainingHealth={Math.max(0, mainTankMaxHealthEffective - Math.max(0, unmitigatedDamage - (tankPositions.mainTank ? mainTankBarrierAmount : tankBarrierAmount)) * (1 - (tankPositions.mainTank ? mainTankMitigationPercentage : mitigationPercentage)))}
-                      healingAmount={mainTankHealingAmount}
+                      remainingHealth={mainTankRemainingAfterDamageWithLiturgySingle}
+                      healingAmount={mainTankHealingAmountAdjusted}
                       barrierAmount={0} // Barriers are already accounted for in remaining health
                       isTankBuster={true}
                       tankPosition="mainTank"
@@ -1072,9 +797,9 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <HealthBar
-                  label="Party After Damage"
-                  maxHealth={baseHealth.party}
-                  currentHealth={baseHealth.party}
+                  label="After Damage"
+                  maxHealth={partyBaseMaxHealth}
+                  currentHealth={partyBaseMaxHealth}
                   damageAmount={unmitigatedDamage}
                   barrierAmount={partyBarrierAmount}
                   isTankBuster={false}
@@ -1083,10 +808,10 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
                 />
                 {/* Party Healing Health Bar - Always show */}
                 <HealingHealthBar
-                  label="Party After Healing"
-                  maxHealth={baseHealth.party}
-                  remainingHealth={Math.max(0, baseHealth.party - Math.max(0, unmitigatedDamage - partyBarrierAmount) * (1 - mitigationPercentage))}
-                  healingAmount={partyHealingAmount}
+                  label="After Healing"
+                  maxHealth={partyBaseMaxHealth}
+                  remainingHealth={partyRemainingAfterDamageWithLiturgy}
+                  healingAmount={partyHealingAmountAdjusted}
                   barrierAmount={0} // Barriers are already accounted for in remaining health
                   isTankBuster={false}
                 />

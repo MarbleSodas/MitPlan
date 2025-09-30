@@ -1,45 +1,18 @@
 import React from 'react';
-import styled from 'styled-components';
+import { useTheme } from '../../contexts/ThemeContext';
 
-const Header = styled.header`
-  text-align: center;
-  margin-bottom: ${props => props.theme.spacing.xlarge};
-  display: flex;
-  flex-direction: column;
-  position: relative;
-
-
-  h1 {
-    font-size: ${props => props.theme.fontSizes.responsive.xxxlarge};
-
-
-  }
-
-  p {
-    font-size: ${props => props.theme.fontSizes.responsive.medium};
-
-
-  }
-`;
-
-const HeaderTop = styled.div`
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-  padding: ${props => props.theme.spacing.medium} 0;
-
-
-`;
-
-export const HeaderLayout = ({ title, description, topLeftContent, topRightContent }) => (
-  <Header>
-    <HeaderTop>
-      {topLeftContent}
-      {topRightContent}
-    </HeaderTop>
-    <h1>{title}</h1>
-    <p>{description}</p>
-  </Header>
-);
+export const HeaderLayout = ({ title, description, topLeftContent, topRightContent }) => {
+  const { theme } = useTheme();
+  return (
+    <header className="text-center flex flex-col relative mb-[var(--space-xlarge)]">
+      <div className="flex justify-between gap-2 py-[var(--space-medium)]">
+        {topLeftContent}
+        {topRightContent}
+      </div>
+      <h1 className="text-[var(--fs-r-xxxlarge)]">{title}</h1>
+      <p className="text-[var(--fs-r-medium)]">{description}</p>
+    </header>
+  );
+};
 
 export default HeaderLayout;

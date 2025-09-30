@@ -304,7 +304,7 @@
     {
     "id": "hi-nrg_fever_1",
     "name": "Hi-NRG Fever",
-    "time": 605,
+    "time": 606,
     "description": "Enrage sequence. A series of high-damage raid-wide hits that will wipe the party if the boss is not defeated in time.",
     "unmitigatedDamage": "9999999",
     "damageType": "magical",

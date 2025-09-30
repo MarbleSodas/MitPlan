@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import { Plus, FileText, Calendar, User, Trash2, Edit, Check, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast/Toast';
@@ -16,326 +15,12 @@ import AnonymousPlanCreator from './AnonymousPlanCreator';
 import { BossSelectionModal, UserProfile } from '../dashboard';
 import Footer from '../layout/Footer';
 
-const DashboardContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
 
-const Header = styled.div`
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-  }
-`;
 
-const HeaderContent = styled.div`
-  flex: 1;
-`;
 
-const Title = styled.h1`
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
-  font-weight: 600;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-`;
 
-const Subtitle = styled.p`
-  margin: 0;
-  font-size: 1rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-`;
 
-const UserSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  @media (max-width: 768px) {
-    justify-content: flex-start;
-  }
-`;
-
-const PlansSection = styled.div`
-  margin-bottom: 3rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-`;
-
-const SectionTitle = styled.h2`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-`;
-
-const PlanCount = styled.span`
-  background: ${props => props.theme?.colors?.primaryBackground || '#eff6ff'};
-  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-`;
-
-const ActionsBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-  }
-`;
-
-const Button = styled.button`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: ${props => props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-  
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.primaryHover || '#2980b9'};
-  }
-`;
-
-const PlansGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-`;
-
-const PlanCard = styled.div`
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e0e0e0'};
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  
-  &:hover {
-    border-color: ${props => props.theme?.colors?.primary || '#3399ff'};
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const PlanTitleRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-`;
-
-const PlanTitle = styled.h3`
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  flex: 1;
-`;
-
-const HeaderEditButton = styled.button`
-  background: transparent;
-  border: none;
-  color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  cursor: pointer;
-  padding: 0.375rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  opacity: 0.7;
-
-  &:hover {
-    opacity: 1;
-    background: ${props => props.theme?.colors?.primaryLight || 'rgba(51, 153, 255, 0.1)'};
-    transform: scale(1.05);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-`;
-
-const PlanNameInput = styled.input`
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border: 2px solid ${props => props.theme?.colors?.primary || '#3399ff'};
-  border-radius: 6px;
-  padding: 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  width: 100%;
-  outline: none;
-  font-family: inherit;
-
-  &:focus {
-    border-color: ${props => props.theme?.colors?.primaryHover || '#2980b9'};
-    box-shadow: 0 0 0 3px rgba(51, 153, 255, 0.1);
-  }
-`;
-
-const EditActions = styled.div`
-  display: flex;
-  gap: 0.25rem;
-  margin-left: 0.5rem;
-`;
-
-const EditActionButton = styled.button`
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.hover || '#f5f5f5'};
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-`;
-
-const SaveButton = styled(EditActionButton)`
-  color: ${props => props.theme?.colors?.success || '#10b981'};
-
-  &:hover {
-    background: rgba(16, 185, 129, 0.1);
-  }
-`;
-
-const CancelButton = styled(EditActionButton)`
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-
-  &:hover {
-    background: rgba(102, 102, 102, 0.1);
-  }
-`;
-
-const PlanMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-`;
-
-const PlanActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-`;
-
-const SmallButton = styled(Button)`
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-`;
-
-const SecondaryButton = styled(SmallButton)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.hover || '#f5f5f5'};
-  }
-`;
-
-const DangerButton = styled(SmallButton)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.error || '#e74c3c'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.error || '#e74c3c'};
-    color: white;
-  }
-`;
-
-const SectionEmptyState = styled.div`
-  text-align: center;
-  padding: 2rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-  background: ${props => props.theme?.colors?.backgroundSecondary || '#f8fafc'};
-  border-radius: 8px;
-  border: 1px dashed ${props => props.theme?.colors?.border || '#e2e8f0'};
-`;
-
-const SectionEmptyText = styled.p`
-  font-size: 0.875rem;
-  margin: 0;
-  font-style: italic;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem 1rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-`;
-
-const EmptyStateIcon = styled.div`
-  margin-bottom: 1rem;
-  color: ${props => props.theme?.colors?.textTertiary || '#999999'};
-`;
-
-const Modal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-`;
 
 const AnonymousDashboard = () => {
   const navigate = useNavigate();
@@ -488,60 +173,60 @@ const AnonymousDashboard = () => {
 
   return (
     <>
-      <DashboardContainer>
-      <Header>
-        <HeaderContent>
-          <Title>
+      <div className="max-w-6xl mx-auto p-6 md:p-8">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex-1">
+          <h1 className="m-0 mb-2 text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-3">
             <User size={32} />
             Anonymous Dashboard
-          </Title>
-          <Subtitle>
+          </h1>
+          <p className="m-0 text-gray-600 dark:text-gray-400">
             Your plans are stored locally in your browser.
-          </Subtitle>
-        </HeaderContent>
-        <UserSection>
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           <UserProfile />
-        </UserSection>
-      </Header>
+        </div>
+      </div>
 
 
 
-      <ActionsBar>
+      <div className="flex items-center justify-between mb-6 gap-4 flex-col md:flex-row">
         <div>
           <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Your Plans ({categorizedPlans.totalPlans})</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <PrimaryButton onClick={handleCreatePlanByBoss}>
+          <button className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" onClick={handleCreatePlanByBoss}>
             <Plus size={16} />
             Create New Plan
-          </PrimaryButton>
+          </button>
         </div>
-      </ActionsBar>
+      </div>
 
       {loading ? (
         <div>Loading plans...</div>
       ) : categorizedPlans.totalPlans === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>
+        <div className="text-center p-6 text-gray-600 dark:text-gray-400">
+          <div className="mb-4 text-gray-400">
             <FileText size={48} />
-          </EmptyStateIcon>
+          </div>
           <h3>No plans yet</h3>
           <p>Create your first mitigation plan to get started.</p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
-            <PrimaryButton onClick={handleCreatePlanByBoss}>
+          <div className="flex gap-4 justify-center flex-wrap mt-4">
+            <button className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" onClick={handleCreatePlanByBoss}>
               <Plus size={16} />
               Create Your First Plan
-            </PrimaryButton>
+            </button>
           </div>
-        </EmptyState>
+        </div>
       ) : (
         <>
           {/* My Plans Section */}
-          <PlansSection>
-            <SectionHeader>
-              <SectionTitle>My Plans</SectionTitle>
-              <PlanCount>{categorizedPlans.ownedPlans.length}</PlanCount>
-            </SectionHeader>
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 m-0">My Plans</h2>
+              <span className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">{categorizedPlans.ownedPlans.length}</span>
+            </div>
 
             {categorizedPlans.ownedPlans.length === 0 ? (
               <SectionEmptyState>
@@ -550,13 +235,13 @@ const AnonymousDashboard = () => {
                 </SectionEmptyText>
               </SectionEmptyState>
             ) : (
-              <PlansGrid>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {categorizedPlans.ownedPlans.map((plan) => (
-                  <PlanCard key={plan.id} onClick={() => handleEditPlan(plan.id)}>
-                    <PlanTitleRow>
+                  <div key={plan.id} onClick={() => handleEditPlan(plan.id)} className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 transition hover:shadow-md hover:border-blue-500 cursor-pointer">
+                    <div className="flex items-center gap-3 mb-2">
                       {editingPlanId === plan.id ? (
                         <>
-                          <PlanNameInput
+                          <input className="bg-white dark:bg-neutral-900 border-2 border-blue-500 rounded-md p-2 text-lg font-semibold text-gray-900 dark:text-gray-100 w-full outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
                             onKeyDown={(e) => handleNameKeyPress(e, plan.id)}
@@ -565,8 +250,8 @@ const AnonymousDashboard = () => {
                             disabled={savingName}
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <EditActions>
-                            <SaveButton
+                          <div className="flex gap-1 ml-2">
+                            <button className="text-green-600 hover:bg-green-100 p-1 rounded"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSaveName(plan.id);
@@ -575,8 +260,8 @@ const AnonymousDashboard = () => {
                               title="Save name"
                             >
                               <Check size={12} />
-                            </SaveButton>
-                            <CancelButton
+                            </button>
+                            <button className="text-gray-500 hover:bg-gray-100 p-1 rounded"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCancelEditName();
@@ -585,13 +270,13 @@ const AnonymousDashboard = () => {
                               title="Cancel"
                             >
                               <X size={12} />
-                            </CancelButton>
-                          </EditActions>
+                            </button>
+                          </div>
                         </>
                       ) : (
                         <>
-                          <PlanTitle>{plan.name}</PlanTitle>
-                          <HeaderEditButton
+                          <h3 className="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100 flex-1">{plan.name}</h3>
+                          <button className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 p-1 rounded opacity-70 hover:opacity-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleStartEditName(plan.id, plan.name);
@@ -600,11 +285,11 @@ const AnonymousDashboard = () => {
                             title="Edit plan name"
                           >
                             <Edit size={16} />
-                          </HeaderEditButton>
+                          </button>
                         </>
                       )}
-                    </PlanTitleRow>
-                    <PlanMeta>
+                    </div>
+                    <div className="flex flex-col gap-1 mb-4 text-sm text-gray-600 dark:text-gray-400">
                       <div>Boss: {plan.bossId}</div>
                       <div>
                         <Calendar size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
@@ -614,23 +299,23 @@ const AnonymousDashboard = () => {
                         <Calendar size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
                         Updated: {formatDate(plan.updatedAt)}
                       </div>
-                    </PlanMeta>
+                    </div>
 
-                    <PlanActions onClick={(e) => e.stopPropagation()}>
-                      <SecondaryButton onClick={() => handleEditPlan(plan.id)}>
+                    <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
+                      <button className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800 flex items-center gap-1" onClick={() => handleEditPlan(plan.id)}>
                         <Edit size={14} />
                         Edit
-                      </SecondaryButton>
-                      <DangerButton onClick={() => handleDeletePlan(plan.id, plan.name)}>
+                      </button>
+                      <button className="px-3 py-2 rounded-md text-red-600 hover:bg-red-600 hover:text-white flex items-center gap-1" onClick={() => handleDeletePlan(plan.id, plan.name)}>
                         <Trash2 size={14} />
                         Delete
-                      </DangerButton>
-                    </PlanActions>
-                  </PlanCard>
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </PlansGrid>
+              </div>
             )}
-          </PlansSection>
+          </div>
 
           {/* Note: Anonymous users don't have shared plans since they only work with localStorage */}
         </>
@@ -644,17 +329,17 @@ const AnonymousDashboard = () => {
       )}
 
       {showCreateModal && (
-        <Modal onClick={handleCreateModalClose}>
-          <div onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4" onClick={handleCreateModalClose}>
+          <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-4" onClick={(e) => e.stopPropagation()}>
             <AnonymousPlanCreator
               onCancel={handleCreateModalClose}
               onSuccess={handlePlanCreated}
               preSelectedBossId={selectedBossForPlan}
             />
           </div>
-        </Modal>
+        </div>
       )}
-    </DashboardContainer>
+    </div>
     <Footer />
   </>
   );

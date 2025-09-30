@@ -1,44 +1,23 @@
 import React from 'react';
-import styled from 'styled-components';
 
-const KofiLink = styled.a`
-  display: inline-block;
-  transition: transform 0.2s ease;
-  border-radius: 16px;
-  height: 36px;
-  overflow: hidden; // Ensures the border-radius applies to the image
-  box-shadow: ${props => props.theme.shadows.small};
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.medium};
-  }
 
-  &:active {
-    transform: translateY(0);
-  }
-
-  img {
-    display: block;
-    height: 100%;
-    width: auto;
-    border: 0;
-  }
-`;
 
 const KofiButton = () => {
   return (
-    <KofiLink
+    <a
       href="https://ko-fi.com/marblesodas"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Support me on Ko-fi"
+      className="inline-block h-9 rounded-[16px] overflow-hidden shadow-sm transition-transform duration-200 ease-in-out hover:-translate-y-0.5 active:translate-y-0"
     >
       <img
         src="https://storage.ko-fi.com/cdn/kofi6.png?v=6"
         alt="Buy Me a Coffee at ko-fi.com"
+        className="block h-full w-auto border-0"
       />
-    </KofiLink>
+    </a>
   );
 };
 

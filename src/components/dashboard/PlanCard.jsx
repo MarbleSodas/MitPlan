@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { Share2, Edit2, Check, X } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
 import { useToast } from '../common/Toast';
@@ -7,245 +6,117 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
 import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 
-const Card = styled.div`
-  background: ${props => props.theme?.colors?.cardBackground || '#ffffff'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  min-width: 0;
+const Card = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6 shadow transition-all min-w-0 hover:shadow-lg hover:-translate-y-0.5 ${className}`}
+  >
+    {children}
+  </div>
+);
 
-  &:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-  }
+const CardHeader = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex justify-between items-start mb-4 ${className}`}>{children}</div>
+);
 
-`;
+const PlanNameContainer = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex items-center gap-2 flex-1 min-w-0 ${className}`}>{children}</div>
+);
 
-const CardHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-`;
+const PlanName = ({ children, className = '', ...rest }) => (
+  <h3 {...rest} className={`text-[1.25rem] font-semibold m-0 leading-snug flex-1 min-w-0 break-words ${className}`}>{children}</h3>
+);
 
-const PlanNameContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-`;
+const PlanNameInput = ({ className = '', ...rest }) => (
+  <input
+    {...rest}
+    className={`text-[1.25rem] font-semibold m-0 leading-snug flex-1 min-w-0 bg-[var(--color-cardBackground)] border-2 border-[var(--color-primary)] rounded px-2 py-1 outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_3px_rgba(51,153,255,0.15)] ${className}`}
+  />
+);
 
-const PlanName = styled.h3`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  line-height: 1.3;
-  flex: 1;
-  min-width: 0;
-  word-break: break-word;
-`;
+const EditButton = ({ children, className = '', ...rest }) => (
+  <button
+    {...rest}
+    className={`bg-transparent border-0 text-[var(--color-textSecondary)] cursor-pointer p-1 rounded flex items-center justify-center transition-colors flex-shrink-0 hover:bg-[var(--select-bg)] hover:text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+  >
+    {children}
+  </button>
+);
 
-const PlanNameInput = styled.input`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  line-height: 1.3;
-  flex: 1;
-  min-width: 0;
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border: 2px solid ${props => props.theme?.colors?.primary || '#3b82f6'};
-  border-radius: 4px;
-  padding: 0.25rem 0.5rem;
-  outline: none;
+const EditActions = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex gap-1 ${className}`}>{children}</div>
+);
 
-  &:focus {
-    border-color: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
+const SaveButton = (props) => (
+  <EditButton
+    {...props}
+    className={`text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 ${props.className || ''}`}
+  />
+);
 
-const EditButton = styled.button`
-  background: transparent;
-  border: none;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+const CancelButton = (props) => (
+  <EditButton
+    {...props}
+    className={`text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 ${props.className || ''}`}
+  />
+);
 
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
-    color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  }
+const BossName = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`text-sm text-[var(--color-textSecondary)] mt-2 ${className}`}>{children}</div>
+);
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
+const CardActions = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex flex-wrap gap-3 mt-4 ${className}`}>{children}</div>
+);
 
-const EditActions = styled.div`
-  display: flex;
-  gap: 0.25rem;
-`;
+const Button = ({ children, className = '', ...rest }) => (
+  <button
+    {...rest}
+    className={`px-4 py-2 rounded-md text-sm font-semibold cursor-pointer transition-all min-h-[44px] flex items-center justify-center whitespace-nowrap flex-1 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+  >
+    {children}
+  </button>
+);
 
-const SaveButton = styled(EditButton)`
-  color: ${props => props.theme?.colors?.success || '#10b981'};
+const PrimaryButton = ({ children, className = '', ...rest }) => (
+  <Button {...rest} className={`bg-[var(--color-primary)] text-[var(--color-buttonText)] hover:brightness-110 hover:-translate-y-0.5 hover:shadow ${className}`}>{children}</Button>
+);
 
-  &:hover:not(:disabled) {
-    background: rgba(16, 185, 129, 0.1);
-  }
-`;
+const SecondaryButton = ({ children, className = '', ...rest }) => (
+  <Button {...rest} className={`bg-transparent text-[var(--color-textSecondary)] border border-[var(--color-border)] hover:bg-[var(--select-bg)] hover:text-[var(--color-text)] hover:-translate-y-0.5 ${className}`}>{children}</Button>
+);
 
-const CancelButton = styled(EditButton)`
-  color: ${props => props.theme?.colors?.error || '#ef4444'};
+const DangerButton = ({ children, className = '', ...rest }) => (
+  <Button {...rest} className={`bg-red-500 text-white border border-red-500 hover:bg-red-600 hover:border-red-600 hover:-translate-y-0.5 hover:shadow ${className}`}>{children}</Button>
+);
 
-  &:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.1);
-  }
-`;
+const MetaInfo = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex flex-col gap-2 mt-4 pt-4 border-t border-[var(--color-border)] text-xs text-[var(--color-textSecondary)] ${className}`}>{children}</div>
+);
 
-const BossName = styled.div`
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-`;
+const MetaRow = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex justify-between items-center ${className}`}>{children}</div>
+);
 
-const CardActions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1rem;
+const CreatorInfo = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`text-center italic text-[var(--color-primary)] font-medium ${className}`}>{children}</div>
+);
 
-`;
+const ConfirmDialog = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] ${className}`}>{children}</div>
+);
 
-const Button = styled.button`
-  padding: 0.625rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  flex: 1;
+const ConfirmContent = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`bg-[var(--color-cardBackground)] p-8 rounded-xl max-w-[400px] w-[90%] ${className}`}>{children}</div>
+);
 
+const ConfirmTitle = ({ children, className = '', ...rest }) => (
+  <h3 {...rest} className={`text-[var(--color-text)] m-0 mb-4 text-lg font-semibold ${className}`}>{children}</h3>
+);
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-  }
-
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.hoverBackground || '#f9fafb'};
-    color: ${props => props.theme?.colors?.text || '#333333'};
-    border-color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    transform: translateY(-1px);
-  }
-`;
-
-const DangerButton = styled(Button)`
-  background: ${props => props.theme?.colors?.error || '#ef4444'} !important;
-  color: white;
-  border: 1px solid ${props => props.theme?.colors?.error || '#ef4444'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.errorHover || '#dc2626'};
-    border-color: ${props => props.theme?.colors?.errorHover || '#dc2626'};
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-  }
-
-`;
-
-const MetaInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  font-size: 0.8rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-`;
-
-const MetaRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const CreatorInfo = styled.div`
-  text-align: center;
-  font-style: italic;
-  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  font-weight: 500;
-`;
-
-const ConfirmDialog = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ConfirmContent = styled.div`
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  padding: 2rem;
-  border-radius: 12px;
-  max-width: 400px;
-  width: 90%;
-`;
-
-const ConfirmTitle = styled.h3`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  margin: 0 0 1rem 0;
-`;
-
-const ConfirmActions = styled.div`
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-`;
+const ConfirmActions = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex gap-4 justify-end mt-6 ${className}`}>{children}</div>
+);
 
 const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();

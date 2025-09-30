@@ -780,7 +780,7 @@ export const mitigationAbilities = [
     duration: 20,
     cooldown: 180,
     jobs: ['WHM'],
-    icon: '/abilities-official/liturgy_of_the_bell.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Liturgy_of_the_Bell.png',
     type: 'healing',
     healingPotency: 400, // Estimated healing potency
     healingType: 'triggered',
@@ -1016,6 +1016,117 @@ export const mitigationAbilities = [
     targetsTank: true,
     scaleBarrierWithHealing: true // This shield scales with healing potency buffs
   },
+
+  {
+    id: 'asylum',
+    name: 'Asylum',
+    description: 'Envelops a designated area in a field of healing.',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Creates a healing area that restores HP over time for 24s'
+    },
+    duration: 24,
+    cooldown: 90,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Asylum.png',
+    type: 'healing',
+    healingPotency: 0,
+    regenPotency: 100,
+    healingType: 'regen',
+    regenDuration: 24,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'area',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'cure_iii',
+    name: 'Cure III',
+    description: 'Restores target and nearby party members\' HP with a potent cure',
+    levelRequirement: 50,
+    levelDescriptions: {
+      50: 'Restores HP of target and nearby party members with 600 potency'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure_III.png',
+    type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'afflatus_solace',
+    name: 'Afflatus Solace',
+    description: 'Restores target\'s HP. Can only be executed while in possession of a Lily.',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Restores target\'s HP with 600 potency. Consumes 1 Lily.'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Solace.png',
+    type: 'healing',
+    healingPotency: 600,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    consumesLily: true
+  },
+  {
+    id: 'afflatus_rapture',
+    name: 'Afflatus Rapture',
+    description: 'Restores own HP and that of all nearby party members. Consumes a Lily.',
+    levelRequirement: 76,
+    levelDescriptions: {
+      76: 'Restores own HP and the HP of all nearby party members with 300 potency. Consumes 1 Lily.'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Rapture.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    consumesLily: true
+  },
+  {
+    id: 'assize',
+    name: 'Assize',
+    description: 'Restores own HP and the HP of all nearby party members.',
+    levelRequirement: 56,
+    levelDescriptions: {
+      56: 'Restores own HP and the HP of all nearby party members with 400 potency'
+    },
+    duration: 0,
+    cooldown: 40,
+    jobs: ['WHM'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Assize.png',
+    type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+
   {
     id: 'aetherflow',
     name: 'Aetherflow',
@@ -1304,7 +1415,7 @@ export const mitigationAbilities = [
     description: 'Restores own HP and the HP of all nearby party members. Also grants a barrier.',
     levelRequirement: 80,
     levelDescriptions: {
-      80: 'Restores HP of all nearby party members with 200 potency and grants a barrier equivalent to 200 potency. 2 charges. Usable while Seraph is summoned.'
+      80: 'Restores HP of all nearby party members with 250 potency and grants a barrier equivalent to 250 potency. 2 charges. Usable while Seraph is summoned.'
     },
     duration: 30,
     cooldown: 30,
@@ -1312,9 +1423,9 @@ export const mitigationAbilities = [
     jobs: ['SCH'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Consolation.png',
     type: 'healing',
-    healingPotency: 200,
+    healingPotency: 250,
     healingType: 'instant',
-    barrierFlatPotency: 200,
+    barrierFlatPotency: 250,
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
@@ -1326,10 +1437,10 @@ export const mitigationAbilities = [
   {
     id: 'expedient',
     name: 'Expedient',
-    description: 'Increases movement speed and reduces damage taken by 10%',
+    description: 'Increases movement speed for 10s and reduces damage taken by 10%',
     levelRequirement: 90,
     levelDescriptions: {
-      90: 'Increases movement speed and reduces damage taken by 10% for 20s'
+      90: 'Increases movement speed for 10s and reduces damage taken by 10% for 20s'
     },
     duration: 20,
     cooldown: 120,
@@ -1345,10 +1456,10 @@ export const mitigationAbilities = [
   {
     id: 'seraphism',
     name: 'Seraphism',
-    description: 'Increases healing magic potency by 20% and grants a barrier that absorbs damage equal to 10% of HP healed',
+    description: 'Gradually restores the HP of self and all party members within a radius of 50 yalms.',
     levelRequirement: 100,
     levelDescriptions: {
-      100: 'Increases healing magic potency by 20% and grants a barrier that absorbs damage equal to 10% of HP healed for 20s'
+      100: 'Gradually restores the HP of self and all party members within a radius of 50 yalms.'
     },
     duration: 20,
     cooldown: 180,

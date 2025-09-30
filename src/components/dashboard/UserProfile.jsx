@@ -1,173 +1,89 @@
 import { useState } from 'react';
-import styled from 'styled-components';
 import { Edit3 } from 'lucide-react';
 import { updateProfile } from 'firebase/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../config/firebase';
 
-const ProfileContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+const ProfileContainer = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`group flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 ${className}`}
+  >
+    {children}
+  </div>
+);
 
-  &:hover {
-    background-color: ${props => props.theme?.colors?.backgroundSecondary || 'rgba(0, 0, 0, 0.05)'};
-  }
+const UserAvatar = ({ children, className = '', color, ...rest }) => (
+  <div
+    {...rest}
+    style={{ backgroundColor: color }}
+    className={`w-10 h-10 rounded-full text-white font-semibold text-sm flex items-center justify-center flex-shrink-0 ${className}`}
+  >
+    {children}
+  </div>
+);
 
-`;
+const UserInfo = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex flex-col min-w-0 ${className}`}>{children}</div>
+);
 
-const UserAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: ${props => props.color || '#3399ff'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-  flex-shrink: 0;
-
-`;
-
-const UserInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-`;
-
-const DisplayName = styled.span`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-weight: 500;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-`;
+const DisplayName = ({ children, className = '', ...rest }) => (
+  <span {...rest} className={`text-neutral-900 dark:text-neutral-100 font-medium text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis ${className}`}>{children}</span>
+);
 
 
-const EditIcon = styled(Edit3)`
-  width: 14px;
-  height: 14px;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  opacity: 0;
-  transition: opacity 0.2s ease;
-
-  ${ProfileContainer}:hover & {
-    opacity: 1;
-  }
-
-`;
+const EditIcon = (props) => (
+  <Edit3 {...props} className={`w-[14px] h-[14px] text-neutral-500 opacity-0 transition-opacity group-hover:opacity-100 ${props.className || ''}`} />
+);
 
 // Modal styles
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-`;
+const ModalOverlay = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 ${className}`}>{children}</div>
+);
 
-const ModalContent = styled.div`
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border-radius: 12px;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border: 1px solid ${props => props.theme?.colors?.border || '#e5e7eb'};
-`;
+const ModalContent = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`bg-white dark:bg-neutral-800 rounded-xl p-6 w-full max-w-[400px] shadow-xl border border-neutral-200 dark:border-neutral-700 ${className}`}>{children}</div>
+);
 
-const ModalTitle = styled.h3`
-  margin: 0 0 1rem 0;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.25rem;
-  font-weight: 600;
-`;
+const ModalTitle = ({ children, className = '', ...rest }) => (
+  <h3 {...rest} className={`m-0 mb-4 text-neutral-900 dark:text-neutral-100 text-xl font-semibold ${className}`}>{children}</h3>
+);
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
+const Form = ({ children, className = '', ...rest }) => (
+  <form {...rest} className={`flex flex-col gap-4 ${className}`}>{children}</form>
+);
 
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 1px solid ${props => props.theme?.colors?.border || '#e5e7eb'};
-  border-radius: 8px;
-  font-size: 1rem;
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  color: ${props => props.theme?.colors?.text || '#333333'};
+const Input = ({ className = '', ...rest }) => (
+  <input
+    {...rest}
+    className={`px-3 py-3 border border-neutral-300 dark:border-neutral-600 rounded-lg text-base bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(51,153,255,0.125)] disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+  />
+);
 
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme?.colors?.primary || '#3399ff'};
-    box-shadow: 0 0 0 3px ${props => props.theme?.colors?.primary || '#3399ff'}20;
-  }
+const ButtonGroup = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`flex gap-3 justify-end ${className}`}>{children}</div>
+);
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
+const Button = ({ children, className = '', ...rest }) => (
+  <button
+    {...rest}
+    className={`px-4 py-3 rounded-lg font-medium cursor-pointer transition-all border-0 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+  >
+    {children}
+  </button>
+);
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-`;
+const PrimaryButton = ({ children, className = '', ...rest }) => (
+  <Button {...rest} className={`bg-blue-500 text-white hover:bg-blue-600 ${className}`}>{children}</Button>
+);
 
-const Button = styled.button`
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
+const SecondaryButton = ({ children, className = '', ...rest }) => (
+  <Button {...rest} className={`bg-transparent text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 ${className}`}>{children}</Button>
+);
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: ${props => props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.primaryHover || '#2980ff'};
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  border: 1px solid ${props => props.theme?.colors?.border || '#e5e7eb'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.backgroundSecondary || 'rgba(0, 0, 0, 0.05)'};
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: ${props => props.theme?.colors?.error || '#e74c3c'};
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-`;
+const ErrorMessage = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={`text-red-500 text-sm mt-2 ${className}`}>{children}</div>
+);
 
 // Generate a consistent color for a user based on their ID
 const generateUserColor = (userId) => {

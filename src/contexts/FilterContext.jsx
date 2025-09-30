@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
+import { useRealtimePlan } from './RealtimePlanContext';
+import { useRealtimeBossContext } from './RealtimeBossContext';
+import { bosses } from '../data';
+import { baseHealthValues } from '../data/bosses/bossData';
 
 // Create a context for the filter and controls state
 const FilterContext = createContext();
@@ -23,6 +27,10 @@ export const FilterProvider = ({ children }) => {
     const saved = loadFromLocalStorage('mitPlanShowPrecastOptions', null);
     return saved !== null ? saved : true;
   });
+
+  // Access plan and boss level for health-aware filtering
+  const { realtimePlan } = useRealtimePlan();
+  const { currentBossId, currentBossLevel } = useRealtimeBossContext();
 
   // Toggle the filter state
   const toggleFilterMode = useCallback(() => {
@@ -67,6 +75,22 @@ export const FilterProvider = ({ children }) => {
       return filteredMitigations;
     }
 
+    // If a party minimum health threshold is set and this is a raid-wide action,
+    // hide mitigations when the unmitigated damage would still leave the party at or above the threshold
+    if (!isTankBuster) {
+      const partyMin = realtimePlan?.healthSettings?.partyMinHealth;
+      if (partyMin && bossAction?.unmitigatedDamage) {
+        const dmg = parseInt(String(bossAction.unmitigatedDamage).replace(/[^0-9]/g, ''), 10) || 0;
+        const currentBoss = bosses.find(b => b.id === currentBossId) || null;
+        const basePartyHp = (currentBoss?.baseHealth?.party)
+          ?? (baseHealthValues[currentBossLevel] && baseHealthValues[currentBossLevel].party)
+          ?? baseHealthValues[100].party;
+        if ((basePartyHp - dmg) >= partyMin) {
+          return [];
+        }
+      }
+    }
+
     // Apply additional filtering based on boss action type when filter is enabled
     return filteredMitigations.filter(mitigation => {
       if (isTankBuster) {
@@ -77,7 +101,7 @@ export const FilterProvider = ({ children }) => {
         return mitigation.forRaidWide === true;
       }
     });
-  }, [showAllMitigations]);
+  }, [showAllMitigations, realtimePlan, currentBossLevel]);
 
   // Create the context value
   const contextValue = {

@@ -1,77 +1,34 @@
 import React from 'react';
-import styled from 'styled-components';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const ToggleButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  width: 36px;
-  background: transparent;
-  color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primary || '#3399ff'};
-    color: white;
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px ${props => props.theme?.colors?.primary || '#3b82f6'}33;
-  }
-
-  svg {
-    width: 20px;
-    height: 20px;
-    transition: all 0.3s ease;
-  }
-`;
-
-const IconWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  transform: ${props => props.$isVisible ? 'scale(1) rotate(0deg)' : 'scale(0) rotate(180deg)'};
-  opacity: ${props => props.$isVisible ? 1 : 0};
-  position: ${props => props.$isVisible ? 'static' : 'absolute'};
-`;
-
 const ThemeToggle = ({ className, showLabel = false }) => {
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, theme } = useTheme();
+
 
   return (
-    <ToggleButton 
-      onClick={toggleTheme} 
-      className={className}
+    <button
+      onClick={toggleTheme}
+      className={`flex items-center justify-center h-9 w-9 rounded-lg font-semibold cursor-pointer transition-all relative overflow-hidden focus:outline-none focus:ring-2 text-blue-500 hover:text-white hover:bg-blue-500` + (className ? ` ${className}` : '')}
       title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
     >
-      <IconWrapper $isVisible={!isDarkMode}>
-        <Sun />
-      </IconWrapper>
-      <IconWrapper $isVisible={isDarkMode}>
-        <Moon />
-      </IconWrapper>
+      <div
+        className={`flex items-center justify-center transition-all ${!isDarkMode ? 'scale-100 rotate-0 opacity-100 static' : 'scale-0 rotate-180 opacity-0 absolute'}`}
+      >
+        <Sun size={20} />
+      </div>
+      <div
+        className={`flex items-center justify-center transition-all ${isDarkMode ? 'scale-100 rotate-0 opacity-100 static' : 'scale-0 rotate-180 opacity-0 absolute'}`}
+      >
+        <Moon size={20} />
+      </div>
       {showLabel && (
-        <span style={{ marginLeft: '8px', fontSize: '14px' }}>
+        <span className="ml-2 text-sm">
           {isDarkMode ? 'Dark' : 'Light'}
         </span>
       )}
-    </ToggleButton>
+    </button>
   );
 };
 

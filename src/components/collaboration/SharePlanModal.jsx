@@ -1,160 +1,12 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { Copy, Check, Share2, Users } from 'lucide-react';
+import { Copy, Check, Share2 } from 'lucide-react';
 import * as planService from '../../services/realtimePlanService';
 import { useToast } from '../common/Toast';
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-`;
-
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-`;
-
-const Title = styled.h2`
-  margin: 0;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.5rem;
-  font-weight: 600;
-`;
-
-const Description = styled.p`
-  margin: 0 0 1.5rem 0;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  line-height: 1.5;
-`;
-
-const ShareSection = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const SectionTitle = styled.h3`
-  margin: 0 0 0.75rem 0;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1rem;
-  font-weight: 600;
-`;
-
-const UrlContainer = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`;
-
-const UrlInput = styled.input`
-  flex: 1;
-  padding: 0.75rem;
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  border-radius: 8px;
-  font-size: 0.875rem;
-  background: ${props => props.theme?.colors?.backgroundSecondary || '#f8f9fa'};
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  }
-`;
-
-const CopyButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: ${props => props.copied ? '#10b981' : props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 100px;
-  justify-content: center;
-
-  &:hover {
-    background: ${props => props.copied ? '#059669' : props.theme?.colors?.primaryHover || '#2980ff'};
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const StatusMessage = styled.div`
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-  
-  &.success {
-    background: ${props => props.theme?.colors?.successBackground || '#f0f9ff'};
-    color: ${props => props.theme?.colors?.success || '#10b981'};
-    border: 1px solid ${props => props.theme?.colors?.successBorder || '#bfdbfe'};
-  }
-  
-  &.error {
-    background: ${props => props.theme?.colors?.errorBackground || '#fef2f2'};
-    color: ${props => props.theme?.colors?.error || '#ef4444'};
-    border: 1px solid ${props => props.theme?.colors?.errorBorder || '#fecaca'};
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-`;
-
-const Button = styled.button`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.backgroundSecondary || '#f8f9fa'};
-  }
-`;
+import { useTheme } from '../../contexts/ThemeContext';
 
 const SharePlanModal = ({ isOpen, onClose, plan }) => {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const { addToast } = useToast();
   const [isPublic, setIsPublic] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
@@ -163,7 +15,6 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Generate share URL
   useEffect(() => {
     if (plan && isOpen) {
       const baseUrl = window.location.origin;
@@ -175,11 +26,9 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
 
   const handleMakePublic = async () => {
     if (!plan) return;
-
     setLoading(true);
     setError('');
     setSuccess('');
-
     try {
       await planService.makePlanPublic(plan.id, true);
       setIsPublic(true);
@@ -197,16 +46,8 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-
-      // Show success toast
-      addToast({
-        type: 'success',
-        title: 'Plan link copied!',
-        message: 'The plan link has been copied to your clipboard.',
-        duration: 3000
-      });
+      addToast({ type: 'success', title: 'Plan link copied!', message: 'The plan link has been copied to your clipboard.', duration: 3000 });
     } catch (err) {
-      // Fallback for browsers that don't support clipboard API
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
       document.body.appendChild(textArea);
@@ -215,14 +56,7 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
       document.body.removeChild(textArea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-
-      // Show success toast for fallback method
-      addToast({
-        type: 'success',
-        title: 'Plan link copied!',
-        message: 'The plan link has been copied to your clipboard.',
-        duration: 3000
-      });
+      addToast({ type: 'success', title: 'Plan link copied!', message: 'The plan link has been copied to your clipboard.', duration: 3000 });
     }
   };
 
@@ -236,66 +70,57 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
   if (!isOpen || !plan) return null;
 
   return (
-    <ModalOverlay onClick={handleClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <Header>
-          <Share2 size={24} color="#3399ff" />
-          <Title>Share Plan</Title>
-        </Header>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={handleClose}>
+      <div className="rounded-xl w-[90%] max-w-[500px] p-8" style={{ background: colors.background, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 mb-6">
+          <Share2 size={24} color={colors.primary || '#3399ff'} />
+          <h2 className="m-0 text-xl font-semibold" style={{ color: colors.text }}>Share Plan</h2>
+        </div>
 
-        <Description>
+        <p className="mb-6" style={{ color: colors.textSecondary, lineHeight: 1.5 }}>
           Share "{plan.name}" with others for collaborative editing. Anyone with the link will be able to view and edit this plan.
-        </Description>
+        </p>
 
-        <ShareSection>
-          <SectionTitle>Share Link</SectionTitle>
-          <Description>
-            Universal access enabled - all plans are shareable and editable by anyone.
-          </Description>
-          <UrlContainer>
-            <UrlInput
+        <div className="mb-6">
+          <h3 className="m-0 mb-2 text-base font-semibold" style={{ color: colors.text }}>Share Link</h3>
+          <p className="mb-4" style={{ color: colors.textSecondary }}>Universal access enabled - all plans are shareable and editable by anyone.</p>
+          <div className="flex gap-2 mb-4">
+            <input
               value={shareUrl}
               readOnly
               onClick={(e) => e.target.select()}
+              className="flex-1 rounded-lg text-sm"
+              style={{ padding: '0.75rem', border: `2px solid ${colors.border}`, background: colors.backgroundSecondary, color: colors.text }}
             />
-            <CopyButton
+            <button
               onClick={handleCopyUrl}
-              copied={copied}
+              className={`flex items-center gap-2 rounded-lg font-semibold text-sm min-w-[100px] justify-center transition ${copied ? 'bg-emerald-500 hover:bg-emerald-600' : ''}`}
+              style={{ padding: '0.75rem 1rem', background: copied ? undefined : colors.primary, color: '#fff', border: 'none' }}
             >
-              {copied ? (
-                <>
-                  <Check size={16} />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy size={16} />
-                  Copy
-                </>
-              )}
-            </CopyButton>
-          </UrlContainer>
-        </ShareSection>
+              {copied ? (<><Check size={16} />Copied!</>) : (<><Copy size={16} />Copy</>)}
+            </button>
+          </div>
+        </div>
 
         {error && (
-          <StatusMessage className="error">
+          <div className="mb-4 rounded-lg text-sm" style={{ padding: '0.75rem', background: colors.errorBackground || '#fef2f2', color: colors.error || '#ef4444', border: `1px solid ${colors.errorBorder || '#fecaca'}` }}>
             {error}
-          </StatusMessage>
+          </div>
         )}
 
         {success && (
-          <StatusMessage className="success">
+          <div className="mb-4 rounded-lg text-sm" style={{ padding: '0.75rem', background: colors.successBackground || '#f0f9ff', color: colors.success || '#10b981', border: `1px solid ${colors.successBorder || '#bfdbfe'}` }}>
             {success}
-          </StatusMessage>
+          </div>
         )}
 
-        <ButtonGroup>
-          <SecondaryButton onClick={handleClose}>
+        <div className="flex justify-end gap-3">
+          <button onClick={handleClose} className="rounded-lg font-semibold transition" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: colors.textSecondary, border: `2px solid ${colors.border}` }}>
             Close
-          </SecondaryButton>
-        </ButtonGroup>
-      </ModalContent>
-    </ModalOverlay>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

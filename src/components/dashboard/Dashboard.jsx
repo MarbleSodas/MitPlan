@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
 import unifiedPlanService from '../../services/unifiedPlanService';
@@ -14,181 +14,9 @@ import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
 
-const DashboardContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-`;
 
-const Title = styled.h1`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 2rem;
-  font-weight: 600;
-  margin: 0;
-`;
 
-const UserInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const UserName = styled.span`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-weight: 500;
-`;
-
-const LogoutButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  padding: 0 1rem;
-  background: ${props => props.theme?.colors?.error || '#ef4444'} !important;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.errorHover || '#dc2626'};
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-  }
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-`;
-
-const Button = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primaryHover || '#2563eb'};
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  border: 2px solid ${props => props.theme?.colors?.primary || '#3b82f6'};
-
-  &:hover {
-    background: ${props => props.theme?.colors?.primary || '#3b82f6'};
-    color: white;
-  }
-`;
-
-const PlansSection = styled.div`
-  margin-bottom: 3rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-`;
-
-const SectionTitle = styled.h2`
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-`;
-
-const PlanCount = styled.span`
-  background: ${props => props.theme?.colors?.primaryBackground || '#eff6ff'};
-  color: ${props => props.theme?.colors?.primary || '#3b82f6'};
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-`;
-
-const PlansGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
-
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 4rem 2rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-`;
-
-const EmptyStateTitle = styled.h3`
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const SectionEmptyState = styled.div`
-  text-align: center;
-  padding: 2rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-  background: ${props => props.theme?.colors?.backgroundSecondary || '#f8fafc'};
-  border-radius: 8px;
-  border: 1px dashed ${props => props.theme?.colors?.border || '#e2e8f0'};
-`;
-
-const SectionEmptyText = styled.p`
-  font-size: 0.875rem;
-  margin: 0;
-  font-style: italic;
-`;
-
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem;
-  font-size: 1.1rem;
-  color: ${props => props.theme?.colors?.textSecondary || '#6b7280'};
-`;
-
-const ErrorMessage = styled.div`
-  background: ${props => props.theme?.colors?.errorBackground || '#fef2f2'};
-  border: 1px solid ${props => props.theme?.colors?.errorBorder || '#fecaca'};
-  color: ${props => props.theme?.colors?.error || '#ef4444'};
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -293,9 +121,9 @@ const Dashboard = () => {
   if (loading) {
     return (
       <>
-        <DashboardContainer>
-          <LoadingSpinner>Loading your plans...</LoadingSpinner>
-        </DashboardContainer>
+        <div className="max-w-[1200px] mx-auto p-8">
+          <div className="flex items-center justify-center p-16 text-[1.1rem] text-[var(--color-textSecondary)]">Loading your plans...</div>
+        </div>
         <Footer />
       </>
     );
@@ -303,64 +131,64 @@ const Dashboard = () => {
 
   return (
     <>
-      <DashboardContainer>
-      <Header>
-        <Title>Mitigation Plans</Title>
-        <UserInfo>
+      <div className="max-w-[1200px] mx-auto p-8">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="m-0 text-2xl font-semibold text-[var(--color-text)]">Mitigation Plans</h1>
+        <div className="flex items-center gap-2">
           <UserProfile />
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <LogoutButton onClick={handleLogout}>
+          <button onClick={handleLogout} className="inline-flex h-9 items-center justify-center rounded-md bg-red-500 px-4 text-white text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-600">
             Sign Out
-          </LogoutButton>
-        </UserInfo>
-      </Header>
+          </button>
+        </div>
+      </div>
 
       {error && (
-        <ErrorMessage>
+        <div className="mb-8 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-4 text-[#ef4444]">
           Error: {error}
-        </ErrorMessage>
+        </div>
       )}
 
-      <ActionButtons>
-        <Button onClick={handleCreatePlanByBoss}>
+      <div className="mb-8 flex flex-wrap gap-4">
+        <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[var(--color-primary)] px-6 py-3 font-semibold text-[var(--color-buttonText)] shadow-sm transition-all hover:brightness-110">
           Create New Plan
-        </Button>
-        <SecondaryButton onClick={handleImportPlan}>
+        </button>
+        <button onClick={handleImportPlan} className="rounded-lg border-2 border-[var(--color-primary)] px-6 py-3 font-semibold text-[var(--color-primary)] transition-all hover:bg-[var(--color-primary)] hover:text-[var(--color-buttonText)]">
           Import Plan
-        </SecondaryButton>
-      </ActionButtons>
+        </button>
+      </div>
 
       {categorizedPlans.totalPlans === 0 ? (
-        <EmptyState>
-          <EmptyStateTitle>No Plans Yet</EmptyStateTitle>
-          <EmptyStateText>
+        <div className="text-center px-8 py-16 text-[var(--color-textSecondary)]">
+          <h3 className="mb-4 text-2xl text-[var(--color-text)]">No Plans Yet</h3>
+          <p className="mb-8 text-base">
             Create your first mitigation plan to get started with optimizing your raid strategies.
-          </EmptyStateText>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button onClick={handleCreatePlanByBoss}>
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[#3b82f6] px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]">
               Create Your First Plan
-            </Button>
+            </button>
           </div>
-        </EmptyState>
+        </div>
       ) : (
         <>
           {/* My Plans Section */}
-          <PlansSection>
-            <SectionHeader>
-              <SectionTitle>My Plans</SectionTitle>
-              <PlanCount>{categorizedPlans.ownedPlans.length}</PlanCount>
-            </SectionHeader>
+          <section className="mb-12 last:mb-0">
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">My Plans</h2>
+              <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{categorizedPlans.ownedPlans.length}</span>
+            </div>
 
             {categorizedPlans.ownedPlans.length === 0 ? (
-              <SectionEmptyState>
-                <SectionEmptyText>
+              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
+                <p className="m-0 text-sm italic">
                   You haven't created any plans yet. Click "Create New Plan" to get started!
-                </SectionEmptyText>
-              </SectionEmptyState>
+                </p>
+              </div>
             ) : (
-              <PlansGrid>
+              <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
                 {categorizedPlans.ownedPlans.map((plan) => (
                   <PlanCard
                     key={plan.id}
@@ -370,26 +198,26 @@ const Dashboard = () => {
                     isSharedPlan={false}
                   />
                 ))}
-              </PlansGrid>
+              </div>
             )}
-          </PlansSection>
+          </section>
 
           {/* Shared Plans Section - Only show for authenticated users */}
           {user && !user.isAnonymous && (
-            <PlansSection>
-              <SectionHeader>
-                <SectionTitle>Shared Plans</SectionTitle>
-                <PlanCount>{categorizedPlans.sharedPlans.length}</PlanCount>
-              </SectionHeader>
+            <section className="mb-12 last:mb-0">
+              <div className="mb-6 flex items-center gap-3">
+                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Shared Plans</h2>
+                <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{categorizedPlans.sharedPlans.length}</span>
+              </div>
 
               {categorizedPlans.sharedPlans.length === 0 ? (
-                <SectionEmptyState>
-                  <SectionEmptyText>
+                <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
+                  <p className="m-0 text-sm italic">
                     No plans have been shared with you yet. Shared plans will appear here when other users give you access.
-                  </SectionEmptyText>
-                </SectionEmptyState>
+                  </p>
+                </div>
               ) : (
-                <PlansGrid>
+                <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
                   {categorizedPlans.sharedPlans.map((plan) => (
                     <PlanCard
                       key={plan.id}
@@ -399,9 +227,9 @@ const Dashboard = () => {
                       isSharedPlan={true}
                     />
                   ))}
-                </PlansGrid>
+                </div>
               )}
-            </PlansSection>
+            </section>
           )}
         </>
       )}
@@ -428,7 +256,7 @@ const Dashboard = () => {
           onSuccess={handlePlanImported}
         />
       )}
-    </DashboardContainer>
+    </div>
     <Footer />
   </>
   );

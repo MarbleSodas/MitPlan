@@ -1,110 +1,6 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { loadFromLocalStorage } from '../../utils/storage/storageUtils';
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: ${props => props.theme?.colors?.background || '#ffffff'};
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-`;
-
-const Title = styled.h2`
-  margin: 0 0 1rem 0;
-  color: ${props => props.theme?.colors?.text || '#333333'};
-  font-size: 1.5rem;
-  font-weight: 600;
-`;
-
-const Description = styled.p`
-  margin: 0 0 1.5rem 0;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  line-height: 1.5;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme?.colors?.primary || '#3399ff'};
-  }
-
-  &::placeholder {
-    color: ${props => props.theme?.colors?.textSecondary || '#999999'};
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-`;
-
-const Button = styled.button`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: ${props => props.theme?.colors?.primary || '#3399ff'};
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.primaryHover || '#2980ff'};
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${props => props.theme?.colors?.textSecondary || '#666666'};
-  border: 2px solid ${props => props.theme?.colors?.border || '#e1e5e9'};
-
-  &:hover:not(:disabled) {
-    background: ${props => props.theme?.colors?.backgroundSecondary || '#f8f9fa'};
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: ${props => props.theme?.colors?.error || '#e74c3c'};
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-`;
 
 const DisplayNameModal = ({ 
   isOpen, 
@@ -174,13 +70,13 @@ const DisplayNameModal = ({
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClick={allowCancel ? handleCancel : undefined}>
-      <ModalContent onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
-        <Title>{title}</Title>
-        <Description>{description}</Description>
-        
-        <Form onSubmit={handleSubmit}>
-          <Input
+    <div onClick={allowCancel ? handleCancel : undefined} className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
+      <div onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown} className="bg-white dark:bg-neutral-900 rounded-xl p-8 max-w-md w-[90%] shadow-2xl">
+        <h2 className="m-0 mb-4 text-2xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+        <p className="m-0 mb-6 text-gray-500 dark:text-gray-400 leading-relaxed">{description}</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
             type="text"
             placeholder="Enter your display name"
             value={displayName}
@@ -188,30 +84,33 @@ const DisplayNameModal = ({
             maxLength={50}
             autoFocus
             disabled={isSubmitting}
+            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] disabled:bg-gray-50 disabled:border-gray-400 disabled:text-gray-400 placeholder:text-gray-500 placeholder:font-normal"
           />
-          
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          
-          <ButtonGroup>
+
+          {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
+
+          <div className="flex gap-3 justify-end">
             {allowCancel && (
-              <SecondaryButton
+              <button
                 type="button"
                 onClick={handleCancel}
                 disabled={isSubmitting}
+                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition disabled:text-gray-400 disabled:border-gray-400"
               >
                 Cancel
-              </SecondaryButton>
+              </button>
             )}
-            <PrimaryButton
+            <button
               type="submit"
               disabled={isSubmitting || !displayName.trim()}
+              className="min-h-11 px-5 py-3 rounded-[10px] text-white font-semibold bg-blue-500 hover:bg-blue-600 transition shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-400 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:shadow-[0_0_0_4px_rgba(59,130,246,0.2)]"
             >
               {isSubmitting ? 'Joining...' : 'Join Session'}
-            </PrimaryButton>
-          </ButtonGroup>
-        </Form>
-      </ModalContent>
-    </ModalOverlay>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 

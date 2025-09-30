@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import styled from 'styled-components';
 import ChargeCounter from '../ChargeCounter';
 import {
   getAbilityDescriptionForLevel,
@@ -11,97 +10,38 @@ import {
 } from '../../utils';
 import { useTankPositionContext } from '../../contexts';
 
-const MitigationItemContainer = styled.div`
-  background-color: ${props => {
-    if (props.$disabled) {
-      return props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)';
-    }
-    return 'transparent';
-  }};
-  border: none;
-  border-left: 4px solid ${props => {
-    if (props.$disabled) {
-      return props.theme?.colors?.error || '#ff5555';
-    }
-    return props.theme?.colors?.primary || '#3399ff';
-  }};
-  border-radius: ${props => props.theme.borderRadius.small};
-  padding: ${props => props.theme.spacing.small} ${props => props.theme.spacing.medium};
-  cursor: ${props => props.$disabled ? 'not-allowed' : 'grab'};
-  transition: all 0.2s ease;
-  width: 100%;
-  opacity: ${props => props.$disabled ? 0.7 : 1};
-  position: relative;
-  margin-bottom: 2px;
+const MitigationItemContainer = ({ children, className = '', $disabled, ...rest }) => {
+  const base = 'group relative w-full transition-all border-l-4 rounded-sm px-3 py-2 mb-[2px] select-none';
+  const state = $disabled
+    ? 'cursor-not-allowed opacity-70 border-l-red-500 bg-neutral-100/80 dark:bg-neutral-700/50'
+    : 'cursor-grab opacity-100 border-l-blue-500 hover:bg-black/5 dark:hover:bg-white/5';
+  return (
+    <div {...rest} className={`${base} ${state} ${className}`}>
+      {children}
+    </div>
+  );
+};
 
-  &:hover {
-    background-color: ${props => {
-      if (props.$disabled) {
-        return props.theme.mode === 'dark' ? 'rgba(50, 50, 50, 0.5)' : 'rgba(240, 240, 240, 0.8)';
-      }
-      return props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
-    }};
-    transform: none;
-  }
+const MitigationIcon = ({ children, className = '', ...rest }) => (
+  <span {...rest} className={`mr-2 inline-flex items-center justify-center w-5 h-5 sm:w-4 sm:h-4 shrink-0 align-middle ${className}`}>{children}</span>
+);
 
-  &:active {
-    cursor: ${props => props.$disabled ? 'not-allowed' : 'grabbing'};
-  }
-`;
+const MitigationName = ({ children, className = '', ...rest }) => (
+  <h4 {...rest} className={`m-0 mb-[5px] inline-block ${className}`}>{children}</h4>
+);
 
-const MitigationIcon = styled.span`
-  margin-right: ${props => props.theme.spacing.small};
-  vertical-align: middle;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
+const MitigationDescription = ({ children, className = '', ...rest }) => (
+  <p {...rest} className={`m-0 text-sm text-neutral-600 dark:text-neutral-300 ${className}`}>{children}</p>
+);
 
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    margin-right: 4px;
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0; /* Prevent icon from shrinking */
-  }
-`;
-
-const MitigationName = styled.h4`
-  margin: 0 0 5px 0;
-  display: inline-block;
-`;
-
-const MitigationDescription = styled.p`
-  margin: 0;
-  font-size: ${props => props.theme.fontSizes.medium};
-  color: ${props => props.theme.colors.lightText};
-  font-weight: ${props => props.theme.mode === 'dark' ? '500' : 'normal'};
-`;
-
-const CooldownOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 12px;
-  padding: 5px;
-  border-radius: inherit;
-  z-index: 2;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-
-  ${MitigationItemContainer}:hover & {
-    opacity: 1;
-  }
-`;
+const CooldownOverlay = ({ children, className = '', ...rest }) => (
+  <div
+    {...rest}
+    className={`absolute inset-0 bg-black/70 text-white flex items-center justify-center text-center text-[12px] p-[5px] rounded-[inherit] z-20 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 ${className}`}
+  >
+    {children}
+  </div>
+);
 
 const MitigationItem = memo(({
   mitigation,
@@ -247,7 +187,7 @@ const MitigationItem = memo(({
     <MitigationItemContainer $disabled={finalDisabled}>
       <MitigationIcon>
         {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
-          <img src={mitigation.icon} alt={mitigation.name} style={{ maxHeight: '24px', maxWidth: '24px' }} /> :
+          <img src={mitigation.icon} alt={mitigation.name} className="h-6 w-6 object-contain" /> :
           mitigation.icon
         }
       </MitigationIcon>

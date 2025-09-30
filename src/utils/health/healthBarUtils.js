@@ -4,41 +4,41 @@
 
 /**
  * Calculate the damage percentage relative to max health
- * 
+ *
  * @param {number} damage - The raw damage amount
  * @param {number} maxHealth - The maximum health value
  * @returns {number} - The damage as a percentage of max health (0-1)
  */
 export const calculateDamagePercentage = (damage, maxHealth) => {
   if (!damage || !maxHealth) return 0;
-  
+
   // Convert string damage to number if needed
-  const numericDamage = typeof damage === 'string' 
-    ? parseInt(damage.replace(/[^0-9]/g, ''), 10) 
+  const numericDamage = typeof damage === 'string'
+    ? parseInt(damage.replace(/[^0-9]/g, ''), 10)
     : damage;
-  
+
   if (isNaN(numericDamage)) return 0;
-  
+
   return Math.min(1, numericDamage / maxHealth);
 };
 
 /**
  * Calculate the mitigated damage amount
- * 
+ *
  * @param {number} rawDamage - The raw unmitigated damage
  * @param {number} mitigationPercentage - The mitigation percentage (0-1)
  * @returns {number} - The mitigated damage amount
  */
 export const calculateMitigatedDamage = (rawDamage, mitigationPercentage) => {
   if (!rawDamage) return 0;
-  
+
   // Convert string damage to number if needed
-  const numericDamage = typeof rawDamage === 'string' 
-    ? parseInt(rawDamage.replace(/[^0-9]/g, ''), 10) 
+  const numericDamage = typeof rawDamage === 'string'
+    ? parseInt(rawDamage.replace(/[^0-9]/g, ''), 10)
     : rawDamage;
-  
+
   if (isNaN(numericDamage)) return 0;
-  
+
   return numericDamage * (1 - mitigationPercentage);
 };
 
@@ -73,7 +73,7 @@ export const calculateBarrierAmount = (ability, maxHealth, healingPotencyPer100 
 
 /**
  * Calculate the remaining health after damage
- * 
+ *
  * @param {number} maxHealth - The maximum health value
  * @param {number} damage - The damage amount
  * @param {number} barrierAmount - The barrier amount (optional)
@@ -81,32 +81,53 @@ export const calculateBarrierAmount = (ability, maxHealth, healingPotencyPer100 
  */
 export const calculateRemainingHealth = (maxHealth, damage, barrierAmount = 0) => {
   if (!maxHealth) return 0;
-  
+
   // Convert string damage to number if needed
-  const numericDamage = typeof damage === 'string' 
-    ? parseInt(damage.replace(/[^0-9]/g, ''), 10) 
+  const numericDamage = typeof damage === 'string'
+    ? parseInt(damage.replace(/[^0-9]/g, ''), 10)
     : damage;
-  
+
   if (isNaN(numericDamage)) return maxHealth;
-  
+
   // Calculate how much damage is absorbed by the barrier
   const damageToHealth = Math.max(0, numericDamage - barrierAmount);
-  
+
   // Calculate remaining health
   return Math.max(0, maxHealth - damageToHealth);
 };
 
 /**
  * Format a health value for display
- * 
+ *
  * @param {number} health - The health value
  * @returns {string} - Formatted health string
  */
 export const formatHealth = (health) => {
   if (!health && health !== 0) return '0';
-  
+
   return health.toLocaleString(undefined, { maximumFractionDigits: 0 });
 };
+
+/**
+ * Compact formatter for health values (e.g., 143k, 1.2M)
+ */
+export const formatHealthCompact = (health) => {
+  if (health === null || health === undefined) return '0';
+  const n = Number(health);
+  if (Number.isNaN(n)) return '0';
+  const abs = Math.abs(n);
+  if (abs >= 1000000) {
+    const value = n / 1000000;
+    // Use 1 decimal for values under 10M, otherwise no decimals
+    return `${value.toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  }
+  if (abs >= 1000) {
+    // Round to nearest thousand
+    return `${Math.round(n / 1000)}k`;
+  }
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+};
+
 
 /**
  * Format a percentage for display
@@ -309,6 +330,7 @@ export default {
   calculateBarrierAmount,
   calculateRemainingHealth,
   formatHealth,
+  formatHealthCompact,
   formatPercentage,
   getHealingPotency,
   calculateHealingAmount,

@@ -19,7 +19,7 @@ const MitigationContext = createContext();
 export const MitigationProvider = ({ children, bossActions, bossLevel = 90, selectedJobs }) => {
   // Get tank position context
   const { tankPositions } = useTankPositionContext();
-  
+
   // Initialize assignments from localStorage or empty object
   const [assignments, setAssignments] = useState(() => {
     // Try to load from localStorage
@@ -573,7 +573,7 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
   }, [assignments, bossActions, bossLevel, selectedJobs]);
 
   // Add a mitigation to a boss action
-  const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared') => {
+  const addMitigation = useCallback((bossActionId, mitigation, tankPosition = 'shared', options = {}) => {
     // Store the original tankPosition for debugging purposes
     const originalTankPosition = tankPosition;
     // Determine if this is a tank-specific mitigation (self-target)
@@ -588,10 +588,10 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       // Check which tank has access to this ability
       const mainTankJob = tankPositions?.mainTank;
       const offTankJob = tankPositions?.offTank;
-      
+
       const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
       const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-      
+
       // Override tankPosition if job compatibility doesn't match provided position
       if (canMainTankUse && !canOffTankUse) {
         // Only main tank can use this ability
@@ -622,12 +622,12 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
         // Check which tank has access to this ability (for single-target abilities that can be cast on tanks)
         const mainTankJob = tankPositions?.mainTank;
         const offTankJob = tankPositions?.offTank;
-        
+
         // For single-target abilities, what matters is which job can CAST the ability
         // not which job will receive it (since these can generally be cast on any tank)
         const canMainTankUse = mainTankJob && mitigation.jobs.includes(mainTankJob);
         const canOffTankUse = offTankJob && mitigation.jobs.includes(offTankJob);
-        
+
         if (canMainTankUse && !canOffTankUse) {
           // Only main tank can cast this ability, but can target either tank
           // In this case, target defaults to main tank
@@ -663,10 +663,23 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
       });
     }
 
-    // Add tankPosition to the mitigation object
+    // Determine caster job ID for role-shared or multi-caster abilities
+    let finalCasterJobId = null;
+    const providedCasterJobId = options && options.casterJobId ? options.casterJobId : null;
+
+    // Prefer provided caster if valid
+    if (providedCasterJobId && Array.isArray(mitigation.jobs) && mitigation.jobs.includes(providedCasterJobId)) {
+      finalCasterJobId = providedCasterJobId;
+    } else if (!providedCasterJobId && Array.isArray(mitigation.jobs) && mitigation.jobs.length === 1) {
+      // Auto-assign if only one job can cast the ability
+      finalCasterJobId = mitigation.jobs[0];
+    }
+
+    // Add tankPosition and optional caster to the mitigation object
     const mitigationWithPosition = {
       ...mitigation,
-      tankPosition
+      tankPosition,
+      ...(finalCasterJobId ? { casterJobId: finalCasterJobId } : {})
     };
 
     // Check if this mitigation is already assigned to this action for this tank position
@@ -675,6 +688,15 @@ export const MitigationProvider = ({ children, bossActions, bossLevel = 90, sele
     )) {
       return false;
     }
+    // Log assignment with caster information if available
+    console.log('[MitigationContext] Adding mitigation', {
+      bossActionId,
+      mitigationId: mitigation.id,
+      mitigationName: mitigation.name,
+      tankPosition,
+      casterJobId: finalCasterJobId || null
+    });
+
 
     // Check for cooldown conflicts and remove future assignments if needed
     const conflicts = checkAndRemoveFutureConflicts(bossActionId, mitigation);
