@@ -229,7 +229,11 @@ const PlanningInterface = () => {
   // Drag and drop handlers - MUST be called before early returns
   const handleDragStart = useCallback((event) => {
     const { active } = event;
-    const mitigation = availableMitigations.find(m => m.id === active.id);
+    // Extract the actual mitigation ID by removing the __fs suffix if present
+    const activeId = typeof active.id === 'string' && active.id.endsWith('__fs')
+      ? active.id.slice(0, -4) // Remove '__fs' suffix
+      : active.id;
+    const mitigation = availableMitigations.find(m => m.id === activeId);
     if (mitigation) {
       setActiveMitigation(mitigation);
     }
@@ -247,7 +251,7 @@ const PlanningInterface = () => {
     // Prefer action object from droppable data when available
     let targetBossAction = over?.data?.current?.action || null;
 
-    // Fallback: extract original action id from droppable id of form `${action.id}__${idx}`
+    // Fallback: extract original action id from droppable id of form `${action.id}__${idx}` or `${action.id}__${idx}__fs`
     if (!targetBossAction) {
       const overId = over.id;
       const originalId = typeof overId === 'string' && overId.includes('__') ? overId.split('__')[0] : overId;
@@ -274,7 +278,12 @@ const PlanningInterface = () => {
     }
     */
 
-    const mitigation = availableMitigations.find(m => m.id === active.id);
+    // Extract the actual mitigation ID by removing the __fs suffix if present
+    const activeId = typeof active.id === 'string' && active.id.endsWith('__fs')
+      ? active.id.slice(0, -4) // Remove '__fs' suffix
+      : active.id;
+
+    const mitigation = availableMitigations.find(m => m.id === activeId);
     if (!mitigation) {
       setActiveMitigation(null);
       return;
