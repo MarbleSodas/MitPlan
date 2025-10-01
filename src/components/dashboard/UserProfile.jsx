@@ -7,7 +7,7 @@ import { auth } from '../../config/firebase';
 const ProfileContainer = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`group flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 ${className}`}
+    className={`group flex items-center gap-3 cursor-pointer px-3 py-2 rounded-lg transition-colors bg-[var(--color-cardBackground)] border border-[var(--color-border)] hover:bg-[var(--select-bg)] hover:shadow-sm ${className}`}
   >
     {children}
   </div>
@@ -28,12 +28,12 @@ const UserInfo = ({ children, className = '', ...rest }) => (
 );
 
 const DisplayName = ({ children, className = '', ...rest }) => (
-  <span {...rest} className={`text-neutral-900 dark:text-neutral-100 font-medium text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis ${className}`}>{children}</span>
+  <span {...rest} className={`text-[var(--color-text)] font-medium text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis ${className}`}>{children}</span>
 );
 
 
 const EditIcon = (props) => (
-  <Edit3 {...props} className={`w-[14px] h-[14px] text-neutral-500 opacity-0 transition-opacity group-hover:opacity-100 ${props.className || ''}`} />
+  <Edit3 {...props} className={`w-[14px] h-[14px] text-[var(--color-textSecondary)] opacity-0 transition-all group-hover:opacity-100 group-hover:text-[var(--color-primary)] ${props.className || ''}`} />
 );
 
 // Modal styles
