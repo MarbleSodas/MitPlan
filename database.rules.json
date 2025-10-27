@@ -115,6 +115,44 @@
           ".validate": "newData.isNumber() && newData.val() > 0"
         }
       }
+    },
+    "timelines": {
+      ".read": true,
+      ".write": true,
+      "$timelineId": {
+        ".read": true,
+        ".write": true,
+        "userId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "ownerId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "bossId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "description": {
+          ".validate": "newData.isString()"
+        },
+        "isPublic": {
+          ".validate": "newData.isBoolean()"
+        },
+        "actions": {
+          ".validate": "newData.hasChildren()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "version": {
+          ".validate": "newData.isNumber()"
+        }
+      }
     }
   }
 }

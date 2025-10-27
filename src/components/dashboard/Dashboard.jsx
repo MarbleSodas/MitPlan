@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
 import unifiedPlanService from '../../services/unifiedPlanService';
+import { getUserTimelines } from '../../services/timelineService';
 import PlanCard from './PlanCard';
+import TimelineCard from './TimelineCard';
 import CreatePlanModal from './CreatePlanModal';
 import BossSelectionModal from './BossSelectionModal';
 import ImportPlanModal from './ImportPlanModal';
@@ -31,6 +33,8 @@ const Dashboard = () => {
     sharedPlans: [],
     totalPlans: 0
   });
+  const [timelines, setTimelines] = useState([]);
+  const [timelinesLoading, setTimelinesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -40,6 +44,7 @@ const Dashboard = () => {
       // Set the user context for the unified plan service
       unifiedPlanService.setUserContext(user, false);
       loadCategorizedPlans();
+      loadUserTimelines();
     }
   }, [user]);
 
@@ -67,6 +72,27 @@ const Dashboard = () => {
       setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserTimelines = async () => {
+    if (!user) {
+      setTimelines([]);
+      return;
+    }
+
+    setTimelinesLoading(true);
+
+    try {
+      console.log('[Dashboard] Loading timelines for user:', user.uid);
+      const userTimelines = await getUserTimelines(user.uid);
+      console.log('[Dashboard] Timelines loaded:', userTimelines.length);
+      setTimelines(userTimelines);
+    } catch (err) {
+      console.error('Error loading timelines:', err);
+      setTimelines([]);
+    } finally {
+      setTimelinesLoading(false);
     }
   };
 
@@ -111,6 +137,14 @@ const Dashboard = () => {
     setShowImportModal(false);
     loadUserPlans(); // Keep for real-time updates
     loadCategorizedPlans(); // Refresh categorized view
+  };
+
+  const handleTimelineChanged = () => {
+    loadUserTimelines(); // Refresh timelines when one is changed/deleted
+  };
+
+  const handleCreateTimeline = () => {
+    navigate('/timeline/create');
   };
 
   const handlePlanChanged = () => {
@@ -231,6 +265,44 @@ const Dashboard = () => {
               )}
             </section>
           )}
+
+          {/* Boss Action Timelines Section */}
+          <section className="mb-12 last:mb-0">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Boss Action Timelines</h2>
+                <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
+              </div>
+              <button
+                onClick={handleCreateTimeline}
+                className="rounded-lg bg-[#3b82f6] px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]"
+              >
+                Create Timeline
+              </button>
+            </div>
+
+            {timelinesLoading ? (
+              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
+                <p className="m-0 text-sm">Loading timelines...</p>
+              </div>
+            ) : timelines.length === 0 ? (
+              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
+                <p className="m-0 text-sm italic">
+                  You haven't created any boss action timelines yet. Create a timeline to organize boss mechanics and use them as templates for mitigation plans!
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
+                {timelines.map((timeline) => (
+                  <TimelineCard
+                    key={timeline.id}
+                    timeline={timeline}
+                    onTimelineChanged={handleTimelineChanged}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
         </>
       )}
 
