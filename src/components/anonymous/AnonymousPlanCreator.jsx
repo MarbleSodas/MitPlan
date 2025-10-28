@@ -3,12 +3,13 @@
  * Handles creation of new plans for anonymous users
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Save, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import localStoragePlanService from '../../services/localStoragePlanService';
 import { bosses } from '../../data';
+import { getTimelinesByBossTag } from '../../services/timelineService';
 
 
 const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null }) => {
@@ -17,10 +18,36 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
   const [formData, setFormData] = useState({
     name: '',
     bossId: preSelectedBossId || '',
-    description: ''
+    description: '',
+    timelineId: '' // Selected timeline (optional)
   });
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+  const [loadingTimelines, setLoadingTimelines] = useState(false);
+  const [availableTimelines, setAvailableTimelines] = useState([]);
+
+  // Load timelines when boss is selected
+  useEffect(() => {
+    if (formData.bossId) {
+      loadTimelinesForBoss(formData.bossId);
+    } else {
+      setAvailableTimelines([]);
+    }
+  }, [formData.bossId]);
+
+  const loadTimelinesForBoss = async (bossId) => {
+    setLoadingTimelines(true);
+    try {
+      // Get both official and custom timelines for this boss
+      const timelines = await getTimelinesByBossTag(bossId, false);
+      setAvailableTimelines(timelines);
+    } catch (err) {
+      console.error('[AnonymousPlanCreator] Error loading timelines:', err);
+      setAvailableTimelines([]);
+    } finally {
+      setLoadingTimelines(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -28,7 +55,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (error) {
       setError('');
@@ -37,12 +64,12 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setError('Plan name is required');
       return;
     }
-    
+
     if (!formData.bossId) {
       setError('Please select a boss');
       return;
@@ -56,19 +83,29 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
       const planData = {
         name: formData.name.trim(),
         bossId: formData.bossId,
+        bossTags: [formData.bossId],
         description: formData.description.trim(),
         assignments: {},
         selectedJobs: {},
         tankPositions: {}
       };
 
+      // If a timeline is selected, store the reference
+      if (formData.timelineId) {
+        planData.sourceTimelineId = formData.timelineId;
+        const selectedTimeline = availableTimelines.find(t => t.id === formData.timelineId);
+        if (selectedTimeline) {
+          planData.sourceTimelineName = selectedTimeline.name;
+        }
+      }
+
       const createdPlan = await localStoragePlanService.createPlan(planData);
-      
+
       console.log('[AnonymousPlanCreator] Plan created:', createdPlan);
-      
+
       // Navigate to the new plan
       navigate(`/anonymous/plan/${createdPlan.id}`);
-      
+
       // Call success callback
       onSuccess?.(createdPlan);
       
@@ -148,6 +185,52 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             </div>
           )}
         </div>
+
+        {/* Timeline Selection - Only show when boss is selected */}
+        {formData.bossId && (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="timelineId" className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              Timeline (Optional)
+            </label>
+            {loadingTimelines ? (
+              <div className="text-sm text-gray-500 py-2">Loading timelines...</div>
+            ) : (
+              <>
+                <select
+                  id="timelineId"
+                  name="timelineId"
+                  value={formData.timelineId}
+                  onChange={handleInputChange}
+                  disabled={isCreating}
+                  className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Create blank plan (no timeline)</option>
+                  {availableTimelines.map(timeline => (
+                    <option key={timeline.id} value={timeline.id}>
+                      {timeline.official ? '⭐ ' : '📝 '}
+                      {timeline.name}
+                      {timeline.official ? ' (Official)' : ' (Custom)'}
+                    </option>
+                  ))}
+                </select>
+                <div className="text-sm text-gray-500 mt-1">
+                  {formData.timelineId ? (
+                    <>
+                      Selected timeline will be used as a reference for boss actions.
+                      {availableTimelines.find(t => t.id === formData.timelineId)?.official && (
+                        <span className="block mt-1 text-blue-600 dark:text-blue-400">
+                          ⭐ Official timeline - Predefined boss actions
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    'Select a timeline to use predefined boss actions, or create a blank plan to add custom actions.'
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <label htmlFor="description" className="text-sm font-medium text-gray-800 dark:text-gray-200">Description (Optional)</label>

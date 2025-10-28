@@ -148,7 +148,9 @@ export const RealtimePlanProvider = ({ children, planId }) => {
               assignmentsData: planData.assignments,
               tankPositionsData: planData.tankPositions,
               hasUserId: !!planData.userId,
-              isPublic: planData.isPublic
+              isPublic: planData.isPublic,
+              sourceTimelineId: planData.sourceTimelineId,
+              sourceTimelineName: planData.sourceTimelineName
             });
             setRealtimePlan(planData);
           } else {

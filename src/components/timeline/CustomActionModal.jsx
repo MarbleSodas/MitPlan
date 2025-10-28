@@ -129,21 +129,42 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
           {/* Icon */}
           <div>
             <label className="block text-sm font-medium mb-2">Icon</label>
-            <div className="grid grid-cols-10 gap-2">
-              {iconOptions.map(icon => (
-                <button
-                  key={icon}
-                  type="button"
-                  onClick={() => handleChange('icon', icon)}
-                  className={`p-2 text-2xl rounded-lg border-2 transition-colors ${
-                    formData.icon === icon
-                      ? 'border-[var(--color-primary)] bg-[var(--select-bg)]'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
-                  }`}
-                >
-                  {icon}
-                </button>
-              ))}
+
+            {/* Custom Icon Input */}
+            <div className="mb-3">
+              <input
+                type="text"
+                value={formData.icon}
+                onChange={(e) => handleChange('icon', e.target.value)}
+                placeholder="Enter any emoji or text icon"
+                className="w-full px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-2xl text-center"
+                maxLength={10}
+              />
+              <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                Type any emoji, symbol, or text (up to 10 characters)
+              </p>
+            </div>
+
+            {/* Preset Icons */}
+            <div>
+              <p className="text-xs text-[var(--color-textSecondary)] mb-2">Quick select presets:</p>
+              <div className="grid grid-cols-10 gap-2">
+                {iconOptions.map(icon => (
+                  <button
+                    key={icon}
+                    type="button"
+                    onClick={() => handleChange('icon', icon)}
+                    className={`p-2 text-2xl rounded-lg border-2 transition-colors ${
+                      formData.icon === icon
+                        ? 'border-[var(--color-primary)] bg-[var(--select-bg)]'
+                        : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
+                    }`}
+                    title={`Use ${icon}`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

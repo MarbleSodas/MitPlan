@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
-import { createTimeline, getTimeline, updateTimeline, addBossTag, removeBossTag } from '../../services/timelineService';
+import { createTimeline, getTimeline, updateTimeline, addBossTag, removeBossTag, getAllUniqueBossTags } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { bossActionsLibrary } from '../../data/bossActionsLibrary';
 import { ArrowLeft, Plus, Trash2, Save, GripVertical, X, Tag, Edit2, Check } from 'lucide-react';
@@ -27,7 +27,19 @@ const TimelineEditor = () => {
   const [editingActionId, setEditingActionId] = useState(null); // New: for inline editing
   const [editingField, setEditingField] = useState(null); // New: which field is being edited
 
+  // Tag suggestions state
+  const [allExistingTags, setAllExistingTags] = useState([]);
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [filteredTagSuggestions, setFilteredTagSuggestions] = useState([]);
+  const tagInputRef = useRef(null);
+  const suggestionsRef = useRef(null);
+
   const isEditMode = !!timelineId;
+
+  // Load all existing tags on mount
+  useEffect(() => {
+    loadAllExistingTags();
+  }, []);
 
   // Load timeline if editing
   useEffect(() => {
@@ -35,6 +47,62 @@ const TimelineEditor = () => {
       loadTimeline();
     }
   }, [timelineId]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target) &&
+        tagInputRef.current &&
+        !tagInputRef.current.contains(event.target)
+      ) {
+        setShowTagSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Filter tag suggestions based on input
+  useEffect(() => {
+    if (newBossTag.trim()) {
+      const searchTerm = newBossTag.toLowerCase();
+
+      // Combine boss names from bosses data and existing tags
+      const bossOptions = bosses.map(b => ({ id: b.id, name: b.name, type: 'boss' }));
+      const existingTagOptions = allExistingTags
+        .filter(tag => !bosses.find(b => b.id === tag)) // Exclude boss IDs already in bosses
+        .map(tag => ({ id: tag, name: tag, type: 'custom' }));
+
+      const allOptions = [...bossOptions, ...existingTagOptions];
+
+      // Filter options that contain the search term and aren't already added
+      const filtered = allOptions.filter(option =>
+        option.name.toLowerCase().includes(searchTerm) &&
+        !bossTags.includes(option.id)
+      );
+
+      setFilteredTagSuggestions(filtered);
+      setShowTagSuggestions(filtered.length > 0);
+    } else {
+      setFilteredTagSuggestions([]);
+      setShowTagSuggestions(false);
+    }
+  }, [newBossTag, bossTags, allExistingTags]);
+
+  const loadAllExistingTags = async () => {
+    try {
+      const tags = await getAllUniqueBossTags();
+      setAllExistingTags(tags);
+    } catch (error) {
+      console.error('Error loading existing tags:', error);
+      // Silently fail - not critical
+    }
+  };
 
   const loadTimeline = async () => {
     setLoading(true);
@@ -69,12 +137,21 @@ const TimelineEditor = () => {
   };
 
   // Handle adding boss tag
-  const handleAddBossTag = () => {
-    const tag = newBossTag.trim();
+  const handleAddBossTag = (tagToAdd = null) => {
+    const tag = (tagToAdd || newBossTag).trim();
     if (tag && !bossTags.includes(tag)) {
       setBossTags([...bossTags, tag]);
       setNewBossTag('');
+      setShowTagSuggestions(false);
+
+      // Reload existing tags to include the new one
+      loadAllExistingTags();
     }
+  };
+
+  // Handle selecting a tag from suggestions
+  const handleSelectTagSuggestion = (tagId) => {
+    handleAddBossTag(tagId);
   };
 
   // Handle removing boss tag
@@ -140,12 +217,10 @@ const TimelineEditor = () => {
     setTimelineActions(timelineActions.filter(a => a.id !== actionId));
   };
 
-  // Handle editing custom action
+  // Handle editing action (now works for all actions, not just custom)
   const handleEditAction = (action) => {
-    if (action.isCustom) {
-      setEditingAction(action);
-      setShowCustomActionModal(true);
-    }
+    setEditingAction(action);
+    setShowCustomActionModal(true);
   };
 
   // Sort actions by time
@@ -321,38 +396,72 @@ const TimelineEditor = () => {
                       </div>
                     )}
 
-                    {/* Add new tag */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newBossTag}
-                        onChange={(e) => setNewBossTag(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddBossTag()}
-                        placeholder="Add boss tag or custom name"
-                        className="flex-1 px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm"
-                      />
-                      <button
-                        onClick={handleAddBossTag}
-                        className="px-3 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[#2563eb] transition-colors"
-                      >
-                        <Plus size={16} />
-                      </button>
+                    {/* Add new tag with suggestions */}
+                    <div className="relative">
+                      <div className="flex gap-2">
+                        <input
+                          ref={tagInputRef}
+                          type="text"
+                          value={newBossTag}
+                          onChange={(e) => setNewBossTag(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (filteredTagSuggestions.length > 0) {
+                                handleSelectTagSuggestion(filteredTagSuggestions[0].id);
+                              } else {
+                                handleAddBossTag();
+                              }
+                            }
+                          }}
+                          onFocus={() => {
+                            if (newBossTag.trim() && filteredTagSuggestions.length > 0) {
+                              setShowTagSuggestions(true);
+                            }
+                          }}
+                          placeholder="Search for boss tags..."
+                          className="flex-1 px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm"
+                        />
+                        <button
+                          onClick={() => handleAddBossTag()}
+                          className="px-3 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[#2563eb] transition-colors"
+                          title="Add custom tag"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+
+                      {/* Tag suggestions dropdown */}
+                      {showTagSuggestions && filteredTagSuggestions.length > 0 && (
+                        <div
+                          ref={suggestionsRef}
+                          className="absolute z-10 w-full mt-1 bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        >
+                          {filteredTagSuggestions.map((suggestion, index) => {
+                            const boss = bosses.find(b => b.id === suggestion.id);
+                            return (
+                              <button
+                                key={`${suggestion.id}-${index}`}
+                                onClick={() => handleSelectTagSuggestion(suggestion.id)}
+                                className="w-full px-3 py-2 text-left hover:bg-[var(--select-bg)] transition-colors flex items-center justify-between text-sm"
+                              >
+                                <span className="flex items-center gap-2">
+                                  {boss && <span>{boss.icon}</span>}
+                                  <span>{suggestion.name}</span>
+                                </span>
+                                {suggestion.type === 'custom' && (
+                                  <span className="text-xs text-[var(--color-textSecondary)] italic">custom</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Quick add from boss list */}
+                    {/* Helper text */}
                     <div className="text-xs text-[var(--color-textSecondary)]">
-                      Quick add:
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {bosses.filter(b => !bossTags.includes(b.id)).slice(0, 4).map(boss => (
-                          <button
-                            key={boss.id}
-                            onClick={() => setBossTags([...bossTags, boss.id])}
-                            className="px-2 py-1 bg-[var(--color-background)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] transition-colors text-xs"
-                          >
-                            {boss.name}
-                          </button>
-                        ))}
-                      </div>
+                      Type to search existing tags or add a custom tag
                     </div>
                   </div>
                 </div>
@@ -530,15 +639,13 @@ const TimelineEditor = () => {
                           </div>
 
                           <div className="flex gap-2">
-                            {action.isCustom && (
-                              <button
-                                onClick={() => handleEditAction(action)}
-                                className="p-2 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--select-bg)] rounded transition-colors"
-                                title="Edit in modal"
-                              >
-                                <Edit2 size={18} />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleEditAction(action)}
+                              className="p-2 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--select-bg)] rounded transition-colors"
+                              title="Edit in modal"
+                            >
+                              <Edit2 size={18} />
+                            </button>
                             <button
                               onClick={() => handleRemoveAction(action.id)}
                               className="p-2 text-red-500 hover:bg-red-500/10 rounded transition-colors"

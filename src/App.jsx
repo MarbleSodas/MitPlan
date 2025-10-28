@@ -12,7 +12,9 @@ import DataPolicy from './pages/DataPolicy';
 import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
 import TimelineEditor from './components/timeline/TimelineEditor';
 import TimelineViewer from './components/timeline/TimelineViewer';
+import TimelineBrowser from './components/timeline/TimelineBrowser';
 import CreatePlanFromTimeline from './components/timeline/CreatePlanFromTimeline';
+import MakeTimelinesPublic from './components/admin/MakeTimelinesPublic';
 
 // DEBUGGING: Minimal App to test if React is working
 // TODO: Restore full app once loading issue is resolved
@@ -173,6 +175,15 @@ const AppContent = () => {
 
       {/* Timeline routes */}
       <Route
+        path="/timeline/browse"
+        element={
+          <ProtectedRoute>
+            <TimelineBrowser />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/timeline/create"
         element={
           <ProtectedRoute>
@@ -215,6 +226,16 @@ const AppContent = () => {
             <PlanProvider>
               <CreatePlanFromTimeline />
             </PlanProvider>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin utilities */}
+      <Route
+        path="/admin/make-timelines-public"
+        element={
+          <ProtectedRoute>
+            <MakeTimelinesPublic />
           </ProtectedRoute>
         }
       />

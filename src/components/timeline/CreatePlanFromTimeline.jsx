@@ -34,7 +34,12 @@ const CreatePlanFromTimeline = () => {
       setPlanDescription(timelineData.description || '');
     } catch (error) {
       console.error('Error loading timeline:', error);
-      addToast('Failed to load timeline', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to load timeline',
+        message: 'Please try again.',
+        duration: 4000
+      });
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -48,7 +53,12 @@ const CreatePlanFromTimeline = () => {
 
   const handleCreatePlan = async () => {
     if (!planName.trim()) {
-      addToast('Please enter a plan name', 'error');
+      addToast({
+        type: 'error',
+        title: 'Plan name required',
+        message: 'Please enter a plan name.',
+        duration: 3000
+      });
       return;
     }
 
@@ -74,13 +84,23 @@ const CreatePlanFromTimeline = () => {
       const newPlan = await createNewPlan(planData);
       console.log('[CreatePlanFromTimeline] Plan created successfully:', newPlan);
 
-      addToast('Mitplan created successfully from timeline', 'success');
-      
+      addToast({
+        type: 'success',
+        title: 'Mitplan created!',
+        message: 'Your mitplan has been created successfully from the timeline.',
+        duration: 3000
+      });
+
       // Navigate to the new plan editor
       navigate(`/plan/${newPlan.id}`);
     } catch (error) {
       console.error('Error creating plan from timeline:', error);
-      addToast(error.message || 'Failed to create mitplan', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to create mitplan',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
     } finally {
       setCreating(false);
     }

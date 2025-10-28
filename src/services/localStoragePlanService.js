@@ -65,7 +65,12 @@ class LocalStoragePlanService {
         isPublic: false, // Local plans are private by default
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        version: 1
+        version: 1,
+        // Timeline references (optional)
+        sourceTimelineId: planData.sourceTimelineId || null,
+        sourceTimelineName: planData.sourceTimelineName || null,
+        // Boss tags for flexible boss associations
+        bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
       };
 
       // Store the plan
@@ -80,7 +85,9 @@ class LocalStoragePlanService {
         updatedAt: plan.updatedAt,
         userId: user.id,
         isLocal: true,
-        isPublic: false
+        isPublic: false,
+        sourceTimelineId: plan.sourceTimelineId,
+        bossTags: plan.bossTags
       });
 
       // Add to user's plans

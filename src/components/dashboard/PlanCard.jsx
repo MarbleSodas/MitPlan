@@ -286,10 +286,20 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
 
     try {
       await deletePlanById(plan.id);
-      addToast('Plan deleted successfully', 'success');
+      addToast({
+        type: 'success',
+        title: 'Plan deleted!',
+        message: 'Your plan has been deleted successfully.',
+        duration: 3000
+      });
     } catch (error) {
       console.error('Failed to delete plan:', error);
-      addToast(error.message || 'Failed to delete plan', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to delete plan',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
     } finally {
       setLoading(false);
     }

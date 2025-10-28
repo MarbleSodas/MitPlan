@@ -289,12 +289,20 @@ const Dashboard = () => {
                 <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Boss Action Timelines</h2>
                 <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
               </div>
-              <button
-                onClick={handleCreateTimeline}
-                className="rounded-lg bg-[#3b82f6] px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]"
-              >
-                Create Timeline
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate('/timeline/browse')}
+                  className="rounded-lg border-2 border-[#3b82f6] px-4 py-2 font-semibold text-[#3b82f6] transition-all hover:bg-[#3b82f6] hover:text-white"
+                >
+                  Browse Timelines
+                </button>
+                <button
+                  onClick={handleCreateTimeline}
+                  className="rounded-lg bg-[#3b82f6] px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]"
+                >
+                  Create Timeline
+                </button>
+              </div>
             </div>
 
             {timelinesLoading ? (

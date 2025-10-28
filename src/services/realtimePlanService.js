@@ -53,7 +53,12 @@ export const createPlan = async (userId, planData) => {
       isPublic: planData.isPublic || false,
       lastModifiedBy: userId,
       lastChangeOrigin: 'creation',
-      version: 4.0 // New version for updated Realtime Database structure
+      version: 4.0, // New version for updated Realtime Database structure
+      // Timeline references (optional)
+      sourceTimelineId: planData.sourceTimelineId || null,
+      sourceTimelineName: planData.sourceTimelineName || null,
+      // Boss tags for flexible boss associations
+      bossTags: planData.bossTags || (bossId ? [bossId] : [])
     };
 
     // Initialize ownership and access control
@@ -353,7 +358,12 @@ export const subscribeToPlan = (planId, callback) => {
         updatedAt: planData.updatedAt,
         version: planData.version || 3.0,
         lastModifiedBy: planData.lastModifiedBy,
-        lastChangeOrigin: planData.lastChangeOrigin
+        lastChangeOrigin: planData.lastChangeOrigin,
+        // Timeline references (optional)
+        sourceTimelineId: planData.sourceTimelineId || null,
+        sourceTimelineName: planData.sourceTimelineName || null,
+        // Boss tags for flexible boss associations
+        bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
       };
 
       callback(completePlan);
@@ -397,7 +407,12 @@ export const subscribeToUserPlans = (userId, callback) => {
             updatedAt: planData.updatedAt,
             version: planData.version || 3.0,
             lastModifiedBy: planData.lastModifiedBy,
-            lastChangeOrigin: planData.lastChangeOrigin
+            lastChangeOrigin: planData.lastChangeOrigin,
+            // Timeline references (optional)
+            sourceTimelineId: planData.sourceTimelineId || null,
+            sourceTimelineName: planData.sourceTimelineName || null,
+            // Boss tags for flexible boss associations
+            bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
           };
           plans.push(transformedPlan);
         }
@@ -829,7 +844,12 @@ export const subscribeToPlanWithOrigin = (planId, callback, sessionId = null) =>
           updatedAt: planData.updatedAt,
           version: planData.version || 3.0,
           lastModifiedBy: planData.lastModifiedBy,
-          lastChangeOrigin: planData.lastChangeOrigin
+          lastChangeOrigin: planData.lastChangeOrigin,
+          // Timeline references (optional)
+          sourceTimelineId: planData.sourceTimelineId || null,
+          sourceTimelineName: planData.sourceTimelineName || null,
+          // Boss tags for flexible boss associations
+          bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
         };
 
         callback(completePlan, changeOrigin);

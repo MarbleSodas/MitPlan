@@ -20,10 +20,34 @@
     "timelines": {
       ".read": true,
       ".write": true,
-      ".indexOn": ["userId", "ownerId", "official"],
+      ".indexOn": ["userId", "ownerId", "official", "isPublic", "likeCount"],
       "$timelineId": {
         ".read": true,
-        ".write": "data.child('official').val() !== true || !data.exists()"
+        ".write": "data.child('official').val() !== true || !data.exists()",
+        "likedBy": {
+          ".read": true,
+          ".write": true,
+          "$userId": {
+            ".read": true,
+            ".write": true
+          }
+        }
+      }
+    },
+    "userCollections": {
+      ".read": true,
+      ".write": true,
+      "$userId": {
+        ".read": true,
+        ".write": true,
+        "timelines": {
+          ".read": true,
+          ".write": true,
+          "$timelineId": {
+            ".read": true,
+            ".write": true
+          }
+        }
       }
     }
   }

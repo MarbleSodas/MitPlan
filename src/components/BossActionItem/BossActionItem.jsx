@@ -16,7 +16,7 @@ import {
 } from '../../utils';
 
 
-import { mitigationAbilities, bosses } from '../../data';
+import { mitigationAbilities } from '../../data';
 import { useTankPositionContext } from '../../contexts';
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 
@@ -107,6 +107,7 @@ const BossActionItem = memo(({
   getActiveMitigations,
   selectedJobs,
   currentBossLevel,
+  baseHealth,
   onClick,
   children
 }) => {
@@ -277,13 +278,14 @@ const BossActionItem = memo(({
   );
 
   // Get the current boss's base health values
-  const currentBoss = bosses.find(boss => boss.level === currentBossLevel);
-  const baseHealth = currentBoss ? currentBoss.baseHealth : { party: 80000, tank: 120000 };
+  // Use baseHealth from props (provided by RealtimeBossContext) or fallback to default
+  const defaultBaseHealth = { party: 143000, tank: 225000 }; // Level 100 defaults
+  const effectiveBaseHealth = baseHealth || defaultBaseHealth;
   const { realtimePlan } = useRealtimePlan();
   const healthSettings = realtimePlan?.healthSettings || {};
-  const mainTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.mainTank) || baseHealth.tank;
-  const offTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.offTank) || baseHealth.tank;
-  const partyBaseMaxHealth = (healthSettings.partyMinHealth) || baseHealth.party;
+  const mainTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.mainTank) || effectiveBaseHealth.tank;
+  const offTankBaseMaxHealth = (healthSettings.tankMaxHealth && healthSettings.tankMaxHealth.offTank) || effectiveBaseHealth.tank;
+  const partyBaseMaxHealth = (healthSettings.partyMinHealth) || effectiveBaseHealth.party;
 
 
   // Parse the unmitigated damage value

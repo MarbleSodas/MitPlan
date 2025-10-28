@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Share2, Edit2, Check, X, Copy, Trash2, FileText } from 'lucide-react';
+import { Share2, Edit2, Check, X, Copy, Trash2, FileText, BookmarkX } from 'lucide-react';
 import { useToast } from '../common/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { deleteTimeline, duplicateTimeline, getShareableLink } from '../../services/timelineService';
+import { deleteTimeline, duplicateTimeline, getShareableLink, removeFromCollection } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 
 const Card = ({ children, className = '', ...rest }) => (
@@ -112,15 +112,72 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       }
 
       await duplicateTimeline(timeline.id, userId);
-      addToast('Timeline duplicated successfully', 'success');
-      
+      addToast({
+        type: 'success',
+        title: 'Timeline duplicated!',
+        message: 'Your timeline has been duplicated successfully.',
+        duration: 3000
+      });
+
       // Notify parent to refresh
       if (onTimelineChanged) {
         onTimelineChanged();
       }
     } catch (error) {
       console.error('Error duplicating timeline:', error);
-      addToast(error.message || 'Failed to duplicate timeline', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to duplicate timeline',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle remove from collection
+  const handleRemoveFromCollection = async () => {
+    if (loading) return;
+
+    setLoading(true);
+
+    // Optimistic update: Remove timeline from UI immediately
+    if (onTimelineDeleted) {
+      onTimelineDeleted(timeline.id);
+    }
+
+    try {
+      const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      await removeFromCollection(userId, timeline.id);
+      addToast({
+        type: 'success',
+        title: 'Removed from collection!',
+        message: 'Timeline has been removed from your collection.',
+        duration: 3000
+      });
+
+      // Notify parent to refresh
+      if (onTimelineChanged) {
+        onTimelineChanged();
+      }
+    } catch (error) {
+      console.error('Error removing from collection:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to remove timeline',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
+
+      // Revert optimistic update on error
+      if (onTimelineChanged) {
+        onTimelineChanged();
+      }
     } finally {
       setLoading(false);
     }
@@ -145,7 +202,12 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       }
 
       await deleteTimeline(timeline.id, userId);
-      addToast('Timeline deleted successfully', 'success');
+      addToast({
+        type: 'success',
+        title: 'Timeline deleted!',
+        message: 'Your timeline has been deleted successfully.',
+        duration: 3000
+      });
 
       // Notify parent for any additional cleanup
       if (onTimelineChanged) {
@@ -153,7 +215,12 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       }
     } catch (error) {
       console.error('Error deleting timeline:', error);
-      addToast(error.message || 'Failed to delete timeline', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to delete timeline',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
 
       // Rollback: Reload timelines on error
       if (onTimelineChanged) {
@@ -169,10 +236,20 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     try {
       const shareLink = getShareableLink(timeline.id);
       await navigator.clipboard.writeText(shareLink);
-      addToast('Share link copied to clipboard', 'success');
+      addToast({
+        type: 'success',
+        title: 'Share link copied!',
+        message: 'The share link has been copied to your clipboard.',
+        duration: 3000
+      });
     } catch (error) {
       console.error('Error copying share link:', error);
-      addToast('Failed to copy share link', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to copy share link',
+        message: 'Please try again.',
+        duration: 4000
+      });
     }
   };
 
@@ -222,10 +299,12 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
         </CardContent>
 
         <CardActions>
-          <ActionButton onClick={handleEdit} variant="primary" disabled={loading}>
-            <Edit2 size={16} />
-            Edit
-          </ActionButton>
+          {isOwner() && (
+            <ActionButton onClick={handleEdit} variant="primary" disabled={loading}>
+              <Edit2 size={16} />
+              Edit
+            </ActionButton>
+          )}
 
           <ActionButton onClick={handleView} disabled={loading}>
             <FileText size={16} />
@@ -251,6 +330,13 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
             <ActionButton onClick={() => setShowDeleteConfirm(true)} variant="danger" disabled={loading}>
               <Trash2 size={16} />
               Delete
+            </ActionButton>
+          )}
+
+          {!isOwner() && timeline.inCollection && (
+            <ActionButton onClick={handleRemoveFromCollection} variant="secondary" disabled={loading}>
+              <BookmarkX size={16} />
+              Remove from Collection
             </ActionButton>
           )}
         </CardActions>
