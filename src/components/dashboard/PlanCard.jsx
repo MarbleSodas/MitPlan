@@ -118,7 +118,7 @@ const ConfirmActions = ({ children, className = '', ...rest }) => (
   <div {...rest} className={`flex gap-4 justify-end mt-6 ${className}`}>{children}</div>
 );
 
-const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
+const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
   const { addToast } = useToast();
   const { user, isAnonymousMode, anonymousUser } = useAuth();
@@ -277,11 +277,19 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false }) => {
 
   const handleDelete = async () => {
     setLoading(true);
+    setShowDeleteConfirm(false);
+
+    // Optimistic update: Remove plan from Dashboard UI immediately
+    if (onPlanDeleted) {
+      onPlanDeleted(plan.id);
+    }
+
     try {
       await deletePlanById(plan.id);
-      setShowDeleteConfirm(false);
+      addToast('Plan deleted successfully', 'success');
     } catch (error) {
       console.error('Failed to delete plan:', error);
+      addToast(error.message || 'Failed to delete plan', 'error');
     } finally {
       setLoading(false);
     }

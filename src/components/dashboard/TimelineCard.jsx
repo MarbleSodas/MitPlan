@@ -67,7 +67,7 @@ const ActionButton = ({ children, className = '', variant = 'default', ...rest }
   );
 };
 
-const TimelineCard = ({ timeline, onTimelineChanged }) => {
+const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
   const { addToast } = useToast();
   const { user, isAnonymousMode, anonymousUser } = useAuth();
   const navigate = useNavigate();
@@ -131,6 +131,13 @@ const TimelineCard = ({ timeline, onTimelineChanged }) => {
     if (loading) return;
 
     setLoading(true);
+    setShowDeleteConfirm(false);
+
+    // Optimistic update: Remove timeline from UI immediately
+    if (onTimelineDeleted) {
+      onTimelineDeleted(timeline.id);
+    }
+
     try {
       const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
       if (!userId) {
@@ -139,15 +146,19 @@ const TimelineCard = ({ timeline, onTimelineChanged }) => {
 
       await deleteTimeline(timeline.id, userId);
       addToast('Timeline deleted successfully', 'success');
-      setShowDeleteConfirm(false);
-      
-      // Notify parent to refresh
+
+      // Notify parent for any additional cleanup
       if (onTimelineChanged) {
         onTimelineChanged();
       }
     } catch (error) {
       console.error('Error deleting timeline:', error);
       addToast(error.message || 'Failed to delete timeline', 'error');
+
+      // Rollback: Reload timelines on error
+      if (onTimelineChanged) {
+        onTimelineChanged();
+      }
     } finally {
       setLoading(false);
     }

@@ -157,15 +157,25 @@ export const PlanProvider = ({ children }) => {
   const deletePlanById = async (planId) => {
     setLoading(true);
     setError(null);
-    
+
+    // Optimistic update: Remove plan from UI immediately
+    const previousPlans = plans;
+    const previousCurrentPlan = currentPlan;
+
+    setPlans(prev => prev.filter(plan => plan.id !== planId));
+
+    if (currentPlan?.id === planId) {
+      setCurrentPlan(null);
+    }
+
     try {
       await planService.deletePlan(planId);
-      setPlans(prev => prev.filter(plan => plan.id !== planId));
-      
-      if (currentPlan?.id === planId) {
-        setCurrentPlan(null);
-      }
+      console.log('[PlanContext] Plan deleted successfully (optimistic)');
     } catch (err) {
+      // Rollback on error: Restore previous state
+      console.error('[PlanContext] Plan deletion failed, rolling back:', err);
+      setPlans(previousPlans);
+      setCurrentPlan(previousCurrentPlan);
       setError(err.message);
       throw err;
     } finally {

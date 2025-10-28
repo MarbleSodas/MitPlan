@@ -143,6 +143,11 @@ const Dashboard = () => {
     loadUserTimelines(); // Refresh timelines when one is changed/deleted
   };
 
+  const handleTimelineDeleted = (timelineId) => {
+    // Optimistic update: Remove timeline from UI immediately
+    setTimelines(prev => prev.filter(timeline => timeline.id !== timelineId));
+  };
+
   const handleCreateTimeline = () => {
     navigate('/timeline/create');
   };
@@ -150,6 +155,15 @@ const Dashboard = () => {
   const handlePlanChanged = () => {
     loadUserPlans(); // Keep for real-time updates
     loadCategorizedPlans(); // Refresh categorized view
+  };
+
+  const handlePlanDeleted = (planId) => {
+    // Optimistic update: Remove plan from categorized lists immediately
+    setCategorizedPlans(prev => ({
+      ownedPlans: prev.ownedPlans.filter(plan => plan.id !== planId),
+      sharedPlans: prev.sharedPlans.filter(plan => plan.id !== planId),
+      totalPlans: prev.totalPlans - 1
+    }));
   };
 
   if (loading) {
@@ -229,6 +243,7 @@ const Dashboard = () => {
                     plan={plan}
                     onEdit={() => handleNavigateToPlanner(plan.id)}
                     onPlanChanged={handlePlanChanged}
+                    onPlanDeleted={handlePlanDeleted}
                     isSharedPlan={false}
                   />
                 ))}
@@ -258,6 +273,7 @@ const Dashboard = () => {
                       plan={plan}
                       onEdit={() => handleNavigateToPlanner(plan.id)}
                       onPlanChanged={handlePlanChanged}
+                      onPlanDeleted={handlePlanDeleted}
                       isSharedPlan={true}
                     />
                   ))}
@@ -298,6 +314,7 @@ const Dashboard = () => {
                     key={timeline.id}
                     timeline={timeline}
                     onTimelineChanged={handleTimelineChanged}
+                    onTimelineDeleted={handleTimelineDeleted}
                   />
                 ))}
               </div>

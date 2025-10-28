@@ -25,7 +25,13 @@ export const RealtimeBossProvider = ({ children }) => {
 
   // Update boss actions when boss changes
   useEffect(() => {
-    if (!currentBossId) return;
+    // Boss is now optional - if no boss selected, use empty actions
+    if (!currentBossId) {
+      console.log('[RealtimeBossContext] No boss selected, using empty actions');
+      setCurrentBossActions([]);
+      setSelectedBossAction(null);
+      return;
+    }
 
     console.log('[RealtimeBossContext] Loading boss actions for:', currentBossId);
 
@@ -42,6 +48,10 @@ export const RealtimeBossProvider = ({ children }) => {
 
       // Deselect any selected action when changing bosses
       setSelectedBossAction(null);
+    } else {
+      // Boss ID provided but no actions found
+      console.warn('[RealtimeBossContext] No actions found for boss:', currentBossId);
+      setCurrentBossActions([]);
     }
   }, [currentBossId]);
 

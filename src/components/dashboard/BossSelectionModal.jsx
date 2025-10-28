@@ -9,7 +9,14 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
     setSelectedBoss(boss);
     // Small delay for visual feedback before proceeding
     setTimeout(() => {
-      onSelectBoss(boss.id);
+      onSelectBoss(boss?.id || null);
+    }, 150);
+  };
+
+  const handleNoBossClick = () => {
+    setSelectedBoss({ id: null });
+    setTimeout(() => {
+      onSelectBoss(null);
     }, 150);
   };
 
@@ -18,13 +25,31 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
       <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-neutral-900 p-8 rounded-xl max-w-3xl w-[90%] max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Select Boss Encounter</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-2 text-base">Choose a boss to create a mitigation plan for</p>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Select Boss Encounter (Optional)</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-2 text-base">Choose a boss to start with their timeline, or create a custom plan</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-neutral-800">×</button>
         </div>
 
         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-6 mt-4">
+          {/* No Boss Option */}
+          <div
+            onClick={handleNoBossClick}
+            className="bg-white dark:bg-neutral-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 cursor-pointer transition-transform shadow-sm hover:border-blue-500 hover:-translate-y-0.5 hover:shadow-lg active:-translate-y-0.5 text-center relative overflow-hidden"
+            style={{
+              opacity: selectedBoss?.id === null ? 0.7 : 1,
+              transform: selectedBoss?.id === null ? 'scale(0.98)' : undefined
+            }}
+          >
+            <div className="text-3xl mb-4 h-[60px] flex items-center justify-center">
+              ✨
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Custom Timeline</h3>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">No Boss</div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 m-0 leading-snug overflow-hidden">Create a custom timeline from scratch using the boss actions library</p>
+          </div>
+
+          {/* Boss Options */}
           {bosses.map(boss => (
             <div
               key={boss.id}

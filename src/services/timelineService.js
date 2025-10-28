@@ -29,12 +29,14 @@ const TIMELINES_PATH = 'timelines';
  * @typedef {Object} Timeline
  * @property {string} id - Unique identifier for the timeline
  * @property {string} name - Name of the timeline
- * @property {string} bossId - ID of the boss this timeline is for
+ * @property {string[]} [bossTags] - Optional array of boss tags/labels (can be official boss IDs or custom names)
+ * @property {string} [bossId] - DEPRECATED: Legacy single boss ID (kept for backward compatibility)
  * @property {string} userId - ID of the user who created the timeline
  * @property {string} ownerId - ID of the owner (same as userId)
  * @property {BossAction[]} actions - Array of boss actions in the timeline
  * @property {string} [description] - Optional description of the timeline
  * @property {boolean} isPublic - Whether the timeline is publicly accessible
+ * @property {boolean} [official] - Whether this is an official/predefined timeline (read-only)
  * @property {number} createdAt - Timestamp when the timeline was created
  * @property {number} updatedAt - Timestamp when the timeline was last updated
  * @property {number} version - Version number of the timeline data structure
@@ -43,10 +45,12 @@ const TIMELINES_PATH = 'timelines';
 /**
  * @typedef {Object} TimelineData
  * @property {string} [name] - Name of the timeline
- * @property {string} [bossId] - ID of the boss
+ * @property {string[]} [bossTags] - Optional array of boss tags
+ * @property {string} [bossId] - DEPRECATED: Legacy single boss ID
  * @property {BossAction[]} [actions] - Array of boss actions
  * @property {string} [description] - Description of the timeline
  * @property {boolean} [isPublic] - Whether the timeline is public
+ * @property {boolean} [official] - Whether this is an official timeline
  * @property {number} [createdAt] - Creation timestamp
  */
 
@@ -64,18 +68,21 @@ export const createTimeline = async (userId, timelineData) => {
       throw new Error('User ID is required to create a timeline');
     }
 
-    // Prepare timeline document
+    // Prepare timeline document with new flexible structure
     const timelineDoc = {
       name: timelineData.name || 'Untitled Timeline',
-      bossId: timelineData.bossId || 'ketuduke',
+      // Support both new bossTags array and legacy bossId
+      bossTags: timelineData.bossTags || (timelineData.bossId ? [timelineData.bossId] : []),
+      bossId: timelineData.bossId || null, // Keep for backward compatibility
       userId: userId,
       ownerId: userId, // For backward compatibility
       actions: timelineData.actions || [], // Array of boss actions (both existing and custom)
       description: timelineData.description || '',
       isPublic: timelineData.isPublic || false,
+      official: timelineData.official || false, // Mark official timelines
       createdAt: timelineData.createdAt || Date.now(),
       updatedAt: Date.now(),
-      version: 1.0
+      version: 2.0 // Increment version for new structure
     };
 
     // Create timeline in Firebase
@@ -308,6 +315,102 @@ export const importTimeline = async (importData, userId, timelineName = null) =>
   }
 };
 
+/**
+ * Get all official timelines
+ * @returns {Promise<Array>} Array of official timelines
+ */
+export const getOfficialTimelines = async () => {
+  try {
+    console.log('[TimelineService] Fetching official timelines');
+
+    const timelinesRef = ref(database, TIMELINES_PATH);
+    const officialTimelinesQuery = query(timelinesRef, orderByChild('official'), equalTo(true));
+    const snapshot = await get(officialTimelinesQuery);
+
+    if (snapshot.exists()) {
+      const timelines = [];
+      snapshot.forEach((childSnapshot) => {
+        timelines.push({
+          id: childSnapshot.key,
+          ...childSnapshot.val()
+        });
+      });
+
+      // Sort by name
+      timelines.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+      console.log('[TimelineService] Retrieved official timelines:', timelines.length);
+      return timelines;
+    } else {
+      console.log('[TimelineService] No official timelines found');
+      return [];
+    }
+  } catch (error) {
+    console.error('[TimelineService] Error fetching official timelines:', error);
+    throw error;
+  }
+};
+
+/**
+ * Add a boss tag to a timeline
+ * @param {string} timelineId - Timeline ID
+ * @param {string} bossTag - Boss tag to add (can be boss ID or custom name)
+ * @returns {Promise<void>}
+ */
+export const addBossTag = async (timelineId, bossTag) => {
+  try {
+    const timeline = await getTimeline(timelineId);
+    const currentTags = timeline.bossTags || [];
+
+    // Avoid duplicates
+    if (!currentTags.includes(bossTag)) {
+      const updatedTags = [...currentTags, bossTag];
+      await updateTimeline(timelineId, { bossTags: updatedTags });
+    }
+  } catch (error) {
+    console.error('[TimelineService] Error adding boss tag:', error);
+    throw new Error('Failed to add boss tag');
+  }
+};
+
+/**
+ * Remove a boss tag from a timeline
+ * @param {string} timelineId - Timeline ID
+ * @param {string} bossTag - Boss tag to remove
+ * @returns {Promise<void>}
+ */
+export const removeBossTag = async (timelineId, bossTag) => {
+  try {
+    const timeline = await getTimeline(timelineId);
+    const currentTags = timeline.bossTags || [];
+    const updatedTags = currentTags.filter(tag => tag !== bossTag);
+    await updateTimeline(timelineId, { bossTags: updatedTags });
+  } catch (error) {
+    console.error('[TimelineService] Error removing boss tag:', error);
+    throw new Error('Failed to remove boss tag');
+  }
+};
+
+/**
+ * Update a specific action in a timeline
+ * @param {string} timelineId - Timeline ID
+ * @param {string} actionId - Action ID to update
+ * @param {object} updates - Fields to update in the action
+ * @returns {Promise<void>}
+ */
+export const updateTimelineAction = async (timelineId, actionId, updates) => {
+  try {
+    const timeline = await getTimeline(timelineId);
+    const updatedActions = timeline.actions.map(action =>
+      action.id === actionId ? { ...action, ...updates } : action
+    );
+    await updateTimeline(timelineId, { actions: updatedActions });
+  } catch (error) {
+    console.error('[TimelineService] Error updating timeline action:', error);
+    throw new Error('Failed to update timeline action');
+  }
+};
+
 export default {
   createTimeline,
   getTimeline,
@@ -317,6 +420,10 @@ export default {
   duplicateTimeline,
   getShareableLink,
   exportTimeline,
-  importTimeline
+  importTimeline,
+  getOfficialTimelines,
+  addBossTag,
+  removeBossTag,
+  updateTimelineAction
 };
 

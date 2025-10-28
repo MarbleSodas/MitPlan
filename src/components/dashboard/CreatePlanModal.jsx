@@ -31,10 +31,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       return;
     }
 
-    if (!formData.bossId) {
-      setError('Please select a boss encounter');
-      return;
-    }
+    // Boss is now optional - no validation required
 
     setLoading(true);
     setError('');
@@ -43,7 +40,8 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       const planData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        bossId: formData.bossId,
+        bossId: formData.bossId || null, // Boss is now optional
+        bossTags: formData.bossId ? [formData.bossId] : [], // Convert to array for new structure
         assignments: {},
         selectedJobs: {},
         tankPositions: {
@@ -99,26 +97,29 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="bossId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Boss Encounter *</label>
+            <label htmlFor="bossId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Boss Encounter (Optional)</label>
             <select
               id="bossId"
               name="bossId"
               value={formData.bossId}
               onChange={handleInputChange}
               disabled={!!preSelectedBossId}
-              required
               className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
             >
-              <option value="">Select a boss encounter</option>
+              <option value="">No boss selected (create custom timeline)</option>
               {bosses.map(boss => (
                 <option key={boss.id} value={boss.id}>
                   {boss.name}
                 </option>
               ))}
             </select>
-            {preSelectedBossId && (
+            {preSelectedBossId ? (
               <div className="text-sm text-gray-500 mt-1">
                 Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 mt-1">
+                You can create a custom timeline without selecting a boss, or choose a boss to start with their predefined actions.
               </div>
             )}
           </div>

@@ -26,7 +26,12 @@ const TimelineViewer = ({ isShared = false }) => {
       setTimeline(timelineData);
     } catch (error) {
       console.error('Error loading timeline:', error);
-      addToast('Failed to load timeline', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to load timeline',
+        message: 'Please try again.',
+        duration: 4000
+      });
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -56,10 +61,20 @@ const TimelineViewer = ({ isShared = false }) => {
     try {
       const shareLink = getShareableLink(timelineId);
       await navigator.clipboard.writeText(shareLink);
-      addToast('Share link copied to clipboard', 'success');
+      addToast({
+        type: 'success',
+        title: 'Share link copied!',
+        message: 'The share link has been copied to your clipboard.',
+        duration: 3000
+      });
     } catch (error) {
       console.error('Error copying share link:', error);
-      addToast('Failed to copy share link', 'error');
+      addToast({
+        type: 'error',
+        title: 'Failed to copy share link',
+        message: 'Please try again.',
+        duration: 4000
+      });
     }
   };
 
