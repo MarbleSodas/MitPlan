@@ -25,7 +25,7 @@ import Footer from '../layout/Footer';
 
 // Import planning components
 import JobSelector from '../../features/jobs/JobSelector/JobSelector';
-import BossSelector from '../../features/bosses/BossSelector/BossSelector';
+
 import BossActionItem from '../BossActionItem/BossActionItem';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
@@ -75,7 +75,7 @@ const PlanningInterface = () => {
   const { loading, error } = useRealtimePlan();
 
   // Get real-time contexts - ALWAYS call all hooks before any early returns
-  const { currentBossId, setCurrentBossId, sortedBossActions, selectedBossAction, toggleBossActionSelection, currentBossLevel } = useRealtimeBossContext();
+  const { sortedBossActions, selectedBossAction, toggleBossActionSelection, currentBossLevel, currentBaseHealth } = useRealtimeBossContext();
   const { selectedJobs } = useRealtimeJobContext();
   const {
     assignments,
@@ -407,11 +407,7 @@ const PlanningInterface = () => {
       onDragEnd={handleDragEnd}
     >
       <div className="flex flex-col gap-4 mb-4">
-        <BossSelector
-          selectedBossId={currentBossId}
-          onSelectBoss={setCurrentBossId}
-          disabled={false}
-        />
+
         <JobSelector
           disabled={false}
         />
@@ -460,6 +456,7 @@ const PlanningInterface = () => {
                   getActiveMitigations={getActiveMitigations}
                   selectedJobs={selectedJobs}
                   currentBossLevel={currentBossLevel}
+                  baseHealth={currentBaseHealth}
                   onClick={() => handleBossActionSelection(action)}
                 >
                   <AssignedMitigations
@@ -567,6 +564,7 @@ const PlanningInterface = () => {
 	                          getActiveMitigations={getActiveMitigations}
 	                          selectedJobs={selectedJobs}
 	                          currentBossLevel={currentBossLevel}
+	                          baseHealth={currentBaseHealth}
 	                          onClick={() => handleBossActionSelection(action)}
 	                        >
 	                          <AssignedMitigations

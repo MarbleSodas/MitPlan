@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePlan } from '../../contexts/PlanContext';
 import { bosses } from '../../data';
+import { getTimelinesByBossTag, getOfficialTimelines } from '../../services/timelineService';
 
 
 const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedBossId = null }) => {
@@ -8,12 +9,36 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    bossId: preSelectedBossId || ''
+    bossId: preSelectedBossId || '',
+    timelineId: '' // Selected timeline (optional)
   });
   const [loading, setLoading] = useState(false);
+  const [loadingTimelines, setLoadingTimelines] = useState(false);
   const [error, setError] = useState('');
+  const [availableTimelines, setAvailableTimelines] = useState([]);
 
-  // Use the imported bosses data for consistency
+  // Load timelines when boss is selected
+  useEffect(() => {
+    if (formData.bossId) {
+      loadTimelinesForBoss(formData.bossId);
+    } else {
+      setAvailableTimelines([]);
+    }
+  }, [formData.bossId]);
+
+  const loadTimelinesForBoss = async (bossId) => {
+    setLoadingTimelines(true);
+    try {
+      // Get both official and custom timelines for this boss
+      const timelines = await getTimelinesByBossTag(bossId, false);
+      setAvailableTimelines(timelines);
+    } catch (err) {
+      console.error('[CreatePlanModal] Error loading timelines:', err);
+      setAvailableTimelines([]);
+    } finally {
+      setLoadingTimelines(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -25,16 +50,13 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setError('Plan name is required');
       return;
     }
 
-    if (!formData.bossId) {
-      setError('Please select a boss encounter');
-      return;
-    }
+    // Boss is now optional - no validation required
 
     setLoading(true);
     setError('');
@@ -43,7 +65,8 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       const planData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        bossId: formData.bossId,
+        bossId: formData.bossId || null, // Boss is now optional
+        bossTags: formData.bossId ? [formData.bossId] : [], // Convert to array for new structure
         assignments: {},
         selectedJobs: {},
         tankPositions: {
@@ -51,6 +74,15 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           offTank: null
         }
       };
+
+      // If a timeline is selected, store the reference
+      if (formData.timelineId) {
+        planData.sourceTimelineId = formData.timelineId;
+        const selectedTimeline = availableTimelines.find(t => t.id === formData.timelineId);
+        if (selectedTimeline) {
+          planData.sourceTimelineName = selectedTimeline.name;
+        }
+      }
 
       console.log('[CreatePlanModal] Creating plan with data:', planData);
       const newPlan = await createNewPlan(planData);
@@ -99,20 +131,19 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="bossId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Boss Encounter *</label>
+            <label htmlFor="bossId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Boss Encounter</label>
             <select
               id="bossId"
               name="bossId"
               value={formData.bossId}
               onChange={handleInputChange}
               disabled={!!preSelectedBossId}
-              required
               className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
             >
               <option value="">Select a boss encounter</option>
               {bosses.map(boss => (
                 <option key={boss.id} value={boss.id}>
-                  {boss.name}
+                  {boss.icon} {boss.name}
                 </option>
               ))}
             </select>
@@ -122,6 +153,51 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               </div>
             )}
           </div>
+
+          {/* Timeline Selection - Only show when boss is selected */}
+          {formData.bossId && (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="timelineId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">
+                Timeline (Optional)
+              </label>
+              {loadingTimelines ? (
+                <div className="text-sm text-gray-500 py-2">Loading timelines...</div>
+              ) : (
+                <>
+                  <select
+                    id="timelineId"
+                    name="timelineId"
+                    value={formData.timelineId}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Create blank plan (no timeline)</option>
+                    {availableTimelines.map(timeline => (
+                      <option key={timeline.id} value={timeline.id}>
+                        {timeline.official ? '⭐ ' : '📝 '}
+                        {timeline.name}
+                        {timeline.official ? ' (Official)' : ' (Custom)'}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {formData.timelineId ? (
+                      <>
+                        Selected timeline will be used as a reference for boss actions.
+                        {availableTimelines.find(t => t.id === formData.timelineId)?.official && (
+                          <span className="block mt-1 text-blue-600 dark:text-blue-400">
+                            ⭐ Official timeline - Predefined boss actions
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      'Select a timeline to use predefined boss actions, or create a blank plan to add custom actions.'
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <label htmlFor="description" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Description</label>

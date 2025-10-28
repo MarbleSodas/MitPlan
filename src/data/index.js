@@ -1,7 +1,7 @@
 /**
  * Export all data from a single file
  */
-export { bosses } from './bosses/bossData.js';
+export { bosses, baseHealthValues } from './bosses/bossData.js';
 export { bossActionsMap, bossActions } from './bosses/bossActions.js';
 export { ffxivJobs } from './jobs/jobData.js';
 export { mitigationAbilities } from './abilities/mitigationAbilities.js';

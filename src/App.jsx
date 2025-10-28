@@ -10,6 +10,11 @@ import MitigationPlanner from './components/planner/MitigationPlanner';
 import UnauthenticatedPlanGuard from './components/guards/UnauthenticatedPlanGuard';
 import DataPolicy from './pages/DataPolicy';
 import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
+import TimelineEditor from './components/timeline/TimelineEditor';
+import TimelineViewer from './components/timeline/TimelineViewer';
+import TimelineBrowser from './components/timeline/TimelineBrowser';
+import CreatePlanFromTimeline from './components/timeline/CreatePlanFromTimeline';
+import MakeTimelinesPublic from './components/admin/MakeTimelinesPublic';
 
 // DEBUGGING: Minimal App to test if React is working
 // TODO: Restore full app once loading issue is resolved
@@ -165,6 +170,73 @@ const AppContent = () => {
           <AnonymousAllowedRoute>
             <MitigationPlanner isAnonymous={true} />
           </AnonymousAllowedRoute>
+        }
+      />
+
+      {/* Timeline routes */}
+      <Route
+        path="/timeline/browse"
+        element={
+          <ProtectedRoute>
+            <TimelineBrowser />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/timeline/create"
+        element={
+          <ProtectedRoute>
+            <TimelineEditor />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/timeline/edit/:timelineId"
+        element={
+          <ProtectedRoute>
+            <TimelineEditor />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/timeline/view/:timelineId"
+        element={
+          <ProtectedRoute>
+            <TimelineViewer />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/timeline/shared/:timelineId"
+        element={
+          <AnonymousAllowedRoute>
+            <TimelineViewer isShared={true} />
+          </AnonymousAllowedRoute>
+        }
+      />
+
+      <Route
+        path="/plan/create-from-timeline/:timelineId"
+        element={
+          <ProtectedRoute>
+            <PlanProvider>
+              <CreatePlanFromTimeline />
+            </PlanProvider>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin utilities */}
+      <Route
+        path="/admin/make-timelines-public"
+        element={
+          <ProtectedRoute>
+            <MakeTimelinesPublic />
+          </ProtectedRoute>
         }
       />
 

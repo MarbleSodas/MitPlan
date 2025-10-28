@@ -25,19 +25,33 @@ export const BossProvider = ({ children }) => {
 
   // Update boss actions when boss changes
   useEffect(() => {
+    // Boss is now optional - if no boss selected, use empty actions
+    if (!currentBossId) {
+      console.log('[BossContext] No boss selected, using empty actions');
+      setCurrentBossActions([]);
+      setSelectedBossAction(null);
+      return;
+    }
+
     // Get the raw boss actions
     const rawBossActions = bossActionsMap[currentBossId];
 
-    // Process multi-hit tank busters
-    const processedActions = processMultiHitTankBusters(rawBossActions);
+    if (rawBossActions) {
+      // Process multi-hit tank busters
+      const processedActions = processMultiHitTankBusters(rawBossActions);
 
-    // Update the state with processed actions
-// DEBUG: Log boss action selection
-console.log('[BossContext] currentBossId:', currentBossId, 'First action:', processedActions[0]?.name);
-    setCurrentBossActions(processedActions);
+      // Update the state with processed actions
+      // DEBUG: Log boss action selection
+      console.log('[BossContext] currentBossId:', currentBossId, 'First action:', processedActions[0]?.name);
+      setCurrentBossActions(processedActions);
 
-    // Deselect any selected action when changing bosses
-    setSelectedBossAction(null);
+      // Deselect any selected action when changing bosses
+      setSelectedBossAction(null);
+    } else {
+      // Boss ID provided but no actions found
+      console.warn('[BossContext] No actions found for boss:', currentBossId);
+      setCurrentBossActions([]);
+    }
 
     // Update localStorage
     const autosavedPlan = loadFromLocalStorage('mitPlanAutosave', {});
