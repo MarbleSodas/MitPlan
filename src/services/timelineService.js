@@ -877,6 +877,25 @@ export const getCollectionTimelineIds = async (userId) => {
   }
 };
 
+/**
+ * Toggle the public/private status of a timeline
+ * @param {string} timelineId - Timeline ID
+ * @param {boolean} isPublic - New public status
+ * @returns {Promise<void>}
+ */
+export const togglePublicStatus = async (timelineId, isPublic) => {
+  try {
+    console.log('[TimelineService] Toggling public status for timeline:', timelineId, 'to:', isPublic);
+
+    await updateTimeline(timelineId, { isPublic });
+
+    console.log('[TimelineService] Public status updated successfully');
+  } catch (error) {
+    console.error('[TimelineService] Error toggling public status:', error);
+    throw new Error('Failed to update timeline visibility');
+  }
+};
+
 export default {
   createTimeline,
   getTimeline,
@@ -901,6 +920,7 @@ export default {
   addToCollection,
   removeFromCollection,
   isInCollection,
-  getCollectionTimelineIds
+  getCollectionTimelineIds,
+  togglePublicStatus
 };
 

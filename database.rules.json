@@ -22,8 +22,8 @@
       ".write": true,
       ".indexOn": ["userId", "ownerId", "official", "isPublic", "likeCount"],
       "$timelineId": {
-        ".read": true,
-        ".write": "data.child('official').val() !== true || !data.exists()",
+        ".read": "data.child('isPublic').val() === true || (auth != null && (data.child('userId').val() === auth.uid || data.child('ownerId').val() === auth.uid))",
+        ".write": "(auth != null && (data.child('userId').val() === auth.uid || data.child('ownerId').val() === auth.uid || !data.exists())) && (data.child('official').val() !== true || !data.exists())",
         "likedBy": {
           ".read": true,
           ".write": true,
