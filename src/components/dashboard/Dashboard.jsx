@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
+import { useToast } from '../common/Toast';
 import unifiedPlanService from '../../services/unifiedPlanService';
 import { getUserTimelines } from '../../services/timelineService';
 import PlanCard from './PlanCard';
 import TimelineCard from './TimelineCard';
 import CreatePlanModal from './CreatePlanModal';
 import BossSelectionModal from './BossSelectionModal';
+import CustomTimelineSelectionModal from './CustomTimelineSelectionModal';
 import ImportPlanModal from './ImportPlanModal';
 import UserProfile from './UserProfile';
 import ThemeToggle from '../common/ThemeToggle';
@@ -24,8 +26,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { loadUserPlans } = usePlan();
+  const { addToast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
+  const [showCustomTimelineModal, setShowCustomTimelineModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedBossForPlan, setSelectedBossForPlan] = useState(null);
   const [categorizedPlans, setCategorizedPlans] = useState({
@@ -115,12 +119,71 @@ const Dashboard = () => {
   const handleBossSelected = (bossId) => {
     setSelectedBossForPlan(bossId);
     setShowBossSelectionModal(false);
-    setShowCreateModal(true);
+
+    // If bossId is null, show custom timeline selection modal
+    // Otherwise, show the regular create plan modal
+    if (bossId === null) {
+      setShowCustomTimelineModal(true);
+    } else {
+      setShowCreateModal(true);
+    }
   };
 
   const handleCreateModalClose = () => {
     setShowCreateModal(false);
     setSelectedBossForPlan(null);
+  };
+
+  const handleCustomTimelineModalClose = () => {
+    setShowCustomTimelineModal(false);
+    setSelectedBossForPlan(null);
+  };
+
+  const handleTimelineSelected = async (timeline) => {
+    // Close the custom timeline modal
+    setShowCustomTimelineModal(false);
+
+    // Create a new empty plan with the selected timeline
+    try {
+      const planData = {
+        name: `${timeline.name} - Plan`,
+        description: timeline.description || '',
+        bossId: timeline.bossId || null,
+        bossTags: timeline.bossTags || [],
+        assignments: {},
+        selectedJobs: {},
+        tankPositions: {
+          mainTank: null,
+          offTank: null
+        },
+        sourceTimelineId: timeline.id,
+        sourceTimelineName: timeline.name,
+        bossMetadata: timeline.bossMetadata || null
+      };
+
+      // Use the unified plan service to create the plan
+      const newPlan = await unifiedPlanService.createPlan(planData);
+      console.log('[Dashboard] Plan created from timeline:', newPlan);
+
+      addToast({
+        type: 'success',
+        title: 'Plan created!',
+        message: `Plan created from timeline "${timeline.name}"`,
+        duration: 3000
+      });
+
+      // Refresh plans and navigate to the new plan
+      loadCategorizedPlans();
+      handleNavigateToPlanner(newPlan.id);
+    } catch (error) {
+      console.error('Error creating plan from timeline:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to create plan',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
+    }
   };
 
   const handleImportPlan = () => {
@@ -335,6 +398,13 @@ const Dashboard = () => {
         <BossSelectionModal
           onClose={() => setShowBossSelectionModal(false)}
           onSelectBoss={handleBossSelected}
+        />
+      )}
+
+      {showCustomTimelineModal && (
+        <CustomTimelineSelectionModal
+          onClose={handleCustomTimelineModalClose}
+          onSelectTimeline={handleTimelineSelected}
         />
       )}
 

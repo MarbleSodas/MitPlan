@@ -21,6 +21,7 @@ const TimelineEditor = () => {
   const [bossTags, setBossTags] = useState([]); // New: array of boss tags
   const [newBossTag, setNewBossTag] = useState(''); // New: input for adding boss tags
   const [description, setDescription] = useState('');
+  const [level, setLevel] = useState(100); // Boss level (default to 100)
   const [timelineActions, setTimelineActions] = useState([]);
   const [showCustomActionModal, setShowCustomActionModal] = useState(false);
   const [editingAction, setEditingAction] = useState(null);
@@ -112,6 +113,7 @@ const TimelineEditor = () => {
       // Support both new bossTags and legacy bossId
       setBossTags(timeline.bossTags || (timeline.bossId ? [timeline.bossId] : []));
       setDescription(timeline.description || '');
+      setLevel(timeline.bossMetadata?.level || 100); // Load level from bossMetadata
       setTimelineActions(timeline.actions || []);
     } catch (error) {
       console.error('Error loading timeline:', error);
@@ -262,7 +264,10 @@ const TimelineEditor = () => {
         bossTags: bossTags, // New: use boss tags instead of single boss
         bossId: bossTags.length > 0 ? bossTags[0] : null, // Keep first tag as legacy bossId for compatibility
         description: description,
-        actions: timelineActions
+        actions: timelineActions,
+        bossMetadata: {
+          level: level
+        }
       };
 
       if (isEditMode) {
@@ -365,6 +370,21 @@ const TimelineEditor = () => {
                     placeholder="Enter timeline name"
                     className="w-full px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Level</label>
+                  <select
+                    value={level}
+                    onChange={(e) => setLevel(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  >
+                    <option value={90}>Level 90</option>
+                    <option value={100}>Level 100</option>
+                  </select>
+                  <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+                    Select the level for this timeline (affects damage calculations)
+                  </p>
                 </div>
 
                 <div>
