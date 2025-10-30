@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Share2, Edit2, Check, X, Copy, Trash2, FileText, BookmarkX } from 'lucide-react';
+import { Share2, Edit2, Check, X, Copy, Trash2, FileText, BookmarkX, Globe, Lock } from 'lucide-react';
 import { useToast } from '../common/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { deleteTimeline, duplicateTimeline, getShareableLink, removeFromCollection } from '../../services/timelineService';
+import { deleteTimeline, duplicateTimeline, getShareableLink, removeFromCollection, togglePublicStatus } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 
 const Card = ({ children, className = '', ...rest }) => (
@@ -73,6 +73,8 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPublic, setIsPublic] = useState(timeline.isPublic || false);
+  const [togglingPublic, setTogglingPublic] = useState(false);
 
   // Check if current user owns this timeline
   const isOwner = () => {
@@ -98,6 +100,43 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
   // Handle view timeline
   const handleView = () => {
     navigate(`/timeline/view/${timeline.id}`);
+  };
+
+  // Handle toggle public status
+  const handleTogglePublic = async () => {
+    if (togglingPublic || !isOwner()) return;
+
+    setTogglingPublic(true);
+    const newPublicStatus = !isPublic;
+
+    try {
+      await togglePublicStatus(timeline.id, newPublicStatus);
+      setIsPublic(newPublicStatus);
+
+      addToast({
+        type: 'success',
+        title: newPublicStatus ? 'Timeline is now public' : 'Timeline is now private',
+        message: newPublicStatus
+          ? 'Your timeline is now visible in the Browse Timelines page.'
+          : 'Your timeline is now private and only visible to you.',
+        duration: 3000
+      });
+
+      // Notify parent to refresh if needed
+      if (onTimelineChanged) {
+        onTimelineChanged();
+      }
+    } catch (error) {
+      console.error('Error toggling public status:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to update visibility',
+        message: error.message || 'Please try again.',
+        duration: 4000
+      });
+    } finally {
+      setTogglingPublic(false);
+    }
   };
 
   // Handle duplicate timeline
@@ -296,6 +335,30 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
             <span className="font-semibold">Updated:</span>
             <span>{formatDate(timeline.updatedAt)}</span>
           </InfoRow>
+
+          {isOwner() && (
+            <InfoRow>
+              <span className="font-semibold">Visibility:</span>
+              <button
+                onClick={handleTogglePublic}
+                disabled={togglingPublic}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--select-bg)] hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-primary)]"
+                title={isPublic ? 'Click to make private' : 'Click to make public'}
+              >
+                {isPublic ? (
+                  <>
+                    <Globe size={14} />
+                    <span className="text-xs font-medium">Public</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock size={14} />
+                    <span className="text-xs font-medium">Private</span>
+                  </>
+                )}
+              </button>
+            </InfoRow>
+          )}
         </CardContent>
 
         <CardActions>
