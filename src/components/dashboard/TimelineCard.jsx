@@ -5,11 +5,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { deleteTimeline, duplicateTimeline, getShareableLink, removeFromCollection, togglePublicStatus } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
+import { BUTTON, CARD, cn } from '../../styles/designSystem';
 
 const Card = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6 shadow transition-all min-w-0 hover:shadow-lg hover:-translate-y-0.5 ${className}`}
+    className={cn(CARD.interactive, 'p-6', className)}
   >
     {children}
   </div>
@@ -48,19 +49,18 @@ const CardActions = ({ children, className = '', ...rest }) => (
   <div {...rest} className={`flex flex-wrap gap-2 mt-4 pt-4 border-t border-[var(--color-border)] ${className}`}>{children}</div>
 );
 
-const ActionButton = ({ children, className = '', variant = 'default', ...rest }) => {
-  const baseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed';
+const ActionButton = ({ children, className = '', variant = 'primary', ...rest }) => {
   const variantClasses = {
-    default: 'bg-[var(--select-bg)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white',
-    primary: 'bg-[var(--color-primary)] text-white hover:bg-[#2563eb]',
-    danger: 'bg-red-500 text-white hover:bg-red-600',
-    secondary: 'bg-gray-500 text-white hover:bg-gray-600'
+    primary: BUTTON.primary.small,
+    secondary: BUTTON.secondary.small,
+    danger: BUTTON.danger.small,
+    ghost: BUTTON.variant.ghost + ' ' + BUTTON.size.small,
   };
 
   return (
     <button
       {...rest}
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={cn(variantClasses[variant] || variantClasses.primary, 'gap-2', className)}
     >
       {children}
     </button>

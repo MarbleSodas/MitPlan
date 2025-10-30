@@ -24,7 +24,7 @@ const Footer = () => {
           </a>
           <span className="text-xs text-[var(--color-textSecondary)] opacity-50">•</span>
           <a
-            href="https://ko-fi.com/marblesodas"
+            href="https://ko-fi.com/goodfaithgames"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[0.9rem] text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:underline transition-colors"

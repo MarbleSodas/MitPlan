@@ -2,6 +2,7 @@ import React, { useEffect, useRef, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { ffxivJobs } from '../../../data';
+import { BUTTON, MODAL, cn } from '../../../styles/designSystem';
 
 // Get or create a portal container for the modal
 const getOrCreatePortalContainer = () => {
@@ -15,7 +16,7 @@ const getOrCreatePortalContainer = () => {
 };
 
 const ModalOverlay = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`fixed inset-0 bg-black/50 flex items-center justify-center z-[10000] ${className}`}>
+  <div {...rest} className={cn(MODAL.overlay, 'z-[10000]', className)}>
     {children}
   </div>
 );
@@ -24,20 +25,20 @@ const ModalContainer = forwardRef(({ children, className = '', ...rest }, ref) =
   <div
     ref={ref}
     {...rest}
-    className={`relative w-[90%] max-w-[400px] rounded-xl p-5 sm:p-5 bg-white dark:bg-neutral-800 shadow-2xl ${className}`}
+    className={cn(MODAL.container, 'max-w-[400px] w-[90%]', className)}
   >
     {children}
   </div>
 ));
 
 const ModalHeader = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex justify-between items-center mb-4 ${className}`}>
+  <div {...rest} className={cn(MODAL.header, className)}>
     {children}
   </div>
 );
 
 const ModalTitle = ({ children, className = '', ...rest }) => (
-  <h3 {...rest} className={`m-0 text-neutral-900 dark:text-neutral-100 text-lg font-semibold ${className}`}>{children}</h3>
+  <h3 {...rest} className={cn(MODAL.title, 'text-lg', className)}>{children}</h3>
 );
 
 const CloseButton = ({ children, className = '', ...rest }) => (
@@ -49,8 +50,8 @@ const CloseButton = ({ children, className = '', ...rest }) => (
   </button>
 );
 
-const ModalContent = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`mb-5 text-neutral-800 dark:text-neutral-200 ${className}`}>{children}</div>
+const ModalContentSection = ({ children, className = '', ...rest }) => (
+  <div {...rest} className={cn(MODAL.content, className)}>{children}</div>
 );
 
 const ButtonContainer = ({ children, className = '', ...rest }) => (
@@ -58,12 +59,9 @@ const ButtonContainer = ({ children, className = '', ...rest }) => (
 );
 
 const Button = ({ children, className = '', $primary, ...rest }) => {
-  const base = 'flex-1 inline-flex items-center justify-center gap-2 font-bold rounded-md px-4 py-2 transition-transform hover:-translate-y-0.5 shadow-sm';
-  const variant = $primary
-    ? 'bg-blue-500 text-white hover:bg-blue-600'
-    : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-600';
+  const buttonClass = $primary ? BUTTON.primary.medium : BUTTON.secondary.medium;
   return (
-    <button {...rest} className={`${base} ${variant} ${className}`}>
+    <button {...rest} className={cn(buttonClass, 'flex-1 gap-2', className)}>
       {children}
     </button>
   );

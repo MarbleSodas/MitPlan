@@ -5,11 +5,12 @@ import { useToast } from '../common/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
 import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
+import { BUTTON, CARD, cn } from '../../styles/designSystem';
 
 const Card = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6 shadow transition-all min-w-0 hover:shadow-lg hover:-translate-y-0.5 ${className}`}
+    className={cn(CARD.interactive, 'p-6', className)}
   >
     {children}
   </div>
@@ -69,25 +70,22 @@ const CardActions = ({ children, className = '', ...rest }) => (
   <div {...rest} className={`flex flex-wrap gap-3 mt-4 ${className}`}>{children}</div>
 );
 
-const Button = ({ children, className = '', ...rest }) => (
-  <button
-    {...rest}
-    className={`px-4 py-2 rounded-md text-sm font-semibold cursor-pointer transition-all min-h-[44px] flex items-center justify-center whitespace-nowrap flex-1 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
-  >
+const PrimaryButton = ({ children, className = '', ...rest }) => (
+  <button {...rest} className={cn(BUTTON.primary.medium, 'flex-1', className)}>
     {children}
   </button>
 );
 
-const PrimaryButton = ({ children, className = '', ...rest }) => (
-  <Button {...rest} className={`bg-[var(--color-primary)] text-[var(--color-buttonText)] hover:brightness-110 hover:-translate-y-0.5 hover:shadow ${className}`}>{children}</Button>
-);
-
 const SecondaryButton = ({ children, className = '', ...rest }) => (
-  <Button {...rest} className={`bg-transparent text-[var(--color-textSecondary)] border border-[var(--color-border)] hover:bg-[var(--select-bg)] hover:text-[var(--color-text)] hover:-translate-y-0.5 ${className}`}>{children}</Button>
+  <button {...rest} className={cn(BUTTON.secondary.medium, 'flex-1', className)}>
+    {children}
+  </button>
 );
 
 const DangerButton = ({ children, className = '', ...rest }) => (
-  <Button {...rest} className={`bg-red-500 text-white border border-red-500 hover:bg-red-600 hover:border-red-600 hover:-translate-y-0.5 hover:shadow ${className}`}>{children}</Button>
+  <button {...rest} className={cn(BUTTON.danger.medium, 'flex-1', className)}>
+    {children}
+  </button>
 );
 
 const MetaInfo = ({ children, className = '', ...rest }) => (

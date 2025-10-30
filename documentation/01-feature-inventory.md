@@ -280,7 +280,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 **Description**: Community and support features.
 
 **Features**:
-- Ko-fi donation button (ko-fi.com/marblesodas)
+- Ko-fi donation button (ko-fi.com/goodfaithgames)
 - Discord community button
 - Clean, minimalistic styling
 - Responsive design

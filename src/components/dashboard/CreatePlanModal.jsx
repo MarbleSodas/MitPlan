@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePlan } from '../../contexts/PlanContext';
 import { bosses } from '../../data';
 import { getTimelinesByBossTag, getOfficialTimelines } from '../../services/timelineService';
+import { INPUT, SELECT, BUTTON, MODAL, cn } from '../../styles/designSystem';
 
 
 const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedBossId = null }) => {
@@ -103,21 +104,21 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
   };
 
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
-      <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-neutral-900 p-8 rounded-xl max-w-xl w-[90%] max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div onClick={onClose} className={cn(MODAL.overlay, 'z-[1000]')}>
+      <div onClick={(e) => e.stopPropagation()} className={cn(MODAL.container, 'max-w-xl p-8')}>
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 m-0">
+          <h2 className={cn(MODAL.title, 'text-2xl')}>
             {preSelectedBossId
               ? `Create Plan for ${bosses.find(b => b.id === preSelectedBossId)?.name}`
               : 'Create New Plan'
             }
           </h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-neutral-800">×</button>
+          <button onClick={onClose} className={cn(BUTTON.ghost, 'w-8 h-8 p-0')}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label htmlFor="name" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Plan Name *</label>
+            <label htmlFor="name" className="text-[var(--color-text)] font-medium text-sm">Plan Name *</label>
             <input
               id="name"
               name="name"
@@ -126,19 +127,19 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               value={formData.name}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] text-[0.95rem] font-medium bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 transition hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.03)] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] placeholder:text-gray-500 placeholder:font-normal"
+              className={INPUT.medium}
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="bossId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Boss Encounter</label>
+            <label htmlFor="bossId" className="text-[var(--color-text)] font-medium text-sm">Boss Encounter</label>
             <select
               id="bossId"
               name="bossId"
               value={formData.bossId}
               onChange={handleInputChange}
               disabled={!!preSelectedBossId}
-              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+              className={SELECT.medium}
             >
               <option value="">Select a boss encounter</option>
               {bosses.map(boss => (
@@ -148,7 +149,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               ))}
             </select>
             {preSelectedBossId && (
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-sm text-[var(--color-textSecondary)] mt-1">
                 Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
               </div>
             )}
@@ -157,11 +158,11 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           {/* Timeline Selection - Only show when boss is selected */}
           {formData.bossId && (
             <div className="flex flex-col gap-2">
-              <label htmlFor="timelineId" className="text-gray-800 dark:text-gray-200 font-medium text-sm">
+              <label htmlFor="timelineId" className="text-[var(--color-text)] font-medium text-sm">
                 Timeline (Optional)
               </label>
               {loadingTimelines ? (
-                <div className="text-sm text-gray-500 py-2">Loading timelines...</div>
+                <div className="text-sm text-[var(--color-textSecondary)] py-2">Loading timelines...</div>
               ) : (
                 <>
                   <select
@@ -169,7 +170,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                     name="timelineId"
                     value={formData.timelineId}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-[10px] bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+                    className={SELECT.medium}
                   >
                     <option value="">Create blank plan (no timeline)</option>
                     {availableTimelines.map(timeline => (
@@ -200,14 +201,14 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           )}
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="description" className="text-gray-800 dark:text-gray-200 font-medium text-sm">Description</label>
+            <label htmlFor="description" className="text-[var(--color-text)] font-medium text-sm">Description</label>
             <textarea
               id="description"
               name="description"
               placeholder="Optional description for your plan"
               value={formData.description}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 min-h-[100px] resize-y focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.125)] placeholder:text-gray-500"
+              className={cn(INPUT.medium, 'min-h-[100px] resize-y')}
             />
           </div>
 
@@ -218,8 +219,8 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           )}
 
           <div className="flex gap-3 justify-end mt-2">
-            <button type="button" onClick={onClose} className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-gray-200 dark:border-gray-700 text-blue-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition">Cancel</button>
-            <button type="submit" disabled={loading} className="min-h-11 px-5 py-3 rounded-[10px] text-white font-semibold bg-blue-500 hover:bg-blue-600 transition shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-400 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:shadow-[0_0_0_4px_rgba(59,130,246,0.2)]">{loading ? 'Creating...' : 'Create Plan'}</button>
+            <button type="button" onClick={onClose} className={BUTTON.secondary.large}>Cancel</button>
+            <button type="submit" disabled={loading} className={BUTTON.primary.large}>{loading ? 'Creating...' : 'Create Plan'}</button>
           </div>
         </form>
       </div>

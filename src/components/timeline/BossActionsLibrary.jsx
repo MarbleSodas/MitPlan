@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { bossActionsLibrary, categorizedActions, libraryUtils } from '../../data/bossActionsLibrary';
+import { INPUT, SELECT } from '../../styles/designSystem';
 
 const BossActionsLibrary = ({ onSelectAction }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,7 +52,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search actions by name or description..."
-          className="w-full pl-10 pr-4 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          className={INPUT.small + ' pl-10'}
         />
       </div>
 
@@ -62,7 +63,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-1.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            className={SELECT.small}
           >
             <option value="all">All Actions</option>
             <option value="tankBusters">Tank Busters</option>
@@ -74,7 +75,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         <select
           value={selectedDamageType}
           onChange={(e) => setSelectedDamageType(e.target.value)}
-          className="px-3 py-1.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          className={SELECT.small}
         >
           <option value="all">All Damage Types</option>
           <option value="magical">Magical</option>
@@ -85,7 +86,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         <select
           value={selectedImportance}
           onChange={(e) => setSelectedImportance(e.target.value)}
-          className="px-3 py-1.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          className={SELECT.small}
         >
           <option value="all">All Importance</option>
           <option value="critical">Critical</option>

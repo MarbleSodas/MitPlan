@@ -7,6 +7,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth } from '../../config/firebase';
+import { INPUT, BUTTON } from '../../styles/designSystem';
 
 
 
@@ -159,7 +160,7 @@ const AuthForm = ({ onSuccess }) => {
           <div ref={contentRef} key={mode} className="flex flex-col gap-4">
         {mode === 'register' && (
           <div className="flex flex-col gap-1.5">
-            <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
+            <input className={INPUT.medium}
               type="text"
               placeholder="Display Name (optional)"
               value={displayName}
@@ -169,7 +170,7 @@ const AuthForm = ({ onSuccess }) => {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
+          <input className={INPUT.medium}
             type="email"
             placeholder="Email address"
             value={email}
@@ -180,7 +181,7 @@ const AuthForm = ({ onSuccess }) => {
 
         {mode !== 'reset' && (
           <div className="flex flex-col gap-1.5">
-            <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
+            <input className={INPUT.medium}
               type="password"
               placeholder="Password"
               value={password}
@@ -192,7 +193,7 @@ const AuthForm = ({ onSuccess }) => {
 
         {mode === 'register' && (
           <div className="flex flex-col gap-1.5">
-            <input className="w-full px-4 py-3 border-2 rounded-[10px] text-[0.95rem] font-medium bg-[var(--color-cardBackground)] text-[var(--color-text)] border-[var(--color-border)] transition hover:border-[var(--color-primary)] hover:shadow-[0_0_0_3px_rgba(51,153,255,0.08)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)] disabled:opacity-60 placeholder:text-[var(--color-textSecondary)] placeholder:font-normal"
+            <input className={INPUT.medium}
               type="password"
               placeholder="Confirm Password"
               value={confirmPassword}
@@ -203,7 +204,7 @@ const AuthForm = ({ onSuccess }) => {
         )}
 
         <div className="flex flex-col gap-3 mt-1">
-          <button type="submit" disabled={loading || !isFormValid()} className="min-h-11 px-5 py-3 rounded-[10px] font-semibold bg-[var(--color-primary)] text-[var(--color-buttonText)] hover:brightness-110 transition shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:shadow-[0_0_0_4px_rgba(51,153,255,0.2)]">
+          <button type="submit" disabled={loading || !isFormValid()} className={BUTTON.primary.large}>
             {getButtonText()}
           </button>
 
@@ -217,7 +218,7 @@ const AuthForm = ({ onSuccess }) => {
               <button
                 type="button"
                 onClick={() => animateToMode('register')}
-                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+                className={BUTTON.secondary.large}
               >
                 Create New Account
               </button>

@@ -6,7 +6,7 @@ import React from 'react';
 const KofiButton = () => {
   return (
     <a
-      href="https://ko-fi.com/marblesodas"
+      href="https://ko-fi.com/goodfaithgames"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Support me on Ko-fi"

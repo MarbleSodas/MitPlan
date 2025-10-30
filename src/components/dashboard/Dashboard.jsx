@@ -17,6 +17,7 @@ import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
+import { BUTTON } from '../../styles/designSystem';
 
 
 
@@ -250,7 +251,7 @@ const Dashboard = () => {
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <button onClick={handleLogout} className="inline-flex h-9 items-center justify-center rounded-md bg-red-500 px-4 text-white text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-600">
+          <button onClick={handleLogout} className={BUTTON.danger.small}>
             Sign Out
           </button>
         </div>
@@ -263,10 +264,10 @@ const Dashboard = () => {
       )}
 
       <div className="mb-8 flex flex-wrap gap-4">
-        <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[var(--color-primary)] px-6 py-3 font-semibold text-[var(--color-buttonText)] shadow-sm transition-all hover:brightness-110">
+        <button onClick={handleCreatePlanByBoss} className={BUTTON.primary.medium}>
           Create New Plan
         </button>
-        <button onClick={handleImportPlan} className="rounded-lg border-2 border-[var(--color-primary)] px-6 py-3 font-semibold text-[var(--color-primary)] transition-all hover:bg-[var(--color-primary)] hover:text-[var(--color-buttonText)]">
+        <button onClick={handleImportPlan} className={BUTTON.secondary.medium}>
           Import Plan
         </button>
       </div>
@@ -278,7 +279,7 @@ const Dashboard = () => {
             Create your first mitigation plan to get started with optimizing your raid strategies.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button onClick={handleCreatePlanByBoss} className="rounded-lg bg-[#3b82f6] px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]">
+            <button onClick={handleCreatePlanByBoss} className={BUTTON.primary.medium}>
               Create Your First Plan
             </button>
           </div>
@@ -352,18 +353,18 @@ const Dashboard = () => {
                 <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Boss Action Timelines</h2>
                 <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate('/timeline/browse')}
-                  className="rounded-lg border-2 border-[#3b82f6] px-4 py-2 font-semibold text-[#3b82f6] transition-all hover:bg-[#3b82f6] hover:text-white"
-                >
-                  Browse Timelines
-                </button>
+              <div className="flex gap-4">
                 <button
                   onClick={handleCreateTimeline}
-                  className="rounded-lg bg-[#3b82f6] px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-[#2563eb]"
+                  className={BUTTON.primary.medium}
                 >
                   Create Timeline
+                </button>
+                <button
+                  onClick={() => navigate('/timeline/browse')}
+                  className={BUTTON.secondary.medium}
+                >
+                  Browse Timelines
                 </button>
               </div>
             </div>

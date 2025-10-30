@@ -244,7 +244,7 @@ Join our Discord server for real-time support and community interaction:
 - Connect with other FFXIV raiders
 
 ### Ko-fi Support
-Support the development of MitPlan: [ko-fi.com/marblesodas](https://ko-fi.com/marblesodas)
+Support the development of MitPlan: [ko-fi.com/goodfaithgames](https://ko-fi.com/goodfaithgames)
 
 ## 📚 Documentation
 
