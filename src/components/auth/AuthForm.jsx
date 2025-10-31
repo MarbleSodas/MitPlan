@@ -150,8 +150,8 @@ const AuthForm = ({ onSuccess }) => {
   };
 
   return (
-    <div className="max-w-[380px] mx-auto p-6 rounded-2xl">
-      <h2 className="text-center mb-6 text-[var(--color-text)] font-bold text-2xl leading-tight tracking-tight">{getTitle()}</h2>
+    <div className="max-w-[420px] mx-auto p-8 rounded-3xl glass-effect shadow-2xl border border-[var(--color-borderLight)] backdrop-blur-xl mt-14">
+      <h2 className="text-center mb-8 text-[var(--color-text)] font-bold text-3xl leading-tight tracking-tight">{getTitle()}</h2>
       <form onSubmit={handleSubmit}>
         <div
           ref={containerRef}
@@ -203,22 +203,26 @@ const AuthForm = ({ onSuccess }) => {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 mt-1">
-          <button type="submit" disabled={loading || !isFormValid()} className={BUTTON.primary.large}>
+        <div className="flex flex-col gap-3 mt-2">
+          <button
+            type="submit"
+            disabled={loading || !isFormValid()}
+            className={`${BUTTON.primary.large} bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] hover:shadow-lg hover:shadow-[var(--color-primary)]/30 transition-all duration-300`}
+          >
             {getButtonText()}
           </button>
 
           {mode === 'login' && (
             <>
-              <div className="flex items-center gap-3 my-4">
-                <div className="h-px flex-1 bg-[var(--color-border)]" />
-                <span className="px-2 text-xs font-medium text-[var(--color-textSecondary)]">or</span>
-                <div className="h-px flex-1 bg-[var(--color-border)]" />
+              <div className="flex items-center gap-3 my-5">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+                <span className="px-3 text-xs font-semibold text-[var(--color-textSecondary)] uppercase tracking-wider">or</span>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
               </div>
               <button
                 type="button"
                 onClick={() => animateToMode('register')}
-                className={BUTTON.secondary.large}
+                className={`${BUTTON.secondary.large} hover:shadow-md transition-all duration-300`}
               >
                 Create New Account
               </button>
@@ -227,15 +231,15 @@ const AuthForm = ({ onSuccess }) => {
 
           {mode === 'register' && (
             <>
-              <div className="flex items-center gap-3 my-4">
-                <div className="h-px flex-1 bg-[var(--color-border)]" />
-                <span className="px-2 text-xs font-medium text-[var(--color-textSecondary)]">or</span>
-                <div className="h-px flex-1 bg-[var(--color-border)]" />
+              <div className="flex items-center gap-3 my-5">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+                <span className="px-3 text-xs font-semibold text-[var(--color-textSecondary)] uppercase tracking-wider">or</span>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
               </div>
               <button
                 type="button"
                 onClick={() => animateToMode('login')}
-                className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+                className="min-h-11 px-5 py-3 rounded-lg font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] hover:border-[var(--color-primary)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
               >
                 Already have an account? Sign In
               </button>
@@ -246,7 +250,7 @@ const AuthForm = ({ onSuccess }) => {
             <button
               type="button"
               onClick={() => animateToMode('login')}
-              className="min-h-11 px-5 py-3 rounded-[10px] font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+              className="min-h-11 px-5 py-3 rounded-lg font-medium border-2 border-[var(--color-border)] text-[var(--color-primary)] hover:bg-[var(--select-bg)] hover:border-[var(--color-primary)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
             >
               Back to Sign In
             </button>
@@ -257,7 +261,7 @@ const AuthForm = ({ onSuccess }) => {
           <button
             type="button"
             onClick={() => animateToMode('reset')}
-            className="mt-1 inline-flex w-fit items-center text-sm font-medium text-[var(--color-primary)] hover:brightness-110 hover:underline rounded-md px-1.5 py-1 focus:outline-none focus:shadow-[0_0_0_3px_rgba(51,153,255,0.2)]"
+            className="mt-2 inline-flex w-fit items-center text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-accent)] hover:underline rounded-md px-2 py-1.5 focus:outline-none focus:shadow-[0_0_0_3px_rgba(99,102,241,0.2)] transition-colors duration-200"
           >
             Forgot Password?
           </button>
@@ -267,12 +271,12 @@ const AuthForm = ({ onSuccess }) => {
       </form>
 
       {error && (
-        <div className="mt-4 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-500">
+        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800/50 px-4 py-3.5 text-sm font-semibold text-red-600 dark:text-red-400 shadow-sm animate-fade-in">
           {error}
         </div>
       )}
       {success && (
-        <div className="mt-3 rounded-[10px] border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-600">
+        <div className="mt-5 rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800/50 px-4 py-3.5 text-sm font-semibold text-green-700 dark:text-green-400 shadow-sm animate-fade-in">
           {success}
         </div>
       )}

@@ -19,59 +19,70 @@ const LandingPage = ({ onAuthSuccess }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] flex flex-col p-8 relative transition-colors duration-300">
-      <div className="absolute top-8 right-8 z-10 flex items-center gap-2">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] flex flex-col p-8 relative transition-colors duration-300 overflow-hidden">
+      {/* Gradient mesh background */}
+      <div className="absolute inset-0 pointer-events-none opacity-50" style={{ background: 'var(--gradient-mesh)' }} />
+
+      {/* Top navigation */}
+      <div className="absolute top-8 right-8 z-10 flex items-center gap-2 animate-fade-in">
         <KofiButton />
         <DiscordButton />
         <ThemeToggle />
       </div>
-      <main className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-        <section className="text-[var(--color-text)]">
-          <div className="mb-8 flex items-center gap-4">
-            <div className="h-[60px] w-[60px] rounded-[12px] bg-[var(--select-bg)] border border-[var(--color-border)] flex items-center justify-center text-[2rem] font-bold text-[var(--color-primary)]">M</div>
-            <h1 className="m-0 text-4xl font-bold">MitPlan</h1>
-          </div>
 
-          <h2 className="m-0 mb-6 text-2xl font-normal opacity-90 text-[var(--color-textSecondary)]">FFXIV Mitigation Planner</h2>
+      <main className="flex-1 flex items-center justify-center relative z-10 pb-16">
+        <div className="w-full max-w-[1280px] grid grid-cols-1 md:grid-cols-2 gap-20 items-center px-4">
+          {/* Left section - Hero content */}
+          <section className="text-[var(--color-text)] space-y-8">
+            {/* Logo and title */}
+            <div className="mb-10 flex items-center gap-5 animate-fade-in-up opacity-0" style={{ animationDelay: '0.1s' }}>
+              <div className="relative group">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-300" />
+                <div className="relative h-[72px] w-[72px] rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center text-[2.5rem] font-bold text-white shadow-lg">
+                  M
+                </div>
+              </div>
+              <h1 className="m-0 text-5xl font-bold tracking-tight bg-gradient-to-r from-[var(--color-text)] to-[var(--color-textSecondary)] bg-clip-text">
+                MitPlan
+              </h1>
+            </div>
 
-          <p className="mb-8 text-[1.1rem] leading-relaxed text-[var(--color-textSecondary)]">
-            The ultimate tool for Final Fantasy XIV raiders to plan and optimize
-            their mitigation strategies. Create detailed plans, track cooldowns,
-            and coordinate with your team for perfect raid execution.
-          </p>
+            {/* Subtitle */}
+            <h2 className="m-0 text-3xl font-semibold text-[var(--color-textSecondary)] leading-tight animate-fade-in-up opacity-0" style={{ animationDelay: '0.2s' }}>
+              FFXIV Mitigation Planner
+            </h2>
 
-          <ul className="list-none p-0 m-0 space-y-4">
-            {features.map((feature, index) => (
-              <li key={index} className="flex items-center gap-3 text-base opacity-90">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--select-bg)] font-bold text-[var(--color-primary)] shrink-0">✓</span>
-                {feature}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="rounded-[20px] p-8">
-          <AuthForm
-            onSuccess={onAuthSuccess}
-          />
-
-          {/* TODO: Anonymous mode feature not fully implemented yet
-          <DemoSection>
-            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-              Want to try it first?
+            {/* Description */}
+            <p className="text-lg leading-relaxed text-[var(--color-textSecondary)] max-w-[540px] animate-fade-in-up opacity-0" style={{ animationDelay: '0.3s' }}>
+              The ultimate tool for Final Fantasy XIV raiders to plan and optimize
+              their mitigation strategies. Create detailed plans, track cooldowns,
+              and coordinate with your team for perfect raid execution.
             </p>
-            <DemoButton onClick={handleAnonymousMode}>
-              Try Anonymous Mode
-            </DemoButton>
-            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-              No account required • Plans stored locally
-            </p>
-          </DemoSection>
-          */}
-        </section>
+
+            {/* Features list */}
+            <ul className="list-none p-0 m-0 space-y-4 pt-4">
+              {features.map((feature, index) => (
+                <li
+                  key={index}
+                  className={`flex items-center gap-4 text-base text-[var(--color-text)] animate-fade-in-up opacity-0 stagger-${index + 1}`}
+                >
+                  <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] font-bold text-white text-sm shrink-0 shadow-md">
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] opacity-50 blur-md" />
+                    <span className="relative">✓</span>
+                  </span>
+                  <span className="font-medium">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Right section - Auth form */}
+          <section className="animate-scale-in opacity-0 self-start" style={{ animationDelay: '0.4s' }}>
+            <AuthForm onSuccess={onAuthSuccess} />
+          </section>
         </div>
       </main>
+
       <Footer />
     </div>
   );

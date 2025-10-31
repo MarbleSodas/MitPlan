@@ -3,16 +3,21 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 // Define light and dark themes
 const lightTheme = {
   colors: {
-    primary: '#3399ff',
+    primary: '#6366f1', // Modern indigo
+    primaryDark: '#4f46e5', // Darker indigo for gradients
+    primaryLight: '#818cf8', // Lighter indigo
+    accent: '#8b5cf6', // Purple accent
     secondary: '#ffffff',
-    background: '#f5f5f5',
+    background: '#fafafa', // Softer background
+    backgroundGradient: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
     cardBackground: '#ffffff',
-    text: '#333333',
-    textSecondary: '#666666',
-    lightText: '#666666',
+    text: '#1f2937', // Darker, more readable
+    textSecondary: '#6b7280', // Modern gray
+    lightText: '#9ca3af',
     buttonText: '#ffffff',
-    border: '#dddddd',
-    hover: '#e6f7ff',
+    border: '#e5e7eb', // Softer border
+    borderLight: '#f3f4f6',
+    hover: '#eef2ff', // Indigo tint
     critical: '#ff0000',
     high: '#ff9900',
     medium: '#ffcc00',
@@ -79,28 +84,34 @@ const lightTheme = {
   },
   shadows: {
     small: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    medium: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    large: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    xlarge: '0 8px 16px rgba(0, 0, 0, 0.1)',
-    focus: '0 0 0 3px rgba(51, 153, 255, 0.5)',
-    hover: '0 2px 8px rgba(0, 0, 0, 0.15)',
-    active: '0 1px 2px rgba(0, 0, 0, 0.2) inset'
+    medium: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    large: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    xlarge: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    focus: '0 0 0 3px rgba(99, 102, 241, 0.4)',
+    hover: '0 10px 20px rgba(99, 102, 241, 0.15)',
+    active: '0 1px 2px rgba(0, 0, 0, 0.2) inset',
+    glow: '0 0 20px rgba(99, 102, 241, 0.3)'
   },
   mode: 'light'
 };
 
 const darkTheme = {
   colors: {
-    primary: '#3399ff',
+    primary: '#818cf8', // Lighter indigo for dark mode
+    primaryDark: '#6366f1',
+    primaryLight: '#a5b4fc',
+    accent: '#a78bfa', // Lighter purple accent
     secondary: '#1e2a38',
-    background: '#121212',
-    cardBackground: '#1e1e1e',
-    text: '#f5f5f5',
-    textSecondary: '#cccccc',
-    lightText: '#cccccc', // Improved contrast from #aaaaaa
+    background: '#0f172a', // Deeper, richer dark
+    backgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+    cardBackground: '#1e293b', // Slate background
+    text: '#f1f5f9', // Softer white
+    textSecondary: '#cbd5e1', // Lighter gray
+    lightText: '#94a3b8',
     buttonText: '#ffffff',
-    border: '#444444',
-    hover: '#2a3a4a',
+    border: '#334155', // Subtle border
+    borderLight: '#475569',
+    hover: '#312e81', // Deep indigo hover
     critical: '#ff6666', // Brighter for better visibility
     high: '#ffbb44', // Brighter for better visibility
     medium: '#ffee44', // Brighter for better visibility
@@ -167,12 +178,13 @@ const darkTheme = {
   },
   shadows: {
     small: '0 1px 3px rgba(0, 0, 0, 0.3)',
-    medium: '0 2px 4px rgba(0, 0, 0, 0.3)',
-    large: '0 4px 8px rgba(0, 0, 0, 0.3)',
-    xlarge: '0 8px 16px rgba(0, 0, 0, 0.3)',
-    focus: '0 0 0 3px rgba(51, 153, 255, 0.6)',
-    hover: '0 2px 8px rgba(0, 0, 0, 0.3)',
-    active: '0 1px 2px rgba(0, 0, 0, 0.4) inset'
+    medium: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+    large: '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3)',
+    xlarge: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3)',
+    focus: '0 0 0 3px rgba(129, 140, 248, 0.5)',
+    hover: '0 10px 20px rgba(129, 140, 248, 0.2)',
+    active: '0 1px 2px rgba(0, 0, 0, 0.4) inset',
+    glow: '0 0 20px rgba(129, 140, 248, 0.4)'
   },
   mode: 'dark'
 };
@@ -222,8 +234,16 @@ const applyThemeVariables = (themeObj) => {
 
   // Derived tokens used by components
   // Selected card background highlight
-  const selectBg = themeObj.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : '#e6f7ff';
+  const selectBg = themeObj.mode === 'dark' ? 'rgba(129, 140, 248, 0.15)' : 'rgba(99, 102, 241, 0.08)';
   set('--select-bg', selectBg);
+
+  // Gradient backgrounds
+  set('--gradient-primary', themeObj.mode === 'dark'
+    ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+    : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)');
+  set('--gradient-mesh', themeObj.mode === 'dark'
+    ? 'radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.2) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.2) 0px, transparent 50%)'
+    : 'radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 50%)');
 };
 
 // Create a provider component
