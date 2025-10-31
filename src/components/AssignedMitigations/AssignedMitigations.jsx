@@ -20,7 +20,7 @@ import { useFilterContext } from '../../contexts';
 const PrecastInput = ({ className = '', style, ...rest }) => (
   <input
     {...rest}
-    className={`w-10 text-center border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 transition-colors focus:border-blue-500 appearance-none ${className}`}
+    className={`w-10 text-center border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 transition-colors focus:border-blue-500 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${className}`}
     style={{ ...(style || {}), MozAppearance: 'textfield' }}
   />
 );
@@ -121,25 +121,15 @@ const AssignedMitigations = ({
             <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[12px] flex items-center border-l-2 border-blue-500 text-gray-900 dark:text-gray-100 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 hover:bg-blue-500/10">
               <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                 {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
-                  <img src={displayMitigation.icon} alt={displayMitigation.name} style={{
-                    maxHeight: '100%',
-                    maxWidth: '100%',
-                    display: 'block'
-                  }} /> :
+                  <img
+                    src={displayMitigation.icon}
+                    alt={displayMitigation.name}
+                    className="max-h-full max-w-full block"
+                  /> :
                   displayMitigation.icon
                 }
               </span>
-              <span
-                style={{
-                  flex: '1 1 auto',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'normal',
-                  minWidth: 0,
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal min-w-0 flex items-center">
                 {displayMitigation.name}
                 {displayMitigation.casterJobId && (
                   <CasterBadge>
@@ -153,7 +143,7 @@ const AssignedMitigations = ({
                   </TankPositionBadge>
                 )}
               </span>
-              <div style={{ display: 'flex', flex: '0 0 auto', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+              <div className="flex flex-[0_0_auto] items-center justify-end gap-1.5">
                 {showPrecastOptions && getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
                   <PrecastInput
                     type="number"
@@ -236,23 +226,15 @@ const AssignedMitigations = ({
                 <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[11px] flex items-center border-l-2 border-gray-500 text-gray-500 dark:text-gray-300 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic hover:bg-blue-500/5">
                   <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                     {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
-                      <img src={fullMitigation.icon} alt={fullMitigation.name} style={{
-                        maxHeight: '18px',
-                        maxWidth: '18px',
-                        opacity: 0.7,
-                        display: 'block'
-                      }} /> :
+                      <img
+                        src={fullMitigation.icon}
+                        alt={fullMitigation.name}
+                        className="max-h-[18px] max-w-[18px] opacity-70 block"
+                      /> :
                       fullMitigation.icon
                     }
                   </span>
-                  <span style={{
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'normal',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
+                  <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal flex items-center">
                     {fullMitigation.name}
                     {mitigation.casterJobId && (
                       <CasterBadge>
@@ -266,11 +248,9 @@ const AssignedMitigations = ({
                       </TankPositionBadge>
                     )}
                   </span>
-                  <small style={{
-                    fontSize: '9px',
-                    opacity: 0.8,
-                    flexShrink: 0
-                  }}>{mitigation.remainingDuration.toFixed(1)}s</small>
+                  <small className="text-[9px] opacity-80 shrink-0">
+                    {mitigation.remainingDuration.toFixed(1)}s
+                  </small>
                 </div>
               </Tooltip>
             );

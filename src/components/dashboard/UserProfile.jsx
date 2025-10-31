@@ -8,7 +8,28 @@ import { BUTTON, INPUT, MODAL, HEIGHTS, cn } from '../../styles/designSystem';
 const ProfileContainer = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`group flex items-center gap-2 cursor-pointer px-3 h-9 rounded-lg transition-colors bg-[var(--color-cardBackground)] border border-[var(--color-border)] hover:bg-[var(--select-bg)] hover:shadow-sm ${className}`}
+    className={`
+      group
+      flex
+      items-center
+      gap-3
+      cursor-pointer
+      px-2
+      py-1
+      h-10
+      rounded-lg
+      transition-all
+      duration-200
+      bg-[var(--color-cardBackground)]
+      border
+      border-[var(--color-border)]
+      hover:bg-[var(--select-bg)]
+      hover:shadow-md
+      hover:border-[var(--color-primary)]
+      hover:-translate-y-0.5
+      active:translate-y-0
+      ${className}
+    `.trim().replace(/\s+/g, ' ')}
   >
     {children}
   </div>
@@ -18,18 +39,67 @@ const UserAvatar = ({ children, className = '', color, ...rest }) => (
   <div
     {...rest}
     style={{ backgroundColor: color }}
-    className={`w-7 h-7 rounded-full text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 ${className}`}
+    className={`
+      w-8
+      h-8
+      rounded-full
+      text-white
+      font-bold
+      text-xs
+      flex
+      items-center
+      justify-center
+      flex-shrink-0
+      shadow-sm
+      ring-2
+      ring-white/20
+      transition-transform
+      duration-200
+      group-hover:scale-110
+      ${className}
+    `.trim().replace(/\s+/g, ' ')}
   >
     {children}
   </div>
 );
 
 const UserInfo = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex flex-col min-w-0 ${className}`}>{children}</div>
+  <div
+    {...rest}
+    className={`
+      flex
+      flex-col
+      min-w-0
+      flex-1
+      justify-center
+      ${className}
+    `.trim().replace(/\s+/g, ' ')}
+  >
+    {children}
+  </div>
 );
 
 const DisplayName = ({ children, className = '', ...rest }) => (
-  <span {...rest} className={`text-[var(--color-text)] font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis ${className}`}>{children}</span>
+  <span
+    {...rest}
+    className={`
+      text-[var(--color-text)]
+      font-semibold
+      text-sm
+      tracking-wide
+      leading-tight
+      whitespace-nowrap
+      overflow-hidden
+      text-ellipsis
+      max-w-[200px]
+      transition-colors
+      duration-200
+      group-hover:text-[var(--color-primary)]
+      ${className}
+    `.trim().replace(/\s+/g, ' ')}
+  >
+    {children}
+  </span>
 );
 
 

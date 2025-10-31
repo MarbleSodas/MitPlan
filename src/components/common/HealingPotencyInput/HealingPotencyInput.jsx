@@ -10,7 +10,6 @@ const HEALING_POTENCY_VALUES = {
 
 const HealingPotencyInput = () => {
   const { theme } = useTheme();
-  const colors = theme.colors;
   const { currentBossLevel } = useRealtimeBossContext();
 
   const [healingPotency, setHealingPotency] = useState(HEALING_POTENCY_VALUES[currentBossLevel] || HEALING_POTENCY_VALUES[100]);
@@ -30,10 +29,16 @@ const HealingPotencyInput = () => {
   }, [healingPotency, currentBossLevel]);
 
   return (
-    <div className="flex items-center gap-2 rounded-md text-sm" style={{ padding: '6px 12px', backgroundColor: colors.secondary }}>
-      <span className="whitespace-nowrap font-medium" style={{ color: colors.text }}>Healing (Lv.</span>
-      <span className="font-semibold min-w-[20px]" style={{ color: colors.primary }}>{currentBossLevel}</span>
-      <span className="whitespace-nowrap font-medium" style={{ color: colors.text }}>per 100 Cure Potency):</span>
+    <div className="flex items-center gap-2 rounded-md text-sm px-3 py-1.5 bg-[var(--color-secondary)]">
+      <span className="whitespace-nowrap font-medium text-[var(--color-text)]">
+        Healing (Lv.
+      </span>
+      <span className="font-semibold min-w-[20px] text-[var(--color-primary)]">
+        {currentBossLevel}
+      </span>
+      <span className="whitespace-nowrap font-medium text-[var(--color-text)]">
+        per 100 Cure Potency):
+      </span>
       <input
         type="number"
         min="1"
@@ -41,8 +46,7 @@ const HealingPotencyInput = () => {
         value={healingPotency}
         onChange={(e) => setHealingPotency(Number(e.target.value))}
         placeholder={(HEALING_POTENCY_VALUES[currentBossLevel] || HEALING_POTENCY_VALUES[100]).toString()}
-        className="w-[60px] text-center rounded text-sm"
-        style={{ padding: '2px', border: `1px solid ${colors.border}`, background: colors.background, color: colors.text }}
+        className="w-[60px] text-center rounded text-sm p-0.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text)]"
       />
     </div>
   );

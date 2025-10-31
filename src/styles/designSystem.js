@@ -91,6 +91,8 @@ export const FOCUS = {
   ringOffset: 'focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2',
   border: 'focus:outline-none focus:border-[var(--color-primary)]',
   shadow: 'focus:outline-none focus:shadow-[0_0_0_3px_rgba(51,153,255,0.2)]',
+  // Enhanced input focus with glow effect and border color change
+  input: 'focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15),0_0_20px_rgba(99,102,241,0.1)] focus:bg-[var(--color-cardBackground)]',
 };
 
 // ============================================================================
@@ -176,11 +178,12 @@ export const BUTTON = {
 const inputBase = `
   w-full
   bg-[var(--color-cardBackground)] text-[var(--color-text)]
-  border border-[var(--color-border)]
-  ${TRANSITIONS.colors}
-  ${FOCUS.shadow}
+  border-2 border-[var(--color-border)]
+  transition-all duration-200 ease-in-out
+  ${FOCUS.input}
   placeholder:text-[var(--color-textSecondary)]
   disabled:opacity-60 disabled:cursor-not-allowed
+  hover:border-[var(--color-borderLight)]
 `.trim().replace(/\s+/g, ' ');
 
 export const INPUT = {

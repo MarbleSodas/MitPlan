@@ -159,13 +159,23 @@ const AuthForm = ({ onSuccess }) => {
         >
           <div ref={contentRef} key={mode} className="flex flex-col gap-4">
         {mode === 'register' && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
+              <svg className="w-4 h-4 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Display Name
+              <span className="text-xs font-normal text-[var(--color-textSecondary)] ml-auto">Optional</span>
+            </label>
             <input className={INPUT.medium}
               type="text"
-              placeholder="Display Name (optional)"
+              placeholder="How should we call you?"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
+            <p className="text-xs text-[var(--color-textSecondary)] -mt-1">
+              This will be visible to others in shared plans
+            </p>
           </div>
         )}
 
