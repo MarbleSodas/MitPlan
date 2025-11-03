@@ -111,6 +111,13 @@ async function createOfficialTimelines() {
         description: `Official timeline for ${boss.name} encounter`,
         bossId: boss.id,
         bossTags: [boss.id],
+        bossMetadata: {
+          level: boss.level,
+          name: boss.name,
+          icon: boss.icon,
+          description: boss.description,
+          baseHealth: boss.baseHealth
+        },
         actions: actions,
         official: true,
         isPublic: true,
@@ -118,7 +125,7 @@ async function createOfficialTimelines() {
         ownerId: 'system',
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        version: 2.0
+        version: 2.1
       };
 
       // Create a new timeline with auto-generated ID

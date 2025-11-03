@@ -33,6 +33,15 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       // Get both official and custom timelines for this boss
       const timelines = await getTimelinesByBossTag(bossId, false);
       setAvailableTimelines(timelines);
+
+      // Auto-select the official timeline if available
+      const officialTimeline = timelines.find(t => t.official === true);
+      if (officialTimeline) {
+        setFormData(prev => ({
+          ...prev,
+          timelineId: officialTimeline.id
+        }));
+      }
     } catch (err) {
       console.error('[CreatePlanModal] Error loading timelines:', err);
       setAvailableTimelines([]);
@@ -172,7 +181,6 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                     onChange={handleInputChange}
                     className={SELECT.medium}
                   >
-                    <option value="">Create blank plan (no timeline)</option>
                     {availableTimelines.map(timeline => (
                       <option key={timeline.id} value={timeline.id}>
                         {timeline.official ? '⭐ ' : '📝 '}
@@ -182,17 +190,15 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                     ))}
                   </select>
                   <div className="text-sm text-gray-500 mt-1">
-                    {formData.timelineId ? (
+                    {formData.timelineId && (
                       <>
                         Selected timeline will be used as a reference for boss actions.
                         {availableTimelines.find(t => t.id === formData.timelineId)?.official && (
                           <span className="block mt-1 text-blue-600 dark:text-blue-400">
-                            ⭐ Official timeline - Predefined boss actions
+                            ⭐ Official timeline automatically selected
                           </span>
                         )}
                       </>
-                    ) : (
-                      'Select a timeline to use predefined boss actions, or create a blank plan to add custom actions.'
                     )}
                   </div>
                 </>
