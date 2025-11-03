@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
 import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 import { BUTTON, CARD, cn } from '../../styles/designSystem';
+import { bosses } from '../../data/bosses/bossData';
 
 const Card = ({ children, className = '', ...rest }) => (
   <div
@@ -127,6 +128,20 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(plan.name || '');
   const [nameUpdateLoading, setNameUpdateLoading] = useState(false);
+
+  // Helper function to get boss display name from boss tag/ID
+  const getBossDisplayName = (bossTag) => {
+    const boss = bosses.find(b => b.id === bossTag);
+    return boss ? `${boss.icon} ${boss.name}` : bossTag;
+  };
+
+  // Get boss display text - use bossTags if available, fallback to bossId
+  const getBossDisplay = () => {
+    const tags = plan.bossTags || (plan.bossId ? [plan.bossId] : []);
+    if (tags.length === 0) return 'Unknown';
+    if (tags.length === 1) return getBossDisplayName(tags[0]);
+    return tags.map(tag => getBossDisplayName(tag)).join(', ');
+  };
 
   // Check if current user owns this plan
   const isOwner = () => {
@@ -425,7 +440,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
                 </>
               )}
             </PlanNameContainer>
-            <BossName>Boss: {plan.bossId || 'Unknown'}</BossName>
+            <BossName>Boss: {getBossDisplay()}</BossName>
           </div>
         </CardHeader>
 
