@@ -176,9 +176,9 @@ const TankSelectionModal = ({
             <X size={20} />
           </CloseButton>
         </ModalHeader>
-        <ModalContent>
+        <ModalContentSection>
           <strong>{contextMessage}</strong>
-        </ModalContent>
+        </ModalContentSection>
         <ButtonContainer>
           <Button onClick={onSelectMainTank} $primary>
             {mainTankIcon && <JobIcon src={mainTankIcon} alt={mainTankJob} />}

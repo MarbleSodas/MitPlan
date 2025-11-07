@@ -20,7 +20,7 @@ import { mitigationAbilities } from '../../data';
 import { useTankPositionContext } from '../../contexts';
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 
-const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, ...rest }) => {
+const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, $time, $isTouched, ...rest }) => {
   const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer bg-[var(--color-cardBackground)] text-[var(--color-text)]';
   const borderSel = $isSelected ? 'border-blue-500' : 'border-[var(--color-border)]';
   const leftBorder = $importance === 'critical'
@@ -72,7 +72,7 @@ const ActionDescription = ({ children, className = '', ...rest }) => (
 );
 
 
-const ContentContainer = ({ children, className = '', ...rest }) => (
+const ContentContainer = ({ children, className = '', $hasAssignments, ...rest }) => (
   <div {...rest} className={`flex items-start my-[10px] w-full max-w-full ${className}`}>{children}</div>
 );
 

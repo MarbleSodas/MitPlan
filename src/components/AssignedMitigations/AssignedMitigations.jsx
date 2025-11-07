@@ -98,7 +98,7 @@ const AssignedMitigations = ({
   return (
     <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-gray-200 dark:border-gray-700 p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden bg-white/80 dark:bg-black/15 rounded-br-md z-10 shadow-[-3px_0_8px_rgba(0,0,0,0.08)] w-[clamp(220px,16vw,300px)] min-w-[220px] max-w-[320px]">
       {/* Render directly assigned mitigations */}
-      {filteredDirectMitigations.map(mitigation => {
+      {filteredDirectMitigations.map((mitigation, index) => {
         // Find the full mitigation data from the abilities array
         const fullMitigation = mitigationAbilities.find(a => a.id === mitigation.id);
         if (!fullMitigation) return null;
@@ -113,9 +113,12 @@ const AssignedMitigations = ({
           tooltipContent += `\nPrecast: ${Number(displayMitigation.precastSeconds).toFixed(1)}s before`;
         }
 
+        // Create a unique key combining id, tankPosition, and casterJobId
+        const uniqueKey = `${displayMitigation.id}-${displayMitigation.tankPosition || 'shared'}-${displayMitigation.casterJobId || 'default'}-${index}`;
+
         return (
           <Tooltip
-            key={displayMitigation.id}
+            key={uniqueKey}
             content={tooltipContent}
           >
             <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[12px] flex items-center border-l-2 border-blue-500 text-gray-900 dark:text-gray-100 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 hover:bg-blue-500/10">
