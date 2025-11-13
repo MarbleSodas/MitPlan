@@ -744,8 +744,7 @@ export const mitigationAbilities = [
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
-    scaleBarrierWithHealing: true, // This shield scales with healing potency buffs
-    upgradedBy: 'divine_caress' // This ability is replaced by Divine Caress at level 100
+    scaleBarrierWithHealing: true // This shield scales with healing potency buffs
   },
   {
     id: 'temperance',
@@ -988,8 +987,7 @@ export const mitigationAbilities = [
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true
+    forRaidWide: false
   },
   {
     id: 'divine_caress',
@@ -997,11 +995,10 @@ export const mitigationAbilities = [
     description: 'Grants healing and creates a barrier that absorbs damage',
     levelRequirement: 100,
     levelDescriptions: {
-      100: 'Grants healing and creates a barrier that absorbs damage for 30s'
+      100: 'Grants healing and creates a barrier that absorbs damage. Barrier duration: 10s. Can only be executed while Divine Grace is active.'
     },
-    duration: 30,
-    cooldown: 30,
-    count: 2, // Has 2 charges
+    duration: 10,
+    cooldown: 1,
     jobs: ['WHM'],
     icon: '/abilities-gamerescape/divine_caress.png',
     type: 'barrier',
@@ -1014,7 +1011,8 @@ export const mitigationAbilities = [
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
-    scaleBarrierWithHealing: true // This shield scales with healing potency buffs
+    scaleBarrierWithHealing: true, // This shield scales with healing potency buffs
+    requiresActiveWindow: { abilityId: 'temperance', windowDuration: 30 } // Can only be used during Divine Grace (30s after Temperance)
   },
 
   {
@@ -1044,9 +1042,9 @@ export const mitigationAbilities = [
     id: 'cure_iii',
     name: 'Cure III',
     description: 'Restores target and nearby party members\' HP with a potent cure',
-    levelRequirement: 50,
+    levelRequirement: 40,
     levelDescriptions: {
-      50: 'Restores HP of target and nearby party members with 600 potency'
+      40: 'Restores HP of target and nearby party members with 600 potency'
     },
     duration: 0,
     cooldown: 2.5,
@@ -1067,14 +1065,14 @@ export const mitigationAbilities = [
     description: 'Restores target\'s HP. Can only be executed while in possession of a Lily.',
     levelRequirement: 52,
     levelDescriptions: {
-      52: 'Restores target\'s HP with 600 potency. Consumes 1 Lily.'
+      52: 'Restores target\'s HP with 800 potency. Consumes 1 Lily.'
     },
     duration: 0,
     cooldown: 2.5,
     jobs: ['WHM'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Solace.png',
     type: 'healing',
-    healingPotency: 600,
+    healingPotency: 800,
     healingType: 'instant',
     mitigationValue: 0,
     damageType: 'both',
@@ -1089,14 +1087,14 @@ export const mitigationAbilities = [
     description: 'Restores own HP and that of all nearby party members. Consumes a Lily.',
     levelRequirement: 76,
     levelDescriptions: {
-      76: 'Restores own HP and the HP of all nearby party members with 300 potency. Consumes 1 Lily.'
+      76: 'Restores own HP and the HP of all nearby party members with 400 potency. Consumes 1 Lily.'
     },
     duration: 0,
     cooldown: 2.5,
     jobs: ['WHM'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Rapture.png',
     type: 'healing',
-    healingPotency: 300,
+    healingPotency: 400,
     healingType: 'instant',
     mitigationValue: 0,
     damageType: 'both',
