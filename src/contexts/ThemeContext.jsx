@@ -259,27 +259,16 @@ export const ThemeProvider = ({ children }) => {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  // Toggle theme function
   const toggleTheme = () => {
-    setIsDarkMode(prevMode => {
-      const newMode = !prevMode;
-      localStorage.setItem('darkMode', newMode.toString());
-      const root = document.documentElement;
-      if (newMode) {
-        root.classList.add('dark');
-        root.setAttribute('data-theme', 'dark');
-      } else {
-        root.classList.remove('dark');
-        root.setAttribute('data-theme', 'light');
-      }
-      return newMode;
-    });
+    setIsDarkMode(prevMode => !prevMode);
   };
 
-  // Apply theme to document on mount and when theme changes
   useEffect(() => {
     const root = document.documentElement;
     const themeObj = isDarkMode ? darkTheme : lightTheme;
+    
+    localStorage.setItem('darkMode', isDarkMode.toString());
+    
     if (isDarkMode) {
       root.classList.add('dark');
       root.setAttribute('data-theme', 'dark');
@@ -287,6 +276,7 @@ export const ThemeProvider = ({ children }) => {
       root.classList.remove('dark');
       root.setAttribute('data-theme', 'light');
     }
+    
     applyThemeVariables(themeObj);
   }, [isDarkMode]);
 

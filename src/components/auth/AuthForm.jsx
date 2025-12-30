@@ -27,7 +27,25 @@ const AuthForm = ({ onSuccess }) => {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const FIREBASE_ERROR_MAP = {
+    'auth/user-not-found': { field: 'email', message: 'No account found with this email address' },
+    'auth/invalid-email': { field: 'email', message: 'No account found with this email address' },
+    'auth/email-already-in-use': { field: 'email', message: 'An account with this email already exists' },
+    'auth/wrong-password': { field: 'password', message: 'Incorrect password' },
+    'auth/weak-password': { field: 'password', message: 'Password is too weak. Use at least 6 characters' },
+    'auth/invalid-credential': { field: 'both', message: 'Invalid email or password' },
+    'auth/too-many-requests': { field: 'general', message: 'Too many attempts. Please try again later' },
+    'auth/network-request-failed': { field: 'general', message: 'Network error. Check your connection' },
+  };
+
+  const parseFirebaseError = (err) => {
+    const errorCode = err.code || '';
+    return FIREBASE_ERROR_MAP[errorCode] || { field: 'general', message: err.message || 'An error occurred. Please try again' };
+  };
 
   // Email validation regex
   const isValidEmail = (email) => {
@@ -93,24 +111,46 @@ const AuthForm = ({ onSuccess }) => {
   }, [mode]);
 
 
+  const clearFieldErrors = () => {
+    setEmailError('');
+    setPasswordError('');
+    setError('');
+  };
+
+  const handleFieldError = (parsedError) => {
+    const { field, message } = parsedError;
+    
+    if (field === 'email') {
+      setEmailError(message);
+    } else if (field === 'password') {
+      setPasswordError(message);
+    } else if (field === 'both') {
+      setEmailError(message);
+      setPasswordError(message);
+    } else {
+      setError(message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    clearFieldErrors();
     setSuccess('');
 
     try {
       if (mode === 'register') {
         if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
+          setPasswordError('Passwords do not match');
+          return;
         }
         if (password.length < 6) {
-          throw new Error('Password must be at least 6 characters');
+          setPasswordError('Password must be at least 6 characters');
+          return;
         }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-        // Update display name if provided
         if (displayName.trim()) {
           await updateProfile(userCredential.user, {
             displayName: displayName.trim()
@@ -126,7 +166,7 @@ const AuthForm = ({ onSuccess }) => {
         setSuccess('Password reset email sent! Check your inbox.');
       }
     } catch (err) {
-      setError(err.message);
+      handleFieldError(parseFirebaseError(err));
     } finally {
       setLoading(false);
     }
@@ -180,24 +220,46 @@ const AuthForm = ({ onSuccess }) => {
         )}
 
         <div className="flex flex-col gap-1.5">
-          <input className={INPUT.medium}
+          <input className={`${INPUT.medium} transition-all duration-200 ${emailError ? 'ring-2 ring-red-400/50 border-red-400 dark:ring-red-500/40 dark:border-red-500' : ''}`}
             type="email"
             placeholder="Email address"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError('');
+            }}
             required
           />
+          {emailError && (
+            <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 animate-fade-in">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span><strong>Email:</strong> {emailError}</span>
+            </div>
+          )}
         </div>
 
         {mode !== 'reset' && (
           <div className="flex flex-col gap-1.5">
-            <input className={INPUT.medium}
+            <input className={`${INPUT.medium} transition-all duration-200 ${passwordError ? 'ring-2 ring-red-400/50 border-red-400 dark:ring-red-500/40 dark:border-red-500' : ''}`}
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (passwordError) setPasswordError('');
+              }}
               required
             />
+            {passwordError && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 animate-fade-in">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span><strong>Password:</strong> {passwordError}</span>
+              </div>
+            )}
           </div>
         )}
 
