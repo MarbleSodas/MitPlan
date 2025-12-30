@@ -4,7 +4,7 @@
  * Converts raw FFLogs event data into MitPlan boss action format.
  */
 
-import type { FFLogsEvent, FFLogsFight, FFLogsEnemy, BossAction } from '../../types/index.js';
+import type { FFLogsEvent, FFLogsFight, FFLogsEnemyNPC, FFLogsActor, FFLogsAbility, BossAction } from '../../types/index.js';
 import { dedupeAoEActions, formatDamageValue, determineDamageType } from '../../utils/damage.js';
 
 export interface ParseOptions {
@@ -12,6 +12,7 @@ export interface ParseOptions {
   dedupeAoE?: boolean;
   minDamageThreshold?: number;
   filterBuffs?: boolean;
+  abilityLookup?: Map<number, string>;
 }
 
 /**
@@ -46,29 +47,37 @@ const BUFF_ABILITY_IDS: Set<number> = new Set([
 export function parseFFLogsEvents(
   events: FFLogsEvent[],
   fight: FFLogsFight,
-  bossEnemy: FFLogsEnemy | undefined,
+  bossActorIds: Set<number>,
   options: ParseOptions = {}
 ): BossAction[] {
   const {
     includeDodgeable = false,
     dedupeAoE = true,
     minDamageThreshold = 100,
+    abilityLookup = new Map(),
   } = options;
 
-  // Group events by ability and time window
   const abilityMap = new Map<string, BossAction>();
   const processedIds = new Set<string>();
 
   for (const event of events) {
-    // Skip events without ability info
-    if (!event.ability) continue;
+    // Get ability info - FFLogs v2 uses abilityGameID, we look up name from masterData
+    const abilityGameID = event.abilityGameID ?? event.ability?.guid;
+    if (!abilityGameID) continue;
+
+    // Look up ability name from masterData, fallback to ability object or generic name
+    const abilityName = abilityLookup.get(abilityGameID) 
+      ?? event.ability?.name 
+      ?? `Ability ${abilityGameID}`;
+
+    // Filter to only boss/enemy abilities (sourceID should be in bossActorIds)
+    if (bossActorIds.size > 0 && event.sourceID && !bossActorIds.has(event.sourceID)) {
+      continue;
+    }
 
     // Skip non-damaging events if not filtering buffs
-    const damage = event.amount ?? event.damage ?? 0;
+    const damage = event.unmitigatedAmount ?? event.amount ?? event.damage ?? 0;
     if (damage < minDamageThreshold && !options.filterBuffs) continue;
-
-    const abilityName = event.ability.name.trim();
-    const abilityGuid = event.ability.guid;
 
     // Skip known non-damaging abilities
     if (NON_DAMAGING_PATTERNS.some(p => p.test(abilityName))) {
@@ -76,7 +85,7 @@ export function parseFFLogsEvents(
     }
 
     // Skip buff/debuff abilities
-    if (BUFF_ABILITY_IDS.has(abilityGuid)) continue;
+    if (BUFF_ABILITY_IDS.has(abilityGameID)) continue;
 
     // Calculate relative time in seconds from fight start
     const relativeTime = Math.round((event.timestamp - fight.startTime) / 1000);
@@ -89,17 +98,17 @@ export function parseFFLogsEvents(
     if (isDodgeable && !includeDodgeable) continue;
 
     // Create a unique ID for this ability usage
-    const baseId = createActionId(abilityName, abilityGuid);
+    const baseId = createActionId(abilityName, abilityGameID);
     const usageId = `${baseId}_${relativeTime}`;
 
     if (processedIds.has(usageId)) continue;
     processedIds.add(usageId);
 
     // Determine if this is a tank buster
-    const isTankBuster = isTankBusterEvent(event);
+    const isTankBuster = isTankBusterEvent(event, abilityName);
 
     // Get damage values for formatting
-    const totalDamage = event.amount ?? event.damage ?? 0;
+    const totalDamage = event.unmitigatedAmount ?? event.amount ?? event.damage ?? 0;
     const damageStr = formatDamageValue(totalDamage, event);
 
     // Create the action
@@ -115,13 +124,11 @@ export function parseFFLogsEvents(
 
     if (isTankBuster) {
       action.isTankBuster = true;
-      // Check if it's a dual tank buster by looking for multi-target
-      if (event.target?.type === 'NPC' && isMultiTargetTankBuster(abilityName)) {
+      if (isMultiTargetTankBuster(abilityName)) {
         action.isDualTankBuster = true;
       }
     }
 
-    // Store the action
     if (!abilityMap.has(usageId)) {
       abilityMap.set(usageId, action);
     }
@@ -129,7 +136,6 @@ export function parseFFLogsEvents(
 
   const actions = Array.from(abilityMap.values()).sort((a, b) => a.time - b.time);
 
-  // Apply AoE deduplication if enabled
   if (dedupeAoE) {
     return dedupeAoEActions(actions);
   }
@@ -141,32 +147,21 @@ export function parseFFLogsEvents(
  * Check if an ability is a dodgeable mechanic
  */
 function isDodgeableMechanic(abilityName: string, event: FFLogsEvent): boolean {
-  // If no damage, it's likely a dodgeable mechanic
-  const hasDamage = (event.amount ?? 0) > 0 || (event.damage ?? 0) > 0;
+  const hasDamage = (event.unmitigatedAmount ?? event.amount ?? 0) > 0 || (event.damage ?? 0) > 0;
   if (!hasDamage) return true;
 
-  // Check against dodgeable patterns
   return DODGEABLE_PATTERNS.some(p => p.test(abilityName));
 }
 
-/**
- * Check if an event is a tank buster
- */
-function isTankBusterEvent(event: FFLogsEvent): boolean {
-  if (!event.target) return false;
+function isTankBusterEvent(event: FFLogsEvent, abilityName: string): boolean {
+  if (!event.targetID) return false;
 
-  // Single target on a tank role player
-  const isTankTarget = event.target.type === 'Player';
+  const damage = event.unmitigatedAmount ?? event.amount ?? event.damage ?? 0;
+  const isHighDamage = damage > 50000;
 
-  // High damage single-target ability
-  const damage = event.amount ?? event.damage ?? 0;
-  const isHighDamage = damage > 50000; // Adjust threshold as needed
+  const hasTankBusterName = /\b(buster|fracture|needle|shot|blast|strike|blow)\b/i.test(abilityName);
 
-  // Check ability name for tank buster indicators
-  const name = event.ability?.name ?? '';
-  const hasTankBusterName = /\b(buster|fracture|needle|shot|blast|strike|blow)\b/i.test(name);
-
-  return isTankTarget && (isHighDamage || hasTankBusterName);
+  return isHighDamage || hasTankBusterName;
 }
 
 /**
@@ -225,22 +220,85 @@ function getIconForAbility(name: string, isTankBuster: boolean): string {
 }
 
 /**
- * Extract enemy information for parsing
+ * Extract boss actor IDs from fight enemyNPCs and report actors
+ * Returns a Set of actor IDs that are boss/enemy NPCs for filtering events
  */
-export function extractBossEnemy(
-  enemies: FFLogsEnemy[],
-  fight: FFLogsFight
-): FFLogsEnemy | undefined {
-  // Find enemy matching the fight boss ID
-  let boss = enemies.find(e => e.id === fight.boss);
-  if (boss) return boss;
+export function extractBossActorIds(
+  fight: FFLogsFight,
+  actors?: FFLogsActor[]
+): Set<number> {
+  const bossIds = new Set<number>();
+  
+  // Add all enemy NPC IDs from this fight
+  if (fight.enemyNPCs) {
+    for (const npc of fight.enemyNPCs) {
+      bossIds.add(npc.id);
+    }
+  }
+  
+  // Also add actors that are type "Boss" or "NPC" (not players)
+  if (actors) {
+    for (const actor of actors) {
+      if (actor.type === 'Boss' || (actor.type === 'NPC' && actor.subType !== 'Pet')) {
+        bossIds.add(actor.id);
+      }
+    }
+  }
+  
+  return bossIds;
+}
 
-  // Find by type "Boss" or "Unknown"
-  boss = enemies.find(e => e.type === 'Boss' || e.type === 'Unknown');
-  if (boss) return boss;
+/**
+ * Get the primary boss name from fight data
+ */
+export function getBossName(
+  fight: FFLogsFight,
+  actors?: FFLogsActor[]
+): string {
+  if (actors) {
+    const bossActor = actors.find(a => a.type === 'Boss');
+    if (bossActor) return bossActor.name;
+  }
+  
+  return fight.name;
+}
 
-  // Fall back to first non-NPC enemy
-  return enemies.find(e => e.type !== 'NPC');
+export function createAbilityLookup(abilities: FFLogsAbility[]): Map<number, string> {
+  const lookup = new Map<number, string>();
+  for (const ability of abilities) {
+    lookup.set(ability.gameID, ability.name);
+  }
+  return lookup;
+}
+
+export function parseFFLogsEventsWithOccurrences(
+  events: FFLogsEvent[],
+  fight: FFLogsFight,
+  bossActorIds: Set<number>,
+  options: ParseOptions = {}
+): BossAction[] {
+  const baseActions = parseFFLogsEvents(events, fight, bossActorIds, { ...options, dedupeAoE: false });
+  
+  const occurrenceCount = new Map<string, number>();
+  const actionsWithOccurrences: BossAction[] = [];
+  
+  for (const action of baseActions) {
+    const nameKey = action.name.toLowerCase();
+    const currentOccurrence = (occurrenceCount.get(nameKey) || 0) + 1;
+    occurrenceCount.set(nameKey, currentOccurrence);
+    
+    actionsWithOccurrences.push({
+      ...action,
+      occurrence: currentOccurrence,
+      id: `${action.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${currentOccurrence}_${action.time}`,
+    });
+  }
+  
+  if (options.dedupeAoE !== false) {
+    return dedupeAoEActions(actionsWithOccurrences);
+  }
+  
+  return actionsWithOccurrences;
 }
 
 /**

@@ -19,6 +19,19 @@ import type {
 } from '../types/index.js';
 import { dedupeAoEActions } from '../utils/damage.js';
 
+export interface OccurrenceGroup {
+  name: string;
+  occurrence: number;
+  times: number[];
+  actions: BossAction[];
+}
+
+export interface AggregatedAction extends BossAction {
+  confidence: number;
+  sourceReports: number;
+  timeRange: { min: number; max: number; stdDev: number };
+}
+
 /**
  * Aggregate timelines from multiple reports
  *
@@ -334,4 +347,167 @@ export function aggregateWithCactbot(
   console.log(`  Merged to ${deduped.length} total actions`);
 
   return deduped;
+}
+
+export function aggregateByOccurrence(
+  timelines: BossAction[][],
+  totalReports: number,
+  options: { strategy?: AggregationStrategy; minConfidence?: number } = {}
+): AggregatedAction[] {
+  const { strategy = 'median', minConfidence = 0.3 } = options;
+
+  const groups = new Map<string, OccurrenceGroup>();
+
+  for (const timeline of timelines) {
+    for (const action of timeline) {
+      const occurrence = action.occurrence || 1;
+      const key = `${action.name.toLowerCase()}_${occurrence}`;
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          name: action.name,
+          occurrence,
+          times: [],
+          actions: [],
+        });
+      }
+
+      const group = groups.get(key)!;
+      group.times.push(action.time);
+      group.actions.push(action);
+    }
+  }
+
+  const aggregated: AggregatedAction[] = [];
+
+  for (const [_, group] of groups) {
+    const confidence = group.actions.length / totalReports;
+    if (confidence < minConfidence) continue;
+
+    const times = group.times.sort((a, b) => a - b);
+    const time = calculateAggregateTime(group.actions, strategy);
+
+    const min = times[0];
+    const max = times[times.length - 1];
+    const mean = times.reduce((a, b) => a + b, 0) / times.length;
+    const variance = times.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / times.length;
+    const stdDev = Math.sqrt(variance);
+
+    const filteredActions = times.length >= 3
+      ? group.actions.filter((_, i) => Math.abs(times[i] - mean) <= 2 * stdDev)
+      : group.actions;
+
+    const baseAction = filteredActions[0] || group.actions[0];
+
+    const damageValues = group.actions
+      .map(a => a.unmitigatedDamage)
+      .filter(Boolean) as string[];
+    const maxDamage = damageValues.length > 0 ? damageValues[damageValues.length - 1] : undefined;
+
+    aggregated.push({
+      ...baseAction,
+      id: `${baseAction.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${group.occurrence}_${Math.round(time)}`,
+      time: Math.round(time),
+      occurrence: group.occurrence,
+      confidence: Math.round(confidence * 100) / 100,
+      sourceReports: group.actions.length,
+      unmitigatedDamage: maxDamage,
+      timeRange: {
+        min: Math.round(min),
+        max: Math.round(max),
+        stdDev: Math.round(stdDev * 100) / 100,
+      },
+    });
+  }
+
+  aggregated.sort((a, b) => a.time - b.time);
+
+  console.log(`  Aggregated ${groups.size} occurrence groups to ${aggregated.length} actions`);
+  console.log(`  Filtered out ${groups.size - aggregated.length} low-confidence actions`);
+
+  return aggregated;
+}
+
+export function mergeWithCactbotTiming(
+  fflogsActions: AggregatedAction[],
+  cactbotActions: BossAction[],
+  options: { fuzzyMatch?: boolean } = {}
+): BossAction[] {
+  const { fuzzyMatch = true } = options;
+
+  if (cactbotActions.length === 0) {
+    return fflogsActions.map(a => {
+      const { timeRange, ...rest } = a;
+      return rest;
+    });
+  }
+
+  const cactbotByName = new Map<string, BossAction[]>();
+  for (const action of cactbotActions) {
+    const key = action.name.toLowerCase();
+    if (!cactbotByName.has(key)) {
+      cactbotByName.set(key, []);
+    }
+    cactbotByName.get(key)!.push(action);
+  }
+
+  const merged: BossAction[] = [];
+  const usedCactbot = new Set<string>();
+
+  for (const ffAction of fflogsActions) {
+    const key = ffAction.name.toLowerCase();
+    const occurrence = ffAction.occurrence || 1;
+    
+    let cactbotMatch: BossAction | undefined;
+    
+    const exactMatches = cactbotByName.get(key);
+    if (exactMatches && exactMatches.length >= occurrence) {
+      cactbotMatch = exactMatches[occurrence - 1];
+    }
+
+    if (!cactbotMatch && fuzzyMatch) {
+      for (const [cactKey, cactActions] of cactbotByName) {
+        if (cactActions.length >= occurrence) {
+          const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (normalize(key).includes(normalize(cactKey)) || normalize(cactKey).includes(normalize(key))) {
+            cactbotMatch = cactActions[occurrence - 1];
+            break;
+          }
+        }
+      }
+    }
+
+    const { timeRange, ...baseAction } = ffAction;
+
+    if (cactbotMatch) {
+      usedCactbot.add(`${cactbotMatch.name.toLowerCase()}_${cactbotMatch.time}`);
+      merged.push({
+        ...baseAction,
+        time: cactbotMatch.time,
+        id: `${baseAction.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${occurrence}_${cactbotMatch.time}`,
+      });
+    } else {
+      merged.push(baseAction);
+    }
+  }
+
+  for (const cactAction of cactbotActions) {
+    const key = `${cactAction.name.toLowerCase()}_${cactAction.time}`;
+    if (!usedCactbot.has(key)) {
+      const hasMatch = merged.some(m => 
+        m.name.toLowerCase() === cactAction.name.toLowerCase() &&
+        Math.abs(m.time - cactAction.time) < 5
+      );
+      if (!hasMatch) {
+        merged.push({
+          ...cactAction,
+          importance: cactAction.importance || 'medium',
+        });
+      }
+    }
+  }
+
+  merged.sort((a, b) => a.time - b.time);
+
+  return merged;
 }

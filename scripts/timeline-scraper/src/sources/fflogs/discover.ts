@@ -6,7 +6,7 @@
  * 2. Zone-based queries (fallback)
  */
 
-import type { DiscoveredReport } from '../../types/index.js';
+import type { DiscoveredReport, FFLogsFight } from '../../types/index.js';
 import { FFLogsClient } from './client.js';
 import { getBossMapping } from '../../config/index.js';
 
@@ -15,6 +15,12 @@ export interface DiscoveryOptions {
   requireKill?: boolean;
   minDuration?: number;
   metric?: string;
+}
+
+export interface ValidatedReport extends DiscoveredReport {
+  fightId: number;
+  fightDuration: number;
+  validated: boolean;
 }
 
 /**
@@ -163,13 +169,89 @@ export function filterReports(
 
   let filtered = reports.filter(r => validateReport(r, options));
 
-  // Sort by start time (newest first)
   filtered.sort((a, b) => b.startTime - a.startTime);
 
-  // Apply limit
   if (limit && filtered.length > limit) {
     filtered = filtered.slice(0, limit);
   }
 
   return filtered;
+}
+
+export async function discoverAndValidateReports(
+  bossId: string,
+  client: FFLogsClient,
+  options: DiscoveryOptions & { onProgress?: (current: number, total: number) => void } = {}
+): Promise<ValidatedReport[]> {
+  const {
+    limit = 10,
+    requireKill = true,
+    minDuration = 120,
+    onProgress,
+  } = options;
+
+  const bossMapping = getBossMapping(bossId);
+  if (!bossMapping) {
+    throw new Error(`Unknown boss ID: ${bossId}`);
+  }
+
+  const encounterId = (bossMapping as { encounterId?: number }).encounterId;
+  if (!encounterId) {
+    throw new Error(`Boss ${bossId} does not have encounterId configured. Use 'generate' with manual report codes.`);
+  }
+
+  console.log(`Discovering reports for ${bossMapping.name} (encounter ${encounterId})...`);
+
+  const candidateReports = await discoverRecentReports(bossId, client, {
+    limit: limit * 3,
+    requireKill,
+    minDuration,
+  });
+
+  if (candidateReports.length === 0) {
+    console.log('No candidate reports found from rankings');
+    return [];
+  }
+
+  console.log(`Found ${candidateReports.length} candidate reports, validating...`);
+
+  const validatedReports: ValidatedReport[] = [];
+  let processed = 0;
+
+  for (const report of candidateReports) {
+    if (validatedReports.length >= limit) break;
+
+    try {
+      processed++;
+      if (onProgress) onProgress(processed, candidateReports.length);
+
+      const reportData = await client.getReport(report.code);
+      const fights = client.findFightsByEncounter(reportData.fights, encounterId);
+      const killFights = requireKill ? client.findKillFights(fights) : fights;
+
+      if (killFights.length === 0) continue;
+
+      const longestFight = killFights.sort((a, b) => 
+        (b.endTime - b.startTime) - (a.endTime - a.startTime)
+      )[0];
+
+      const fightDuration = (longestFight.endTime - longestFight.startTime) / 1000;
+
+      if (fightDuration < minDuration) continue;
+
+      validatedReports.push({
+        ...report,
+        fightId: longestFight.id,
+        fightDuration: Math.round(fightDuration),
+        validated: true,
+        duration: Math.round(fightDuration),
+      });
+
+    } catch (error) {
+      console.warn(`  Failed to validate ${report.code}: ${(error as Error).message}`);
+    }
+  }
+
+  console.log(`Validated ${validatedReports.length} reports with kill fights`);
+  return validatedReports;
 }

@@ -220,6 +220,93 @@ export async function loadCactbotTimeline(
   }
 }
 
+export async function loadCactbotTimelineSafe(
+  bossId: string,
+  timelinePath: string,
+  baseUrl: string = 'https://raw.githubusercontent.com/quisquous/cactbot/main',
+  options: CactbotParseOptions = {}
+): Promise<{ actions: BossAction[]; available: boolean; error?: string }> {
+  const url = `${baseUrl}/${timelinePath}`;
+
+  try {
+    const response = await fetch(url);
+    
+    if (response.status === 404) {
+      return {
+        actions: [],
+        available: false,
+        error: `Cactbot timeline not available for ${bossId} (7.x content not yet supported by Cactbot)`,
+      };
+    }
+    
+    if (!response.ok) {
+      return {
+        actions: [],
+        available: false,
+        error: `Failed to fetch Cactbot timeline: ${response.status}`,
+      };
+    }
+    
+    const timelineText = await response.text();
+    const entries = parseCactbotTimeline(timelineText, options);
+    const actions = cactbotToMitPlanActions(entries, bossId);
+    
+    return { actions, available: true };
+  } catch (error) {
+    return {
+      actions: [],
+      available: false,
+      error: `Error fetching Cactbot timeline: ${(error as Error).message}`,
+    };
+  }
+}
+
+export function fuzzyMatchActionName(fflogsName: string, cactbotName: string): boolean {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const a = normalize(fflogsName);
+  const b = normalize(cactbotName);
+  
+  if (a === b) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  
+  const similarity = calculateSimilarity(a, b);
+  return similarity > 0.8;
+}
+
+function calculateSimilarity(a: string, b: string): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  
+  let matches = 0;
+  for (let i = 0; i < shorter.length; i++) {
+    if (longer.includes(shorter[i])) matches++;
+  }
+  
+  return matches / longer.length;
+}
+
+export function buildCactbotOccurrenceMap(
+  cactbotActions: BossAction[]
+): Map<string, BossAction[]> {
+  const map = new Map<string, BossAction[]>();
+  
+  for (const action of cactbotActions) {
+    const key = action.name.toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, []);
+    }
+    map.get(key)!.push(action);
+  }
+  
+  for (const [_, actions] of map) {
+    actions.sort((a, b) => a.time - b.time);
+  }
+  
+  return map;
+}
+
 /**
  * Merge Cactbot timeline with FFLogs parsed data
  *

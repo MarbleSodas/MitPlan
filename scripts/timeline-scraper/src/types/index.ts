@@ -1,6 +1,3 @@
-/**
- * MitPlan boss action format
- */
 export interface BossAction {
   id: string;
   name: string;
@@ -13,6 +10,116 @@ export interface BossAction {
   isTankBuster?: boolean;
   isDualTankBuster?: boolean;
   tags?: string[];
+  occurrence?: number;
+  confidence?: number;
+  sourceReports?: number;
+  hitCount?: number;
+  perHitDamage?: string;
+  mechanic?: MechanicInfo;
+  analysisSource?: 'fflogs' | 'cactbot' | 'ai' | 'web' | 'manual';
+}
+
+export interface MechanicInfo {
+  type: MechanicType;
+  target: 'party' | 'tanks' | 'healers' | 'dps' | 'random' | 'proximity' | 'marked';
+  requiresMovement?: boolean;
+  requiresStacking?: boolean;
+  requiresSpreading?: boolean;
+  vulnerabilityDebuff?: boolean;
+  knockback?: boolean;
+  bleedOrDot?: boolean;
+  notes?: string;
+}
+
+export type MechanicType = 
+  | 'raidwide'
+  | 'tankbuster'
+  | 'stack'
+  | 'spread'
+  | 'proximity'
+  | 'cleave'
+  | 'enrage'
+  | 'transition'
+  | 'mechanic'
+  | 'dot'
+  | 'unknown';
+
+export interface MultiHitCluster {
+  abilityId: number;
+  abilityName: string;
+  events: FFLogsEvent[];
+  startTime: number;
+  endTime: number;
+  hitCount: number;
+  totalDamage: number;
+  perHitDamage: number;
+}
+
+export interface MultiHitConfig {
+  windowMs: number;
+  minHitsForMultiHit: number;
+  knownMultiHitAbilities?: string[];
+}
+
+export interface OccurrenceConfig {
+  sameOccurrenceWindowSec: number;
+  newOccurrenceGapSec: number;
+}
+
+export interface AlignmentConfig {
+  referenceAction?: string;
+  autoDetectReference: boolean;
+  minReportPresence: number;
+}
+
+export interface AbilityAnalysisRequest {
+  abilityName: string;
+  bossName: string;
+  damage: number;
+  hitCount: number;
+  targetCount: number;
+  timing: number;
+  context?: string;
+}
+
+export interface AbilityAnalysisResponse {
+  mechanicType: MechanicType;
+  target: MechanicInfo['target'];
+  description: string;
+  importance: 'low' | 'medium' | 'high' | 'critical';
+  isTankBuster: boolean;
+  isDualTankBuster: boolean;
+  requiresMitigation: boolean;
+  confidence: number;
+}
+
+export interface AbilityWebInfo {
+  name: string;
+  description: string;
+  source: string;
+  url: string;
+  damageType?: 'physical' | 'magical' | 'mixed';
+  mechanicType?: MechanicType;
+  notes?: string[];
+}
+
+export interface EnhancedScrapeOptions {
+  bossId: string;
+  count?: number;
+  output?: string;
+  useCactbot?: boolean;
+  dryRun?: boolean;
+  minFightDuration?: number;
+  minConfidence?: number;
+  useAiAnalysis?: boolean;
+  useWebSearch?: boolean;
+  usePatternAnalysis?: boolean;
+  useAiValidation?: boolean;
+  autoCorrectTimeline?: boolean;
+  multiHitConfig?: Partial<MultiHitConfig>;
+  occurrenceConfig?: Partial<OccurrenceConfig>;
+  alignmentConfig?: Partial<AlignmentConfig>;
+  onProgress?: (message: string) => void;
 }
 
 /**
@@ -61,14 +168,25 @@ export interface FFLogsEncounter {
 
 export interface FFLogsFight {
   id: number;
-  boss: number;
+  encounterID: number;
   name: string;
-  zoneID: number;
+  gameZone?: {
+    id: number;
+    name: string;
+  };
   startTime: number;
   endTime: number;
   kill: boolean;
-  standardComposition: boolean;
-  difficulty: number;
+  difficulty?: number;
+  enemyNPCs?: FFLogsEnemyNPC[];
+  friendlyPlayers?: number[];
+}
+
+export interface FFLogsEnemyNPC {
+  id: number;
+  gameID: number;
+  groupCount?: number;
+  instanceCount?: number;
 }
 
 export interface FFLogsEnemy {
@@ -82,7 +200,14 @@ export interface FFLogsEnemy {
 export interface FFLogsActor {
   id: number;
   name: string;
-  type: 'Player' | 'NPC' | 'Unknown';
+  type: 'Player' | 'NPC' | 'Boss' | 'Pet' | 'Unknown';
+  subType?: string;
+}
+
+export interface FFLogsAbility {
+  gameID: number;
+  name: string;
+  type: string;
 }
 
 export interface FFLogsEvent {
@@ -98,13 +223,16 @@ export interface FFLogsEvent {
     type: number;
     abilityIcon: string;
   };
+  abilityGameID?: number; // FFLogs v2 uses this instead of ability object
   damage?: number;
   hitType?: number;
   amount?: number;
+  unmitigatedAmount?: number;
   absorbed?: number;
   overkill?: number;
   multistrike?: boolean;
   criticalHit?: boolean;
+  multiplier?: number;
 }
 
 export interface FFLogsReportData {
@@ -144,7 +272,10 @@ export interface ReportData {
       fights: FFLogsFight[];
       startTime: number;
       endTime: number;
-      enemies: FFLogsEnemy[];
+      masterData?: {
+        actors: FFLogsActor[];
+        abilities: FFLogsAbility[];
+      };
     };
   };
 }

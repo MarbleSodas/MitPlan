@@ -13,6 +13,14 @@ A command-line tool for generating FFXIV raid timelines from FFLogs reports and 
 - **Multi-Hit Damage Formatting** - Properly formats abilities that hit multiple times
 - **Dodgeable Mechanic Filtering** - Optionally exclude pure dodge mechanics
 - **Timeline Updates** - Merge new data into existing timeline files
+- **Multi-Hit Detection** - Automatically consolidates rapid-fire damage into single multi-hit actions
+- **Occurrence Tracking** - Window-based tracking distinguishes repeated uses from multi-hit abilities
+- **Timeline Alignment** - Auto-detects reference actions to align timings across reports
+- **AI Analysis** - Optional integration with gemini-cli for mechanic classification
+- **Web Search** - Optional enrichment with ability descriptions from FFXIV resources
+- **Validation** - Post-generation quality checks for timeline accuracy
+- **AI Pattern Analysis** - Gemini-powered analysis to detect repeating sequences, rotation cycles, phase patterns, and mechanic correlations
+- **AI Validation & Correction** - AI-powered validation that suggests merges, flags anomalies, detects missing mechanics, and optionally auto-corrects timelines
 
 ## Installation
 

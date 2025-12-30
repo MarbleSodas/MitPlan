@@ -19,7 +19,10 @@ import {
   clearCredentials,
   listAvailableBosses,
   analyzeReport,
+  scrapeTimeline,
 } from './generator/index.js';
+import { processTimelines, generateTimelineReport } from './generator/enhancedProcessor.js';
+import { getBossMultiHitAbilities, getBossFirstAction } from './config/index.js';
 import { getAccessToken, clearCachedToken } from './sources/fflogs/auth.js';
 import { createConfig, getBossMapping, getAllBossIds } from './config/index.js';
 import { getRateLimitStatus } from './sources/fflogs/client.js';
@@ -75,9 +78,12 @@ program
     const spinner = ora('Generating timeline...').start();
 
     try {
+      // Ensure reports is always an array
+      const reportCodes = Array.isArray(options.reports) ? options.reports : [options.reports];
+      
       const result = await generateTimeline({
         bossId: options.boss,
-        reportCodes: options.reports,
+        reportCodes: reportCodes,
         output: options.output,
         useCactbot: options.cactbot !== false,
         includeDodgeable: options.includeDodgeable || false,
@@ -155,16 +161,20 @@ program
     const spinner = ora('Aggregating timelines...').start();
 
     try {
-      // Call autoGenerateTimeline with or without report codes
-      if (!options.reports || options.reports.length === 0) {
+      // Ensure reports is always an array if provided
+      const reportCodes = options.reports 
+        ? (Array.isArray(options.reports) ? options.reports : [options.reports])
+        : undefined;
+      
+      if (!reportCodes || reportCodes.length === 0) {
         console.log(chalk.yellow(`Auto-discovering ${options.count} recent reports for ${options.boss}...`));
       } else {
-        console.log(chalk.yellow(`Processing ${options.reports.length} provided report codes...`));
+        console.log(chalk.yellow(`Processing ${reportCodes.length} provided report codes...`));
       }
 
       const result = await autoGenerateTimeline({
         bossId: options.boss,
-        reportCodes: options.reports,
+        reportCodes: reportCodes,
         count: parseInt(options.count, 10),
         output: options.output,
         useCactbot: options.cactbot !== false,
@@ -194,6 +204,117 @@ program
 
         if (!options.dryRun) {
           console.log(chalk.blue(`  • Output: ${result.outputPath}`));
+        }
+      } else {
+        spinner.fail(chalk.red('Failed to generate timeline'));
+        for (const error of result.errors) {
+          console.log(chalk.red(`  • ${error}`));
+        }
+        process.exit(1);
+      }
+
+    } catch (error) {
+      spinner.fail(chalk.red('Fatal error'));
+      console.error(error);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Scrape command - Automatically discover, fetch, and aggregate timelines
+ */
+program
+  .command('scrape')
+  .description('Auto-discover recent clear reports and generate an aggregated timeline')
+  .option('-b, --boss <id>', 'Boss ID (e.g., m7s, m8s)')
+  .option('-c, --count <number>', 'Number of recent reports to fetch', '10')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--no-cactbot', 'Disable Cactbot integration')
+  .option('--dry-run', 'Generate without writing output file')
+  .option('--min-duration <seconds>', 'Minimum fight duration in seconds', '120')
+  .option('--min-confidence <ratio>', 'Minimum confidence ratio (0-1) to include action', '0.3')
+  .option('--multi-hit-window <ms>', 'Window in ms for grouping multi-hit abilities', '2000')
+  .option('--occurrence-gap <seconds>', 'Minimum gap to consider a new occurrence', '30')
+  .option('--use-ai', 'Enable AI analysis for ability classification')
+  .option('--use-web', 'Enable web search for ability descriptions')
+  .option('--use-patterns', 'Enable AI timeline pattern analysis (detects rotations, phases, repeats)')
+  .option('--use-validation', 'Enable AI validation (suggests merges, flags anomalies)')
+  .option('--auto-correct', 'Automatically apply high-confidence corrections from AI validation')
+  .option('--reference <action>', 'Specific action to use as time=0 anchor')
+  .action(async (options) => {
+    console.log(chalk.cyan(banner));
+
+    if (!options.boss) {
+      console.error(chalk.red('Error: Boss ID is required. Use -b or --boss'));
+      console.log(chalk.yellow('Available boss IDs: ' + getAllBossIds().slice(0, 8).join(', ') + '...'));
+      console.log(chalk.yellow('Use "list-bosses" command to see all available bosses.'));
+      process.exit(1);
+    }
+
+    const spinner = ora('Scraping timeline...').start();
+
+    try {
+      const bossMultiHitAbilities = getBossMultiHitAbilities(options.boss);
+      const bossFirstAction = options.reference || getBossFirstAction(options.boss);
+      
+      const result = await scrapeTimeline({
+        bossId: options.boss,
+        count: parseInt(options.count, 10),
+        output: options.output,
+        useCactbot: options.cactbot !== false,
+        dryRun: options.dryRun || false,
+        minFightDuration: parseInt(options.minDuration, 10),
+        minConfidence: parseFloat(options.minConfidence),
+        usePatternAnalysis: options.usePatterns || false,
+        useAiValidation: options.useValidation || false,
+        autoCorrectTimeline: options.autoCorrect || false,
+        onProgress: (message) => {
+          spinner.text = message;
+        },
+      });
+
+      if (result.success) {
+        spinner.succeed(chalk.green(`Generated timeline with ${result.actions.length} actions`));
+
+        console.log(chalk.blue('\n=== Summary ==='));
+        console.log(chalk.blue(`  Reports discovered: ${result.reportsDiscovered}`));
+        console.log(chalk.blue(`  Reports validated: ${result.reportsValidated}`));
+        console.log(chalk.blue(`  Reports processed: ${result.reportsUsed.length}`));
+        
+        if (result.cactbotAvailable) {
+          console.log(chalk.green(`  Cactbot: Available and used for timing`));
+        } else {
+          console.log(chalk.yellow(`  Cactbot: Not available (FFLogs timing used)`));
+        }
+
+        console.log(chalk.blue(`  Unique actions: ${result.uniqueActions}`));
+        
+        if (bossMultiHitAbilities.length > 0) {
+          console.log(chalk.blue(`  Known multi-hit abilities: ${bossMultiHitAbilities.join(', ')}`));
+        }
+        
+        if (bossFirstAction) {
+          console.log(chalk.blue(`  Reference action: ${bossFirstAction}`));
+        }
+
+        if (result.reportsUsed.length <= 5) {
+          console.log(chalk.blue(`  Reports: ${result.reportsUsed.join(', ')}`));
+        } else {
+          console.log(chalk.blue(`  First 5 reports: ${result.reportsUsed.slice(0, 5).join(', ')}`));
+        }
+
+        if (!options.dryRun && result.outputPath) {
+          console.log(chalk.green(`\n  Output: ${result.outputPath}`));
+        }
+
+        if (result.errors.length > 0) {
+          console.log(chalk.yellow(`\n  Warnings: ${result.errors.length}`));
+          for (const error of result.errors.slice(0, 3)) {
+            console.log(chalk.yellow(`    • ${error}`));
+          }
+          if (result.errors.length > 3) {
+            console.log(chalk.yellow(`    ... and ${result.errors.length - 3} more`));
+          }
         }
       } else {
         spinner.fail(chalk.red('Failed to generate timeline'));

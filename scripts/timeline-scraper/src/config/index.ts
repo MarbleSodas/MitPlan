@@ -51,15 +51,20 @@ export const CACTBOT_BASE_URL = 'https://raw.githubusercontent.com/quisquous/cac
  * Note: Cactbot does not yet have Dawntrail (7.x) timeline files.
  * Timeline paths are placeholders and will return 404 until Cactbot adds 7.x support.
  */
-export const BOSS_MAPPING: Record<string, {
+export interface BossConfig {
   id: string;
   name: string;
   zoneId?: number;
-  encounterId?: number;  // FFLogs encounter ID for rankings query
+  encounterId?: number;
   timelinePath: string;
   mitPlanId: string;
   fflogsAbilityIds?: number[];
-}> = {
+  multiHitAbilities?: string[];
+  firstAction?: string;
+  phaseTransitions?: string[];
+}
+
+export const BOSS_MAPPING: Record<string, BossConfig> = {
   // Dawntrail Savage Raids (AAC Light-Heavyweight - Zone 62)
   'm1s': {
     id: 'm1s',
@@ -118,6 +123,9 @@ export const BOSS_MAPPING: Record<string, {
     encounterId: 99,
     timelinePath: 'ui/raidboss/data/07-dt/savage/m7s.txt',
     mitPlanId: 'aac-cruiserweight-m7s',
+    multiHitAbilities: ['brutal impact', 'explosion'],
+    firstAction: 'Brutal Impact',
+    phaseTransitions: ['Neo Bombarian Special'],
   },
   'm8s': {
     id: 'm8s',
@@ -241,8 +249,23 @@ export function getCactbotTimelineUrl(path: string): string {
 /**
  * Get boss mapping by MitPlan boss ID or alias
  */
-export function getBossMapping(bossId: string): typeof BOSS_MAPPING[keyof typeof BOSS_MAPPING] | undefined {
+export function getBossMapping(bossId: string): BossConfig | undefined {
   return BOSS_MAPPING[bossId.toLowerCase()];
+}
+
+export function getBossMultiHitAbilities(bossId: string): string[] {
+  const boss = getBossMapping(bossId);
+  return boss?.multiHitAbilities || [];
+}
+
+export function getBossFirstAction(bossId: string): string | undefined {
+  const boss = getBossMapping(bossId);
+  return boss?.firstAction;
+}
+
+export function getBossPhaseTransitions(bossId: string): string[] {
+  const boss = getBossMapping(bossId);
+  return boss?.phaseTransitions || [];
 }
 
 /**

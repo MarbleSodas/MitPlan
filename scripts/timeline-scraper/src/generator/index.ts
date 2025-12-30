@@ -10,23 +10,29 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { FFLogsClient } from '../sources/fflogs/client.js';
 import { getAccessToken, clearCachedToken } from '../sources/fflogs/auth.js';
-import { parseFFLogsEvents, extractBossEnemy } from '../sources/fflogs/parser.js';
+import { parseFFLogsEvents, extractBossActorIds, getBossName, createAbilityLookup, parseFFLogsEventsWithOccurrences } from '../sources/fflogs/parser.js';
 import {
   loadCactbotTimeline,
   mergeCactbotWithFFLogs,
+  loadCactbotTimelineSafe,
 } from '../sources/cactbot/parser.js';
 import { getBossMapping, createConfig } from '../config/index.js';
 import type {
   BossAction,
   TimelineData,
-  FFLogsEnemy,
   TimelineReport,
   AggregationStrategy,
 } from '../types/index.js';
 import { dedupeAoEActions } from '../utils/damage.js';
-import { discoverRecentReports } from '../sources/fflogs/discover.js';
+import { discoverRecentReports, discoverAndValidateReports, ValidatedReport } from '../sources/fflogs/discover.js';
 import { normalizeTimeline, alignWithCactbot } from './normalizer.js';
-import { aggregateTimelines, aggregateWithCactbot } from './aggregator.js';
+import { aggregateTimelines, aggregateWithCactbot, aggregateByOccurrence, mergeWithCactbotTiming } from './aggregator.js';
+import {
+  analyzeTimelinePatterns,
+  validateTimelineWithAI,
+  formatPatternAnalysisReport,
+  formatAIValidationReport,
+} from '../analysis/index.js';
 
 export interface GenerateOptions {
   bossId: string;
@@ -65,6 +71,31 @@ export interface GenerateResult {
   errors: string[];
 }
 
+export interface ScrapeOptions {
+  bossId: string;
+  count?: number;
+  output?: string;
+  useCactbot?: boolean;
+  dryRun?: boolean;
+  minFightDuration?: number;
+  minConfidence?: number;
+  usePatternAnalysis?: boolean;
+  useAiValidation?: boolean;
+  autoCorrectTimeline?: boolean;
+  onProgress?: (message: string) => void;
+}
+
+export interface ScrapeResult extends GenerateResult {
+  reportsDiscovered: number;
+  reportsValidated: number;
+  cactbotAvailable: boolean;
+  uniqueActions: number;
+  aggregationStats: {
+    totalOccurrenceGroups: number;
+    filteredByConfidence: number;
+  };
+}
+
 /**
  * Generate a timeline from FFLogs reports
  */
@@ -100,8 +131,8 @@ export async function generateTimeline(options: GenerateOptions): Promise<Genera
         console.log(`Fetching report: ${reportCode}`);
         const report = await client.getReport(reportCode);
 
-        // Find the appropriate fight
-        const fights = client.findFightsByBoss(report.fights, bossMapping.zoneId || 0);
+        // Find the appropriate fight by encounter ID
+        const fights = client.findFightsByEncounter(report.fights, bossMapping.encounterId || 0);
         const killFights = client.findKillFights(fights);
 
         if (killFights.length === 0) {
@@ -125,15 +156,18 @@ export async function generateTimeline(options: GenerateOptions): Promise<Genera
 
         console.log(`  Using fight ${fight.id} (${fight.name}, ${Math.round(fightDuration)}s)`);
 
-        // Get boss enemy
-        const bossEnemy = extractBossEnemy(report.enemies, fight);
-        console.log(`  Boss: ${bossEnemy?.name || 'Unknown'}`);
+        // Get boss actor IDs for filtering events
+        const bossActorIds = extractBossActorIds(fight, report.masterData?.actors);
+        const bossName = getBossName(fight, report.masterData?.actors);
+        const abilityLookup = createAbilityLookup(report.masterData?.abilities || []);
+        console.log(`  Boss: ${bossName}`);
 
-        // Fetch events
+        // Fetch events - use DamageTaken to get boss damage on players
         console.log(`  Fetching events...`);
         const events = await client.getAllEvents(reportCode, fight.id, {
           startTime: fight.startTime,
           endTime: fight.endTime,
+          dataType: 'DamageTaken',
           onProgress: (count) => {
             if (count % 10000 === 0) {
               console.log(`    ${count} events...`);
@@ -144,9 +178,10 @@ export async function generateTimeline(options: GenerateOptions): Promise<Genera
         console.log(`  Fetched ${events.length} events`);
 
         // Parse into actions
-        const actions = parseFFLogsEvents(events, fight, bossEnemy, {
+        const actions = parseFFLogsEvents(events, fight, bossActorIds, {
           includeDodgeable: options.includeDodgeable ?? false,
           dedupeAoE: options.dedupeAoE ?? true,
+          abilityLookup,
         });
 
         console.log(`  Parsed ${actions.length} actions`);
@@ -290,8 +325,8 @@ export async function autoGenerateTimeline(options: AutoGenerateOptions): Promis
 
         const reportData = await client.getReport(report.code);
 
-        // Find the appropriate fight
-        const fights = client.findFightsByBoss(reportData.fights, bossMapping.zoneId || 0);
+        // Find fights by encounter ID
+        const fights = client.findFightsByEncounter(reportData.fights, bossMapping.encounterId || 0);
         const killFights = client.findKillFights(fights);
 
         if (killFights.length === 0) {
@@ -307,13 +342,14 @@ export async function autoGenerateTimeline(options: AutoGenerateOptions): Promis
         const fightDuration = (fight.endTime - fight.startTime) / 1000;
         console.log(`  Fight ${fight.id}: ${Math.round(fightDuration)}s`);
 
-        // Get boss enemy
-        const bossEnemy = extractBossEnemy(reportData.enemies, fight);
+        // Get boss actor IDs for filtering
+        const bossActorIds = extractBossActorIds(fight, reportData.masterData?.actors);
+        const abilityLookup = createAbilityLookup(reportData.masterData?.abilities || []);
 
-        // Fetch events
         const events = await client.getAllEvents(report.code, fight.id, {
           startTime: fight.startTime,
           endTime: fight.endTime,
+          dataType: 'DamageTaken',
           onProgress: (count) => {
             if (count % 10000 === 0) {
               console.log(`    ${count} events...`);
@@ -323,10 +359,10 @@ export async function autoGenerateTimeline(options: AutoGenerateOptions): Promis
 
         console.log(`  Fetched ${events.length} events`);
 
-        // Parse into actions
-        const actions = parseFFLogsEvents(events, fight, bossEnemy, {
+        const actions = parseFFLogsEvents(events, fight, bossActorIds, {
           includeDodgeable: options.includeDodgeable ?? false,
           dedupeAoE: options.dedupeAoE ?? true,
+          abilityLookup,
         });
 
         console.log(`  Parsed ${actions.length} actions`);
@@ -583,12 +619,10 @@ export async function analyzeReport(
 ): Promise<void> {
   const config = createConfig();
 
-  // Authenticate
   console.log('Authenticating with FFLogs...');
   const accessToken = await getAccessToken(config.fflogs.clientId, config.fflogs.clientSecret);
   const client = new FFLogsClient({ accessToken });
 
-  // Get report data
   console.log(`Fetching report: ${reportCode}`);
   const report = await client.getReport(reportCode);
 
@@ -598,28 +632,21 @@ export async function analyzeReport(
   console.log(`Start: ${new Date(report.startTime).toISOString()}`);
   console.log(`Duration: ${Math.round((report.endTime - report.startTime) / 1000)}s`);
 
-  // List fights
   console.log(`\n=== Fights (${report.fights.length}) ===`);
   for (const fight of report.fights) {
     const duration = Math.round((fight.endTime - fight.startTime) / 1000);
     const kill = fight.kill ? ' [KILL]' : '';
-    console.log(`  ${fight.id}: ${fight.name}${kill} - ${duration}s`);
+    const encounterInfo = fight.encounterID ? ` (Encounter: ${fight.encounterID})` : '';
+    console.log(`  ${fight.id}: ${fight.name}${kill} - ${duration}s${encounterInfo}`);
   }
 
-  // List enemies
-  console.log(`\n=== Enemies (${report.enemies.length}) ===`);
-  const uniqueEnemies = new Map<string, FFLogsEnemy>();
-  for (const enemy of report.enemies) {
-    const key = `${enemy.name} (${enemy.type})`;
-    if (!uniqueEnemies.has(key)) {
-      uniqueEnemies.set(key, enemy);
-    }
-  }
-  for (const [name, enemy] of uniqueEnemies) {
-    console.log(`  ${enemy.id}: ${name}`);
+  const actors = report.masterData?.actors || [];
+  const enemyActors = actors.filter(a => a.type === 'Boss' || a.type === 'NPC');
+  console.log(`\n=== Enemies/NPCs (${enemyActors.length}) ===`);
+  for (const actor of enemyActors) {
+    console.log(`  ${actor.id}: ${actor.name} (${actor.type}${actor.subType ? '/' + actor.subType : ''})`);
   }
 
-  // Get event count for a specific fight if requested
   if (options.fightId) {
     const fight = report.fights.find(f => f.id === options.fightId);
     if (fight) {
@@ -636,7 +663,6 @@ export async function analyzeReport(
 
       console.log(`Total events: ${events.length}`);
 
-      // Categorize events
       const byType = new Map<string, number>();
       for (const event of events) {
         const type = event.type || 'unknown';
@@ -649,4 +675,266 @@ export async function analyzeReport(
       }
     }
   }
+}
+
+export async function scrapeTimeline(options: ScrapeOptions): Promise<ScrapeResult> {
+  const result: ScrapeResult = {
+    success: false,
+    bossId: options.bossId,
+    actions: [],
+    reportsUsed: [],
+    cactbotUsed: false,
+    cactbotAvailable: false,
+    errors: [],
+    reportsDiscovered: 0,
+    reportsValidated: 0,
+    uniqueActions: 0,
+    aggregationStats: {
+      totalOccurrenceGroups: 0,
+      filteredByConfidence: 0,
+    },
+  };
+
+  const log = options.onProgress || console.log;
+
+  try {
+    const config = createConfig();
+    const bossMapping = getBossMapping(options.bossId);
+
+    if (!bossMapping) {
+      result.errors.push(`Unknown boss ID: ${options.bossId}`);
+      return result;
+    }
+
+    log('Authenticating with FFLogs...');
+    const accessToken = await getAccessToken(config.fflogs.clientId, config.fflogs.clientSecret);
+    const client = new FFLogsClient({ accessToken });
+
+    log(`\n=== Step 1: Discovering Reports for ${bossMapping.name} ===`);
+    const count = options.count || 10;
+
+    const validatedReports = await discoverAndValidateReports(options.bossId, client, {
+      limit: count,
+      requireKill: true,
+      minDuration: options.minFightDuration || 120,
+      onProgress: (current, total) => {
+        log(`  Validating report ${current}/${total}...`);
+      },
+    });
+
+    result.reportsDiscovered = count * 3;
+    result.reportsValidated = validatedReports.length;
+
+    if (validatedReports.length === 0) {
+      result.errors.push('No valid reports found with kill fights');
+      return result;
+    }
+
+    log(`\n=== Step 2: Fetching Cactbot Timeline ===`);
+    let cactbotActions: BossAction[] = [];
+    
+    if (options.useCactbot !== false && bossMapping.timelinePath) {
+      const cactbotResult = await loadCactbotTimelineSafe(
+        options.bossId,
+        bossMapping.timelinePath,
+        config.cactbot.baseUrl
+      );
+
+      if (cactbotResult.available) {
+        cactbotActions = cactbotResult.actions;
+        result.cactbotAvailable = true;
+        result.cactbotUsed = true;
+        log(`  Loaded ${cactbotActions.length} Cactbot actions`);
+      } else {
+        log(`  ${cactbotResult.error}`);
+        log(`  Continuing with FFLogs-only timing`);
+      }
+    } else {
+      log(`  Cactbot integration disabled`);
+    }
+
+    log(`\n=== Step 3: Processing ${validatedReports.length} Reports ===`);
+    const allTimelines: BossAction[][] = [];
+
+    for (let i = 0; i < validatedReports.length; i++) {
+      const report = validatedReports[i];
+      log(`\n[${i + 1}/${validatedReports.length}] ${report.code} (${report.fightDuration}s)`);
+
+      try {
+        const reportData = await client.getReport(report.code);
+        const fight = reportData.fights.find(f => f.id === report.fightId);
+
+        if (!fight) {
+          log(`  Fight ${report.fightId} not found, skipping`);
+          continue;
+        }
+
+        const bossActorIds = extractBossActorIds(fight, reportData.masterData?.actors);
+        const abilityLookup = createAbilityLookup(reportData.masterData?.abilities || []);
+
+        const events = await client.getAllEvents(report.code, fight.id, {
+          startTime: fight.startTime,
+          endTime: fight.endTime,
+          dataType: 'DamageTaken',
+        });
+
+        log(`  Fetched ${events.length} events`);
+
+        const actions = parseFFLogsEventsWithOccurrences(events, fight, bossActorIds, {
+          includeDodgeable: false,
+          dedupeAoE: true,
+          abilityLookup,
+        });
+
+        log(`  Parsed ${actions.length} actions`);
+        allTimelines.push(actions);
+        result.reportsUsed.push(report.code);
+
+      } catch (error) {
+        log(`  Error: ${(error as Error).message}`);
+        result.errors.push(`Report ${report.code}: ${(error as Error).message}`);
+      }
+    }
+
+    if (allTimelines.length === 0) {
+      result.errors.push('No timelines were successfully parsed');
+      return result;
+    }
+
+    log(`\n=== Step 4: Aggregating ${allTimelines.length} Timelines ===`);
+    
+    const aggregatedActions = aggregateByOccurrence(
+      allTimelines,
+      allTimelines.length,
+      {
+        strategy: 'median',
+        minConfidence: options.minConfidence || 0.3,
+      }
+    );
+
+    result.aggregationStats.totalOccurrenceGroups = aggregatedActions.length;
+
+    log(`\n=== Step 5: Merging with Cactbot Timing ===`);
+    
+    let finalActions: BossAction[];
+    if (cactbotActions.length > 0) {
+      finalActions = mergeWithCactbotTiming(aggregatedActions, cactbotActions, {
+        fuzzyMatch: true,
+      });
+      log(`  Merged ${aggregatedActions.length} FFLogs actions with ${cactbotActions.length} Cactbot actions`);
+      log(`  Result: ${finalActions.length} actions`);
+    } else {
+      finalActions = aggregatedActions.map(a => {
+        const { timeRange, ...rest } = a as any;
+        return rest as BossAction;
+      });
+      log(`  Using FFLogs timing (no Cactbot available)`);
+    }
+
+    result.actions = finalActions;
+    result.uniqueActions = finalActions.length;
+
+    if (options.usePatternAnalysis) {
+      log(`\n=== Step 6: AI Pattern Analysis ===`);
+      const patternAnalysis = await analyzeTimelinePatterns(finalActions, bossMapping.name, {
+        enabled: true,
+        timeout: 60000,
+        minOccurrencesForPattern: 2,
+        maxActionsToAnalyze: 100,
+      });
+
+      if (patternAnalysis) {
+        log(`  ${patternAnalysis.summary}`);
+        if (patternAnalysis.repeatPatterns.filter(p => p.isRegular).length > 0) {
+          log(`  Found ${patternAnalysis.repeatPatterns.filter(p => p.isRegular).length} regular repeat patterns`);
+        }
+        if (patternAnalysis.phasePatterns.length > 1) {
+          log(`  Detected ${patternAnalysis.phasePatterns.length} phases`);
+        }
+        if (patternAnalysis.rotationCycles.length > 1) {
+          log(`  Identified ${patternAnalysis.rotationCycles.length} rotation cycles`);
+        }
+        
+        log(`\n${formatPatternAnalysisReport(patternAnalysis)}`);
+
+        if (options.useAiValidation) {
+          log(`\n=== Step 7: AI Validation ===`);
+          const validation = await validateTimelineWithAI(
+            finalActions,
+            bossMapping.name,
+            patternAnalysis,
+            {
+              enabled: true,
+              timeout: 45000,
+              autoCorrect: options.autoCorrectTimeline || false,
+              minConfidenceForCorrection: 0.8,
+            }
+          );
+
+          log(`  Validation score: ${validation.score}/100`);
+          
+          if (validation.issues.filter(i => i.type === 'error').length > 0) {
+            log(`  Errors: ${validation.issues.filter(i => i.type === 'error').length}`);
+          }
+          if (validation.issues.filter(i => i.type === 'warning').length > 0) {
+            log(`  Warnings: ${validation.issues.filter(i => i.type === 'warning').length}`);
+          }
+          if (validation.mergeSuggestions.length > 0) {
+            log(`  Merge suggestions: ${validation.mergeSuggestions.length}`);
+          }
+          if (validation.missingMechanics.length > 0) {
+            log(`  Potentially missing mechanics: ${validation.missingMechanics.length}`);
+          }
+
+          log(`\n${formatAIValidationReport(validation)}`);
+
+          if (validation.correctedActions) {
+            log(`  Applied ${validation.mergeSuggestions.length} auto-corrections`);
+            finalActions = validation.correctedActions;
+            result.actions = finalActions;
+            result.uniqueActions = finalActions.length;
+          }
+        }
+      }
+    } else if (options.useAiValidation) {
+      log(`\n=== Step 6: AI Validation ===`);
+      const validation = await validateTimelineWithAI(
+        finalActions,
+        bossMapping.name,
+        null,
+        {
+          enabled: true,
+          timeout: 45000,
+          autoCorrect: options.autoCorrectTimeline || false,
+          minConfidenceForCorrection: 0.8,
+        }
+      );
+
+      log(`  Validation score: ${validation.score}/100`);
+      log(`\n${formatAIValidationReport(validation)}`);
+
+      if (validation.correctedActions) {
+        finalActions = validation.correctedActions;
+        result.actions = finalActions;
+        result.uniqueActions = finalActions.length;
+      }
+    }
+
+    if (!options.dryRun) {
+      const outputPath = options.output || getDefaultOutputPath(options.bossId);
+      await writeTimeline(finalActions, options.bossId, bossMapping, outputPath);
+      result.outputPath = outputPath;
+      log(`\nTimeline written to: ${outputPath}`);
+    } else {
+      log(`\nDry run - skipping output file generation`);
+    }
+
+    result.success = finalActions.length > 0;
+
+  } catch (error) {
+    result.errors.push(`Fatal error: ${(error as Error).message}`);
+    console.error('Fatal error:', error);
+  }
+
+  return result;
 }

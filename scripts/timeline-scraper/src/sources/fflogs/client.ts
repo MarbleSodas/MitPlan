@@ -162,23 +162,38 @@ export class FFLogsClient {
             }
             fights {
               id
-              boss
+              encounterID
               name
-              zoneID
+              gameZone {
+                id
+                name
+              }
               startTime
               endTime
               kill
-              standardComposition
               difficulty
+              enemyNPCs {
+                id
+                gameID
+                groupCount
+                instanceCount
+              }
+              friendlyPlayers
             }
             startTime
             endTime
-            enemies {
-              id
-              name
-              guid
-              type
-              instance
+            masterData {
+              actors {
+                id
+                name
+                type
+                subType
+              }
+              abilities {
+                gameID
+                name
+                type
+              }
             }
           }
         }
@@ -198,11 +213,10 @@ export class FFLogsClient {
     options: {
       startTime?: number;
       endTime?: number;
-      eventType?: string;
+      dataType?: string;
       sourceId?: number;
       targetId?: number;
       limit?: number;
-      nextPageTimestamp?: number | null;
     } = {}
   ): Promise<{
     data: FFLogsEvent[];
@@ -211,37 +225,33 @@ export class FFLogsClient {
     const {
       startTime = 0,
       endTime = 9999999999,
-      eventType,
-      sourceId,
-      targetId,
+      dataType = 'DamageDone',
       limit = 10000,
-      nextPageTimestamp,
     } = options;
 
+    // Build filter string inline (FFLogs v2 uses inline args, not variables for events)
+    const filterParts = [
+      `fightIDs: [${fightId}]`,
+      `startTime: ${startTime}`,
+      `endTime: ${endTime}`,
+      `limit: ${limit}`,
+      `dataType: ${dataType}`,
+    ];
+
+    if (options.sourceId !== undefined) {
+      filterParts.push(`sourceID: ${options.sourceId}`);
+    }
+    if (options.targetId !== undefined) {
+      filterParts.push(`targetID: ${options.targetId}`);
+    }
+
+    const filterString = filterParts.join(', ');
+
     const query = `
-      query EventsData(
-        $code: String!
-        $fightId: Float!
-        $startTime: Float!
-        $endTime: Float!
-        $limit: Float!
-        $nextPageTimestamp: Float
-        $eventType: String
-        $sourceId: Float
-        $targetId: Float
-      ) {
+      query EventsData($code: String!) {
         reportData {
           report(code: $code) {
-            events(
-              fightIDs: [$fightId]
-              startTime: $startTime
-              endTime: $endTime
-              limit: $limit
-              nextPageTimestamp: $nextPageTimestamp
-              eventType: $eventType
-              sourceID: $sourceId
-              targetID: $targetId
-            ) {
+            events(${filterString}) {
               data
               nextPageTimestamp
             }
@@ -250,20 +260,7 @@ export class FFLogsClient {
       }
     `;
 
-    const variables: Record<string, unknown> = {
-      code,
-      fightId,
-      startTime,
-      endTime,
-      limit,
-      nextPageTimestamp,
-    };
-
-    if (eventType) variables.eventType = eventType;
-    if (sourceId) variables.sourceId = sourceId;
-    if (targetId) variables.targetId = targetId;
-
-    const data = await this.query<EventsData>(query, variables);
+    const data = await this.query<EventsData>(query, { code });
     return {
       data: data.reportData.report.events.data,
       nextPageTimestamp: data.reportData.report.events.nextPageTimestamp,
@@ -279,17 +276,23 @@ export class FFLogsClient {
     options: {
       startTime?: number;
       endTime?: number;
-      eventType?: string;
+      dataType?: string;
       onProgress?: (count: number) => void;
     } = {}
   ): Promise<FFLogsEvent[]> {
     const allEvents: FFLogsEvent[] = [];
+    let currentStartTime = options.startTime ?? 0;
+    const desiredEndTime = options.endTime ?? 9999999999;
+
+    // FFLogs pagination: nextPageTimestamp tells us where to start the next query
     let nextPageTimestamp: number | null = null;
 
     do {
       const result = await this.getEvents(code, fightId, {
-        ...options,
-        nextPageTimestamp,
+        startTime: nextPageTimestamp ?? currentStartTime,
+        endTime: desiredEndTime,
+        dataType: options.dataType,
+        limit: 10000,
       });
 
       allEvents.push(...result.data);
@@ -298,7 +301,7 @@ export class FFLogsClient {
       if (options.onProgress) {
         options.onProgress(allEvents.length);
       }
-    } while (nextPageTimestamp !== null);
+    } while (nextPageTimestamp !== null && nextPageTimestamp < desiredEndTime);
 
     return allEvents;
   }
@@ -315,7 +318,7 @@ export class FFLogsClient {
     return this.getAllEvents(code, fightId, {
       startTime,
       endTime,
-      eventType: 'damage',
+      dataType: 'DamageDone',
     });
   }
 
@@ -331,7 +334,7 @@ export class FFLogsClient {
     return this.getAllEvents(code, fightId, {
       startTime,
       endTime,
-      eventType: 'cast',
+      dataType: 'Casts',
     });
   }
 
@@ -347,7 +350,7 @@ export class FFLogsClient {
     return this.getAllEvents(code, fightId, {
       startTime,
       endTime,
-      eventType: 'applybuff',
+      dataType: 'Buffs',
     });
   }
 
@@ -511,10 +514,18 @@ export class FFLogsClient {
   }
 
   /**
-   * Find fights by boss ID
+   * Find fights by encounter ID
    */
-  findFightsByBoss(fights: FFLogsFight[], bossId: number): FFLogsFight[] {
-    return fights.filter(f => f.boss === bossId);
+  findFightsByEncounter(fights: FFLogsFight[], encounterId: number): FFLogsFight[] {
+    return fights.filter(f => f.encounterID === encounterId);
+  }
+
+  /**
+   * Find fights by boss ID (legacy alias for findFightsByEncounter)
+   * @deprecated Use findFightsByEncounter instead
+   */
+  findFightsByBoss(fights: FFLogsFight[], encounterId: number): FFLogsFight[] {
+    return this.findFightsByEncounter(fights, encounterId);
   }
 
   /**
