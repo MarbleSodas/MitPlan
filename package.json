@@ -16,6 +16,7 @@
     "test:collaboration": "vitest run src/tests/integration/multi-user-collaboration.test.js",
     "test:persistence": "vitest run src/tests/integration/data-persistence-recovery.test.js",
     "test:performance": "vitest run src/tests/performance/realtime-performance.test.jsx",
+    "timeline": "bun run --cwd scripts/timeline-scraper src/cli.ts",
     "security:check": "node scripts/security-check.js",
     "predeploy": "npm run security:check && npm run build"
   },

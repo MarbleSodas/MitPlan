@@ -1,0 +1,470 @@
+[
+  {
+    "id": "brutal_impact_x6_1",
+    "name": "Brutal Impact x6",
+    "time": 11,
+    "description": "6 hits of physical raidwide damage. Approximately ~468,139 per hit.",
+    "unmitigatedDamage": "~4,469,166",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "brutal_smash_1",
+    "name": "Brutal Smash",
+    "time": 34,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~1,530,238",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "sinister_seeds_cast_1",
+    "name": "Sinister Seeds (cast)",
+    "time": 53,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,032,054",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_1_1",
+    "name": "Sinister Seeds (puddles 1)",
+    "time": 57,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,032,054",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_2_1",
+    "name": "Sinister Seeds (puddles 2)",
+    "time": 59,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,032,054",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_seeds_drop_1",
+    "name": "Sinister Seeds (seeds drop)",
+    "time": 61,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,032,054",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_3_1",
+    "name": "Sinister Seeds (puddles 3)",
+    "time": 61,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,032,054",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_4_1",
+    "name": "Sinister Seeds (puddles 4)",
+    "time": 63,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,032,054",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "impact_1",
+    "name": "Impact",
+    "time": 65,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,328,322",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "explosion_1_1",
+    "name": "Explosion 1",
+    "time": 105,
+    "description": "magical raidwide damage.",
+    "unmitigatedDamage": "~3,512,388",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "brutal_smash_2",
+    "name": "Brutal Smash",
+    "time": 120,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~1,535,034",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "pulp_smash_1",
+    "name": "Pulp Smash",
+    "time": 127,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~1,463,227",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "the_unpotted_1",
+    "name": "The Unpotted",
+    "time": 129,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~3,805,176",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "neo_bombarian_special_1",
+    "name": "Neo Bombarian Special",
+    "time": 148,
+    "description": "magical raidwide damage.",
+    "unmitigatedDamage": "~2,427,924",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "electrogenetic_force_1",
+    "name": "Electrogenetic Force",
+    "time": 189,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,739,628",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "revenge_of_the_vines_1",
+    "name": "Revenge of the Vines",
+    "time": 195,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,639,374",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "abominable_blink_1",
+    "name": "Abominable Blink",
+    "time": 223,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,775,490",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "electrogenetic_force_2",
+    "name": "Electrogenetic Force",
+    "time": 252,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,776,220",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "revenge_of_the_vines_2",
+    "name": "Revenge of the Vines",
+    "time": 258,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,652,258",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "abominable_blink_2",
+    "name": "Abominable Blink",
+    "time": 281,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,778,584",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "strange_seeds_cast_1",
+    "name": "Strange Seeds (cast)",
+    "time": 288,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~7,054,774",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "strange_seeds_1_1",
+    "name": "Strange Seeds 1",
+    "time": 294,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~7,054,774",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "killer_seeds_1",
+    "name": "Killer Seeds",
+    "time": 319,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,419,732",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "electrogenetic_force_3",
+    "name": "Electrogenetic Force",
+    "time": 334,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,768,671",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "revenge_of_the_vines_3",
+    "name": "Revenge of the Vines",
+    "time": 340,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,615,840",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "powerslam_1",
+    "name": "Powerslam",
+    "time": 352,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~2,787,117",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "brutal_impact_x7_1",
+    "name": "Brutal Impact x7",
+    "time": 382,
+    "description": "7 hits of physical raidwide damage. Approximately ~539,185 per hit.",
+    "unmitigatedDamage": "~4,887,715",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "revenge_of_the_vines_4",
+    "name": "Revenge of the Vines",
+    "time": 409,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~2,600,980",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "electrogenetic_force_4",
+    "name": "Electrogenetic Force",
+    "time": 426,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~13,767,388",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "slaminator_1",
+    "name": "Slaminator",
+    "time": 432,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~1,660,374",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "brutal_impact_x8_1",
+    "name": "Brutal Impact x8",
+    "time": 442,
+    "description": "8 hits of physical raidwide damage. Approximately ~579,125 per hit.",
+    "unmitigatedDamage": "~5,941,978",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "brutal_smash_3",
+    "name": "Brutal Smash",
+    "time": 465,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~1,479,353",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "killer_seeds_2",
+    "name": "Killer Seeds",
+    "time": 496,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,399,880",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_cast_2",
+    "name": "Sinister Seeds (cast)",
+    "time": 524,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,243,818",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_1_2",
+    "name": "Sinister Seeds (puddles 1)",
+    "time": 528,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,243,818",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_2_2",
+    "name": "Sinister Seeds (puddles 2)",
+    "time": 530,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,243,818",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_seeds_drop_2",
+    "name": "Sinister Seeds (seeds drop)",
+    "time": 532,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,243,818",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_3_2",
+    "name": "Sinister Seeds (puddles 3)",
+    "time": 532,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,243,818",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "sinister_seeds_puddles_4_2",
+    "name": "Sinister Seeds (puddles 4)",
+    "time": 534,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~1,243,818",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "pulp_smash_2",
+    "name": "Pulp Smash",
+    "time": 542,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~1,410,000",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "the_unpotted_2",
+    "name": "The Unpotted",
+    "time": 544,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~10,301,173",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "brutal_impact_x8_2",
+    "name": "Brutal Impact x8",
+    "time": 550,
+    "description": "8 hits of physical raidwide damage. Approximately ~518,265 per hit.",
+    "unmitigatedDamage": "~5,473,830",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "strange_seeds_cast_2",
+    "name": "Strange Seeds (cast)",
+    "time": 580,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~737,260",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "strange_seeds_seeds_drop_1",
+    "name": "Strange Seeds (seeds drop)",
+    "time": 586,
+    "description": "physical raidwide damage.",
+    "unmitigatedDamage": "~737,260",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "strange_seeds_seeds_drop_2",
+    "name": "Strange Seeds (seeds drop)",
+    "time": 600,
+    "description": "physical damage mechanic.",
+    "unmitigatedDamage": "~912,168",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🌱"
+  },
+  {
+    "id": "slaminator_2",
+    "name": "Slaminator",
+    "time": 611,
+    "description": "physical tank buster requiring mitigation.",
+    "unmitigatedDamage": "~2,295,772",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  }
+]

@@ -33,6 +33,7 @@ import {
   formatPatternAnalysisReport,
   formatAIValidationReport,
 } from '../analysis/index.js';
+export { extractDamageTimeline, type DamageExtractorOptions, type DamageExtractorResult } from './damageExtractor.js';
 
 export interface GenerateOptions {
   bossId: string;

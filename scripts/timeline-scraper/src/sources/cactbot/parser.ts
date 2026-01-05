@@ -3,7 +3,7 @@
  *
  * Parses Cactbot timeline files into MitPlan boss action format.
  * Timeline files follow the Cactbot timeline format documented at:
- * https://github.com/quisquous/cactbot/blob/main/docs/TimelineGuide.md
+ * https://github.com/OverlayPlugin/cactbot/blob/main/docs/TimelineGuide.md
  */
 
 import type { BossAction, CactbotTimelineEntry } from '../../types/index.js';
@@ -31,6 +31,11 @@ export async function fetchCactbotTimeline(
 
 /**
  * Parse Cactbot timeline text into structured entries
+ * 
+ * Modern Cactbot format examples:
+ * - 10.5 "Brutal Impact x6" Ability { id: "A55B", source: "Brute Abombinator" } duration 5.2
+ * - 23.1 "Stoneringer" Ability { id: ["A55D", "A55E"], source: "Brute Abombinator" }
+ * - 0.0 "--sync--" InCombat { inGameCombat: "1" } window 0,1
  */
 export function parseCactbotTimeline(
   timelineText: string,
@@ -53,17 +58,45 @@ export function parseCactbotTimeline(
       continue;
     }
 
-    // Parse timeline entry
-    // Format: TIME "NAME" TYPE OPTIONS...
-    // Example: 123.4 "Ability Name" alert
-    const match = trimmed.match(/^(\d+\.?\d*)\s+"([^"]+)"(?:\s+(\S+))?/);
+    // Parse timeline entry - handles modern Cactbot format
+    // Format: TIME "NAME" [TYPE] [{ options }] [key: value]...
+    // Example: 10.5 "Brutal Impact x6" Ability { id: "A55B", source: "Brute Abombinator" } duration 5.2
+    const match = trimmed.match(/^(\d+\.?\d*)\s+"([^"]+)"/);
     if (!match) continue;
 
-    const [, timeStr, name, type] = match;
+    const [, timeStr, name] = match;
     const time = parseFloat(timeStr);
 
-    // Filter out dodgeable mechanics if requested
-    if (filterDodgeable && isDodgeableOnly(name, type)) {
+    // Skip internal sync markers and non-ability entries
+    if (name.startsWith('--') && name.endsWith('--')) {
+      continue;
+    }
+
+    // Determine entry type from what follows the name
+    const afterName = trimmed.substring(match[0].length).trim();
+    let entryType: string | undefined;
+    
+    // Check for Ability, ActorControl, InCombat, etc.
+    const typeMatch = afterName.match(/^(Ability|ActorControl|InCombat|StartsUsing|AddedCombatant)\b/i);
+    if (typeMatch) {
+      entryType = typeMatch[1];
+    } else {
+      // Legacy format: TIME "NAME" alert/alarm/info
+      const legacyTypeMatch = afterName.match(/^(alert|alarm|info)\b/i);
+      if (legacyTypeMatch) {
+        entryType = legacyTypeMatch[1];
+      }
+    }
+
+    // Skip non-Ability entries (InCombat, ActorControl, etc.) as they're not damage mechanics
+    if (entryType && !['Ability', 'StartsUsing', 'alert', 'alarm', 'info'].includes(entryType)) {
+      continue;
+    }
+
+    // Filter out dodgeable mechanics if requested (only for non-Ability types)
+    // Ability entries should NOT be filtered by dodgeable patterns since they represent actual casts
+    const isAbilityEntry = entryType === 'Ability' || entryType === 'StartsUsing';
+    if (filterDodgeable && !isAbilityEntry && isDodgeableOnly(name, entryType)) {
       continue;
     }
 
@@ -72,29 +105,33 @@ export function parseCactbotTimeline(
       name: name.trim(),
     };
 
-    if (type) {
-      entry.type = type as CactbotTimelineEntry['type'];
+    if (entryType) {
+      entry.type = entryType as CactbotTimelineEntry['type'];
     }
 
-    // Parse additional options
-    const optionsMatch = trimmed.match(/(\w+)\s*:\s*([^"\s]+)/g);
-    if (optionsMatch) {
-      for (const opt of optionsMatch) {
-        const [key, value] = opt.split(/\s*:\s*/);
-        if (key === 'duration') {
-          entry.duration = parseFloat(value);
-        } else if (key === 'window') {
-          entry.window = parseFloat(value);
-        } else if (key === 'id') {
-          entry.id = value;
-        }
+    // Extract ability ID from { id: "XXXX" } or { id: ["XXXX", "YYYY"] }
+    const idMatch = afterName.match(/id:\s*(?:"([^"]+)"|\["([^\]]+)"\]|\[([^\]]+)\])/);
+    if (idMatch) {
+      // Take the first ID if multiple are listed
+      const idValue = idMatch[1] || idMatch[2] || idMatch[3];
+      if (idValue) {
+        entry.id = idValue.split(/[",\s]+/).filter(Boolean)[0];
       }
     }
 
-    // Include if it's an alert/alarm or we're including info
-    if (includeAlerts || (!entry.type || entry.type === 'info')) {
-      entries.push(entry);
+    // Parse duration from "duration X.X" at end of line
+    const durationMatch = afterName.match(/duration\s+(\d+\.?\d*)/);
+    if (durationMatch) {
+      entry.duration = parseFloat(durationMatch[1]);
     }
+
+    // Parse window from "window X,Y" 
+    const windowMatch = afterName.match(/window\s+(\d+\.?\d*)/);
+    if (windowMatch) {
+      entry.window = parseFloat(windowMatch[1]);
+    }
+
+    entries.push(entry);
   }
 
   return entries;
@@ -206,7 +243,7 @@ function getIconFromName(name: string): string {
 export async function loadCactbotTimeline(
   bossId: string,
   timelinePath: string,
-  baseUrl: string = 'https://raw.githubusercontent.com/quisquous/cactbot/main',
+  baseUrl: string = 'https://raw.githubusercontent.com/OverlayPlugin/cactbot/main',
   options: CactbotParseOptions = {}
 ): Promise<BossAction[]> {
   const url = `${baseUrl}/${timelinePath}`;
@@ -223,7 +260,7 @@ export async function loadCactbotTimeline(
 export async function loadCactbotTimelineSafe(
   bossId: string,
   timelinePath: string,
-  baseUrl: string = 'https://raw.githubusercontent.com/quisquous/cactbot/main',
+  baseUrl: string = 'https://raw.githubusercontent.com/OverlayPlugin/cactbot/main',
   options: CactbotParseOptions = {}
 ): Promise<{ actions: BossAction[]; available: boolean; error?: string }> {
   const url = `${baseUrl}/${timelinePath}`;

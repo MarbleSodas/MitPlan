@@ -21,7 +21,9 @@ import {
   analyzeReport,
   scrapeTimeline,
 } from './generator/index.js';
+import { processCactbotFirst } from './generator/cactbotFirstProcessor.js';
 import { processTimelines, generateTimelineReport } from './generator/enhancedProcessor.js';
+import { extractDamageTimeline } from './generator/damageExtractor.js';
 import { getBossMultiHitAbilities, getBossFirstAction } from './config/index.js';
 import { getAccessToken, clearCachedToken } from './sources/fflogs/auth.js';
 import { createConfig, getBossMapping, getAllBossIds } from './config/index.js';
@@ -45,11 +47,181 @@ program
   .version('1.0.0');
 
 /**
- * Generate command - Create a new timeline from FFLogs data
+ * Generate command - Create a new timeline using Cactbot as source of truth
+ * This is the recommended approach for accurate timelines
  */
 program
   .command('generate')
-  .description('Generate a timeline from FFLogs report(s)')
+  .description('Generate an accurate timeline using Cactbot as the source of truth enriched with FFLogs damage data')
+  .argument('<boss>', 'Boss ID (e.g., m7s, m8s)')
+  .option('-c, --count <number>', 'Number of recent reports to fetch', '30')
+  .option('-r, --reports <codes...>', 'FFLogs report codes (optional, space-separated)')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--dodgeable-threshold <ratio>', 'Hit rate threshold below which ability is dodgeable (0-1)', '0.7')
+  .option('--include-dodgeable', 'Include dodgeable mechanics in output')
+  .option('--dry-run', 'Generate without writing output file')
+  .option('--min-duration <seconds>', 'Minimum fight duration in seconds', '120')
+  .action(async (bossId: string, options: any) => {
+    console.log(chalk.cyan(banner));
+
+    const spinner = ora('Generating timeline (Cactbot-first)...').start();
+
+    try {
+      const reportCodes = options.reports
+        ? (Array.isArray(options.reports) ? options.reports : [options.reports])
+        : undefined;
+
+      const result = await processCactbotFirst({
+        bossId: bossId,
+        reportCodes,
+        count: parseInt(options.count, 10),
+        output: options.output,
+        dryRun: options.dryRun || false,
+        minFightDuration: parseInt(options.minDuration, 10),
+        dodgeableThreshold: parseFloat(options.dodgeableThreshold),
+        includeDodgeable: options.includeDodgeable || false,
+        onProgress: (message) => {
+          spinner.text = message;
+        },
+      });
+
+      if (result.success) {
+        spinner.succeed(chalk.green(`Generated timeline with ${result.actions.length} actions`));
+
+        console.log(chalk.blue('\n=== Summary ==='));
+        console.log(chalk.blue(`  Cactbot actions loaded: ${result.cactbotActionCount}`));
+        console.log(chalk.blue(`  Actions matched with FFLogs: ${result.matchedActionCount}`));
+        console.log(chalk.blue(`  Dodgeable actions filtered: ${result.dodgeableActionCount}`));
+        console.log(chalk.blue(`  Reports processed: ${result.reportsUsed.length}`));
+
+        if (result.reportsUsed.length <= 5) {
+          console.log(chalk.blue(`  Reports: ${result.reportsUsed.join(', ')}`));
+        } else {
+          console.log(chalk.blue(`  First 5 reports: ${result.reportsUsed.slice(0, 5).join(', ')}`));
+        }
+
+        if (!options.dryRun && result.outputPath) {
+          console.log(chalk.green(`\n  Output: ${result.outputPath}`));
+        }
+
+        if (result.hitRateSummary) {
+          console.log(chalk.yellow(result.hitRateSummary));
+        }
+
+        if (result.errors.length > 0) {
+          console.log(chalk.yellow(`\n  Warnings: ${result.errors.length}`));
+          for (const error of result.errors.slice(0, 3)) {
+            console.log(chalk.yellow(`    - ${error}`));
+          }
+          if (result.errors.length > 3) {
+            console.log(chalk.yellow(`    ... and ${result.errors.length - 3} more`));
+          }
+        }
+      } else {
+        spinner.fail(chalk.red('Failed to generate timeline'));
+        for (const error of result.errors) {
+          console.log(chalk.red(`  - ${error}`));
+        }
+        process.exit(1);
+      }
+
+    } catch (error) {
+      spinner.fail(chalk.red('Fatal error'));
+      console.error(error);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Generate-damage command - Extract timeline purely from DamageTaken events
+ * Uses median damage values and IQR outlier filtering
+ */
+program
+  .command('generate-damage')
+  .description('Generate timeline from actual damage events only (no casts), with IQR outlier filtering and median values')
+  .argument('<boss>', 'Boss ID (e.g., m7s, m8s)')
+  .option('-c, --count <number>', 'Number of recent reports to fetch', '30')
+  .option('-r, --reports <codes...>', 'FFLogs report codes (optional, space-separated)')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--iqr-multiplier <number>', 'IQR multiplier for outlier detection (1.5 = standard, 3.0 = extreme only)', '1.5')
+  .option('--occurrence-gap <seconds>', 'Seconds gap to consider a new occurrence of same ability', '15')
+  .option('--min-damage <number>', 'Minimum damage threshold to include an event', '5000')
+  .option('--dry-run', 'Generate without writing output file')
+  .option('--min-duration <seconds>', 'Minimum fight duration in seconds', '120')
+  .action(async (bossId: string, options: any) => {
+    console.log(chalk.cyan(banner));
+
+    const spinner = ora('Generating timeline from damage events...').start();
+
+    try {
+      const reportCodes = options.reports
+        ? (Array.isArray(options.reports) ? options.reports : [options.reports])
+        : undefined;
+
+      const result = await extractDamageTimeline({
+        bossId: bossId,
+        reportCodes,
+        count: parseInt(options.count, 10),
+        output: options.output,
+        dryRun: options.dryRun || false,
+        minFightDuration: parseInt(options.minDuration, 10),
+        iqrMultiplier: parseFloat(options.iqrMultiplier),
+        occurrenceGapSec: parseInt(options.occurrenceGap, 10),
+        minDamageThreshold: parseInt(options.minDamage, 10),
+        onProgress: (message) => {
+          spinner.text = message;
+        },
+      });
+
+      if (result.success) {
+        spinner.succeed(chalk.green(`Generated timeline with ${result.actions.length} actions`));
+
+        console.log(chalk.blue('\n=== Summary ==='));
+        console.log(chalk.blue(`  Unique abilities found: ${result.uniqueAbilities}`));
+        console.log(chalk.blue(`  Total events processed: ${result.totalEventsProcessed}`));
+        console.log(chalk.blue(`  Outliers removed: ${result.outliersRemoved}`));
+        console.log(chalk.blue(`  Reports processed: ${result.reportsUsed.length}`));
+
+        if (result.reportsUsed.length <= 5) {
+          console.log(chalk.blue(`  Reports: ${result.reportsUsed.join(', ')}`));
+        } else {
+          console.log(chalk.blue(`  First 5 reports: ${result.reportsUsed.slice(0, 5).join(', ')}`));
+        }
+
+        if (!options.dryRun && result.outputPath) {
+          console.log(chalk.green(`\n  Output: ${result.outputPath}`));
+        }
+
+        if (result.errors.length > 0) {
+          console.log(chalk.yellow(`\n  Warnings: ${result.errors.length}`));
+          for (const error of result.errors.slice(0, 3)) {
+            console.log(chalk.yellow(`    - ${error}`));
+          }
+          if (result.errors.length > 3) {
+            console.log(chalk.yellow(`    ... and ${result.errors.length - 3} more`));
+          }
+        }
+      } else {
+        spinner.fail(chalk.red('Failed to generate timeline'));
+        for (const error of result.errors) {
+          console.log(chalk.red(`  - ${error}`));
+        }
+        process.exit(1);
+      }
+
+    } catch (error) {
+      spinner.fail(chalk.red('Fatal error'));
+      console.error(error);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Generate-fflogs command - Legacy FFLogs-first timeline generation
+ */
+program
+  .command('generate-fflogs')
+  .description('Generate a timeline from FFLogs reports (legacy, FFLogs-first approach)')
   .option('-b, --boss <id>', 'Boss ID (e.g., m7s, m8s)')
   .option('-r, --reports <codes...>', 'FFLogs report code(s), space-separated')
   .option('-o, --output <path>', 'Output file path')
@@ -61,7 +233,6 @@ program
   .action(async (options) => {
     console.log(chalk.cyan(banner));
 
-    // Validate required options
     if (!options.boss) {
       console.error(chalk.red('Error: Boss ID is required. Use -b or --boss'));
       console.log(chalk.yellow('Available boss IDs: ' + getAllBossIds().slice(0, 8).join(', ') + '...'));
@@ -75,10 +246,9 @@ program
       process.exit(1);
     }
 
-    const spinner = ora('Generating timeline...').start();
+    const spinner = ora('Generating timeline (FFLogs-first)...').start();
 
     try {
-      // Ensure reports is always an array
       const reportCodes = Array.isArray(options.reports) ? options.reports : [options.reports];
       
       const result = await generateTimeline({
@@ -96,17 +266,17 @@ program
         spinner.succeed(chalk.green(`Generated timeline with ${result.actions.length} actions`));
 
         if (result.cactbotUsed) {
-          console.log(chalk.blue('  • Cactbot data integrated'));
+          console.log(chalk.blue('  - Cactbot data integrated'));
         }
-        console.log(chalk.blue(`  • Reports used: ${result.reportsUsed.join(', ')}`));
+        console.log(chalk.blue(`  - Reports used: ${result.reportsUsed.join(', ')}`));
 
         if (!options.dryRun) {
-          console.log(chalk.blue(`  • Output: ${result.outputPath}`));
+          console.log(chalk.blue(`  - Output: ${result.outputPath}`));
         }
       } else {
         spinner.fail(chalk.red('Failed to generate timeline'));
         for (const error of result.errors) {
-          console.log(chalk.red(`  • ${error}`));
+          console.log(chalk.red(`  - ${error}`));
         }
         process.exit(1);
       }
@@ -410,7 +580,7 @@ program
       spinner.stop();
 
     } catch (error) {
-      spinner.fail(chalk.red('Analysis failed'));
+      spinner.fail(chalk.red('Fatal error'));
       console.error(error);
       process.exit(1);
     }

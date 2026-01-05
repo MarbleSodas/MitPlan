@@ -29,7 +29,7 @@ export const FFLOGS_REDIRECT_URI = 'http://localhost:3850/callback';
  * - Savage raids: ui/raidboss/data/07-dt/savage/
  * - Ultimate raids: ui/raidboss/data/07-dt/ultimate/
  */
-export const CACTBOT_BASE_URL = 'https://raw.githubusercontent.com/quisquous/cactbot/main';
+export const CACTBOT_BASE_URL = 'https://raw.githubusercontent.com/OverlayPlugin/cactbot/main';
 
 /**
  * Boss mapping from MitPlan boss IDs to Cactbot timeline paths
@@ -71,7 +71,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M1S - Black Cat',
     zoneId: 62,
     encounterId: 93,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m1s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r1s.txt',
     mitPlanId: 'aac-light-heavyweight-m1s',
   },
   'm2s': {
@@ -79,7 +79,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M2S - Honey B. Lovely',
     zoneId: 62,
     encounterId: 94,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m2s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r2s.txt',
     mitPlanId: 'aac-light-heavyweight-m2s',
   },
   'm3s': {
@@ -87,7 +87,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M3S - Brute Bomber',
     zoneId: 62,
     encounterId: 95,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m3s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r3s.txt',
     mitPlanId: 'aac-light-heavyweight-m3s',
   },
   'm4s': {
@@ -95,7 +95,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M4S - Wicked Thunder',
     zoneId: 62,
     encounterId: 96,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m4s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r4s.txt',
     mitPlanId: 'aac-light-heavyweight-m4s',
   },
 
@@ -105,7 +105,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M5S - Dancing Green',
     zoneId: 68,
     encounterId: 97,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m5s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r5s.txt',
     mitPlanId: 'aac-cruiserweight-m5s',
   },
   'm6s': {
@@ -113,7 +113,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M6S - Sugar Riot',
     zoneId: 68,
     encounterId: 98,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m6s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r6s.txt',
     mitPlanId: 'aac-cruiserweight-m6s',
   },
   'm7s': {
@@ -121,7 +121,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M7S - Brute Abombinator',
     zoneId: 68,
     encounterId: 99,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m7s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r7s.txt',
     mitPlanId: 'aac-cruiserweight-m7s',
     multiHitAbilities: ['brutal impact', 'explosion'],
     firstAction: 'Brutal Impact',
@@ -132,7 +132,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M8S - Howling Blade',
     zoneId: 68,
     encounterId: 100,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m8s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r8s.txt',
     mitPlanId: 'aac-cruiserweight-m8s',
   },
 
@@ -142,7 +142,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M1 - Black Cat',
     zoneId: 62,
     encounterId: 93,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m1.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r1n.txt',
     mitPlanId: 'aac-light-heavyweight-m1',
   },
   'm2': {
@@ -150,7 +150,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M2 - Honey B. Lovely',
     zoneId: 62,
     encounterId: 94,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m2.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r2n.txt',
     mitPlanId: 'aac-light-heavyweight-m2',
   },
   'm3': {
@@ -158,7 +158,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M3 - Brute Bomber',
     zoneId: 62,
     encounterId: 95,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m3.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r3n.txt',
     mitPlanId: 'aac-light-heavyweight-m3',
   },
   'm4': {
@@ -166,7 +166,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M4 - Wicked Thunder',
     zoneId: 62,
     encounterId: 96,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m4.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r4n.txt',
     mitPlanId: 'aac-light-heavyweight-m4',
   },
 
@@ -176,7 +176,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M5 - Dancing Green',
     zoneId: 68,
     encounterId: 97,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m5.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r5n.txt',
     mitPlanId: 'aac-cruiserweight-m5',
   },
   'm6': {
@@ -184,7 +184,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M6 - Sugar Riot',
     zoneId: 68,
     encounterId: 98,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m6.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r6n.txt',
     mitPlanId: 'aac-cruiserweight-m6',
   },
   'm7': {
@@ -192,7 +192,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M7 - Brute Abombinator',
     zoneId: 68,
     encounterId: 99,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m7.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r7n.txt',
     mitPlanId: 'aac-cruiserweight-m7',
   },
   'm8': {
@@ -200,8 +200,19 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M8 - Howling Blade',
     zoneId: 68,
     encounterId: 100,
-    timelinePath: 'ui/raidboss/data/07-dt/raid/m8.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r8n.txt',
     mitPlanId: 'aac-cruiserweight-m8',
+  },
+
+  // Endwalker Savage Raids (Pandaemonium - for testing Cactbot integration)
+  'p1s': {
+    id: 'p1s',
+    name: 'P1S - Erichthonios',
+    zoneId: 44,
+    encounterId: 78,
+    timelinePath: 'ui/raidboss/data/06-ew/raid/p1s.txt',
+    mitPlanId: 'pandaemonium-p1s',
+    firstAction: 'Gaoler\'s Flail',
   },
 
   // Legacy aliases (for backward compatibility)
@@ -210,7 +221,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M6S - Sugar Riot',
     zoneId: 68,
     encounterId: 98,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m6s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r6s.txt',
     mitPlanId: 'aac-cruiserweight-m6s',
   },
   'dancing-green': {
@@ -218,7 +229,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M5S - Dancing Green',
     zoneId: 68,
     encounterId: 97,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m5s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r5s.txt',
     mitPlanId: 'aac-cruiserweight-m5s',
   },
   'brute-abominator': {
@@ -226,7 +237,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M7S - Brute Abombinator',
     zoneId: 68,
     encounterId: 99,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m7s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r7s.txt',
     mitPlanId: 'aac-cruiserweight-m7s',
   },
   'howling-blade': {
@@ -234,7 +245,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     name: 'M8S - Howling Blade',
     zoneId: 68,
     encounterId: 100,
-    timelinePath: 'ui/raidboss/data/07-dt/savage/m8s.txt',
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r8s.txt',
     mitPlanId: 'aac-cruiserweight-m8s',
   },
 };

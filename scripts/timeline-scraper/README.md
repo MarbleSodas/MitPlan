@@ -1,380 +1,148 @@
 # MitPlan Timeline Scraper
 
-A command-line tool for generating FFXIV raid timelines from FFLogs reports and Cactbot data. This tool automates the process of creating MitPlan-compatible boss action timelines by pulling real data from FFLogs and integrating with Cactbot's timeline files.
+A powerful command-line tool for generating accurate FFXIV raid timelines. It uses **Cactbot** as the authoritative source for mechanics and timings, then enriches them with **FFLogs** data for damage values and dodgeability detection.
 
-## Features
+## 🚀 Quick Start
 
-- **Client Credentials Authentication** - Simple API key authentication for public reports
-- **FFLogs Data Extraction** - Pull damage data, ability timing, and mechanic information
-- **Cactbot Integration** - Merge with Cactbot timeline files for accurate mechanic identification
-- **Multi-Report Aggregation** - Combine data from multiple reports for accurate timings
-- **Timeline Normalization** - Normalize timelines based on reference actions and phase detection
-- **AoE Deduplication** - Automatically removes duplicate AoE damage entries
-- **Multi-Hit Damage Formatting** - Properly formats abilities that hit multiple times
-- **Dodgeable Mechanic Filtering** - Optionally exclude pure dodge mechanics
-- **Timeline Updates** - Merge new data into existing timeline files
-- **Multi-Hit Detection** - Automatically consolidates rapid-fire damage into single multi-hit actions
-- **Occurrence Tracking** - Window-based tracking distinguishes repeated uses from multi-hit abilities
-- **Timeline Alignment** - Auto-detects reference actions to align timings across reports
-- **AI Analysis** - Optional integration with gemini-cli for mechanic classification
-- **Web Search** - Optional enrichment with ability descriptions from FFXIV resources
-- **Validation** - Post-generation quality checks for timeline accuracy
-- **AI Pattern Analysis** - Gemini-powered analysis to detect repeating sequences, rotation cycles, phase patterns, and mechanic correlations
-- **AI Validation & Correction** - AI-powered validation that suggests merges, flags anomalies, detects missing mechanics, and optionally auto-corrects timelines
+1. **Install dependencies**
+   ```bash
+   cd scripts/timeline-scraper
+   bun install
+   ```
 
-## Installation
+2. **Set up FFLogs API credentials**
+   Create a `.env` file in `scripts/timeline-scraper/`:
+   ```env
+   FFLOGS_CLIENT_ID=your_client_id
+   FFLOGS_CLIENT_SECRET=your_client_secret
+   ```
 
-```bash
-cd scripts/timeline-scraper
-bun install
-```
+3. **Generate a timeline**
+   ```bash
+   # Basic usage (defaults to 30 reports for accuracy)
+   bun timeline generate m7s
 
-## Authentication
+   # Custom report count
+   bun timeline generate m8s -c 10
+   ```
 
-The timeline scraper uses Client Credentials authentication for accessing public FFLogs reports.
+---
 
-### Setting Up FFLogs API Credentials
+## 📖 Commands
 
-1. Log in to https://www.fflogs.com
-2. Go to https://www.fflogs.com/api/clients
-3. Click "Create Client"
-4. Enter a client name (e.g., "MitPlan Timeline Scraper")
-5. Click "Create"
-6. Copy your **Client ID** and **Client Secret**
-
-Set environment variables in a `.env` file:
-
-```env
-FFLOGS_CLIENT_ID=your-client-id-here
-FFLOGS_CLIENT_SECRET=your-client-secret-here
-```
-
-The access token is cached locally in `~/.mitplan/fflogs-token.json`.
-
-## Usage
-
-### Running the CLI
+### `generate` (Recommended)
+This is the primary command for creating high-quality timelines. It uses Cactbot timeline files as the source of truth for mechanics and fetches damage data from FFLogs.
 
 ```bash
-# From project root
-npm run timeline -- <command>
-
-# Or directly from timeline-scraper directory
-cd scripts/timeline-scraper
-bun run src/cli.ts <command>
-```
-
-### Commands
-
-#### `generate` - Create a timeline from FFLogs reports
-
-Generate a new timeline from one or more FFLogs reports:
-
-```bash
-npm run timeline -- generate \
-  --boss m7s \
-  --reports abc123def xyz789ghi
+bun timeline generate <boss_id> [options]
 ```
 
 **Options:**
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-b, --boss <id>` | Boss ID (required) | - |
-| `-r, --reports <codes...>` | FFLogs report codes (required) | - |
-| `-o, --output <path>` | Output file path | Auto-generated |
-| `--no-cactbot` | Disable Cactbot integration | - |
-| `--include-dodgeable` | Include dodgeable mechanics | - |
-| `--no-dedupe` | Disable AoE deduplication | - |
-| `--dry-run` | Generate without writing file | - |
-| `--min-duration <sec>` | Minimum fight duration | 120 |
+- `-c, --count <number>`: Number of reports to auto-discover (default: **30**)
+- `-r, --reports <codes...>`: Specific FFLogs report codes (space-separated)
+- `-o, --output <path>`: Custom output file path
+- `--dodgeable-threshold <ratio>`: Hit rate threshold (0-1) below which an ability is marked dodgeable (default: **0.7**)
+- `--include-dodgeable`: Include mechanics that players usually dodge in the final output
+- `--dry-run`: Preview the timeline in console without writing to disk
+- `--min-duration <sec>`: Minimum fight duration to consider a report valid (default: **120**)
 
-#### `auto` - Aggregate and normalize timelines from multiple reports
+---
 
-Process multiple reports with timeline normalization and aggregation:
+### `generate-damage` (Damage-Only)
+Generates timelines purely from DamageTaken events, ignoring cast actions. Uses statistical filtering (IQR) to remove damage outliers and median values for more accurate unmitigated damage estimates.
 
 ```bash
-npm run timeline -- auto \
-  --boss m7s \
-  --reports abc123def xyz789ghi jkl456mno \
-  --aggregate median
+bun timeline generate-damage <boss_id> [options]
 ```
-
-**Aggregation Strategies:**
-- `median` - Use median timing across all reports (default)
-- `average` - Use average timing
-- `earliest` - Use earliest occurrence (conservative)
-- `latest` - Use latest occurrence
-- `merge` - Combine all unique actions
 
 **Options:**
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-b, --boss <id>` | Boss ID (required) | - |
-| `-r, --reports <codes...>` | Report codes (required) | - |
-| `--aggregate <strategy>` | Aggregation strategy | median |
-| `--reference <action>` | Reference action for time=0 | First damaging |
-| `--phase-gap <sec>` | Phase gap threshold | 30 |
-| `--no-phases` | Disable phase detection | - |
-| `--no-cactbot` | Disable Cactbot integration | - |
-| `--include-dodgeable` | Include dodgeable mechanics | - |
-| `--dry-run` | Generate without writing file | - |
+- `-c, --count <number>`: Number of reports to auto-discover (default: **30**)
+- `-r, --reports <codes...>`: Specific FFLogs report codes (space-separated)
+- `-o, --output <path>`: Custom output file path
+- `--iqr-multiplier <number>`: IQR multiplier for outlier detection (1.5 = standard, 3.0 = extreme only) (default: **1.5**)
+- `--occurrence-gap <seconds>`: Seconds gap to consider a new occurrence of same ability (default: **15**)
+- `--min-damage <number>`: Minimum damage threshold to include an event (default: **5000**)
+- `--dry-run`: Preview the timeline in console without writing to disk
+- `--min-duration <sec>`: Minimum fight duration to consider a report valid (default: **120**)
 
-#### `update` - Update an existing timeline
+**How it works:**
+1. Fetches only `DamageTaken` events from FFLogs (actual damage players receive)
+2. Groups damage events by ability name and clusters them by time proximity
+3. Filters outliers using the Interquartile Range (IQR) method
+4. Uses **median** damage values instead of max for more accurate estimates
+5. Derives timing from when damage actually lands, not when abilities are cast
 
-Merge new FFLogs data into an existing timeline:
+---
 
-```bash
-npm run timeline -- update \
-  --timeline src/data/bosses/brute-abominator_actions.json \
-  --reports xyz789ghi
-```
-
-#### `analyze` - Analyze a report
-
-Examine an FFLogs report without generating a timeline:
+### `list-bosses`
+View all available boss IDs and their status.
 
 ```bash
-npm run timeline -- analyze --report abc123def
-
-# With specific fight analysis
-npm run timeline -- analyze --report abc123def --fight 1 --verbose
+bun timeline list-bosses
+# Or grouped by raid tier
+bun timeline list-bosses --group
 ```
 
-#### `list-bosses` - List available bosses
-
-Show all configured boss IDs:
+### `auto`
+Aggregates and normalizes timelines from multiple reports using a pure FFLogs approach. Useful when Cactbot data isn't available or for custom encounters.
 
 ```bash
-npm run timeline -- list-bosses
-
-# Grouped by raid tier
-npm run timeline -- list-bosses --group
+bun timeline auto <boss_id> [options]
 ```
 
-#### `info` - Show boss information
-
-Get details about a specific boss:
+### `generate-fflogs` (Legacy)
+The original FFLogs-first generation method. Requires specific report codes.
 
 ```bash
-npm run timeline -- info --boss m7s
+bun timeline generate-fflogs -b m7s -r reportCode1
 ```
 
-#### `status` - Check authentication status
+---
 
+## 🛠️ Advanced Usage
+
+### Specific Report Syncing
+If auto-discovery isn't finding the exact data you want, provide specific high-quality report codes:
 ```bash
-npm run timeline -- status
+bun timeline generate m7s --reports abc123def xyz789ghi
 ```
 
-#### `rate-limit` - Check API rate limit
+### Identifying Dodgeable Mechanics
+The tool calculates a "hit rate" for every mechanic across all processed reports. If a mechanic hits less than 70% of players across all reports (default threshold), it is flagged as dodgeable and excluded from the final timeline unless `--include-dodgeable` is used.
 
-```bash
-npm run timeline -- rate-limit
-```
+### Accuracy Tips
+- **Use more reports**: The default of 30 reports provides excellent statistical averages for damage values.
+- **Reference Actions**: The tool syncs FFLogs reports to Cactbot using a reference action (usually the first damaging ability). You can see the reference action used in the console output.
 
-#### `config` - Show configuration
+---
 
-```bash
-npm run timeline -- config
-```
-
-## Supported Bosses
-
-### Dawntrail Savage (AAC Light-Heavyweight - Zone 62)
-
-| ID | Boss Name | FFLogs Encounter |
-|----|-----------|------------------|
-| m1s | Black Cat | 93 |
-| m2s | Honey B. Lovely | 94 |
-| m3s | Brute Bomber | 95 |
-| m4s | Wicked Thunder | 96 |
-
-### Dawntrail Savage (AAC Cruiserweight - Zone 68)
-
-| ID | Boss Name | FFLogs Encounter |
-|----|-----------|------------------|
-| m5s | Dancing Green | 97 |
-| m6s | Sugar Riot | 98 |
-| m7s | Brute Abombinator | 99 |
-| m8s | Howling Blade | 100 |
-
-### Dawntrail Normal Raids
-
-| ID | Boss Name | Zone |
-|----|-----------|------|
-| m1-m4 | AAC Light-Heavyweight bosses | 62 |
-| m5-m8 | AAC Cruiserweight bosses | 68 |
-
-### Legacy Aliases
-
-For backward compatibility, these aliases also work:
-
-| Alias | Maps To |
-|-------|---------|
-| sugar-riot | m6s |
-| dancing-green | m5s |
-| brute-abominator | m7s |
-| howling-blade | m8s |
-
-## Finding FFLogs Report Codes
-
-To get report codes for timeline generation:
-
-1. Go to the FFLogs encounter page:
-   - M7S: https://www.fflogs.com/zone/encounter/99
-   - M8S: https://www.fflogs.com/zone/encounter/100
-2. Click on a clear report
-3. Copy the report code from the URL (e.g., `abc123def` from `https://www.fflogs.com/reports/abc123def`)
-
-## Output Format
-
-Generated timelines follow the MitPlan boss action schema:
+## 📂 Output Format
+Generated timelines are saved to `src/data/bosses/` in a format ready for the MitPlan web application:
 
 ```json
-[
-  {
-    "id": "brutal_impact_1_10",
-    "name": "Brutal Impact",
-    "time": 10,
-    "unmitigatedDamage": "~54,000 per hit",
-    "damageType": "physical",
-    "importance": "high",
-    "icon": "⚔️",
-    "isTankBuster": false
-  },
-  {
-    "id": "smash_here_1_30",
-    "name": "Smash Here",
-    "time": 30,
-    "unmitigatedDamage": "100,000",
-    "damageType": "physical",
-    "importance": "high",
-    "icon": "🛡️",
-    "isTankBuster": true,
-    "isDualTankBuster": true
-  }
-]
+{
+  "id": "brutal_impact_1",
+  "name": "Brutal Impact",
+  "time": 10,
+  "unmitigatedDamage": "~54,000",
+  "damageType": "physical",
+  "importance": "high",
+  "icon": "⚔️"
+}
 ```
 
-## Workflow Examples
+---
 
-### Basic Single-Report Timeline
+## 🔧 Troubleshooting
 
+### SSL/Network Issues
+If you encounter `unable to get local issuer certificate` or API 403 errors (often due to network firewalls/OpenDNS):
+- Try running with: `NODE_TLS_REJECT_UNAUTHORIZED=0 bun timeline generate ...`
+- Check your network's DNS settings.
+
+### Authentication
+If the API returns unauthorized:
 ```bash
-npm run timeline -- generate --boss m7s --reports abc123def
+bun timeline logout
+bun timeline status
 ```
-
-### Multi-Report Aggregation with Normalization
-
-```bash
-npm run timeline -- auto \
-  --boss m7s \
-  --reports report1 report2 report3 report4 report5 \
-  --aggregate median \
-  --phase-gap 30
-```
-
-### Conservative Timeline (Earliest Timings)
-
-```bash
-npm run timeline -- auto \
-  --boss m8s \
-  --reports r1 r2 r3 \
-  --aggregate earliest
-```
-
-### Timeline Without Cactbot
-
-```bash
-npm run timeline -- generate \
-  --boss m7s \
-  --reports abc123def \
-  --no-cactbot
-```
-
-### Dry Run to Preview Results
-
-```bash
-npm run timeline -- auto \
-  --boss m7s \
-  --reports r1 r2 r3 \
-  --dry-run
-```
-
-## Troubleshooting
-
-### Authentication Fails
-
-```bash
-# Clear stored credentials
-npm run timeline -- logout
-
-# Check status
-npm run timeline -- status
-```
-
-### "Rate Limit Reached" Error
-
-The FFLogs API has a rate limit. Check your status:
-
-```bash
-npm run timeline -- rate-limit
-```
-
-### Empty Timeline Generated
-
-Possible causes:
-- Report code is incorrect or private
-- Fight duration is below minimum (use `--min-duration` to adjust)
-- No damaging events found (try `--include-dodgeable`)
-
-### Cactbot Timeline Not Found
-
-Cactbot does not yet have Dawntrail (7.x) timeline files. The tool will fall back to FFLogs-only mode with a warning. This is expected behavior for 7.x content.
-
-## Development
-
-```bash
-# Install dependencies
-bun install
-
-# Run in development mode
-bun run src/cli.ts <command>
-
-# Build for production
-bun run build
-
-# Type checking
-bun run typecheck
-
-# Linting
-bun run lint
-```
-
-## Architecture
-
-```
-src/
-├── cli.ts              # Command-line interface
-├── config/
-│   └── index.ts        # Configuration and boss mappings
-├── generator/
-│   ├── index.ts        # Timeline generation orchestration
-│   ├── normalizer.ts   # Timeline normalization and phase detection
-│   └── aggregator.ts   # Multi-report aggregation
-├── sources/
-│   ├── fflogs/
-│   │   ├── auth.ts     # FFLogs OAuth authentication
-│   │   ├── client.ts   # FFLogs API client
-│   │   ├── discover.ts # Report discovery
-│   │   └── parser.ts   # Event parsing
-│   └── cactbot/
-│       └── parser.ts   # Cactbot timeline parser
-├── types/
-│   └── index.ts        # TypeScript type definitions
-└── utils/
-    └── damage.ts       # Damage formatting utilities
-```
-
-## License
-
-MIT License - See project root for details.

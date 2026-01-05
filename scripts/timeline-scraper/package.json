@@ -11,6 +11,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "bun run src/cli.ts",
+    "timeline": "bun run src/cli.ts",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit"
   },
