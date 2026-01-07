@@ -43,6 +43,38 @@ export const bosses = [
     baseHealth: baseHealthValues[90]
   },
   {
+    id: 'black-cat-m1s',
+    name: 'Black Cat (M1S)',
+    description: 'The mischievous feline, first boss of AAC Light-heavyweight Tier (Savage).',
+    icon: '🐱',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'honey-b-lovely-m2s',
+    name: 'Honey B. Lovely (M2S)',
+    description: 'The queen bee of beauty, second boss of AAC Light-heavyweight Tier (Savage).',
+    icon: '🐝',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'brute-bomber-m3s',
+    name: 'Brute Bomber (M3S)',
+    description: 'The explosive powerhouse, third boss of AAC Light-heavyweight Tier (Savage).',
+    icon: '💣',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'wicked-thunder-m4s',
+    name: 'Wicked Thunder (M4S)',
+    description: 'The electrifying finale, final boss of AAC Light-heavyweight Tier (Savage).',
+    icon: '⚡',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
     id: 'dancing-green-m5s',
     name: 'Dancing Green (M5S)',
     description: 'The shameless playboy of Solution Nine, first boss of AAC Cruiserweight Tier (Savage).',
@@ -71,6 +103,38 @@ export const bosses = [
     name: 'Howling Blade (M8S)',
     description: 'The final boss of AAC Cruiserweight Tier (Savage), wielding a sword and commanding wind and stone.',
     icon: '🐺',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'vamp-fatale-m9s',
+    name: 'Vamp Fatale (M9S)',
+    description: 'The bloodthirsty diva, first boss of AAC Heavyweight Tier (Savage).',
+    icon: '🧛',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'red-hot-deep-blue-m10s',
+    name: 'Red Hot & Deep Blue (M10S)',
+    description: 'The fiery and frigid duo, second boss of AAC Heavyweight Tier (Savage).',
+    icon: '🔥',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'the-tyrant-m11s',
+    name: 'The Tyrant (M11S)',
+    description: 'The ruthless overlord, third boss of AAC Heavyweight Tier (Savage).',
+    icon: '👑',
+    level: 100,
+    baseHealth: baseHealthValues[100]
+  },
+  {
+    id: 'lindwurm-m12s',
+    name: 'Lindwurm (M12S)',
+    description: 'The legendary serpent, final boss of AAC Heavyweight Tier (Savage).',
+    icon: '🐉',
     level: 100,
     baseHealth: baseHealthValues[100]
   },
