@@ -93,7 +93,7 @@ const MitigationPercentage = ({ children, className = '', ...rest }) => (
 const MultiHitIndicator = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`inline-flex items-center justify-center bg-orange-500/10 dark:bg-orange-500/20 text-neutral-800 dark:text-neutral-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mr-2.5 mb-3 border border-orange-500/20 dark:border-orange-500/30 select-none ${className}`}
+    className={`inline-flex items-center justify-center bg-orange-500/10 dark:bg-orange-500/20 text-orange-900 dark:text-neutral-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mr-2.5 mb-3 border border-orange-500/20 dark:border-orange-500/30 select-none ${className}`}
   >
     <span className="mr-1">💥</span> {children}
   </div>

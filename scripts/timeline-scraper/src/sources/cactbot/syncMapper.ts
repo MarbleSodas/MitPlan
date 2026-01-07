@@ -1,5 +1,6 @@
 import type { BossAction, FFLogsEvent } from '../../types/index.js';
 import { determineDamageType } from '../../utils/damage.js';
+import { getBaseActionName, getNameVariations } from './parser.js';
 
 export interface SyncResult {
   found: boolean;
@@ -17,6 +18,8 @@ export interface DamageMapping {
   fflogsTime?: number;
   damageType?: 'physical' | 'magical' | 'mixed';
   matched: boolean;
+  matchedAbilityName?: string;
+  targetCount?: number;
 }
 
 export interface SyncConfig {
@@ -48,16 +51,15 @@ export function findSyncReference(
       ) || cactbotActions[0]
     : cactbotActions[0];
 
-  const targetName = referenceAction.name.toLowerCase();
-  const normalizedTarget = normalizeForMatching(targetName);
+  const targetVariations = getNameVariations(referenceAction.name);
 
   for (const event of fflogsEvents) {
-    const eventAbilityName = event.ability?.name?.toLowerCase() || '';
-    const normalizedEvent = normalizeForMatching(eventAbilityName);
+    const eventAbilityName = event.ability?.name || '';
+    if (!eventAbilityName) continue;
 
-    const isMatch = cfg.fuzzyNameMatch
-      ? fuzzyMatchAbilities(normalizedEvent, normalizedTarget)
-      : normalizedEvent === normalizedTarget;
+    const eventVariations = getNameVariations(eventAbilityName);
+
+    const isMatch = checkNameMatch(eventVariations, targetVariations, cfg.fuzzyNameMatch);
 
     if (isMatch) {
       const eventRelativeTime = (event.timestamp - fightStartTime) / 1000;
@@ -76,46 +78,25 @@ export function findSyncReference(
   return { found: false, offset: 0, referenceAction: referenceAction.name };
 }
 
-function normalizeAbilityName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+function checkNameMatch(
+  eventVariations: string[],
+  targetVariations: string[],
+  fuzzyMatch: boolean
+): boolean {
+  for (const ev of eventVariations) {
+    for (const tv of targetVariations) {
+      if (ev === tv) return true;
+      if (fuzzyMatch && fuzzyMatchAbilities(ev, tv)) return true;
+    }
+  }
+  return false;
 }
 
 function normalizeForMatching(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s*x\d+$/i, '')
-    .replace(/\s*\d+$/, '')
-    .replace(/[^a-z0-9]/g, '');
-}
-
-function extractBaseName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s*x\d+$/i, '')
-    .replace(/\s*\d+$/, '')
-    .trim();
-}
-
-function fuzzyMatch(a: string, b: string): boolean {
-  if (a === b) return true;
-  if (a.includes(b) || b.includes(a)) return true;
-
-  const longer = a.length > b.length ? a : b;
-  const shorter = a.length > b.length ? b : a;
-
-  if (shorter.length < 3) return false;
-
-  let matches = 0;
-  for (let i = 0; i < shorter.length; i++) {
-    if (longer.includes(shorter[i])) matches++;
-  }
-
-  return matches / longer.length > 0.8;
+  return getBaseActionName(name).replace(/[^a-z0-9]/g, '');
 }
 
 function fuzzyMatchAbilities(fflogsName: string, cactbotName: string): boolean {
-  if (fflogsName === cactbotName) return true;
-
   const fflogsBase = normalizeForMatching(fflogsName);
   const cactbotBase = normalizeForMatching(cactbotName);
 
@@ -155,32 +136,36 @@ export function mapDamageToActions(
   const mappings: DamageMapping[] = [];
   const occurrenceMap = buildOccurrenceMap(cactbotActions);
 
-  const eventsByName = groupEventsByName(fflogsEvents);
-  const eventsByNormalizedName = groupEventsByNormalizedName(fflogsEvents);
-
+  const eventsByNormalizedName = groupEventsByAllVariations(fflogsEvents);
   const usedOccurrenceIndices = new Map<string, Set<number>>();
 
   for (const [actionKey, cactbotAction] of occurrenceMap) {
-    const nameKey = cactbotAction.name.toLowerCase();
-    const normalizedName = normalizeForMatching(nameKey);
+    const nameVariations = getNameVariations(cactbotAction.name);
     const expectedFFLogsTime = cactbotAction.time - syncOffset;
 
     let matchedEvents: FFLogsEvent[] = [];
+    let matchedAbilityName: string | undefined;
 
-    const exactMatch = eventsByName.get(nameKey);
-    if (exactMatch) {
-      matchedEvents = exactMatch;
-    } else {
-      const normalizedMatch = eventsByNormalizedName.get(normalizedName);
-      if (normalizedMatch) {
-        matchedEvents = normalizedMatch;
-      } else if (cfg.fuzzyNameMatch) {
-        for (const [eventName, events] of eventsByName) {
-          if (fuzzyMatchAbilities(eventName, nameKey)) {
+    for (const variation of nameVariations) {
+      const normalizedVariation = variation.replace(/[^a-z0-9]/g, '');
+      const events = eventsByNormalizedName.get(normalizedVariation);
+      if (events && events.length > 0) {
+        matchedEvents = events;
+        matchedAbilityName = events[0].ability?.name;
+        break;
+      }
+    }
+
+    if (matchedEvents.length === 0 && cfg.fuzzyNameMatch) {
+      for (const [eventName, events] of eventsByNormalizedName) {
+        for (const variation of nameVariations) {
+          if (fuzzyMatchAbilities(eventName, variation)) {
             matchedEvents = events;
+            matchedAbilityName = events[0].ability?.name;
             break;
           }
         }
+        if (matchedEvents.length > 0) break;
       }
     }
 
@@ -206,6 +191,7 @@ export function mapDamageToActions(
     let minTimeDiff = cfg.matchWindowSec;
     let bestIndex = -1;
 
+    const normalizedName = normalizeForMatching(cactbotAction.name);
     const usedIndices = usedOccurrenceIndices.get(normalizedName) || new Set<number>();
 
     for (let i = 0; i < occurrenceEvents.length; i++) {
@@ -227,10 +213,16 @@ export function mapDamageToActions(
       }
       usedOccurrenceIndices.get(normalizedName)!.add(bestIndex);
 
-      const totalDamage = bestMatch.events.reduce((sum, e) => {
-        return sum + (e.event.unmitigatedAmount ?? e.event.amount ?? e.event.damage ?? 0);
-      }, 0);
+      // Only use unmitigatedAmount for accurate damage values - skip events without it
+      const eventsWithUnmitigated = bestMatch.events.filter(e => e.event.unmitigatedAmount !== undefined);
+      
+      const totalDamage = eventsWithUnmitigated.length > 0
+        ? eventsWithUnmitigated.reduce((sum, e) => sum + e.event.unmitigatedAmount!, 0)
+        : 0;
 
+      // Use events with unmitigated damage for target count, fallback to all events
+      const eventsForTargetCount = eventsWithUnmitigated.length > 0 ? eventsWithUnmitigated : bestMatch.events;
+      const uniqueTargets = new Set(eventsForTargetCount.map(e => e.event.targetID).filter(Boolean));
       const damageType = determineDamageType(bestMatch.events[0].event);
 
       mappings.push({
@@ -241,6 +233,8 @@ export function mapDamageToActions(
         fflogsTime: bestMatch.medianTime,
         damageType,
         matched: true,
+        matchedAbilityName,
+        targetCount: uniqueTargets.size,
       });
     } else {
       mappings.push({
@@ -261,7 +255,7 @@ function buildOccurrenceMap(
   const occurrenceCounts = new Map<string, number>();
 
   for (const action of actions) {
-    const nameKey = action.name.toLowerCase();
+    const nameKey = getBaseActionName(action.name);
     const currentOccurrence = (occurrenceCounts.get(nameKey) || 0) + 1;
     occurrenceCounts.set(nameKey, currentOccurrence);
 
@@ -272,34 +266,25 @@ function buildOccurrenceMap(
   return map;
 }
 
-function groupEventsByName(events: FFLogsEvent[]): Map<string, FFLogsEvent[]> {
+function groupEventsByAllVariations(events: FFLogsEvent[]): Map<string, FFLogsEvent[]> {
   const map = new Map<string, FFLogsEvent[]>();
 
   for (const event of events) {
-    const name = event.ability?.name?.toLowerCase() || '';
-    if (!name) continue;
+    if (event.type !== 'damage') continue;
 
-    if (!map.has(name)) {
-      map.set(name, []);
-    }
-    map.get(name)!.push(event);
-  }
-
-  return map;
-}
-
-function groupEventsByNormalizedName(events: FFLogsEvent[]): Map<string, FFLogsEvent[]> {
-  const map = new Map<string, FFLogsEvent[]>();
-
-  for (const event of events) {
     const name = event.ability?.name || '';
     if (!name) continue;
 
-    const normalized = normalizeForMatching(name);
-    if (!map.has(normalized)) {
-      map.set(normalized, []);
+    const variations = getNameVariations(name);
+    for (const variation of variations) {
+      const normalized = variation.replace(/[^a-z0-9]/g, '');
+      if (!map.has(normalized)) {
+        map.set(normalized, []);
+      }
+      if (!map.get(normalized)!.includes(event)) {
+        map.get(normalized)!.push(event);
+      }
     }
-    map.get(normalized)!.push(event);
   }
 
   return map;
@@ -356,7 +341,7 @@ function createOccurrenceGroup(events: EventWithTime[]): OccurrenceGroup {
 }
 
 export function buildActionKey(name: string, occurrence: number): string {
-  return `${name.toLowerCase()}_${occurrence}`;
+  return `${getBaseActionName(name)}_${occurrence}`;
 }
 
 export function parseActionKey(key: string): { name: string; occurrence: number } {

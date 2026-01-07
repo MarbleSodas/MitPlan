@@ -78,7 +78,7 @@ function findClustersForAbility(
 
 function createCluster(events: FFLogsEvent[], abilityId: number): MultiHitCluster {
   const totalDamage = events.reduce((sum, e) => {
-    return sum + (e.unmitigatedAmount ?? e.amount ?? e.damage ?? 0);
+    return sum + (e.unmitigatedAmount ?? 0);
   }, 0);
   
   const abilityName = events[0].ability?.name ?? `Ability ${abilityId}`;

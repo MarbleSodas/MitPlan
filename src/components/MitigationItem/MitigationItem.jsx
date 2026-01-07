@@ -11,7 +11,7 @@ import {
 import { useTankPositionContext } from '../../contexts';
 
 const MitigationItemContainer = ({ children, className = '', $disabled, ...rest }) => {
-  const base = 'group relative w-full transition-all border-l-4 rounded-sm px-3 py-2 mb-[2px] select-none';
+  const base = 'group relative w-full transition-all border border-l-4 border-y-[var(--color-borderLight)] border-r-[var(--color-borderLight)] bg-[var(--color-cardBackground)] rounded-sm px-3 py-2 mb-[2px] select-none shadow-sm';
   const state = $disabled
     ? 'cursor-not-allowed opacity-70 border-l-red-500 bg-neutral-100/80 dark:bg-neutral-700/50'
     : 'cursor-grab opacity-100 border-l-blue-500 hover:bg-black/5 dark:hover:bg-white/5';
@@ -31,7 +31,7 @@ const MitigationName = ({ children, className = '', ...rest }) => (
 );
 
 const MitigationDescription = ({ children, className = '', ...rest }) => (
-  <p {...rest} className={`m-0 text-sm text-neutral-600 dark:text-neutral-300 ${className}`}>{children}</p>
+  <p {...rest} className={`m-0 text-sm text-[var(--color-textSecondary)] ${className}`}>{children}</p>
 );
 
 const CooldownOverlay = ({ children, className = '', ...rest }) => (

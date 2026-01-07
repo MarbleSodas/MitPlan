@@ -8,16 +8,16 @@ const lightTheme = {
     primaryLight: '#818cf8', // Lighter indigo
     accent: '#8b5cf6', // Purple accent
     secondary: '#ffffff',
-    background: '#fafafa', // Softer background
+    background: '#f3f4f6', // Softer background
     backgroundGradient: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
     cardBackground: '#ffffff',
     text: '#1f2937', // Darker, more readable
-    textSecondary: '#6b7280', // Modern gray
+    textSecondary: '#374151', // Darker gray for better visibility
     lightText: '#9ca3af',
     buttonText: '#ffffff',
-    border: '#e5e7eb', // Softer border
-    borderLight: '#f3f4f6',
-    hover: '#eef2ff', // Indigo tint
+    border: '#d1d5db', // Softer border
+    borderLight: '#e5e7eb',
+    hover: '#e0e7ff', // Indigo tint
     critical: '#ff0000',
     high: '#ff9900',
     medium: '#ffcc00',

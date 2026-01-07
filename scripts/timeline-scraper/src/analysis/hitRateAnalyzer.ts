@@ -18,6 +18,7 @@ export interface HitRateConfig {
   dodgeableThreshold: number;
   matchWindowSec: number;
   minReportsForConfidence: number;
+  neverDodgeableAbilities?: string[];
 }
 
 export interface ReportHitData {
@@ -38,14 +39,21 @@ const DEFAULT_CONFIG: HitRateConfig = {
   dodgeableThreshold: 0.7,
   matchWindowSec: 20,
   minReportsForConfidence: 3,
+  neverDodgeableAbilities: [],
 };
 
-function normalizeForMatching(name: string): string {
+function getBaseActionName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/\s*x\d+$/i, '')
-    .replace(/\s*\d+$/, '')
-    .replace(/[^a-z0-9]/g, '');
+    .replace(/\s+x\d+$/i, '')
+    .replace(/\s*\([^)]+\)$/i, '')
+    .replace(/\s+\d+$/i, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function normalizeForMatching(name: string): string {
+  return getBaseActionName(name).replace(/[^a-z0-9]/g, '');
 }
 
 function fuzzyMatchAbilities(fflogsName: string, cactbotName: string): boolean {
@@ -75,6 +83,16 @@ function fuzzyMatchAbilities(fflogsName: string, cactbotName: string): boolean {
   }
 
   return maxConsecutive >= shorter.length * 0.7 || shorterIdx >= shorter.length * 0.8;
+}
+
+function isNeverDodgeable(actionName: string, neverDodgeableAbilities: string[]): boolean {
+  const baseName = getBaseActionName(actionName);
+  const result = neverDodgeableAbilities.some(ability => {
+    const abilityBase = ability.toLowerCase().trim();
+    // Only match if exact or action contains the FULL ability name (not the other way around)
+    return baseName === abilityBase || baseName.includes(abilityBase);
+  });
+  return result;
 }
 
 export function analyzeHitRates(
@@ -125,8 +143,11 @@ export function analyzeHitRates(
       timingStdDev = Math.round(Math.sqrt(variance) * 100) / 100;
     }
 
+    const isProtected = isNeverDodgeable(cactbotAction.name, cfg.neverDodgeableAbilities || []);
     const isDodgeable =
-      totalReports >= cfg.minReportsForConfidence && hitRate < cfg.dodgeableThreshold;
+      totalReports >= cfg.minReportsForConfidence && 
+      hitRate < cfg.dodgeableThreshold &&
+      !isProtected;
 
     results.push({
       actionName: cactbotAction.name,
@@ -154,7 +175,7 @@ function buildOccurrenceMap(
   const occurrenceCounts = new Map<string, number>();
 
   for (const action of actions) {
-    const nameKey = action.name.toLowerCase();
+    const nameKey = getBaseActionName(action.name);
     const currentOccurrence = (occurrenceCounts.get(nameKey) || 0) + 1;
     occurrenceCounts.set(nameKey, currentOccurrence);
 
@@ -183,6 +204,8 @@ export function matchEventsToActions(
   const eventsByNormalizedName = new Map<string, FFLogsEvent[]>();
 
   for (const event of fflogsEvents) {
+    if (event.type !== 'damage') continue;
+
     const abilityName = event.ability?.name?.toLowerCase() || '';
     if (!abilityName) continue;
 
@@ -199,7 +222,7 @@ export function matchEventsToActions(
   }
 
   for (const [actionKey, cactbotAction] of occurrenceMap) {
-    const nameKey = cactbotAction.name.toLowerCase();
+    const nameKey = getBaseActionName(cactbotAction.name);
     const normalizedName = normalizeForMatching(nameKey);
     
     let events = eventsByName.get(nameKey) || [];
@@ -238,7 +261,7 @@ export function matchEventsToActions(
           const timeDiff = Math.abs(relativeTime - expectedEventTime);
 
           if (timeDiff <= cfg.matchWindowSec) {
-            const damage = event.unmitigatedAmount ?? event.amount ?? event.damage ?? 0;
+            const damage = event.unmitigatedAmount ?? 0;
 
             result.set(actionKey, {
               didHit: true,

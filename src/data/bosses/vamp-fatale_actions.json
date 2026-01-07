@@ -1,0 +1,342 @@
+[
+  {
+    "id": "killer_voice_1",
+    "name": "Killer Voice",
+    "time": 12,
+    "unmitigatedDamage": "~153,447",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "🎤",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "hardcore_1",
+    "name": "Hardcore",
+    "time": 22,
+    "unmitigatedDamage": "~387,103",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🤼",
+    "description": "Dual Tank Buster",
+    "isTankBuster": true,
+    "isDualTankBuster": true
+  },
+  {
+    "id": "blast_beat_1",
+    "name": "Blast Beat",
+    "time": 34,
+    "unmitigatedDamage": "~101,357",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🥁",
+    "description": "Staggered Raidwide"
+  },
+  {
+    "id": "brutal_rain_1",
+    "name": "Brutal Rain (3 hits)",
+    "time": 49,
+    "unmitigatedDamage": "~86,027 per hit",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌧️",
+    "description": "Multi-Hit Party Stack"
+  },
+  {
+    "id": "sadistic_screech_1",
+    "name": "Sadistic Screech",
+    "time": 62,
+    "unmitigatedDamage": "~176,815",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "📢",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "sadistic_screech_2",
+    "name": "Sadistic Screech",
+    "time": 140,
+    "unmitigatedDamage": "~147,642",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "📢",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "crowd_kill_1",
+    "name": "Crowd Kill",
+    "time": 154,
+    "unmitigatedDamage": "~191,113",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🏟️",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "finale_fatale_1",
+    "name": "Finale Fatale",
+    "time": 173,
+    "unmitigatedDamage": "~201,039",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🏁",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "aetherletting_1",
+    "name": "Aetherletting",
+    "time": 198,
+    "unmitigatedDamage": "~127,449",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🩸",
+    "description": "Staggered Baits Per Person"
+  },
+  {
+    "id": "hardcore_2",
+    "name": "Hardcore",
+    "time": 222,
+    "unmitigatedDamage": "~407,042",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🤼",
+    "description": "Dual Tank Buster",
+    "isTankBuster": true,
+    "isDualTankBuster": true
+  },
+  {
+    "id": "blast_beat_2",
+    "name": "Blast Beat",
+    "time": 238,
+    "unmitigatedDamage": "~107,083",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🥁",
+    "description": "Staggered Raidwide"
+  },
+  {
+    "id": "brutal_rain_2",
+    "name": "Brutal Rain (3 hits)",
+    "time": 260,
+    "unmitigatedDamage": "~90,585 per hit",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌧️",
+    "description": "Multi-Hit Party Stack"
+  },
+  {
+    "id": "insatiable_thirst_1",
+    "name": "Insatiable Thirst",
+    "time": 272,
+    "unmitigatedDamage": "~138,912",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🍷",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "sadistic_screech_3",
+    "name": "Sadistic Screech",
+    "time": 285,
+    "unmitigatedDamage": "~191,487",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "📢",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "plummet_1",
+    "name": "Plummet",
+    "time": 297,
+    "unmitigatedDamage": "~146,870",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⬇️",
+    "description": "Dual Tank Buster Tower Bait"
+  },
+  {
+    "id": "killer_voice_2",
+    "name": "Killer Voice",
+    "time": 307,
+    "unmitigatedDamage": "~157,297",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎤"
+  },
+  {
+    "id": "plummet_2",
+    "name": "Plummet",
+    "time": 316,
+    "unmitigatedDamage": "~147,922",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⬇️"
+  },
+  {
+    "id": "flesh_wound_1",
+    "name": "Flesh Wound",
+    "time": 324,
+    "unmitigatedDamage": "~47,678",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🩹"
+  },
+  {
+    "id": "killer_voice_3",
+    "name": "Killer Voice",
+    "time": 326,
+    "unmitigatedDamage": "~159,559",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🎤"
+  },
+  {
+    "id": "plummet_3",
+    "name": "Plummet",
+    "time": 334,
+    "unmitigatedDamage": "~150,500",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⬇️"
+  },
+  {
+    "id": "electrocution_1",
+    "name": "Electrocution",
+    "time": 343,
+    "unmitigatedDamage": "~44,682",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "⚡",
+    "description": "Some Dots throughout"
+  },
+  {
+    "id": "sadistic_screech_4",
+    "name": "Sadistic Screech",
+    "time": 358,
+    "unmitigatedDamage": "~154,287",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "📢",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "crowd_kill_2",
+    "name": "Crowd Kill",
+    "time": 372,
+    "unmitigatedDamage": "~197,303",
+    "damageType": "magical",
+    "importance": "high",
+    "icon": "🏟️",
+    "description": "Raidwide Party Damage"
+  },
+  {
+    "id": "finale_fatale_2",
+    "name": "Finale Fatale",
+    "time": 391,
+    "unmitigatedDamage": "~203,073",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🏁"
+  },
+  {
+    "id": "bloody_bondage_1",
+    "name": "Bloody Bondage",
+    "time": 403,
+    "unmitigatedDamage": "~35,088",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⛓️"
+  },
+  {
+    "id": "blood_lash_1",
+    "name": "Blood Lash",
+    "time": 417,
+    "unmitigatedDamage": "~34,872",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "〰️"
+  },
+  {
+    "id": "bloody_bondage_2",
+    "name": "Bloody Bondage",
+    "time": 425,
+    "unmitigatedDamage": "~35,686",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⛓️"
+  },
+  {
+    "id": "ultrasonic_spread_1",
+    "name": "Ultrasonic Amp",
+    "time": 425,
+    "unmitigatedDamage": "~370,809",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🔊"
+  },
+  {
+    "id": "ultrasonic_spread_2",
+    "name": "Ultrasonic Spread",
+    "time": 432,
+    "unmitigatedDamage": "~146,850",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "🔊"
+  },
+  {
+    "id": "bloody_bondage_3",
+    "name": "Bloody Bondage",
+    "time": 455,
+    "unmitigatedDamage": "~151,010",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⛓️"
+  },
+  {
+    "id": "brutal_rain_3",
+    "name": "Brutal Rain (3 hits)",
+    "time": 503,
+    "unmitigatedDamage": "~95,610 per hit",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🌧️"
+  },
+  {
+    "id": "blast_beat_3",
+    "name": "Blast Beat",
+    "time": 520,
+    "unmitigatedDamage": "~116,145",
+    "damageType": "magical",
+    "importance": "low",
+    "icon": "🥁"
+  },
+  {
+    "id": "half_moon_2",
+    "name": "Half Moon",
+    "time": 532,
+    "unmitigatedDamage": "~159,754",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🌓",
+    "isTankBuster": true
+  },
+  {
+    "id": "hardcore_3",
+    "name": "Hardcore",
+    "time": 540,
+    "unmitigatedDamage": "~428,512",
+    "damageType": "magical",
+    "importance": "critical",
+    "icon": "🤼",
+    "isTankBuster": true,
+    "isDualTankBuster": true
+  },
+  {
+    "id": "insatiable_thirst_2",
+    "name": "Insatiable Thirst",
+    "time": 572,
+    "unmitigatedDamage": "~152,935",
+    "damageType": "magical",
+    "importance": "medium",
+    "icon": "🍷"
+  }
+]

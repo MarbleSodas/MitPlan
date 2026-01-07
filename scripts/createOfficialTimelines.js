@@ -30,7 +30,9 @@ const BOSS_JSON_MAP = {
   'brute-abominator-m7s': 'brute-abominator_actions.json',
   'howling-blade-m8s': 'howling-blade_actions.json',
   'necron': 'necron_actions.json',
-  'ketuduke': 'ketudukeActions.json'
+  'ketuduke': 'ketudukeActions.json',
+  'vamp-fatale-m9s': 'vamp-fatale_actions.json',
+  'red-hot-deep-blue-m10s': 'red-hot-deep-blue_actions.json'
 };
 
 function loadActionsForBoss(bossId) {

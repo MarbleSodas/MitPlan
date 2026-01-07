@@ -1,131 +1,158 @@
-/**
- * Cactbot Timeline Parser
- *
- * Parses Cactbot timeline files into MitPlan boss action format.
- * Timeline files follow the Cactbot timeline format documented at:
- * https://github.com/OverlayPlugin/cactbot/blob/main/docs/TimelineGuide.md
- */
-
 import type { BossAction, CactbotTimelineEntry } from '../../types/index.js';
 
 export interface CactbotParseOptions {
   includeAlerts?: boolean;
   includeInfoOnly?: boolean;
   filterDodgeable?: boolean;
+  abilityOnly?: boolean;
 }
 
-/**
- * Fetch a Cactbot timeline file from the repository
- */
-export async function fetchCactbotTimeline(
-  url: string
-): Promise<string> {
-  const response = await fetch(url);
+export interface ParsedCactbotEntry extends CactbotTimelineEntry {
+  abilityIds?: string[];
+  alternativeNames?: string[];
+  hitCount?: number;
+  isCommented?: boolean;
+  rawLine?: string;
+  resolvedDamageTime?: number;
+  originalCastTime?: number;
+  originalName?: string;
+}
 
+export interface TimingHint {
+  time: number;
+  name: string;
+  baseName: string;
+  abilityIds?: string[];
+}
+
+export async function fetchCactbotTimeline(url: string): Promise<string> {
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch Cactbot timeline: ${response.status} ${response.statusText}`);
   }
-
   return response.text();
 }
 
-/**
- * Parse Cactbot timeline text into structured entries
- * 
- * Modern Cactbot format examples:
- * - 10.5 "Brutal Impact x6" Ability { id: "A55B", source: "Brute Abombinator" } duration 5.2
- * - 23.1 "Stoneringer" Ability { id: ["A55D", "A55E"], source: "Brute Abombinator" }
- * - 0.0 "--sync--" InCombat { inGameCombat: "1" } window 0,1
- */
 export function parseCactbotTimeline(
   timelineText: string,
   options: CactbotParseOptions = {}
 ): CactbotTimelineEntry[] {
+  return parseCactbotTimelineExtended(timelineText, options);
+}
+
+export function parseCactbotTimelineExtended(
+  timelineText: string,
+  options: CactbotParseOptions = {}
+): ParsedCactbotEntry[] {
   const {
-    includeAlerts = true,
-    includeInfoOnly = false,
-    filterDodgeable = true,
+    filterDodgeable = false,
+    abilityOnly = true,
   } = options;
 
-  const entries: CactbotTimelineEntry[] = [];
+  const entries: ParsedCactbotEntry[] = [];
+  const timingHints: TimingHint[] = [];
   const lines = timelineText.split('\n');
 
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Skip empty lines and comments
-    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) {
+    if (!trimmed || trimmed.startsWith('//')) {
+      continue;
+    }
+    
+    if (trimmed.startsWith('#') && !trimmed.match(/^#?\s*\d+\.?\d*\s+"/)) {
       continue;
     }
 
-    // Parse timeline entry - handles modern Cactbot format
-    // Format: TIME "NAME" [TYPE] [{ options }] [key: value]...
-    // Example: 10.5 "Brutal Impact x6" Ability { id: "A55B", source: "Brute Abombinator" } duration 5.2
-    const match = trimmed.match(/^(\d+\.?\d*)\s+"([^"]+)"/);
+    const isLineCommented = trimmed.startsWith('#');
+    const match = trimmed.match(/^#?\s*(\d+\.?\d*)\s+"([^"]+)"/);
     if (!match) continue;
 
-    const [, timeStr, name] = match;
+    const [fullMatch, timeStr, name] = match;
     const time = parseFloat(timeStr);
 
-    // Skip internal sync markers and non-ability entries
     if (name.startsWith('--') && name.endsWith('--')) {
       continue;
     }
 
-    // Determine entry type from what follows the name
-    const afterName = trimmed.substring(match[0].length).trim();
+    const afterName = trimmed.substring(fullMatch.length).trim();
     let entryType: string | undefined;
+    let isCommented = isLineCommented;
     
-    // Check for Ability, ActorControl, InCombat, etc.
-    const typeMatch = afterName.match(/^(Ability|ActorControl|InCombat|StartsUsing|AddedCombatant)\b/i);
-    if (typeMatch) {
-      entryType = typeMatch[1];
+    const commentedTypeMatch = afterName.match(/^#(Ability|StartsUsing)\b/i);
+    if (commentedTypeMatch) {
+      entryType = commentedTypeMatch[1];
+      isCommented = true;
     } else {
-      // Legacy format: TIME "NAME" alert/alarm/info
-      const legacyTypeMatch = afterName.match(/^(alert|alarm|info)\b/i);
-      if (legacyTypeMatch) {
-        entryType = legacyTypeMatch[1];
+      const typeMatch = afterName.match(/^(Ability|ActorControl|InCombat|StartsUsing|AddedCombatant)\b/i);
+      if (typeMatch) {
+        entryType = typeMatch[1];
+      } else {
+        const legacyTypeMatch = afterName.match(/^(alert|alarm|info)\b/i);
+        if (legacyTypeMatch) {
+          entryType = legacyTypeMatch[1];
+        }
       }
     }
 
-    // Skip non-Ability entries (InCombat, ActorControl, etc.) as they're not damage mechanics
     if (entryType && !['Ability', 'StartsUsing', 'alert', 'alarm', 'info'].includes(entryType)) {
       continue;
     }
 
-    // Filter out dodgeable mechanics if requested (only for non-Ability types)
-    // Ability entries should NOT be filtered by dodgeable patterns since they represent actual casts
-    const isAbilityEntry = entryType === 'Ability' || entryType === 'StartsUsing';
-    if (filterDodgeable && !isAbilityEntry && isDodgeableOnly(name, entryType)) {
+    if (abilityOnly && entryType !== 'Ability' && entryType !== 'StartsUsing') {
       continue;
     }
 
-    const entry: CactbotTimelineEntry = {
-      time: Math.round(time),
-      name: name.trim(),
+    if (filterDodgeable && isDodgeableOnly(name, entryType)) {
+      continue;
+    }
+
+    const abilityIds = extractAbilityIds(afterName);
+
+    if (isCommented && entryType === 'Ability') {
+      timingHints.push({
+        time: Math.round(time * 10) / 10,
+        name: cleanActionName(name),
+        baseName: getBaseActionName(name),
+        abilityIds: abilityIds.length > 0 ? abilityIds : undefined,
+      });
+      continue;
+    }
+
+    if (isCommented) {
+      continue;
+    }
+
+    const entry: ParsedCactbotEntry = {
+      time: Math.round(time * 10) / 10,
+      name: cleanActionName(name),
+      rawLine: trimmed,
+      isCommented,
     };
 
     if (entryType) {
       entry.type = entryType as CactbotTimelineEntry['type'];
     }
 
-    // Extract ability ID from { id: "XXXX" } or { id: ["XXXX", "YYYY"] }
-    const idMatch = afterName.match(/id:\s*(?:"([^"]+)"|\["([^\]]+)"\]|\[([^\]]+)\])/);
-    if (idMatch) {
-      // Take the first ID if multiple are listed
-      const idValue = idMatch[1] || idMatch[2] || idMatch[3];
-      if (idValue) {
-        entry.id = idValue.split(/[",\s]+/).filter(Boolean)[0];
-      }
+    if (name.includes('/')) {
+      entry.alternativeNames = name.split('/').map(n => cleanActionName(n.trim()));
     }
 
-    // Parse duration from "duration X.X" at end of line
+    const hitCountMatch = name.match(/\s+x(\d+)$/i);
+    if (hitCountMatch) {
+      entry.hitCount = parseInt(hitCountMatch[1], 10);
+    }
+
+    if (abilityIds.length > 0) {
+      entry.abilityIds = abilityIds;
+      entry.id = abilityIds[0];
+    }
+
     const durationMatch = afterName.match(/duration\s+(\d+\.?\d*)/);
     if (durationMatch) {
       entry.duration = parseFloat(durationMatch[1]);
     }
 
-    // Parse window from "window X,Y" 
     const windowMatch = afterName.match(/window\s+(\d+\.?\d*)/);
     if (windowMatch) {
       entry.window = parseFloat(windowMatch[1]);
@@ -134,12 +161,132 @@ export function parseCactbotTimeline(
     entries.push(entry);
   }
 
-  return entries;
+  return resolveCastToDamageTimings(entries, timingHints);
 }
 
-/**
- * Check if a timeline entry is a dodgeable-only mechanic
- */
+function extractAbilityIds(text: string): string[] {
+  const arrayMatch = text.match(/id:\s*\[([^\]]+)\]/);
+  if (arrayMatch) {
+    return arrayMatch[1]
+      .split(',')
+      .map(s => s.trim().replace(/"/g, ''))
+      .filter(Boolean);
+  }
+
+  const singleMatch = text.match(/id:\s*"([^"]+)"/);
+  if (singleMatch) {
+    return [singleMatch[1]];
+  }
+
+  return [];
+}
+
+function cleanActionName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+function resolveCastToDamageTimings(
+  entries: ParsedCactbotEntry[],
+  timingHints: TimingHint[]
+): ParsedCactbotEntry[] {
+  if (timingHints.length === 0) {
+    return entries;
+  }
+
+  const hintsByBaseName = new Map<string, TimingHint[]>();
+  for (const hint of timingHints) {
+    if (!hintsByBaseName.has(hint.baseName)) {
+      hintsByBaseName.set(hint.baseName, []);
+    }
+    hintsByBaseName.get(hint.baseName)!.push(hint);
+  }
+
+  for (const [_, hints] of hintsByBaseName) {
+    hints.sort((a, b) => a.time - b.time);
+  }
+
+  const usedHintIndices = new Map<string, number>();
+
+  return entries.map(entry => {
+    if (!isCastEntry(entry.name)) {
+      return entry;
+    }
+
+    const entryBaseName = getBaseActionName(entry.name);
+    const hints = hintsByBaseName.get(entryBaseName);
+    
+    if (!hints || hints.length === 0) {
+      return entry;
+    }
+
+    const currentIndex = usedHintIndices.get(entryBaseName) || 0;
+    
+    const relevantHints = hints.filter(h => h.time > entry.time && h.time <= entry.time + 15);
+    
+    if (relevantHints.length === 0) {
+      return entry;
+    }
+
+    const firstDamageHint = relevantHints[0];
+    
+    const newName = removeCastSuffix(entry.name);
+    
+    usedHintIndices.set(entryBaseName, currentIndex + relevantHints.length);
+
+    return {
+      ...entry,
+      originalName: entry.name,
+      originalCastTime: entry.time,
+      name: newName,
+      time: firstDamageHint.time,
+      resolvedDamageTime: firstDamageHint.time,
+    };
+  });
+}
+
+function isCastEntry(name: string): boolean {
+  return /\(cast\)$/i.test(name);
+}
+
+function removeCastSuffix(name: string): string {
+  return name.replace(/\s*\(cast\)$/i, '').trim();
+}
+
+export function getBaseActionName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+x\d+$/i, '')
+    .replace(/\s*\([^)]+\)$/i, '')
+    .replace(/\s+\d+$/i, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+export function getNameVariations(name: string): string[] {
+  const variations: string[] = [name.toLowerCase()];
+  const baseName = getBaseActionName(name);
+  
+  if (baseName !== name.toLowerCase()) {
+    variations.push(baseName);
+  }
+
+  if (name.includes('/')) {
+    const parts = name.split('/');
+    for (const part of parts) {
+      const partLower = part.trim().toLowerCase();
+      if (!variations.includes(partLower)) {
+        variations.push(partLower);
+      }
+      const partBase = getBaseActionName(part);
+      if (!variations.includes(partBase)) {
+        variations.push(partBase);
+      }
+    }
+  }
+
+  return variations;
+}
+
 function isDodgeableOnly(name: string, type?: string): boolean {
   const dodgeablePatterns = [
     /\b(spread|stack|outside|inside|middle|away|close)\b/i,
@@ -149,7 +296,6 @@ function isDodgeableOnly(name: string, type?: string): boolean {
     /\b(tether|beam|laser)\b/i,
   ];
 
-  // If type is info and name contains dodgeable pattern, it's likely dodgeable only
   if (type === 'info' || !type) {
     return dodgeablePatterns.some(p => p.test(name));
   }
@@ -157,9 +303,6 @@ function isDodgeableOnly(name: string, type?: string): boolean {
   return false;
 }
 
-/**
- * Convert Cactbot timeline entries to MitPlan boss actions
- */
 export function cactbotToMitPlanActions(
   entries: CactbotTimelineEntry[],
   bossId: string
@@ -177,7 +320,6 @@ export function cactbotToMitPlanActions(
       icon: getIconFromName(entry.name),
     };
 
-    // Add duration if present
     if (entry.duration) {
       action.description = `Duration: ${entry.duration}s`;
     }
@@ -188,9 +330,6 @@ export function cactbotToMitPlanActions(
   return actions.sort((a, b) => a.time - b.time);
 }
 
-/**
- * Create an action ID from name and time
- */
 function createActionIdFromName(name: string, time: number): string {
   const sanitized = name
     .toLowerCase()
@@ -199,9 +338,6 @@ function createActionIdFromName(name: string, time: number): string {
   return `${sanitized}_${time}`;
 }
 
-/**
- * Map Cactbot entry type to MitPlan importance
- */
 function getImportanceFromType(
   type?: string
 ): 'low' | 'medium' | 'high' | 'critical' {
@@ -217,9 +353,6 @@ function getImportanceFromType(
   }
 }
 
-/**
- * Get an appropriate icon for an ability name
- */
 function getIconFromName(name: string): string {
   const lower = name.toLowerCase();
 
@@ -237,9 +370,6 @@ function getIconFromName(name: string): string {
   return '⚔️';
 }
 
-/**
- * Load and parse a Cactbot timeline by boss ID
- */
 export async function loadCactbotTimeline(
   bossId: string,
   timelinePath: string,
@@ -344,31 +474,21 @@ export function buildCactbotOccurrenceMap(
   return map;
 }
 
-/**
- * Merge Cactbot timeline with FFLogs parsed data
- *
- * Cactbot provides timing and mechanic identification
- * FFLogs provides damage values and validation
- */
 export function mergeCactbotWithFFLogs(
   cactbotActions: BossAction[],
   fflogsActions: BossAction[]
 ): BossAction[] {
   const merged = new Map<string, BossAction>();
 
-  // Add all Cactbot actions first
   for (const action of cactbotActions) {
     merged.set(`${action.name}_${action.time}`, action);
   }
 
-  // Merge FFLogs data
   for (const ffAction of fflogsActions) {
-    // Find matching Cactbot action by time proximity
     let found = false;
 
     for (const [key, cactAction] of merged) {
       if (actionsMatch(cactAction, ffAction)) {
-        // Update with FFLogs damage data
         if (ffAction.unmitigatedDamage) {
           cactAction.unmitigatedDamage = ffAction.unmitigatedDamage;
         }
@@ -386,7 +506,6 @@ export function mergeCactbotWithFFLogs(
       }
     }
 
-    // Add FFLogs-only actions
     if (!found) {
       merged.set(`${ffAction.name}_${ffAction.time}`, ffAction);
     }
@@ -395,19 +514,14 @@ export function mergeCactbotWithFFLogs(
   return Array.from(merged.values()).sort((a, b) => a.time - b.time);
 }
 
-/**
- * Check if two actions represent the same mechanic
- */
 function actionsMatch(a: BossAction, b: BossAction): boolean {
   const timeDiff = Math.abs(a.time - b.time);
   const nameMatch = a.name.toLowerCase() === b.name.toLowerCase();
 
-  // Match if names are similar and within 5 seconds
   if (nameMatch && timeDiff <= 5) {
     return true;
   }
 
-  // Match if times are very close (within 2 seconds)
   if (timeDiff <= 2) {
     return true;
   }
@@ -415,27 +529,19 @@ function actionsMatch(a: BossAction, b: BossAction): boolean {
   return false;
 }
 
-/**
- * Get list of available Cactbot timelines
- *
- * This would scan the Cactbot repository for timeline files.
- * For now, return a hardcoded list based on known Dawntrail bosses.
- */
 export function getAvailableCactbotTimelines(): string[] {
   return [
-    // Dawntrail Savage (7.x)
-    'ui/raidboss/data/07-dt/savage/r1s.txt',
-    'ui/raidboss/data/07-dt/savage/r2s.txt',
-    'ui/raidboss/data/07-dt/savage/r3s.txt',
-    'ui/raidboss/data/07-dt/savage/r4s.txt',
-    'ui/raidboss/data/07-dt/savage/r5s.txt',
-    'ui/raidboss/data/07-dt/savage/r6s.txt',
-    'ui/raidboss/data/07-dt/savage/r7s.txt',
-    'ui/raidboss/data/07-dt/savage/r8s.txt',
-    // Dawntrail Normal
-    'ui/raidboss/data/07-dt/raid/r1.txt',
-    'ui/raidboss/data/07-dt/raid/r2.txt',
-    'ui/raidboss/data/07-dt/raid/r3.txt',
-    'ui/raidboss/data/07-dt/raid/r4.txt',
+    'ui/raidboss/data/07-dt/raid/r1s.txt',
+    'ui/raidboss/data/07-dt/raid/r2s.txt',
+    'ui/raidboss/data/07-dt/raid/r3s.txt',
+    'ui/raidboss/data/07-dt/raid/r4s.txt',
+    'ui/raidboss/data/07-dt/raid/r5s.txt',
+    'ui/raidboss/data/07-dt/raid/r6s.txt',
+    'ui/raidboss/data/07-dt/raid/r7s.txt',
+    'ui/raidboss/data/07-dt/raid/r8s.txt',
+    'ui/raidboss/data/07-dt/raid/r1n.txt',
+    'ui/raidboss/data/07-dt/raid/r2n.txt',
+    'ui/raidboss/data/07-dt/raid/r3n.txt',
+    'ui/raidboss/data/07-dt/raid/r4n.txt',
   ];
 }

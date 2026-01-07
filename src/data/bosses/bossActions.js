@@ -8,6 +8,8 @@ import staticeActions from './statice_actions.json';
 import bruteAbominatorActions from './brute-abominator_actions.json';
 import howlingBladeActions from './howling-blade_actions.json';
 import necronActions from './necron_actions.json';
+import vampFataleActions from './vamp-fatale_actions.json';
+import redHotDeepBlueActions from './red-hot-deep-blue_actions.json';
 
 export const bossActionsMap = {
   'sugar-riot': sugarRiotActions,
@@ -17,6 +19,8 @@ export const bossActionsMap = {
   'brute-abominator-m7s': bruteAbominatorActions,
   'howling-blade-m8s': howlingBladeActions,
   necron: necronActions,
+  'vamp-fatale-m9s': vampFataleActions,
+  'red-hot-deep-blue-m10s': redHotDeepBlueActions,
   // Inline data for Ketuduke kept for now
   ketuduke: [
     {

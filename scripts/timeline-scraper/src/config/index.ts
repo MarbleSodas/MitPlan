@@ -65,7 +65,6 @@ export interface BossConfig {
 }
 
 export const BOSS_MAPPING: Record<string, BossConfig> = {
-  // Dawntrail Savage Raids (AAC Light-Heavyweight - Zone 62)
   'm1s': {
     id: 'm1s',
     name: 'M1S - Black Cat',
@@ -73,6 +72,8 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 93,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r1s.txt',
     mitPlanId: 'aac-light-heavyweight-m1s',
+    firstAction: 'Quadruple Crossing',
+    multiHitAbilities: ['quadruple crossing', 'mouser'],
   },
   'm2s': {
     id: 'm2s',
@@ -81,6 +82,8 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 94,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r2s.txt',
     mitPlanId: 'aac-light-heavyweight-m2s',
+    firstAction: 'Call Me Honey',
+    multiHitAbilities: ['call me honey', 'loveseeker'],
   },
   'm3s': {
     id: 'm3s',
@@ -89,6 +92,8 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 95,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r3s.txt',
     mitPlanId: 'aac-light-heavyweight-m3s',
+    firstAction: 'Knuckle Sandwich',
+    multiHitAbilities: ['knuckle sandwich', 'octuple lariat'],
   },
   'm4s': {
     id: 'm4s',
@@ -97,9 +102,9 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 96,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r4s.txt',
     mitPlanId: 'aac-light-heavyweight-m4s',
+    firstAction: 'Wrath of Zeus',
+    multiHitAbilities: ['wrath of zeus', 'electrope edge'],
   },
-
-  // Dawntrail Savage Raids (AAC Cruiserweight - Zone 68)
   'm5s': {
     id: 'm5s',
     name: 'M5S - Dancing Green',
@@ -107,6 +112,8 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 97,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r5s.txt',
     mitPlanId: 'aac-cruiserweight-m5s',
+    firstAction: 'Deep Cut',
+    multiHitAbilities: ['deep cut'],
   },
   'm6s': {
     id: 'm6s',
@@ -115,6 +122,8 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 98,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r6s.txt',
     mitPlanId: 'aac-cruiserweight-m6s',
+    firstAction: 'Mousse Drip',
+    multiHitAbilities: ['mousse drip', 'layer'],
   },
   'm7s': {
     id: 'm7s',
@@ -123,9 +132,9 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 99,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r7s.txt',
     mitPlanId: 'aac-cruiserweight-m7s',
-    multiHitAbilities: ['brutal impact', 'explosion'],
+    multiHitAbilities: ['brutal impact', 'explosion', 'sporesplosion'],
     firstAction: 'Brutal Impact',
-    phaseTransitions: ['Neo Bombarian Special'],
+    phaseTransitions: ['Neo Bombarian Special', 'Powerslam'],
   },
   'm8s': {
     id: 'm8s',
@@ -134,9 +143,9 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 100,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r8s.txt',
     mitPlanId: 'aac-cruiserweight-m8s',
+    firstAction: 'Extraplanar Pursuit',
+    multiHitAbilities: ['twofold tempest', 'eminent reign'],
   },
-
-  // Dawntrail Normal Raids (AAC Light-Heavyweight - Zone 62)
   'm1': {
     id: 'm1',
     name: 'M1 - Black Cat',
@@ -169,8 +178,6 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     timelinePath: 'ui/raidboss/data/07-dt/raid/r4n.txt',
     mitPlanId: 'aac-light-heavyweight-m4',
   },
-
-  // Dawntrail Normal Raids (AAC Cruiserweight - Zone 68)
   'm5': {
     id: 'm5',
     name: 'M5 - Dancing Green',
@@ -203,8 +210,6 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     timelinePath: 'ui/raidboss/data/07-dt/raid/r8n.txt',
     mitPlanId: 'aac-cruiserweight-m8',
   },
-
-  // Endwalker Savage Raids (Pandaemonium - for testing Cactbot integration)
   'p1s': {
     id: 'p1s',
     name: 'P1S - Erichthonios',
@@ -214,8 +219,6 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     mitPlanId: 'pandaemonium-p1s',
     firstAction: 'Gaoler\'s Flail',
   },
-
-  // Legacy aliases (for backward compatibility)
   'sugar-riot': {
     id: 'm6s',
     name: 'M6S - Sugar Riot',
@@ -223,6 +226,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 98,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r6s.txt',
     mitPlanId: 'aac-cruiserweight-m6s',
+    firstAction: 'Mousse Drip',
   },
   'dancing-green': {
     id: 'm5s',
@@ -231,6 +235,7 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 97,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r5s.txt',
     mitPlanId: 'aac-cruiserweight-m5s',
+    firstAction: 'Deep Cut',
   },
   'brute-abominator': {
     id: 'm7s',
@@ -239,6 +244,8 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 99,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r7s.txt',
     mitPlanId: 'aac-cruiserweight-m7s',
+    firstAction: 'Brutal Impact',
+    multiHitAbilities: ['brutal impact', 'explosion', 'sporesplosion'],
   },
   'howling-blade': {
     id: 'm8s',
@@ -247,6 +254,105 @@ export const BOSS_MAPPING: Record<string, BossConfig> = {
     encounterId: 100,
     timelinePath: 'ui/raidboss/data/07-dt/raid/r8s.txt',
     mitPlanId: 'aac-cruiserweight-m8s',
+    firstAction: 'Extraplanar Pursuit',
+  },
+  'm9s': {
+    id: 'm9s',
+    name: 'M9S - Vamp Fatale',
+    zoneId: 73,
+    encounterId: 101,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r9s.txt',
+    mitPlanId: 'aac-heavyweight-m9s',
+    firstAction: 'Bloodspin',
+  },
+  'm10s': {
+    id: 'm10s',
+    name: 'M10S - Red Hot & Deep Blue',
+    zoneId: 73,
+    encounterId: 102,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r10s.txt',
+    mitPlanId: 'aac-heavyweight-m10s',
+  },
+  'm11s': {
+    id: 'm11s',
+    name: 'M11S - The Tyrant',
+    zoneId: 73,
+    encounterId: 103,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r11s.txt',
+    mitPlanId: 'aac-heavyweight-m11s',
+  },
+  'm12s': {
+    id: 'm12s',
+    name: 'M12S - Lindwurm',
+    zoneId: 73,
+    encounterId: 104,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r12s.txt',
+    mitPlanId: 'aac-heavyweight-m12s',
+  },
+  'm9': {
+    id: 'm9',
+    name: 'M9 - Vamp Fatale',
+    zoneId: 73,
+    encounterId: 101,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r9n.txt',
+    mitPlanId: 'aac-heavyweight-m9',
+  },
+  'm10': {
+    id: 'm10',
+    name: 'M10 - Red Hot & Deep Blue',
+    zoneId: 73,
+    encounterId: 102,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r10n.txt',
+    mitPlanId: 'aac-heavyweight-m10',
+  },
+  'm11': {
+    id: 'm11',
+    name: 'M11 - The Tyrant',
+    zoneId: 73,
+    encounterId: 103,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r11n.txt',
+    mitPlanId: 'aac-heavyweight-m11',
+  },
+  'm12': {
+    id: 'm12',
+    name: 'M12 - Lindwurm',
+    zoneId: 73,
+    encounterId: 104,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r12n.txt',
+    mitPlanId: 'aac-heavyweight-m12',
+  },
+  'vamp-fatale': {
+    id: 'm9s',
+    name: 'M9S - Vamp Fatale',
+    zoneId: 73,
+    encounterId: 101,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r9s.txt',
+    mitPlanId: 'aac-heavyweight-m9s',
+    firstAction: 'Bloodspin',
+  },
+  'red-hot-deep-blue': {
+    id: 'm10s',
+    name: 'M10S - Red Hot & Deep Blue',
+    zoneId: 73,
+    encounterId: 102,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r10s.txt',
+    mitPlanId: 'aac-heavyweight-m10s',
+  },
+  'the-tyrant': {
+    id: 'm11s',
+    name: 'M11S - The Tyrant',
+    zoneId: 73,
+    encounterId: 103,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r11s.txt',
+    mitPlanId: 'aac-heavyweight-m11s',
+  },
+  'lindwurm': {
+    id: 'm12s',
+    name: 'M12S - Lindwurm',
+    zoneId: 73,
+    encounterId: 104,
+    timelinePath: 'ui/raidboss/data/07-dt/raid/r12s.txt',
+    mitPlanId: 'aac-heavyweight-m12s',
   },
 };
 

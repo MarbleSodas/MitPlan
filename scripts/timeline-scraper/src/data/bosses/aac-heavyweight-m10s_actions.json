@@ -1,0 +1,760 @@
+[
+  {
+    "id": "hot_impact_1",
+    "name": "Hot Impact",
+    "time": 16,
+    "unmitigatedDamage": "~396,483",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "flame_floater_1",
+    "name": "Flame Floater",
+    "time": 38,
+    "unmitigatedDamage": "~132,205",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "🔥"
+  },
+  {
+    "id": "alley_oop_inferno_1",
+    "name": "Alley-Oop Inferno",
+    "time": 54,
+    "unmitigatedDamage": "~89,365",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "cutback_blaze_1",
+    "name": "Cutback Blaze",
+    "time": 64,
+    "unmitigatedDamage": "~133,908",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "pyrotation_1",
+    "name": "Pyrotation",
+    "time": 73,
+    "unmitigatedDamage": "~52,423",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "combined_dots_1",
+    "name": "Combined DoTs",
+    "time": 83,
+    "unmitigatedDamage": "~70,820",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burns_1",
+    "name": "Burns",
+    "time": 83,
+    "unmitigatedDamage": "~102,638",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "🔥"
+  },
+  {
+    "id": "divers_dare_1",
+    "name": "Divers' Dare",
+    "time": 84,
+    "unmitigatedDamage": "~94,333",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sick_swell_1",
+    "name": "Sick Swell",
+    "time": 117,
+    "unmitigatedDamage": "~11,005",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "awesome_slab_1",
+    "name": "Awesome Slab",
+    "time": 119,
+    "unmitigatedDamage": "~124,120",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "awesome_splash_1",
+    "name": "Awesome Splash",
+    "time": 119,
+    "unmitigatedDamage": "~127,695",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46561_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46561_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 127,
+    "unmitigatedDamage": "~106,503",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46558_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46558_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 127,
+    "unmitigatedDamage": "~107,106",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46559_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46559_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 130,
+    "unmitigatedDamage": "~134,380",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "deep_impact_1",
+    "name": "Deep Impact",
+    "time": 138,
+    "unmitigatedDamage": "~403,394",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "divers_dare_2",
+    "name": "Divers' Dare",
+    "time": 146,
+    "unmitigatedDamage": "~99,318",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "xtreme_spectacular_1",
+    "name": "Xtreme Spectacular",
+    "time": 175,
+    "unmitigatedDamage": "~35,116",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46578_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46578_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 207,
+    "unmitigatedDamage": "~89,350",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46585_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46585_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 207,
+    "unmitigatedDamage": "~313,467",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46582_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46582_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 214,
+    "unmitigatedDamage": "~90,691",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46577_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46577_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 214,
+    "unmitigatedDamage": "~87,692",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46581_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46581_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 214,
+    "unmitigatedDamage": "~88,137",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46586_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46586_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 214,
+    "unmitigatedDamage": "~309,648",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "combined_dots_2",
+    "name": "Combined DoTs",
+    "time": 229,
+    "unmitigatedDamage": "~69,886",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burns_2",
+    "name": "Burns",
+    "time": 229,
+    "unmitigatedDamage": "~69,886",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🔥"
+  },
+  {
+    "id": "divers_dare_3",
+    "name": "Divers' Dare",
+    "time": 231,
+    "unmitigatedDamage": "~99,812",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_45953_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_45953_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 247,
+    "unmitigatedDamage": "~194,861",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_45954_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_45954_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 247,
+    "unmitigatedDamage": "~192,274",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "alley_oop_inferno_2",
+    "name": "Alley-Oop Inferno",
+    "time": 259,
+    "unmitigatedDamage": "~90,715",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46561_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46561_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 260,
+    "unmitigatedDamage": "~104,712",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46558_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46558_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 260,
+    "unmitigatedDamage": "~107,981",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46562_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46562_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 263,
+    "unmitigatedDamage": "~113,993",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "hot_impact_2",
+    "name": "Hot Impact",
+    "time": 271,
+    "unmitigatedDamage": "~379,001",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "rsv_46547_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46547_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 278,
+    "unmitigatedDamage": "~144,338",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "alley_oop_inferno_3",
+    "name": "Alley-Oop Inferno",
+    "time": 282,
+    "unmitigatedDamage": "~90,906",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "awesome_slab_2",
+    "name": "Awesome Slab",
+    "time": 282,
+    "unmitigatedDamage": "~112,679",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "awesome_splash_2",
+    "name": "Awesome Splash",
+    "time": 282,
+    "unmitigatedDamage": "~115,870",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "hot_aerial_1",
+    "name": "Hot Aerial",
+    "time": 295,
+    "unmitigatedDamage": "~174,627",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sick_swell_2",
+    "name": "Sick Swell",
+    "time": 303,
+    "unmitigatedDamage": "~17,183",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sickest_take_off_1",
+    "name": "Sickest Take-Off",
+    "time": 303,
+    "unmitigatedDamage": "~1,593,837",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "awesome_slab_3",
+    "name": "Awesome Slab",
+    "time": 306,
+    "unmitigatedDamage": "~132,546",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "awesome_splash_3",
+    "name": "Awesome Splash",
+    "time": 306,
+    "unmitigatedDamage": "~119,497",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "cutback_blaze_2",
+    "name": "Cutback Blaze",
+    "time": 310,
+    "unmitigatedDamage": "~132,554",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "deep_impact_2",
+    "name": "Deep Impact",
+    "time": 316,
+    "unmitigatedDamage": "~409,081",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "burns_3",
+    "name": "Burns",
+    "time": 320,
+    "unmitigatedDamage": "~89,079",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🔥"
+  },
+  {
+    "id": "divers_dare_4",
+    "name": "Divers' Dare",
+    "time": 323,
+    "unmitigatedDamage": "~99,594",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "deep_aerial_1",
+    "name": "Deep Aerial",
+    "time": 337,
+    "unmitigatedDamage": "~89,098",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "steam_burst_1",
+    "name": "Steam Burst",
+    "time": 362,
+    "unmitigatedDamage": "~8,823",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "combined_dots_3",
+    "name": "Combined DoTs",
+    "time": 365,
+    "unmitigatedDamage": "~35,095",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "xtreme_wave_1",
+    "name": "Xtreme Wave",
+    "time": 375,
+    "unmitigatedDamage": "~31,647",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🌊"
+  },
+  {
+    "id": "scathing_steam_1",
+    "name": "Scathing Steam",
+    "time": 376,
+    "unmitigatedDamage": "~103,149",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "divers_dare_5",
+    "name": "Divers' Dare",
+    "time": 402,
+    "unmitigatedDamage": "~99,519",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "alley_oop_inferno_4",
+    "name": "Alley-Oop Inferno",
+    "time": 427,
+    "unmitigatedDamage": "~88,908",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46558_1_1_0_0_se2dc5b04_ee2dc5b04_3",
+    "name": "_rsv_46558_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 432,
+    "unmitigatedDamage": "~105,466",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46561_1_1_0_0_se2dc5b04_ee2dc5b04_3",
+    "name": "_rsv_46561_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 433,
+    "unmitigatedDamage": "~107,481",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46559_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46559_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 435,
+    "unmitigatedDamage": "~135,810",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46562_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46562_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 435,
+    "unmitigatedDamage": "~144,155",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "steam_burst_2",
+    "name": "Steam Burst",
+    "time": 437,
+    "unmitigatedDamage": "~87,219",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "freaky_pyrotation_1",
+    "name": "Freaky Pyrotation",
+    "time": 440,
+    "unmitigatedDamage": "~114,994",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sick_swell_3",
+    "name": "Sick Swell",
+    "time": 448,
+    "unmitigatedDamage": "~17,213",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "awesome_slab_4",
+    "name": "Awesome Slab",
+    "time": 451,
+    "unmitigatedDamage": "~125,971",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "divers_dare_6",
+    "name": "Divers' Dare",
+    "time": 456,
+    "unmitigatedDamage": "~99,084",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46510_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46510_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 471,
+    "unmitigatedDamage": "~198,525",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46511_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46511_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 471,
+    "unmitigatedDamage": "~197,543",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46585_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46585_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 499,
+    "unmitigatedDamage": "~311,181",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46586_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46586_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 499,
+    "unmitigatedDamage": "~316,297",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46578_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46578_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 509,
+    "unmitigatedDamage": "~88,862",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46577_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46577_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 509,
+    "unmitigatedDamage": "~90,578",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46582_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46582_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 510,
+    "unmitigatedDamage": "~87,973",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46581_1_1_0_0_se2dc5b04_ee2dc5b04_2",
+    "name": "_rsv_46581_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 510,
+    "unmitigatedDamage": "~90,311",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46513_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46513_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 511,
+    "unmitigatedDamage": "~17,595",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46512_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46512_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 511,
+    "unmitigatedDamage": "~17,736",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "combined_dots_4",
+    "name": "Combined DoTs",
+    "time": 523,
+    "unmitigatedDamage": "~84,397",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burns_4",
+    "name": "Burns",
+    "time": 523,
+    "unmitigatedDamage": "~91,754",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🔥"
+  },
+  {
+    "id": "divers_dare_7",
+    "name": "Divers' Dare",
+    "time": 530,
+    "unmitigatedDamage": "~98,687",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46561_1_1_0_0_se2dc5b04_ee2dc5b04_4",
+    "name": "_rsv_46561_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 546,
+    "unmitigatedDamage": "~108,615",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46558_1_1_0_0_se2dc5b04_ee2dc5b04_4",
+    "name": "_rsv_46558_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 546,
+    "unmitigatedDamage": "~109,176",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "alley_oop_inferno_5",
+    "name": "Alley-Oop Inferno",
+    "time": 548,
+    "unmitigatedDamage": "~90,572",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46559_1_1_0_0_se2dc5b04_ee2dc5b04_3",
+    "name": "_rsv_46559_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 548,
+    "unmitigatedDamage": "~4,401,194",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "deep_impact_3",
+    "name": "Deep Impact",
+    "time": 557,
+    "unmitigatedDamage": "~400,299",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "💥"
+  },
+  {
+    "id": "pyrotation_2",
+    "name": "Pyrotation",
+    "time": 560,
+    "unmitigatedDamage": "~61,525",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "combined_dots_5",
+    "name": "Combined DoTs",
+    "time": 566,
+    "unmitigatedDamage": "~70,720",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burns_5",
+    "name": "Burns",
+    "time": 566,
+    "unmitigatedDamage": "~121,219",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "🔥"
+  },
+  {
+    "id": "divers_dare_8",
+    "name": "Divers' Dare",
+    "time": 571,
+    "unmitigatedDamage": "~99,037",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  }
+]

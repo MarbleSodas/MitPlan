@@ -3,7 +3,7 @@ import type { BossAction } from '../types/index.js';
 import { FFLogsClient } from '../sources/fflogs/client.js';
 import { getAccessToken } from '../sources/fflogs/auth.js';
 import { extractBossActorIds, createAbilityLookup } from '../sources/fflogs/parser.js';
-import { loadCactbotTimelineSafe } from '../sources/cactbot/parser.js';
+import { loadCactbotTimelineSafe, parseCactbotTimelineExtended, type ParsedCactbotEntry } from '../sources/cactbot/parser.js';
 import { findSyncReference, mapDamageToActions, type DamageMapping } from '../sources/cactbot/syncMapper.js';
 import {
   analyzeHitRates,
@@ -14,8 +14,9 @@ import {
   type ActionHitInfo,
 } from '../analysis/hitRateAnalyzer.js';
 import { discoverAndValidateReports, type ValidatedReport } from '../sources/fflogs/discover.js';
-import { getBossMapping, createConfig } from '../config/index.js';
+import { getBossMapping, createConfig, getBossMultiHitAbilities } from '../config/index.js';
 import { formatDamageValue } from '../utils/damage.js';
+import { median } from '../utils/statistics.js';
 
 export interface CactbotSyncOptions {
   bossId: string;
@@ -40,6 +41,13 @@ export interface CactbotSyncResult {
   outputPath?: string;
   errors: string[];
   hitRateSummary?: string;
+}
+
+interface DamageAggregation {
+  values: number[];
+  damageTypes: string[];
+  targetCounts: number[];
+  hitCounts: number[];
 }
 
 export async function processCactbotFirst(options: CactbotSyncOptions): Promise<CactbotSyncResult> {
@@ -128,6 +136,7 @@ export async function processCactbotFirst(options: CactbotSyncOptions): Promise<
 
     const allReportHitData: ReportHitData[] = [];
     const allDamageMappings: Map<string, DamageMapping[]> = new Map();
+    const damageByAction = new Map<string, DamageAggregation>();
 
     for (let i = 0; i < validatedReports.length; i++) {
       const report = validatedReports[i];
@@ -153,7 +162,6 @@ export async function processCactbotFirst(options: CactbotSyncOptions): Promise<
 
         log(`  Fetched ${events.length} damage events`);
 
-        // Enrich events with names from masterData
         let enrichedCount = 0;
         for (const event of events) {
           const gameID = event.abilityGameID ?? event.ability?.guid;
@@ -173,8 +181,8 @@ export async function processCactbotFirst(options: CactbotSyncOptions): Promise<
         if (enrichedCount > 0) {
           log(`  Enriched ${enrichedCount} events with ability names`);
 
-        const uniqueAbilities = new Set(events.map(e => e.ability?.name).filter(Boolean));
-        log(`  Found ${uniqueAbilities.size} unique abilities in report`);
+          const uniqueAbilities = new Set(events.map(e => e.ability?.name).filter(Boolean));
+          log(`  Found ${uniqueAbilities.size} unique abilities in report`);
         }
 
         const syncResult = findSyncReference(cactbotActions, events, fight.startTime, {
@@ -197,6 +205,24 @@ export async function processCactbotFirst(options: CactbotSyncOptions): Promise<
         );
 
         allDamageMappings.set(report.code, damageMappings);
+
+        for (const mapping of damageMappings) {
+          if (mapping.matched && mapping.fflogsDamage && mapping.fflogsDamage > 0) {
+            if (!damageByAction.has(mapping.actionKey)) {
+              damageByAction.set(mapping.actionKey, {
+                values: [],
+                damageTypes: [],
+                targetCounts: [],
+                hitCounts: [],
+              });
+            }
+            const agg = damageByAction.get(mapping.actionKey)!;
+            agg.values.push(mapping.fflogsDamage);
+            if (mapping.damageType) agg.damageTypes.push(mapping.damageType);
+            if (mapping.targetCount) agg.targetCounts.push(mapping.targetCount);
+            if (mapping.fflogsHitCount) agg.hitCounts.push(mapping.fflogsHitCount);
+          }
+        }
 
         const actionHits = new Map<string, ActionHitInfo>();
         for (const mapping of damageMappings) {
@@ -231,9 +257,11 @@ export async function processCactbotFirst(options: CactbotSyncOptions): Promise<
 
     log(`\n=== Step 5: Analyzing Hit Rates ===`);
 
+    const multiHitAbilities = getBossMultiHitAbilities(options.bossId);
     const hitRates = analyzeHitRates(cactbotActions, allReportHitData, {
       dodgeableThreshold: options.dodgeableThreshold || 0.7,
       minReportsForConfidence: Math.min(3, allReportHitData.length),
+      neverDodgeableAbilities: multiHitAbilities,
     });
 
     const filteredHitRates = filterByDodgeability(hitRates, options.includeDodgeable || false);
@@ -248,16 +276,24 @@ export async function processCactbotFirst(options: CactbotSyncOptions): Promise<
     const finalActions = buildFinalTimeline(
       cactbotActions,
       filteredHitRates,
-      allDamageMappings,
-      options.bossId
+      damageByAction,
+      options.bossId,
+      multiHitAbilities
     );
 
-    result.actions = finalActions;
-    log(`  Generated ${finalActions.length} actions for timeline`);
+    log(`\n=== Step 7: Filling Missing Damage Values ===`);
+    const filledActions = fillMissingDamageValues(finalActions);
+    const filledCount = filledActions.filter(a => a.unmitigatedDamage && !finalActions.find(f => f.id === a.id && f.unmitigatedDamage)).length;
+    if (filledCount > 0) {
+      log(`  Filled ${filledCount} missing damage values from similar abilities`);
+    }
+
+    result.actions = filledActions;
+    log(`  Generated ${filledActions.length} actions for timeline`);
 
     if (!options.dryRun) {
       const outputPath = options.output || getDefaultOutputPath(options.bossId);
-      await writeTimelineFile(finalActions, outputPath);
+      await writeTimelineFile(filledActions, outputPath);
       result.outputPath = outputPath;
       log(`\n  Timeline written to: ${outputPath}`);
     } else {
@@ -317,74 +353,82 @@ async function validateProvidedReports(
 function buildFinalTimeline(
   cactbotActions: BossAction[],
   hitRates: HitRateResult[],
-  damageMappings: Map<string, DamageMapping[]>,
-  bossId: string
+  damageByAction: Map<string, DamageAggregation>,
+  bossId: string,
+  multiHitAbilities: string[]
 ): BossAction[] {
   const hitRateMap = new Map<string, HitRateResult>();
   for (const hr of hitRates) {
-    const key = `${hr.actionName.toLowerCase()}_${hr.occurrence}`;
+    // Use getBaseActionName to match how occurrenceMap was built in hitRateAnalyzer
+    const baseName = hr.actionName.toLowerCase()
+      .replace(/\s+x\d+$/i, '')
+      .replace(/\s*\([^)]+\)$/i, '')
+      .replace(/\s+\d+$/i, '')
+      .trim()
+      .replace(/\s+/g, ' ');
+    const key = `${baseName}_${hr.occurrence}`;
     hitRateMap.set(key, hr);
-  }
-
-  const damageByAction = new Map<string, number[]>();
-  const damageTypeByAction = new Map<string, string[]>();
-  for (const [_, mappings] of damageMappings) {
-    for (const mapping of mappings) {
-      if (mapping.matched && mapping.fflogsDamage) {
-        if (!damageByAction.has(mapping.actionKey)) {
-          damageByAction.set(mapping.actionKey, []);
-        }
-        damageByAction.get(mapping.actionKey)!.push(mapping.fflogsDamage);
-      }
-      if (mapping.matched && mapping.damageType) {
-        if (!damageTypeByAction.has(mapping.actionKey)) {
-          damageTypeByAction.set(mapping.actionKey, []);
-        }
-        damageTypeByAction.get(mapping.actionKey)!.push(mapping.damageType);
-      }
-    }
   }
 
   const actions: BossAction[] = [];
   const occurrenceCounts = new Map<string, number>();
+  const multiHitPatterns = multiHitAbilities.map(name => name.toLowerCase());
 
   for (const cactbotAction of cactbotActions) {
-    const nameKey = cactbotAction.name.toLowerCase();
-    const occurrence = (occurrenceCounts.get(nameKey) || 0) + 1;
-    occurrenceCounts.set(nameKey, occurrence);
+    const baseName = cactbotAction.name.toLowerCase()
+      .replace(/\s+x\d+$/i, '')
+      .replace(/\s*\([^)]+\)$/i, '')
+      .replace(/\s+\d+$/i, '')
+      .trim();
+    
+    const occurrence = (occurrenceCounts.get(baseName) || 0) + 1;
+    occurrenceCounts.set(baseName, occurrence);
 
-    const actionKey = `${nameKey}_${occurrence}`;
+    const actionKey = `${baseName}_${occurrence}`;
     const hitRate = hitRateMap.get(actionKey);
 
     if (!hitRate) continue;
 
-    const damages = damageByAction.get(actionKey) || [];
+    const agg = damageByAction.get(actionKey);
     let unmitigatedDamage: string | undefined;
     let damageType: 'physical' | 'magical' | 'mixed' | undefined;
+    let perHitDamage: string | undefined;
 
-    if (damages.length > 0) {
-      const maxDamage = Math.max(...damages);
-      unmitigatedDamage = formatDamageValue(maxDamage);
-    }
+    const hitCountMatch = cactbotAction.name.match(/\s+x(\d+)$/i);
+    const isMultiHit = hitCountMatch || multiHitPatterns.some(p => baseName.includes(p));
+    const hitCount = hitCountMatch ? parseInt(hitCountMatch[1], 10) : undefined;
 
-    const types = damageTypeByAction.get(actionKey) || [];
-    if (types.length > 0) {
-      const counts = types.reduce((acc, t) => {
-        acc[t] = (acc[t] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      damageType = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] as any;
-    } else {
-      const originalType = cactbotAction.damageType;
-      if (originalType === 'physical' || originalType === 'magical' || originalType === 'mixed') {
-        damageType = originalType;
+    if (agg && agg.values.length > 0) {
+      const medianTotalDamage = median(agg.values);
+      const medianTargetCount = agg.targetCounts.length > 0 ? median(agg.targetCounts) : 8;
+      
+      const perPlayerDamage = Math.round(medianTotalDamage / medianTargetCount);
+      
+      if (isMultiHit && hitCount) {
+        const perHit = Math.round(perPlayerDamage / hitCount);
+        perHitDamage = formatDamageValue(perHit);
+        unmitigatedDamage = formatDamageValue(perPlayerDamage);
+      } else {
+        unmitigatedDamage = formatDamageValue(perPlayerDamage);
+      }
+
+      if (agg.damageTypes.length > 0) {
+        const counts: Record<string, number> = {};
+        for (const t of agg.damageTypes) {
+          counts[t] = (counts[t] || 0) + 1;
+        }
+        damageType = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] as 'physical' | 'magical' | 'mixed';
       }
     }
 
-    const isTankBuster = detectTankBuster(cactbotAction.name, hitRate);
-    const importance = determineImportance(hitRate, isTankBuster);
+    const medianTargetCount = agg && agg.targetCounts.length > 0 
+      ? median(agg.targetCounts) 
+      : 8;
+
+    const isTankBuster = detectTankBuster(cactbotAction.name, medianTargetCount, hitRate);
+    const importance = determineImportance(hitRate, isTankBuster, agg);
     const icon = getIconForAction(cactbotAction.name, isTankBuster);
-    const description = generateDescription(cactbotAction.name, hitRate, isTankBuster, damageType);
+    const description = generateDescription(cactbotAction.name, hitRate, isTankBuster, damageType, hitCount);
 
     const sanitizedName = cactbotAction.name
       .toLowerCase()
@@ -405,9 +449,17 @@ function buildFinalTimeline(
       action.unmitigatedDamage = unmitigatedDamage;
     }
 
+    if (perHitDamage) {
+      action.perHitDamage = perHitDamage;
+    }
+
+    if (hitCount) {
+      action.hitCount = hitCount;
+    }
+
     if (isTankBuster) {
       action.isTankBuster = true;
-      if (detectDualTankBuster(cactbotAction.name)) {
+      if (detectDualTankBuster(cactbotAction.name, medianTargetCount)) {
         action.isDualTankBuster = true;
       }
     }
@@ -418,32 +470,51 @@ function buildFinalTimeline(
   return actions.sort((a, b) => a.time - b.time);
 }
 
-function detectTankBuster(name: string, hitRate: HitRateResult): boolean {
+function detectTankBuster(name: string, targetCount: number, hitRate: HitRateResult): boolean {
   const tankBusterPatterns = [
     /buster/i,
-    /smash/i,
+    /smash\s*(here|there)/i,
     /cleave/i,
-    /slam/i,
+    /slam(?!inator)/i,
     /strike/i,
-    /needle/i,
     /flare/i,
+    /blink/i,
   ];
 
-  return tankBusterPatterns.some((p) => p.test(name));
+  if (tankBusterPatterns.some((p) => p.test(name))) return true;
+
+  if (targetCount <= 2 && hitRate.avgDamage && hitRate.avgDamage > 80000) {
+    return true;
+  }
+
+  return false;
 }
 
-function detectDualTankBuster(name: string): boolean {
+function detectDualTankBuster(name: string, targetCount: number): boolean {
   const dualPatterns = [/dual/i, /both/i, /tanks/i, /shared/i, /split/i];
-  return dualPatterns.some((p) => p.test(name));
+  if (dualPatterns.some((p) => p.test(name))) return true;
+  
+  return targetCount === 2;
 }
 
 function determineImportance(
   hitRate: HitRateResult,
-  isTankBuster: boolean
+  isTankBuster: boolean,
+  agg?: DamageAggregation
 ): 'low' | 'medium' | 'high' | 'critical' {
-  if (hitRate.avgDamage && hitRate.avgDamage > 150000) return 'critical';
+  let perPlayerDamage: number | undefined;
+  
+  if (agg && agg.values.length > 0) {
+    const medianTotalDamage = median(agg.values);
+    const medianTargetCount = agg.targetCounts.length > 0 ? median(agg.targetCounts) : 8;
+    perPlayerDamage = medianTotalDamage / medianTargetCount;
+  } else {
+    perPlayerDamage = hitRate.avgDamage;
+  }
+  
+  if (perPlayerDamage && perPlayerDamage > 150000) return 'critical';
   if (isTankBuster) return 'high';
-  if (hitRate.avgDamage && hitRate.avgDamage > 70000) return 'high';
+  if (perPlayerDamage && perPlayerDamage > 70000) return 'high';
   if (hitRate.hitRate < 0.5) return 'low';
   return 'medium';
 }
@@ -454,17 +525,20 @@ function getIconForAction(name: string, isTankBuster: boolean): string {
   const lower = name.toLowerCase();
   if (/fire|flame|burn|heat/i.test(lower)) return '🔥';
   if (/ice|freeze|frost|cold/i.test(lower)) return '❄️';
-  if (/lightning|thunder|volt|shock/i.test(lower)) return '⚡';
+  if (/lightning|thunder|volt|shock|electro/i.test(lower)) return '⚡';
   if (/earth|quake|stone|rock/i.test(lower)) return '🌍';
   if (/wind|gale|aero/i.test(lower)) return '💨';
   if (/water|drown|wave|flood/i.test(lower)) return '🌊';
   if (/dark|shadow|umbra/i.test(lower)) return '🌑';
   if (/light|holy|lumina/i.test(lower)) return '✨';
   if (/explosion|blast|bomb|impact/i.test(lower)) return '💥';
-  if (/seed|vine|plant|nature/i.test(lower)) return '🌱';
+  if (/seed|vine|plant|nature|tendril/i.test(lower)) return '🌱';
   if (/stack|party/i.test(lower)) return '🎯';
   if (/spread/i.test(lower)) return '💫';
   if (/enrage|special/i.test(lower)) return '💀';
+  if (/revenge|vines/i.test(lower)) return '🌿';
+  if (/glower|power/i.test(lower)) return '👁️';
+  if (/spore/i.test(lower)) return '🍄';
 
   return '⚔️';
 }
@@ -473,19 +547,23 @@ function generateDescription(
   name: string,
   hitRate: HitRateResult,
   isTankBuster: boolean,
-  damageType?: 'physical' | 'magical' | 'mixed'
+  damageType?: 'physical' | 'magical' | 'mixed',
+  hitCount?: number
 ): string {
   const parts: string[] = [];
   const lower = name.toLowerCase();
 
-  const multiHitMatch = lower.match(/x(\d+)$/);
-  if (multiHitMatch) {
-    parts.push(`${multiHitMatch[1]} hits of`);
+  if (hitCount) {
+    parts.push(`${hitCount} hits of`);
   }
 
   if (isTankBuster) {
     if (/dual|both|tanks|shared|split/i.test(lower)) {
       parts.push('dual tank buster targeting both tanks.');
+    } else if (/smash\s*here/i.test(lower)) {
+      parts.push('tank buster on the closest player.');
+    } else if (/smash\s*there/i.test(lower)) {
+      parts.push('tank buster on the furthest player.');
     } else {
       parts.push('tank buster requiring mitigation.');
     }
@@ -495,24 +573,108 @@ function generateDescription(
     parts.push('stack marker damage.');
   } else if (/spread/i.test(lower)) {
     parts.push('spread marker damage.');
+  } else if (/impact/i.test(lower) && hitCount) {
+    parts.push('multi-hit raidwide damage.');
   } else {
     parts.push('damage mechanic.');
   }
 
-  if (damageType) {
-    const idx = parts.length - 1;
-    parts[idx] = `${damageType} ${parts[idx]}`;
-  }
-
-  if (hitRate.avgDamage) {
-    const dmgStr = hitRate.avgDamage.toLocaleString();
-    if (multiHitMatch) {
-      const perHit = Math.round(hitRate.avgDamage / parseInt(multiHitMatch[1], 10));
-      parts.push(`Approximately ~${perHit.toLocaleString()} per hit.`);
-    }
+  if (damageType && parts.length > 0) {
+    const lastIdx = parts.length - 1;
+    parts[lastIdx] = `${damageType} ${parts[lastIdx]}`;
   }
 
   return parts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function getAbilityBaseName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+x\d+$/i, '')
+    .replace(/\s*\([^)]+\)$/i, '')
+    .replace(/\s+\d+$/i, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function parseDamageNumber(damageStr: string): number | null {
+  const match = damageStr.match(/~?([\d,]+)/);
+  if (match) {
+    return parseInt(match[1].replace(/,/g, ''), 10);
+  }
+  return null;
+}
+
+function fillMissingDamageValues(actions: BossAction[]): BossAction[] {
+  const damageByBaseName = new Map<string, number[]>();
+  
+  for (const action of actions) {
+    if (!action.unmitigatedDamage) continue;
+    
+    const baseName = getAbilityBaseName(action.name);
+    const damage = parseDamageNumber(action.unmitigatedDamage);
+    
+    if (damage === null) continue;
+    
+    let normalizedDamage = damage;
+    if (action.hitCount && action.hitCount > 1) {
+      normalizedDamage = damage * action.hitCount;
+    }
+    
+    if (!damageByBaseName.has(baseName)) {
+      damageByBaseName.set(baseName, []);
+    }
+    damageByBaseName.get(baseName)!.push(normalizedDamage);
+  }
+
+  const filledActions: BossAction[] = [];
+  
+  for (const action of actions) {
+    if (action.unmitigatedDamage) {
+      filledActions.push(action);
+      continue;
+    }
+    
+    const baseName = getAbilityBaseName(action.name);
+    const damages = damageByBaseName.get(baseName);
+    
+    if (!damages || damages.length < 2) {
+      filledActions.push(action);
+      continue;
+    }
+    
+    const sortedDamages = [...damages].sort((a, b) => a - b);
+    const medianIndex = Math.floor(sortedDamages.length / 2);
+    const medianDamage = sortedDamages.length % 2 === 0
+      ? (sortedDamages[medianIndex - 1] + sortedDamages[medianIndex]) / 2
+      : sortedDamages[medianIndex];
+    
+    let finalDamage = Math.round(medianDamage);
+    let perHitDamage: string | undefined;
+    let unmitigatedDamage: string;
+    
+    if (action.hitCount && action.hitCount > 1) {
+      const perHit = Math.round(finalDamage / action.hitCount);
+      perHitDamage = formatDamageValue(perHit);
+      unmitigatedDamage = formatDamageValue(finalDamage);
+    } else {
+      unmitigatedDamage = formatDamageValue(finalDamage);
+    }
+    
+    const updatedAction: BossAction = {
+      ...action,
+      unmitigatedDamage,
+      importance: action.importance === 'low' ? 'medium' : action.importance,
+    };
+    
+    if (perHitDamage) {
+      updatedAction.perHitDamage = perHitDamage;
+    }
+    
+    filledActions.push(updatedAction);
+  }
+  
+  return filledActions;
 }
 
 function getDefaultOutputPath(bossId: string): string {
@@ -521,7 +683,9 @@ function getDefaultOutputPath(bossId: string): string {
     ? `${bossMapping.mitPlanId}_actions.json`
     : `${bossId}_actions.json`;
 
-  return `${process.cwd()}/src/data/bosses/${filename}`;
+  const scriptDir = decodeURIComponent(new URL('.', import.meta.url).pathname);
+  const projectRoot = scriptDir.replace(/\/scripts\/timeline-scraper\/.*$/, '');
+  return `${projectRoot}/src/data/bosses/${filename}`;
 }
 
 async function writeTimelineFile(actions: BossAction[], outputPath: string): Promise<void> {
@@ -555,6 +719,12 @@ async function writeTimelineFile(actions: BossAction[], outputPath: string): Pro
     }
     if (action.isDualTankBuster) {
       output.isDualTankBuster = action.isDualTankBuster;
+    }
+    if (action.hitCount) {
+      output.hitCount = action.hitCount;
+    }
+    if (action.perHitDamage) {
+      output.perHitDamage = action.perHitDamage;
     }
 
     return output;

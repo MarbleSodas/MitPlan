@@ -1538,10 +1538,10 @@ export const mitigationAbilities = [
   {
     id: 'neutral_sect',
     name: 'Neutral Sect',
-    description: 'Increases healing magic potency by 20% and erects a magicked barrier when casting Aspected Benefic or Helios Conjunction',
+    description: 'Increases healing magic potency by 20%. Grants Suntouched and erects barriers on Aspected Benefic/Helios Conjunction.',
     levelRequirement: 80,
     levelDescriptions: {
-      80: 'Increases healing magic potency by 20% for 20s and erects a magicked barrier when casting Aspected Benefic or Helios Conjunction for 30s'
+      80: 'Increases healing magic potency by 20% for 20s. Additional Effect: When casting Aspected Benefic or Helios Conjunction, erects a magicked barrier which nullifies damage (Aspected Benefic: 250% of HP restored, Helios Conjunction: 125% of HP restored) for 30s. Additional Effect: Grants Suntouched for 30s.'
     },
     duration: 20,
     cooldown: 120,
@@ -1557,6 +1557,58 @@ export const mitigationAbilities = [
     forRaidWide: true,
     // Increases AST healing potency for the caster's healing actions
     healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
+  },
+  {
+    id: 'neutral_sect_aspected_benefic',
+    name: 'Aspected Benefic (Neutral)',
+    description: 'Restores target\'s HP and grants regen and a barrier (Neutral Sect)',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Restores target\'s HP with 250 potency, grants 250 potency regen, and erects a barrier (250% of heal) for 30s'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/abilities-official/aspected_benefic.png',
+    type: 'healing',
+    healingPotency: 250,
+    regenPotency: 250,
+    healingType: 'instant',
+    regenDuration: 15,
+    mitigationValue: 0,
+    barrierFlatPotency: 625,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    scaleBarrierWithHealing: true,
+    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 }
+  },
+  {
+    id: 'neutral_sect_helios_conjunction',
+    name: 'Helios Conjunction (Neutral)',
+    description: 'Restores party HP, grants regen, and erects a barrier (Neutral Sect)',
+    levelRequirement: 96,
+    levelDescriptions: {
+      96: 'Restores party HP with 250 potency, grants 175 potency regen, and erects a barrier (125% of heal) for 30s'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['AST'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Helios_Conjunction.png',
+    type: 'healing',
+    healingPotency: 250,
+    regenPotency: 175,
+    healingType: 'instant',
+    regenDuration: 15,
+    mitigationValue: 0,
+    barrierFlatPotency: 312.5,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    scaleBarrierWithHealing: true,
+    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 }
   },
 
   // ASTROLOGIAN HEALING ABILITIES

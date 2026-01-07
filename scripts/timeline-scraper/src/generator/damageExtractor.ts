@@ -15,9 +15,6 @@ export interface DamageExtractorOptions {
   output?: string;
   dryRun?: boolean;
   minFightDuration?: number;
-  iqrMultiplier?: number;
-  occurrenceGapSec?: number;
-  minDamageThreshold?: number;
   onProgress?: (message: string) => void;
 }
 
@@ -28,9 +25,15 @@ export interface DamageExtractorResult {
   reportsUsed: string[];
   uniqueAbilities: number;
   totalEventsProcessed: number;
-  outliersRemoved: number;
   outputPath?: string;
   errors: string[];
+}
+
+interface DamageThresholds {
+  p50: number;
+  p75: number;
+  p90: number;
+  median: number;
 }
 
 interface DamageOccurrence {
@@ -38,23 +41,24 @@ interface DamageOccurrence {
   abilityId: number;
   occurrenceIndex: number;
   medianTime: number;
-  damages: number[];
-  filteredDamages: number[];
   medianDamage: number;
+  uniqueTargetCount: number;
   hitCount: number;
   damageType: 'physical' | 'magical' | 'mixed';
-  outliersRemoved: number;
+}
+
+interface AbilityDamageEvent {
+  relativeTime: number;
+  damage: number;
+  damageType: 'physical' | 'magical' | 'mixed';
+  targetId: number;
+  reportCode: string;
 }
 
 interface AbilityDamageData {
   abilityName: string;
   abilityId: number;
-  events: Array<{
-    relativeTime: number;
-    damage: number;
-    damageType: 'physical' | 'magical' | 'mixed';
-    reportCode: string;
-  }>;
+  events: AbilityDamageEvent[];
 }
 
 export async function extractDamageTimeline(
@@ -67,14 +71,13 @@ export async function extractDamageTimeline(
     reportsUsed: [],
     uniqueAbilities: 0,
     totalEventsProcessed: 0,
-    outliersRemoved: 0,
     errors: [],
   };
 
   const log = options.onProgress || console.log;
-  const iqrMultiplier = options.iqrMultiplier ?? 1.5;
-  const occurrenceGapSec = options.occurrenceGapSec ?? 15;
-  const minDamageThreshold = options.minDamageThreshold ?? 5000;
+  const occurrenceGapSec = 15;
+  const minDamageThreshold = 5000;
+  const iqrMultiplier = 1.5;
 
   try {
     const config = createConfig();
@@ -85,11 +88,11 @@ export async function extractDamageTimeline(
       return result;
     }
 
-    log(`\n=== Step 1: Authenticating with FFLogs ===`);
+    log(`\n=== Authenticating with FFLogs ===`);
     const accessToken = await getAccessToken(config.fflogs.clientId, config.fflogs.clientSecret);
     const client = new FFLogsClient({ accessToken });
 
-    log(`\n=== Step 2: Discovering FFLogs Reports ===`);
+    log(`\n=== Discovering FFLogs Reports ===`);
 
     let validatedReports: ValidatedReport[];
 
@@ -122,7 +125,7 @@ export async function extractDamageTimeline(
 
     log(`  Found ${validatedReports.length} valid reports`);
 
-    log(`\n=== Step 3: Extracting DamageTaken Events ===`);
+    log(`\n=== Extracting Damage Events ===`);
 
     const abilityDataMap = new Map<string, AbilityDamageData>();
 
@@ -152,11 +155,14 @@ export async function extractDamageTimeline(
         result.totalEventsProcessed += events.length;
 
         for (const event of events) {
+          // Skip non-damage events (calculateddamage events are snapshots, not actual damage)
+          if (event.type !== 'damage') continue;
+
           if (bossActorIds.size > 0 && event.sourceID && !bossActorIds.has(event.sourceID)) {
             continue;
           }
 
-          const damage = event.unmitigatedAmount ?? event.amount ?? event.damage ?? 0;
+          const damage = event.unmitigatedAmount ?? 0;
           if (damage < minDamageThreshold) continue;
 
           const gameID = event.abilityGameID ?? event.ability?.guid;
@@ -184,6 +190,7 @@ export async function extractDamageTimeline(
             relativeTime,
             damage,
             damageType: determineDamageType(event),
+            targetId: event.targetID ?? 0,
             reportCode: report.code,
           });
         }
@@ -201,7 +208,7 @@ export async function extractDamageTimeline(
     }
 
     result.uniqueAbilities = abilityDataMap.size;
-    log(`\n=== Step 4: Clustering and Filtering Occurrences ===`);
+    log(`\n=== Clustering Occurrences ===`);
     log(`  Found ${abilityDataMap.size} unique damaging abilities`);
 
     const allOccurrences: DamageOccurrence[] = [];
@@ -216,7 +223,8 @@ export async function extractDamageTimeline(
 
         const damages = clusterEvents.map((e) => e.damage);
         const filterResult = filterOutliersIQR(damages, iqrMultiplier);
-        result.outliersRemoved += filterResult.outliers.length;
+
+        const uniqueTargets = new Set(clusterEvents.map((e) => e.targetId));
 
         const damageTypes = clusterEvents.map((e) => e.damageType);
         const damageType = getMostCommonDamageType(damageTypes);
@@ -226,12 +234,10 @@ export async function extractDamageTimeline(
           abilityId: abilityData.abilityId,
           occurrenceIndex: occIdx + 1,
           medianTime: Math.round(cluster.median),
-          damages,
-          filteredDamages: filterResult.filtered,
           medianDamage: median(filterResult.filtered),
+          uniqueTargetCount: uniqueTargets.size,
           hitCount: clusterEvents.length,
           damageType,
-          outliersRemoved: filterResult.outliers.length,
         });
       }
     }
@@ -239,27 +245,40 @@ export async function extractDamageTimeline(
     allOccurrences.sort((a, b) => a.medianTime - b.medianTime);
 
     log(`  Generated ${allOccurrences.length} action occurrences`);
-    log(`  Removed ${result.outliersRemoved} outlier damage values`);
 
-    log(`\n=== Step 5: Building Timeline ===`);
+    log(`\n=== Calculating Damage Thresholds ===`);
 
-    const actions = buildTimelineFromOccurrences(allOccurrences);
+    const thresholds = calculateDamageThresholds(allOccurrences);
+    log(`  Median: ${Math.round(thresholds.median).toLocaleString()}`);
+    log(`  P50: ${Math.round(thresholds.p50).toLocaleString()}`);
+    log(`  P75: ${Math.round(thresholds.p75).toLocaleString()}`);
+    log(`  P90: ${Math.round(thresholds.p90).toLocaleString()}`);
+
+    log(`\n=== Building Timeline ===`);
+
+    const actions = buildTimelineFromOccurrences(allOccurrences, thresholds);
     result.actions = actions;
 
+    const tankBusterCount = actions.filter((a) => a.isTankBuster).length;
+    const raidwideCount = actions.filter((a) => !a.isTankBuster).length;
     log(`  Created ${actions.length} timeline actions`);
+    log(`  Tank busters: ${tankBusterCount}, Raidwides/other: ${raidwideCount}`);
 
     if (!options.dryRun) {
       const outputPath = options.output || getDefaultOutputPath(options.bossId);
       await writeTimelineFile(actions, outputPath);
       result.outputPath = outputPath;
-      log(`\n  Timeline written to: ${outputPath}`);
+      log(`\n=== Timeline written to: ${outputPath} ===`);
     } else {
-      log(`\n  Dry run - skipping file write`);
-      log(`\n  Preview of first 10 actions:`);
-      for (const action of actions.slice(0, 10)) {
+      log(`\n=== Dry run - Preview ===`);
+      for (const action of actions.slice(0, 15)) {
+        const tbMarker = action.isTankBuster ? ' [TB]' : '';
         log(
-          `    ${action.time}s - ${action.name} (${action.unmitigatedDamage || 'N/A'}, ${action.damageType})`
+          `  ${action.time}s - ${action.name}${tbMarker} (${action.unmitigatedDamage || 'N/A'})`
         );
+      }
+      if (actions.length > 15) {
+        log(`  ... and ${actions.length - 15} more actions`);
       }
     }
 
@@ -331,7 +350,32 @@ function getMostCommonDamageType(
     | 'mixed';
 }
 
-function buildTimelineFromOccurrences(occurrences: DamageOccurrence[]): BossAction[] {
+function calculateDamageThresholds(occurrences: DamageOccurrence[]): DamageThresholds {
+  const damages = occurrences.map((o) => o.medianDamage).filter((d) => d > 0);
+
+  if (damages.length === 0) {
+    return { p50: 0, p75: 0, p90: 0, median: 0 };
+  }
+
+  const sorted = [...damages].sort((a, b) => a - b);
+
+  const percentile = (arr: number[], p: number): number => {
+    const idx = Math.ceil((p / 100) * arr.length) - 1;
+    return arr[Math.max(0, idx)];
+  };
+
+  return {
+    p50: percentile(sorted, 50),
+    p75: percentile(sorted, 75),
+    p90: percentile(sorted, 90),
+    median: median(sorted),
+  };
+}
+
+function buildTimelineFromOccurrences(
+  occurrences: DamageOccurrence[],
+  thresholds: DamageThresholds
+): BossAction[] {
   const actions: BossAction[] = [];
 
   for (const occ of occurrences) {
@@ -340,9 +384,17 @@ function buildTimelineFromOccurrences(occurrences: DamageOccurrence[]): BossActi
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_|_$/g, '');
 
-    const isTankBuster = detectTankBuster(occ.abilityName, occ.medianDamage);
-    const importance = determineImportance(occ.medianDamage, isTankBuster);
-    const icon = getIconForAction(occ.abilityName, isTankBuster);
+    const isTankBuster = detectTankBuster(
+      occ.abilityName,
+      occ.medianDamage,
+      occ.uniqueTargetCount,
+      thresholds
+    );
+
+    const isDualTankBuster = isTankBuster && occ.uniqueTargetCount === 2;
+
+    const importance = determineImportance(occ.medianDamage, isTankBuster, thresholds);
+    const icon = getIconForAction(occ.abilityName, isTankBuster, occ.uniqueTargetCount);
 
     const action: BossAction = {
       id: `${sanitizedName}_${occ.occurrenceIndex}`,
@@ -356,7 +408,7 @@ function buildTimelineFromOccurrences(occurrences: DamageOccurrence[]): BossActi
 
     if (isTankBuster) {
       action.isTankBuster = true;
-      if (detectDualTankBuster(occ.abilityName)) {
+      if (isDualTankBuster) {
         action.isDualTankBuster = true;
       }
     }
@@ -367,43 +419,34 @@ function buildTimelineFromOccurrences(occurrences: DamageOccurrence[]): BossActi
   return actions;
 }
 
-function detectTankBuster(name: string, damage: number): boolean {
-  const tankBusterPatterns = [
-    /buster/i,
-    /smash/i,
-    /cleave/i,
-    /slam/i,
-    /strike/i,
-    /needle/i,
-    /flare/i,
-    /divide/i,
-    /saber/i,
-  ];
-
+function detectTankBuster(
+  name: string,
+  damage: number,
+  uniqueTargetCount: number,
+  thresholds: DamageThresholds
+): boolean {
+  const tankBusterPatterns = [/buster/i, /cleave/i, /divide/i, /saber/i];
   if (tankBusterPatterns.some((p) => p.test(name))) return true;
-  if (damage > 100000) return true;
 
-  return false;
-}
+  const isHighDamage = damage >= thresholds.p75;
+  const hitsOnlyTanks = uniqueTargetCount <= 2 && uniqueTargetCount > 0;
 
-function detectDualTankBuster(name: string): boolean {
-  const dualPatterns = [/dual/i, /both/i, /tanks/i, /shared/i, /split/i, /twin/i];
-  return dualPatterns.some((p) => p.test(name));
+  return isHighDamage && hitsOnlyTanks;
 }
 
 function determineImportance(
   damage: number,
-  isTankBuster: boolean
+  isTankBuster: boolean,
+  thresholds: DamageThresholds
 ): 'low' | 'medium' | 'high' | 'critical' {
-  if (damage > 150000) return 'critical';
-  if (isTankBuster && damage > 100000) return 'critical';
+  if (damage >= thresholds.p90) return 'critical';
   if (isTankBuster) return 'high';
-  if (damage > 80000) return 'high';
-  if (damage > 50000) return 'medium';
+  if (damage >= thresholds.p75) return 'high';
+  if (damage >= thresholds.p50) return 'medium';
   return 'low';
 }
 
-function getIconForAction(name: string, isTankBuster: boolean): string {
+function getIconForAction(name: string, isTankBuster: boolean, targetCount: number): string {
   if (isTankBuster) return '🛡️';
 
   const lower = name.toLowerCase();
@@ -416,10 +459,11 @@ function getIconForAction(name: string, isTankBuster: boolean): string {
   if (/dark|shadow|umbra/i.test(lower)) return '🌑';
   if (/light|holy|lumina/i.test(lower)) return '✨';
   if (/explosion|blast|bomb|impact/i.test(lower)) return '💥';
-  if (/seed|vine|plant|nature/i.test(lower)) return '🌱';
   if (/stack|party/i.test(lower)) return '🎯';
   if (/spread/i.test(lower)) return '💫';
-  if (/enrage|special/i.test(lower)) return '💀';
+  if (/enrage/i.test(lower)) return '💀';
+
+  if (targetCount >= 6) return '⚔️';
 
   return '⚔️';
 }

@@ -61,6 +61,8 @@ export function parseFFLogsEvents(
   const processedIds = new Set<string>();
 
   for (const event of events) {
+    if (event.type !== 'damage') continue;
+
     // Get ability info - FFLogs v2 uses abilityGameID, we look up name from masterData
     const abilityGameID = event.abilityGameID ?? event.ability?.guid;
     if (!abilityGameID) continue;
@@ -107,8 +109,8 @@ export function parseFFLogsEvents(
     // Determine if this is a tank buster
     const isTankBuster = isTankBusterEvent(event, abilityName);
 
-    // Get damage values for formatting
-    const totalDamage = event.unmitigatedAmount ?? event.amount ?? event.damage ?? 0;
+    // Get damage values for formatting - prefer unmitigated
+    const totalDamage = event.unmitigatedAmount ?? 0;
     const damageStr = formatDamageValue(totalDamage, event);
 
     // Create the action
