@@ -12,7 +12,17 @@ import { bosses } from '../../data';
 import { getTimelinesByBossTag } from '../../services/timelineService';
 
 // Define which bosses have timelines implemented
-const ENABLED_BOSS_IDS = ['vamp-fatale-m9s'];
+const ENABLED_BOSS_IDS = [
+  'vamp-fatale-m9s',
+  'red-hot-deep-blue-m10s',
+  'dancing-green-m5s',
+  'sugar-riot',
+  'brute-abominator-m7s',
+  'howling-blade-m8s',
+  'ketuduke',
+  'lala',
+  'statice'
+];
 
 // Define tier groupings for boss selection
 const BOSS_TIERS = [
