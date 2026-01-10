@@ -1,74 +1,16 @@
 import { useState } from 'react';
 import { Share2, Edit2, Check, X, Copy, Trash2, FileText, BookmarkX, Globe, Lock } from 'lucide-react';
-import { useToast } from '../common/Toast';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { deleteTimeline, duplicateTimeline, getShareableLink, removeFromCollection, togglePublicStatus } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
-import { BUTTON, CARD, cn } from '../../styles/designSystem';
-
-const Card = ({ children, className = '', ...rest }) => (
-  <div
-    {...rest}
-    className={cn(CARD.interactive, 'p-6', className)}
-  >
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex justify-between items-start mb-4 ${className}`}>{children}</div>
-);
-
-const TimelineNameContainer = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex items-center gap-2 flex-1 min-w-0 ${className}`}>{children}</div>
-);
-
-const TimelineName = ({ children, className = '', ...rest }) => (
-  <h3 {...rest} className={`text-[1.25rem] font-semibold m-0 leading-snug flex-1 min-w-0 break-words ${className}`}>{children}</h3>
-);
-
-const EditButton = ({ children, className = '', ...rest }) => (
-  <button
-    {...rest}
-    className={`bg-transparent border-0 text-[var(--color-textSecondary)] cursor-pointer p-1 rounded flex items-center justify-center transition-colors flex-shrink-0 hover:bg-[var(--select-bg)] hover:text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-  >
-    {children}
-  </button>
-);
-
-const CardContent = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`space-y-3 ${className}`}>{children}</div>
-);
-
-const InfoRow = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex items-center gap-2 text-sm text-[var(--color-textSecondary)] ${className}`}>{children}</div>
-);
-
-const CardActions = ({ children, className = '', ...rest }) => (
-  <div {...rest} className={`flex flex-wrap gap-2 mt-4 pt-4 border-t border-[var(--color-border)] ${className}`}>{children}</div>
-);
-
-const ActionButton = ({ children, className = '', variant = 'primary', ...rest }) => {
-  const variantClasses = {
-    primary: BUTTON.primary.small,
-    secondary: BUTTON.secondary.small,
-    danger: BUTTON.danger.small,
-    ghost: BUTTON.variant.ghost + ' ' + BUTTON.size.small,
-  };
-
-  return (
-    <button
-      {...rest}
-      className={cn(variantClasses[variant] || variantClasses.primary, 'gap-2', className)}
-    >
-      {children}
-    </button>
-  );
-};
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
-  const { addToast } = useToast();
   const { user, isAnonymousMode, anonymousUser } = useAuth();
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -76,7 +18,6 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
   const [isPublic, setIsPublic] = useState(timeline.isPublic || false);
   const [togglingPublic, setTogglingPublic] = useState(false);
 
-  // Check if current user owns this timeline
   const isOwner = () => {
     if (isAnonymousMode) {
       return anonymousUser?.id === timeline.userId;
@@ -86,23 +27,19 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     }
   };
 
-  // Get boss name from bossId
   const getBossName = () => {
     const boss = bosses.find(b => b.id === timeline.bossId);
     return boss ? `${boss.icon} ${boss.name}` : timeline.bossId;
   };
 
-  // Handle edit timeline
   const handleEdit = () => {
     navigate(`/timeline/edit/${timeline.id}`);
   };
 
-  // Handle view timeline
   const handleView = () => {
     navigate(`/timeline/view/${timeline.id}`);
   };
 
-  // Handle toggle public status
   const handleTogglePublic = async () => {
     if (togglingPublic || !isOwner()) return;
 
@@ -113,33 +50,23 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       await togglePublicStatus(timeline.id, newPublicStatus);
       setIsPublic(newPublicStatus);
 
-      addToast({
-        type: 'success',
-        title: newPublicStatus ? 'Timeline is now public' : 'Timeline is now private',
-        message: newPublicStatus
+      toast.success(newPublicStatus ? 'Timeline is now public' : 'Timeline is now private', {
+        description: newPublicStatus
           ? 'Your timeline is now visible in the Browse Timelines page.'
-          : 'Your timeline is now private and only visible to you.',
-        duration: 3000
+          : 'Your timeline is now private and only visible to you.'
       });
 
-      // Notify parent to refresh if needed
       if (onTimelineChanged) {
         onTimelineChanged();
       }
     } catch (error) {
       console.error('Error toggling public status:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to update visibility',
-        message: error.message || 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to update visibility', { description: 'Please try again.' });
     } finally {
       setTogglingPublic(false);
     }
   };
 
-  // Handle duplicate timeline
   const handleDuplicate = async () => {
     if (loading) return;
 
@@ -151,37 +78,24 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       }
 
       await duplicateTimeline(timeline.id, userId);
-      addToast({
-        type: 'success',
-        title: 'Timeline duplicated!',
-        message: 'Your timeline has been duplicated successfully.',
-        duration: 3000
-      });
+      toast.success('Timeline duplicated!', { description: 'Your timeline has been duplicated successfully.' });
 
-      // Notify parent to refresh
       if (onTimelineChanged) {
         onTimelineChanged();
       }
     } catch (error) {
       console.error('Error duplicating timeline:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to duplicate timeline',
-        message: error.message || 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to duplicate timeline', { description: 'Please try again.' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle remove from collection
   const handleRemoveFromCollection = async () => {
     if (loading) return;
 
     setLoading(true);
 
-    // Optimistic update: Remove timeline from UI immediately
     if (onTimelineDeleted) {
       onTimelineDeleted(timeline.id);
     }
@@ -193,27 +107,15 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       }
 
       await removeFromCollection(userId, timeline.id);
-      addToast({
-        type: 'success',
-        title: 'Removed from collection!',
-        message: 'Timeline has been removed from your collection.',
-        duration: 3000
-      });
+      toast.success('Removed from collection!', { description: 'Timeline has been removed from your collection.' });
 
-      // Notify parent to refresh
       if (onTimelineChanged) {
         onTimelineChanged();
       }
     } catch (error) {
       console.error('Error removing from collection:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to remove timeline',
-        message: error.message || 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to remove timeline', { description: 'Please try again.' });
 
-      // Revert optimistic update on error
       if (onTimelineChanged) {
         onTimelineChanged();
       }
@@ -222,14 +124,12 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     }
   };
 
-  // Handle delete timeline
   const handleDelete = async () => {
     if (loading) return;
 
     setLoading(true);
     setShowDeleteConfirm(false);
 
-    // Optimistic update: Remove timeline from UI immediately
     if (onTimelineDeleted) {
       onTimelineDeleted(timeline.id);
     }
@@ -241,27 +141,15 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
       }
 
       await deleteTimeline(timeline.id, userId);
-      addToast({
-        type: 'success',
-        title: 'Timeline deleted!',
-        message: 'Your timeline has been deleted successfully.',
-        duration: 3000
-      });
+      toast.success('Timeline deleted!', { description: 'Your timeline has been deleted successfully.' });
 
-      // Notify parent for any additional cleanup
       if (onTimelineChanged) {
         onTimelineChanged();
       }
     } catch (error) {
       console.error('Error deleting timeline:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to delete timeline',
-        message: error.message || 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to delete timeline', { description: 'Please try again.' });
 
-      // Rollback: Reload timelines on error
       if (onTimelineChanged) {
         onTimelineChanged();
       }
@@ -270,34 +158,21 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     }
   };
 
-  // Handle copy share link
   const handleCopyShareLink = async () => {
     try {
       const shareLink = getShareableLink(timeline.id);
       await navigator.clipboard.writeText(shareLink);
-      addToast({
-        type: 'success',
-        title: 'Share link copied!',
-        message: 'The share link has been copied to your clipboard.',
-        duration: 3000
-      });
+      toast.success('Share link copied!', { description: 'The share link has been copied to your clipboard.' });
     } catch (error) {
       console.error('Error copying share link:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to copy share link',
-        message: 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to copy share link', { description: 'Please try again.' });
     }
   };
 
-  // Handle create mitplan from timeline
   const handleCreateMitplan = () => {
     navigate(`/plan/create-from-timeline/${timeline.id}`);
   };
 
-  // Format date
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Unknown';
     const date = new Date(timestamp);
@@ -306,135 +181,127 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <TimelineNameContainer>
-            <TimelineName>{timeline.name}</TimelineName>
-          </TimelineNameContainer>
+      <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl font-semibold leading-snug truncate">
+            {timeline.name}
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
-          <InfoRow>
+        <CardContent className="flex-1 space-y-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-semibold">Boss:</span>
             <span>{getBossName()}</span>
-          </InfoRow>
+          </div>
 
-          <InfoRow>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-semibold">Actions:</span>
             <span>{timeline.actions?.length || 0} boss actions</span>
-          </InfoRow>
+          </div>
 
           {timeline.description && (
-            <InfoRow>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="font-semibold">Description:</span>
               <span className="truncate">{timeline.description}</span>
-            </InfoRow>
+            </div>
           )}
 
-          <InfoRow>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-semibold">Updated:</span>
             <span>{formatDate(timeline.updatedAt)}</span>
-          </InfoRow>
+          </div>
 
           {isOwner() && (
-            <InfoRow>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="font-semibold">Visibility:</span>
-              <button
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleTogglePublic}
                 disabled={togglingPublic}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--select-bg)] hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-primary)]"
+                className={cn("h-7 px-2 text-xs", isPublic ? "text-primary" : "text-muted-foreground")}
                 title={isPublic ? 'Click to make private' : 'Click to make public'}
               >
                 {isPublic ? (
                   <>
-                    <Globe size={14} />
-                    <span className="text-xs font-medium">Public</span>
+                    <Globe size={14} className="mr-1.5" />
+                    Public
                   </>
                 ) : (
                   <>
-                    <Lock size={14} />
-                    <span className="text-xs font-medium">Private</span>
+                    <Lock size={14} className="mr-1.5" />
+                    Private
                   </>
                 )}
-              </button>
-            </InfoRow>
+              </Button>
+            </div>
           )}
         </CardContent>
 
-        <CardActions>
+        <CardFooter className="flex flex-wrap gap-2 pt-4 border-t border-border">
           {isOwner() && (
-            <ActionButton onClick={handleEdit} variant="primary" disabled={loading}>
+            <Button onClick={handleEdit} disabled={loading} className="gap-2">
               <Edit2 size={16} />
               Edit
-            </ActionButton>
+            </Button>
           )}
 
-          <ActionButton onClick={handleView} disabled={loading}>
+          <Button variant="secondary" onClick={handleView} disabled={loading} className="gap-2">
             <FileText size={16} />
             View
-          </ActionButton>
+          </Button>
 
-          <ActionButton onClick={handleCreateMitplan} disabled={loading}>
+          <Button variant="secondary" onClick={handleCreateMitplan} disabled={loading} className="gap-2">
             <FileText size={16} />
             Create Mitplan
-          </ActionButton>
+          </Button>
 
-          <ActionButton onClick={handleDuplicate} disabled={loading}>
+          <Button variant="secondary" onClick={handleDuplicate} disabled={loading} className="gap-2">
             <Copy size={16} />
             Duplicate
-          </ActionButton>
+          </Button>
 
-          <ActionButton onClick={handleCopyShareLink} disabled={loading}>
+          <Button variant="secondary" onClick={handleCopyShareLink} disabled={loading} className="gap-2">
             <Share2 size={16} />
             Copy Link
-          </ActionButton>
+          </Button>
 
           {isOwner() && (
-            <ActionButton onClick={() => setShowDeleteConfirm(true)} variant="danger" disabled={loading}>
+            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading} className="gap-2">
               <Trash2 size={16} />
               Delete
-            </ActionButton>
+            </Button>
           )}
 
           {!isOwner() && timeline.inCollection && (
-            <ActionButton onClick={handleRemoveFromCollection} variant="secondary" disabled={loading}>
+            <Button variant="secondary" onClick={handleRemoveFromCollection} disabled={loading} className="gap-2">
               <BookmarkX size={16} />
               Remove from Collection
-            </ActionButton>
+            </Button>
           )}
-        </CardActions>
+        </CardFooter>
       </Card>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--color-cardBackground)] rounded-xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-xl font-semibold mb-4 text-[var(--color-text)]">Delete Timeline?</h3>
-            <p className="text-[var(--color-textSecondary)] mb-6">
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Timeline?</DialogTitle>
+            <DialogDescription>
               Are you sure you want to delete "{timeline.name}"? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={loading}
-                className="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
+              {loading ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
 
 export default TimelineCard;
-

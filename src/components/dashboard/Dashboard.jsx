@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
-import { useToast } from '../common/Toast';
+import { toast } from 'sonner';
 import unifiedPlanService from '../../services/unifiedPlanService';
 import { getUserTimelines } from '../../services/timelineService';
 import PlanCard from './PlanCard';
@@ -17,7 +17,7 @@ import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
-import { BUTTON } from '../../styles/designSystem';
+import { Button } from '@/components/ui/button';
 
 
 
@@ -27,7 +27,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { loadUserPlans } = usePlan();
-  const { addToast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
   const [showCustomTimelineModal, setShowCustomTimelineModal] = useState(false);
@@ -166,24 +165,14 @@ const Dashboard = () => {
       const newPlan = await unifiedPlanService.createPlan(planData);
       console.log('[Dashboard] Plan created from timeline:', newPlan);
 
-      addToast({
-        type: 'success',
-        title: 'Plan created!',
-        message: `Plan created from timeline "${timeline.name}"`,
-        duration: 3000
-      });
+      toast.success('Plan created!', { description: `Plan created from timeline "${timeline.name}"` });
 
       // Refresh plans and navigate to the new plan
       loadCategorizedPlans();
       handleNavigateToPlanner(newPlan.id);
     } catch (error) {
       console.error('Error creating plan from timeline:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to create plan',
-        message: error.message || 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to create plan', { description: error.message || 'Please try again.' });
     }
   };
 
@@ -251,9 +240,9 @@ const Dashboard = () => {
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <button onClick={handleLogout} className={BUTTON.danger.small}>
+          <Button variant="destructive" size="sm" onClick={handleLogout}>
             Sign Out
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -264,12 +253,12 @@ const Dashboard = () => {
       )}
 
       <div className="mb-8 flex flex-wrap gap-4">
-        <button onClick={handleCreatePlanByBoss} className={BUTTON.primary.medium}>
+        <Button onClick={handleCreatePlanByBoss}>
           Create New Plan
-        </button>
-        <button onClick={handleImportPlan} className={BUTTON.secondary.medium}>
+        </Button>
+        <Button variant="secondary" onClick={handleImportPlan}>
           Import Plan
-        </button>
+        </Button>
       </div>
 
       {categorizedPlans.totalPlans === 0 ? (
@@ -279,9 +268,9 @@ const Dashboard = () => {
             Create your first mitigation plan to get started with optimizing your raid strategies.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button onClick={handleCreatePlanByBoss} className={BUTTON.primary.medium}>
+            <Button onClick={handleCreatePlanByBoss}>
               Create Your First Plan
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -354,18 +343,12 @@ const Dashboard = () => {
                 <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
               </div>
               <div className="flex gap-4">
-                <button
-                  onClick={handleCreateTimeline}
-                  className={BUTTON.primary.medium}
-                >
+                <Button onClick={handleCreateTimeline}>
                   Create Timeline
-                </button>
-                <button
-                  onClick={() => navigate('/timeline/browse')}
-                  className={BUTTON.secondary.medium}
-                >
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/timeline/browse')}>
                   Browse Timelines
-                </button>
+                </Button>
               </div>
             </div>
 

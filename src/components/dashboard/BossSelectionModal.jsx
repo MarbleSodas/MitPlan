@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { bosses } from '../../data';
-import { BUTTON, MODAL, CARD, cn } from '../../styles/designSystem';
+import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
@@ -77,51 +86,51 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
   };
 
   return (
-    <div onClick={onClose} className={cn(MODAL.overlay, 'z-[1000] backdrop-blur-sm')}>
-      <div onClick={(e) => e.stopPropagation()} className={cn(MODAL.container, 'max-w-3xl p-8')}>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className={cn(MODAL.title, 'text-2xl mb-2')}>Select Boss Encounter (Optional)</h2>
-            <p className="text-[var(--color-textSecondary)] text-base">Choose a boss to start with their timeline, or create a custom plan</p>
-          </div>
-          <button onClick={onClose} className={cn(BUTTON.ghost, 'w-8 h-8 p-0')}>×</button>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Select Boss Encounter (Optional)</DialogTitle>
+          <DialogDescription>
+            Choose a boss to start with their timeline, or create a custom plan
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Custom Timeline Option */}
-        <div
+        <Card
           onClick={handleNoBossClick}
-          className={cn(CARD.interactive, 'border-2 border-dashed p-4 mb-6 flex items-center gap-4', selectedBoss?.id === null && 'opacity-70 scale-[0.98]')}
+          className={cn(
+            'border-2 border-dashed p-4 flex items-center gap-4 cursor-pointer hover:bg-accent hover:-translate-y-0.5 transition-all',
+            selectedBoss?.id === null && 'opacity-70 scale-[0.98]'
+          )}
         >
           <div className="text-2xl">✨</div>
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-text)]">Custom Timeline</h3>
-            <p className="text-sm text-[var(--color-textSecondary)] m-0">Create from scratch using the boss actions library</p>
+            <h3 className="text-base font-semibold text-foreground">Custom Timeline</h3>
+            <p className="text-sm text-muted-foreground m-0">Create from scratch using the boss actions library</p>
           </div>
-        </div>
+        </Card>
 
-        {/* Tier Sections */}
-        <div className="border border-[var(--color-border)] rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
+        <div className="border border-border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto mt-4">
           {BOSS_TIERS.map(tier => {
             const tierBosses = tier.bossIds
               .map(id => bosses.find(b => b.id === id))
               .filter(Boolean);
             
             return (
-              <div key={tier.id} className="border-b border-[var(--color-border)] last:border-b-0">
+              <div key={tier.id} className="border-b border-border last:border-b-0">
                 <button
                   type="button"
                   onClick={() => toggleTier(tier.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-bgSecondary)] hover:bg-[var(--color-bgHover)] transition-colors text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors text-left"
                 >
-                  <span className="font-medium text-[var(--color-text)]">{tier.name}</span>
+                  <span className="font-medium text-foreground">{tier.name}</span>
                   {expandedTiers[tier.id] ? (
-                    <ChevronDown size={18} className="text-[var(--color-textSecondary)]" />
+                    <ChevronDown size={18} className="text-muted-foreground" />
                   ) : (
-                    <ChevronRight size={18} className="text-[var(--color-textSecondary)]" />
+                    <ChevronRight size={18} className="text-muted-foreground" />
                   )}
                 </button>
                 {expandedTiers[tier.id] && (
-                  <div className="bg-[var(--color-bg)] grid grid-cols-2 gap-3 p-3">
+                  <div className="bg-background grid grid-cols-2 gap-3 p-3">
                     {tierBosses.map(boss => {
                       const enabled = isBossEnabled(boss.id);
                       const isSelected = selectedBoss?.id === boss.id;
@@ -132,9 +141,9 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                           onClick={() => handleBossClick(boss)}
                           className={cn(
                             'p-4 rounded-lg border transition-all text-center',
-                            enabled && !isSelected && 'border-[var(--color-border)] hover:border-blue-400 hover:bg-[var(--color-bgHover)] cursor-pointer',
-                            enabled && isSelected && 'border-blue-500 bg-blue-50 dark:bg-blue-950/40',
-                            !enabled && 'border-[var(--color-border)] opacity-50 cursor-not-allowed'
+                            enabled && !isSelected && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
+                            enabled && isSelected && 'border-primary bg-primary/10',
+                            !enabled && 'border-border opacity-50 cursor-not-allowed'
                           )}
                         >
                           <div className="text-2xl mb-2">
@@ -146,7 +155,7 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                           </div>
                           <h3 className={cn(
                             'text-sm font-semibold mb-1',
-                            enabled ? 'text-[var(--color-text)]' : 'text-[var(--color-textSecondary)]'
+                            enabled ? 'text-foreground' : 'text-muted-foreground'
                           )}>{boss.name}</h3>
                           {!enabled && (
                             <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
@@ -162,8 +171,8 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
             );
           })}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

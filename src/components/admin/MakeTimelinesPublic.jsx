@@ -54,9 +54,9 @@ const MakeTimelinesPublic = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg p-6">
+        <div className="bg-card border border-border rounded-lg p-6">
           <h1 className="text-2xl font-bold mb-4">Admin Utility: Make All Timelines Public</h1>
           
           <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
@@ -69,7 +69,7 @@ const MakeTimelinesPublic = () => {
           <button
             onClick={handleMakePublic}
             disabled={loading}
-            className="w-full px-6 py-3 bg-[var(--color-primary)] text-[var(--color-buttonText)] rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Processing...' : 'Make All Timelines Public'}
           </button>
@@ -84,19 +84,19 @@ const MakeTimelinesPublic = () => {
                 {result.message}
               </p>
               {result.success && result.count > 0 && (
-                <p className="text-sm text-[var(--color-textSecondary)] mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   {result.count} timeline(s) were updated to be public.
                 </p>
               )}
             </div>
           )}
 
-          <div className="mt-6 text-sm text-[var(--color-textSecondary)]">
+          <div className="mt-6 text-sm text-muted-foreground">
             <p className="mb-2"><strong>What this does:</strong></p>
             <ul className="list-disc list-inside space-y-1">
               <li>Fetches all timelines from the database</li>
-              <li>Sets <code className="bg-[var(--color-background)] px-1 rounded">isPublic: true</code> for each timeline</li>
-              <li>Updates the <code className="bg-[var(--color-background)] px-1 rounded">updatedAt</code> timestamp</li>
+              <li>Sets <code className="bg-background px-1 rounded">isPublic: true</code> for each timeline</li>
+              <li>Updates the <code className="bg-background px-1 rounded">updatedAt</code> timestamp</li>
               <li>Uses batch updates for efficiency</li>
             </ul>
           </div>

@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
+import { RefreshCw } from 'lucide-react';
 import { useTankPositionContext } from '../../contexts/TankPositionContext';
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 import { useRealtimeBossContext } from '../../contexts/RealtimeBossContext';
 import { baseHealthValues } from '../../data/bosses/bossData';
-
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 /**
  * Component for selecting tank positions (MT/OT)
  * Only visible when exactly 2 tank jobs are selected
  */
 const TankPositionSelector = () => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
   const {
     tankPositions,
     assignTankPosition,
@@ -62,104 +63,113 @@ const TankPositionSelector = () => {
 
   if (selectedTankJobs.length !== 2) return null;
 
-  const containerStyle = { backgroundColor: colors.secondary };
-  const titleBorderStyle = { borderBottomColor: colors.border, color: colors.text };
-  const cardStyle = { backgroundColor: colors.cardBackground };
-
   const renderTankCard = (title, roleKey) => (
-    <div className="rounded-md p-4 flex flex-col items-center shadow-sm" style={cardStyle}>
-      <h4 className="m-0 mb-2 text-center" style={{ color: colors.text }}>{title}</h4>
-      <div className="w-full flex items-center justify-center">
-        <div className="flex flex-wrap justify-center gap-2">
-          {selectedTankJobs.map((tank) => {
-            const selected = tankPositions[roleKey] === tank.id;
-            const disabled = tankPositions[roleKey === 'mainTank' ? 'offTank' : 'mainTank'] === tank.id;
-            const optStyle = {
-              backgroundColor: selected ? colors.primary : colors.background,
-              opacity: disabled ? 0.5 : 1,
-            };
-            return (
-              <div
-                key={`${roleKey}-${tank.id}`}
-                className="flex flex-col items-center p-2 rounded-md w-20 transition-all cursor-pointer hover:brightness-105"
-                style={optStyle}
-                onClick={() => assignTankPosition(tank.id, roleKey)}
-              >
-                <div className="w-12 h-12 mb-1 flex items-center justify-center">
-                  {typeof tank.icon === 'string' && tank.icon.startsWith('/') ? (
-                    <img src={tank.icon} alt={tank.name} style={{ maxHeight: '48px', maxWidth: '48px' }} />
-                  ) : (
-                    tank.icon
+    <Card className="shadow-sm bg-card border border-border">
+      <div className="p-4 flex flex-col items-center">
+        <h4 className="m-0 mb-2 text-center font-medium text-foreground">{title}</h4>
+        <div className="w-full flex items-center justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
+            {selectedTankJobs.map((tank) => {
+              const selected = tankPositions[roleKey] === tank.id;
+              const assignedToOther = tankPositions[roleKey === 'mainTank' ? 'offTank' : 'mainTank'] === tank.id;
+              
+              return (
+                <div
+                  key={`${roleKey}-${tank.id}`}
+                  className={cn(
+                    "flex flex-col items-center p-2 rounded-md w-20 transition-all cursor-pointer border-2 hover:brightness-105",
+                    selected 
+                      ? "bg-primary/20 border-primary" 
+                      : assignedToOther
+                        ? "bg-muted/50 border-muted-foreground/30 hover:border-primary/50"
+                        : "bg-background border-transparent hover:border-primary/50"
                   )}
+                  onClick={() => assignTankPosition(tank.id, roleKey)}
+                  title={assignedToOther ? `Click to swap ${tank.name} to ${title}` : `Assign ${tank.name} as ${title}`}
+                >
+                  <div className="w-12 h-12 mb-1 flex items-center justify-center">
+                    {typeof tank.icon === 'string' && tank.icon.startsWith('/') ? (
+                      <img src={tank.icon} alt={tank.name} className="max-h-12 max-w-12 object-contain" />
+                    ) : (
+                      tank.icon
+                    )}
+                  </div>
+                  <div className={cn(
+                    "text-center text-sm font-medium",
+                    selected ? "text-primary" : assignedToOther ? "text-muted-foreground" : "text-muted-foreground"
+                  )}>
+                    {tank.name}
+                  </div>
                 </div>
-                <div className="text-center text-sm" style={{ color: selected ? colors.buttonText : colors.text }}>
-                  {tank.name}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 
   return (
-    <div className="rounded-md p-4 mb-5 shadow-md transition-colors" style={containerStyle}>
-      <h3 className="m-0 mb-4 pb-2 border-b" style={titleBorderStyle}>Tank Positions</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-        {renderTankCard('Main Tank (MT)', 'mainTank')}
-        {renderTankCard('Off Tank (OT)', 'offTank')}
-      </div>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 place-items-center">
-        <div className="flex items-center gap-2 justify-center">
-          <span className="text-xs opacity-70" style={{ color: colors.text }}>MT Max HP</span>
-          <input
-            type="number"
-            min={1}
-            step={100}
-            value={mtMaxHp}
-            onChange={(e) => setMtMaxHp(Number(e.target.value))}
-            onBlur={() => persistTankHp('mainTank', mtMaxHp)}
-            className="w-28 px-2 py-1 rounded border text-right"
-            aria-label={`Main Tank max HP`}
-          />
-          <button
-            type="button"
-            onClick={() => resetTankHpToDefault('mainTank')}
-            aria-label={`Reset Main Tank HP to default`}
-            title="Reset to default"
-            className="flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 text-blue-500 hover:text-white hover:bg-blue-500"
-          >
-            <span aria-hidden="true" className="text-base leading-none">⟳</span>
-          </button>
+    <Card className="mb-5 bg-card border-border">
+      <CardHeader className="pb-2 border-b border-border">
+        <CardTitle className="text-lg font-semibold text-foreground">Tank Positions</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTankCard('Main Tank (MT)', 'mainTank')}
+          {renderTankCard('Off Tank (OT)', 'offTank')}
         </div>
-        <div className="flex items-center gap-2 justify-center">
-          <span className="text-xs opacity-70" style={{ color: colors.text }}>OT Max HP</span>
-          <input
-            type="number"
-            min={1}
-            step={100}
-            value={otMaxHp}
-            onChange={(e) => setOtMaxHp(Number(e.target.value))}
-            onBlur={() => persistTankHp('offTank', otMaxHp)}
-            className="w-28 px-2 py-1 rounded border text-right"
-            aria-label={`Off Tank max HP`}
-          />
-          <button
-            type="button"
-            onClick={() => resetTankHpToDefault('offTank')}
-            aria-label={`Reset Off Tank HP to default`}
-            title="Reset to default"
-            className="flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 text-blue-500 hover:text-white hover:bg-blue-500"
-          >
-            <span aria-hidden="true" className="text-base leading-none">⟳</span>
-          </button>
-        </div>
-      </div>
+        
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 place-items-center">
+          <div className="flex items-center gap-2 justify-center w-full">
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap w-20 text-right">MT Max HP</span>
+            <Input
+              type="number"
+              min={1}
+              step={100}
+              value={mtMaxHp}
+              onChange={(e) => setMtMaxHp(Number(e.target.value))}
+              onBlur={() => persistTankHp('mainTank', mtMaxHp)}
+              className="min-w-[18px] w-auto mx-[2px] text-right bg-background h-8 [field-sizing:content] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              aria-label="Main Tank max HP"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => resetTankHpToDefault('mainTank')}
+              title="Reset to default"
+              className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+            >
+              <RefreshCw size={14} />
+            </Button>
+          </div>
 
-    </div>
+          <div className="flex items-center gap-2 justify-center w-full">
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap w-20 text-right">OT Max HP</span>
+            <Input
+              type="number"
+              min={1}
+              step={100}
+              value={otMaxHp}
+              onChange={(e) => setOtMaxHp(Number(e.target.value))}
+              onBlur={() => persistTankHp('offTank', otMaxHp)}
+              className="min-w-[18px] w-auto mx-[2px] text-right bg-background h-8 [field-sizing:content] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              aria-label="Off Tank max HP"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => resetTankHpToDefault('offTank')}
+              title="Reset to default"
+              className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+            >
+              <RefreshCw size={14} />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
-
 
 export default TankPositionSelector;

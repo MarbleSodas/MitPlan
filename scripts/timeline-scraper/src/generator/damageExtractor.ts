@@ -6,7 +6,7 @@ import { extractBossActorIds, createAbilityLookup } from '../sources/fflogs/pars
 import { discoverAndValidateReports, type ValidatedReport } from '../sources/fflogs/discover.js';
 import { getBossMapping, createConfig } from '../config/index.js';
 import { formatDamageValue, determineDamageType } from '../utils/damage.js';
-import { median, filterOutliersIQR, clusterByProximity } from '../utils/statistics.js';
+import { median, filterOutliersIQR, clusterByProximity, stdDev } from '../utils/statistics.js';
 
 export interface DamageExtractorOptions {
   bossId: string;
@@ -45,6 +45,14 @@ interface DamageOccurrence {
   uniqueTargetCount: number;
   hitCount: number;
   damageType: 'physical' | 'magical' | 'mixed';
+  /** Target counts per report - used for consistency analysis */
+  targetCountsPerReport: number[];
+  /** Median number of targets hit per report */
+  medianTargetCount: number;
+  /** Standard deviation of target counts - low = consistent targeting */
+  targetCountStdDev: number;
+  /** Damage per target (medianDamage / medianTargetCount) */
+  perTargetDamage: number;
 }
 
 interface AbilityDamageEvent {
@@ -229,6 +237,26 @@ export async function extractDamageTimeline(
         const damageTypes = clusterEvents.map((e) => e.damageType);
         const damageType = getMostCommonDamageType(damageTypes);
 
+        const eventsByReport = new Map<string, AbilityDamageEvent[]>();
+        for (const event of clusterEvents) {
+          if (!eventsByReport.has(event.reportCode)) {
+            eventsByReport.set(event.reportCode, []);
+          }
+          eventsByReport.get(event.reportCode)!.push(event);
+        }
+
+        const targetCountsPerReport: number[] = [];
+        for (const [_, reportEvents] of eventsByReport) {
+          const uniqueTargetsInReport = new Set(reportEvents.map((e) => e.targetId));
+          targetCountsPerReport.push(uniqueTargetsInReport.size);
+        }
+
+        const medianTargetCount = median(targetCountsPerReport);
+        const targetCountStdDev = stdDev(targetCountsPerReport);
+        const perTargetDamage = medianTargetCount > 0
+          ? median(filterResult.filtered) / medianTargetCount
+          : median(filterResult.filtered);
+
         allOccurrences.push({
           abilityName: abilityData.abilityName,
           abilityId: abilityData.abilityId,
@@ -238,6 +266,10 @@ export async function extractDamageTimeline(
           uniqueTargetCount: uniqueTargets.size,
           hitCount: clusterEvents.length,
           damageType,
+          targetCountsPerReport,
+          medianTargetCount,
+          targetCountStdDev,
+          perTargetDamage,
         });
       }
     }
@@ -384,14 +416,16 @@ function buildTimelineFromOccurrences(
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_|_$/g, '');
 
-    const isTankBuster = detectTankBuster(
+    const detection = detectTankBuster(
       occ.abilityName,
       occ.medianDamage,
-      occ.uniqueTargetCount,
+      occ.medianTargetCount,
+      occ.targetCountStdDev,
+      occ.perTargetDamage,
       thresholds
     );
 
-    const isDualTankBuster = isTankBuster && occ.uniqueTargetCount === 2;
+    const { isTankBuster, isDualTankBuster } = detection;
 
     const importance = determineImportance(occ.medianDamage, isTankBuster, thresholds);
     const icon = getIconForAction(occ.abilityName, isTankBuster, occ.uniqueTargetCount);
@@ -419,19 +453,37 @@ function buildTimelineFromOccurrences(
   return actions;
 }
 
+interface TankBusterDetectionResult {
+  isTankBuster: boolean;
+  isDualTankBuster: boolean;
+}
+
 function detectTankBuster(
   name: string,
-  damage: number,
-  uniqueTargetCount: number,
+  medianDamage: number,
+  medianTargetCount: number,
+  targetCountStdDev: number,
+  perTargetDamage: number,
   thresholds: DamageThresholds
-): boolean {
+): TankBusterDetectionResult {
   const tankBusterPatterns = [/buster/i, /cleave/i, /divide/i, /saber/i];
-  if (tankBusterPatterns.some((p) => p.test(name))) return true;
+  if (tankBusterPatterns.some((p) => p.test(name))) {
+    const isDual = medianTargetCount >= 1.5 && medianTargetCount <= 2.5;
+    return { isTankBuster: true, isDualTankBuster: isDual };
+  }
 
-  const isHighDamage = damage >= thresholds.p75;
-  const hitsOnlyTanks = uniqueTargetCount <= 2 && uniqueTargetCount > 0;
+  const isConsistentTargetCount = targetCountStdDev <= 0.5;
+  const hitsOnlyTanks = medianTargetCount >= 0.8 && medianTargetCount <= 2.5;
+  const isHighPerTargetDamage = perTargetDamage >= thresholds.p75;
 
-  return isHighDamage && hitsOnlyTanks;
+  const isTankBuster = isConsistentTargetCount && hitsOnlyTanks && isHighPerTargetDamage;
+
+  const isDualTankBuster = isTankBuster &&
+    medianTargetCount >= 1.5 &&
+    medianTargetCount <= 2.5 &&
+    targetCountStdDev <= 0.3;
+
+  return { isTankBuster, isDualTankBuster };
 }
 
 function determineImportance(

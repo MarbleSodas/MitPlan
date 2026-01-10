@@ -18,6 +18,7 @@ import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
+import { Button } from '../ui/button';
 import HealingPotencyInput from '../common/HealingPotencyInput/HealingPotencyInput';
 import PrecastToggle from '../common/PrecastToggle';
 import Footer from '../layout/Footer';
@@ -414,19 +415,22 @@ const PlanningInterface = () => {
         <TankPositionSelector />
       </div>
 
-      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-cardBackground)]">
+      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-border bg-card">
         <FilterToggle />
         <PrecastToggle />
         <PartyMinHealthInput />
         <HealingPotencyInput />
       </div>
 
-      {/* Fullscreen toggle row above the split panels */}
-      <div className="flex items-center justify-end mb-2">
+      {/* Section headers with fullscreen toggle */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-8">
+          <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
+        </div>
         <button
           type="button"
           onClick={openFullscreen}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-[var(--color-border)] text-[var(--color-text)] bg-[var(--color-cardBackground)] hover:bg-[var(--select-bg)] transition"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border text-foreground bg-card hover:bg-muted transition"
           aria-label="Enter fullscreen for timeline and mitigations"
           title="Enter fullscreen"
         >
@@ -436,7 +440,7 @@ const PlanningInterface = () => {
 
 
       <div ref={splitContainerRef} className="flex w-full gap-4">
-        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-[var(--color-background)] rounded-xl p-4 pb-6 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
           <div className="relative flex flex-col p-4 w-full grow">
             {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
@@ -479,7 +483,7 @@ const PlanningInterface = () => {
             <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
               <div className="my-2 w-px bg-[var(--color-border)]" />
             </div>
-            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-[var(--color-background)] rounded-xl p-4 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] min-w-0">
+            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] min-w-0">
             <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
@@ -528,13 +532,13 @@ const PlanningInterface = () => {
 	        >
 	          {/* Click blocker to prevent background interaction */}
 	          <div className="absolute inset-0" onClick={closeFullscreen} />
-	          <div className={`relative m-4 flex w-[min(1800px,100%)] max-w-[100%] gap-4 rounded-xl bg-[var(--color-cardBackground)] p-4 shadow-2xl transition-transform duration-300 ${fsOpen ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.99]'}`}
+	          <div className={`relative m-4 flex w-[min(1800px,100%)] max-w-[100%] gap-4 rounded-xl bg-card p-4 shadow-2xl transition-transform duration-300 ${fsOpen ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.99]'}`}
 	               onClick={(e) => e.stopPropagation()}>
 	            {/* Exit button */}
 	            <button
 	              type="button"
 	              onClick={closeFullscreen}
-	              className="absolute right-3 top-3 inline-flex items-center justify-center h-8 w-8 rounded-md text-[var(--color-buttonText)] bg-[var(--color-primary)] hover:brightness-110 transition z-50"
+	              className="absolute right-3 top-3 inline-flex items-center justify-center h-8 w-8 rounded-md text-primary-foreground bg-primary hover:brightness-110 transition z-50"
 	              aria-label="Exit fullscreen"
 	              title="Exit fullscreen (Esc)"
 	            >
@@ -544,7 +548,7 @@ const PlanningInterface = () => {
 	            <div className="flex w-full gap-4 h-[calc(100vh-64px)]">
 	              {/* Timeline column */}
 	              <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
-	                   className="rounded-xl p-4 pb-6 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-full min-h-[400px] flex flex-col min-w-0 bg-[var(--color-background)]">
+	                   className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-full min-h-[400px] flex flex-col min-w-0 bg-background">
 	                <div className="relative flex flex-col p-4 w-full grow">
 	                  {sortedBossActions.map((action, idx) => {
 	                    const isSelected = selectedBossAction?.id === action.id;
@@ -584,11 +588,11 @@ const PlanningInterface = () => {
 	              </div>
 	              {/* Vertical resizer visual only (no drag in fullscreen) */}
 	              <div className="mx-1 w-2 flex items-stretch justify-center select-none">
-	                <div className="my-2 w-px bg-[var(--color-border)]" />
+	                <div className="my-2 w-px bg-border" />
 	              </div>
 	              {/* Mitigations column */}
 	              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
-	                   className="rounded-xl p-4 shadow-md overflow-y-auto overflow-x-auto overscroll-contain touch-pan-y h-full min-h-[400px] min-w-0 bg-[var(--color-background)]">
+	                   className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-y h-full min-h-[400px] min-w-0 bg-background">
 	                <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
 	                  {filteredMitigations.map(mitigation => {
 	                    const availability = selectedBossAction ? checkAbilityAvailability(
@@ -794,9 +798,9 @@ const MitigationPlannerContent = ({
 
   return (
     <>
-      <div className="min-h-screen p-8 bg-[var(--color-background)] text-[var(--color-text)]">
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-[var(--color-border)]">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">
+      <div className="min-h-screen p-8 bg-background text-foreground">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
+        <h1 className="text-2xl font-semibold text-foreground">
           {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
         </h1>
         <div className="flex items-center gap-2">
@@ -810,12 +814,12 @@ const MitigationPlannerContent = ({
           <KofiButton />
           <DiscordButton />
           <ThemeToggle />
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg font-semibold text-[var(--color-buttonText)] bg-[var(--color-primary)] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition">
+<Button onClick={handleSave} disabled={saving} className="px-4 py-2">
             {saving ? 'Saving...' : 'Save Plan'}
-          </button>
-          <button onClick={handleBack} className="px-4 py-2 rounded-lg font-semibold text-[var(--color-primary)] hover:bg-[var(--select-bg)] transition">
+          </Button>
+          <Button onClick={handleBack} variant="outline">
             {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
-          </button>
+          </Button>
         </div>
       </div>
 

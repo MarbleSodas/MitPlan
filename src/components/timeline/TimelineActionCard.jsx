@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Edit2, Trash2, GripVertical, ChevronDown, ChevronUp, Copy } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const TimelineActionCard = ({
   action,
@@ -22,21 +23,21 @@ const TimelineActionCard = ({
   };
 
   const getImportanceBorderColor = () => {
-    if (action.isTankBuster || action.isDualTankBuster) return 'border-l-red-500';
+    if (action.isTankBuster || action.isDualTankBuster) return 'border-l-destructive';
     switch (action.importance) {
-      case 'critical': return 'border-l-red-500';
-      case 'high': return 'border-l-orange-500';
-      case 'medium': return 'border-l-amber-500';
-      case 'low': return 'border-l-green-500';
-      default: return 'border-l-blue-500';
+      case 'critical': return 'border-l-destructive';
+      case 'high': return 'border-l-[oklch(0.795_0.184_86.047)]';
+      case 'medium': return 'border-l-[oklch(0.967_0.003_264.542)]';
+      case 'low': return 'border-l-[oklch(0.623_0.188_145.28)]';
+      default: return 'border-l-primary';
     }
   };
 
   const getImportanceBackground = () => {
-    if (action.isTankBuster || action.isDualTankBuster) return 'bg-red-500/5';
+    if (action.isTankBuster || action.isDualTankBuster) return 'bg-destructive/5';
     switch (action.importance) {
-      case 'critical': return 'bg-red-500/5';
-      case 'high': return 'bg-orange-500/5';
+      case 'critical': return 'bg-destructive/5';
+      case 'high': return 'bg-[oklch(0.795_0.184_86.047)]/5';
       default: return '';
     }
   };
@@ -58,17 +59,17 @@ const TimelineActionCard = ({
 
   return (
     <div
-      className={`
-        bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg
-        border-l-4 ${getImportanceBorderColor()} ${getImportanceBackground()}
-        transition-all hover:border-[var(--color-primary)]
-        ${isDragging ? 'shadow-lg opacity-90' : ''}
-      `}
+      className={cn(
+        "bg-card border border-border rounded-lg border-l-4 transition-all hover:border-primary",
+        getImportanceBorderColor(),
+        getImportanceBackground(),
+        isDragging && "shadow-lg opacity-90"
+      )}
     >
       <div className="flex items-center gap-2 p-3">
         <div
           {...dragHandleProps}
-          className="cursor-grab active:cursor-grabbing text-[var(--color-textSecondary)] hover:text-[var(--color-text)] p-1"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1"
         >
           <GripVertical size={16} />
         </div>
@@ -81,7 +82,7 @@ const TimelineActionCard = ({
             onKeyDown={handleTimeKeyDown}
             onBlur={handleTimeBlur}
             autoFocus
-            className="w-16 px-2 py-1 text-sm font-mono bg-[var(--color-cardBackground)] border border-[var(--color-primary)] rounded focus:outline-none"
+            className="w-16 px-2 py-1 text-sm font-mono bg-card border border-primary rounded focus:outline-none"
             min={0}
           />
         ) : (
@@ -90,7 +91,7 @@ const TimelineActionCard = ({
               setTempTime(action.time);
               setIsEditingTime(true);
             }}
-            className="w-14 text-sm font-mono font-medium text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors text-left"
+            className="w-14 text-sm font-mono font-medium text-foreground hover:text-primary transition-colors text-left"
             title="Click to edit time"
           >
             {formatTime(action.time)}
@@ -115,11 +116,12 @@ const TimelineActionCard = ({
             </span>
           )}
           {action.damageType && (
-            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+            <span className={cn(
+              "px-1.5 py-0.5 text-[10px] font-medium rounded",
               action.damageType === 'magical' 
                 ? 'bg-purple-500/20 text-purple-400' 
                 : 'bg-yellow-500/20 text-yellow-400'
-            }`}>
+            )}>
               {action.damageType === 'magical' ? 'Mag' : 'Phys'}
             </span>
           )}
@@ -133,21 +135,21 @@ const TimelineActionCard = ({
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={() => onToggleExpand(action.id)}
-            className="p-1.5 text-[var(--color-textSecondary)] hover:text-[var(--color-text)] hover:bg-[var(--select-bg)] rounded transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           <button
             onClick={() => onEdit(action)}
-            className="p-1.5 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--select-bg)] rounded transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors"
             title="Edit action"
           >
             <Edit2 size={16} />
           </button>
           <button
             onClick={() => onDelete(action.id)}
-            className="p-1.5 text-[var(--color-textSecondary)] hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
             title="Delete action"
           >
             <Trash2 size={16} />
@@ -156,51 +158,53 @@ const TimelineActionCard = ({
       </div>
 
       {isExpanded && (
-        <div className="px-3 pb-3 pt-0 border-t border-[var(--color-border)] mt-0">
+        <div className="px-3 pb-3 pt-0 border-t border-border mt-0">
           <div className="pt-3 space-y-2">
             {action.unmitigatedDamage && (
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-[var(--color-textSecondary)]">Damage:</span>
+                <span className="text-muted-foreground">Damage:</span>
                 <span className="font-medium">{action.unmitigatedDamage}</span>
               </div>
             )}
 
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-[var(--color-textSecondary)]">Importance:</span>
-              <span className={`capitalize font-medium ${
-                action.importance === 'critical' ? 'text-red-400' :
-                action.importance === 'high' ? 'text-orange-400' :
-                action.importance === 'medium' ? 'text-amber-400' : 'text-green-400'
-              }`}>
+              <span className="text-muted-foreground">Importance:</span>
+              <span className={cn(
+                "capitalize font-medium",
+                action.importance === 'critical' && 'text-red-400',
+                action.importance === 'high' && 'text-orange-400',
+                action.importance === 'medium' && 'text-amber-400',
+                action.importance === 'low' && 'text-green-400'
+              )}>
                 {action.importance || 'medium'}
               </span>
             </div>
 
             {action.description && (
               <div className="text-sm">
-                <span className="text-[var(--color-textSecondary)]">Description:</span>
-                <p className="mt-1 text-[var(--color-text)] m-0">{action.description}</p>
+                <span className="text-muted-foreground">Description:</span>
+                <p className="mt-1 text-foreground m-0">{action.description}</p>
               </div>
             )}
 
             {action.sourceBoss && (
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-[var(--color-textSecondary)]">From:</span>
+                <span className="text-muted-foreground">From:</span>
                 <span className="font-medium capitalize">{action.sourceBoss.replace(/-/g, ' ')}</span>
               </div>
             )}
 
-            <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-border)]">
+            <div className="flex items-center gap-2 pt-2 border-t border-border">
               <button
                 onClick={() => onDuplicate(action)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-text)] hover:bg-[var(--select-bg)] rounded transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
               >
                 <Copy size={12} />
                 Duplicate
               </button>
               <button
                 onClick={() => onEdit(action)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--select-bg)] rounded transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors"
               >
                 <Edit2 size={12} />
                 Edit All

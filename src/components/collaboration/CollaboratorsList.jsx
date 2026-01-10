@@ -42,33 +42,33 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
     <div className="relative inline-block" data-collaborators-container>
       <button
         onClick={handleToggle}
-        className="flex items-center gap-2 rounded-lg text-sm transition px-3 py-2 border bg-[var(--color-cardBackground)] border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--select-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+        className="flex items-center gap-2 rounded-lg text-sm transition px-3 py-2 border bg-card border-border text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <Users size={16} />
         <span>Collaborators</span>
-        <span className="rounded-full text-[var(--color-buttonText)] text-xs font-semibold min-w-[1.25rem] text-center px-1 bg-[var(--color-primary)]">
+        <span className="rounded-full text-primary-foreground text-xs font-semibold min-w-[1.25rem] text-center px-1 bg-primary">
           {activeCollaborators.length}
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 rounded-lg shadow-md min-w-[250px] max-w-[300px] z-[1000] bg-[var(--color-cardBackground)] border border-[var(--color-border)]">
-          <div className="px-4 py-3 font-semibold text-sm border-b border-[var(--color-border)] text-[var(--color-text)]">
+        <div className="absolute right-0 mt-2 rounded-lg shadow-md min-w-[250px] max-w-[300px] z-[1000] bg-card border border-border">
+          <div className="px-4 py-3 font-semibold text-sm border-b border-border text-foreground">
             Active Collaborators ({activeCollaborators.length})
           </div>
 
           {activeCollaborators.length === 0 ? (
-            <div className="p-4 text-center text-sm text-[var(--color-textSecondary)]">No active collaborators</div>
+            <div className="p-4 text-center text-sm text-muted-foreground">No active collaborators</div>
           ) : (
             <>
               {currentUser && (
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)]">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(currentUser.userId) }}>
                     {getInitials(currentUser.displayName)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate text-[var(--color-text)]">{cleanDisplayName(currentUser.displayName)} (You)</div>
-                    <div className="flex items-center gap-1 text-xs mt-0.5 text-[var(--color-textSecondary)]">
+                    <div className="font-medium text-sm truncate text-foreground">{cleanDisplayName(currentUser.displayName)} (You)</div>
+                    <div className="flex items-center gap-1 text-xs mt-0.5 text-muted-foreground">
                       <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
                       {isReadOnly ? (<><Eye size={12} /><span>Viewing</span></>) : (<><Edit3 size={12} /><span>Editing</span></>)}
                     </div>
@@ -77,13 +77,13 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
               )}
 
               {otherUsers.map((c) => (
-                <div key={c.sessionId} className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)]">
+                <div key={c.sessionId} className="flex items-center gap-3 px-4 py-3 border-b border-border">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(c.userId) }}>
                     {getInitials(c.displayName)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate text-[var(--color-text)]">{cleanDisplayName(c.displayName)}</div>
-                    <div className="flex items-center gap-1 text-xs mt-0.5 text-[var(--color-textSecondary)]">
+                    <div className="font-medium text-sm truncate text-foreground">{cleanDisplayName(c.displayName)}</div>
+                    <div className="flex items-center gap-1 text-xs mt-0.5 text-muted-foreground">
                       <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
                       <Edit3 size={12} />
                       <span>Editing</span>

@@ -1,23 +1,19 @@
 import React, { useRef } from 'react';
-import { useTheme } from '../../../contexts/ThemeContext';
 import { useRealtimeJobContext } from '../../../contexts/RealtimeJobContext';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
-// Role color mapping - using CSS custom properties for dynamic theming
-const ROLE_COLORS = {
-  tank: '#3D5CDB',
-  healer: '#3D9C51',
-  melee: '#AF1E3A',
-  ranged: '#6C6C6C',
-  caster: '#7657C0'
+const ROLE_CONFIG = {
+  tank: { color: 'text-blue-600 dark:text-blue-400', border: 'border-blue-600 dark:border-blue-400', bg: 'bg-blue-600/10 dark:bg-blue-400/10', icon: '🛡️', label: 'Tanks' },
+  healer: { color: 'text-green-600 dark:text-green-400', border: 'border-green-600 dark:border-green-400', bg: 'bg-green-600/10 dark:bg-green-400/10', icon: '💉', label: 'Healers' },
+  melee: { color: 'text-red-600 dark:text-red-400', border: 'border-red-600 dark:border-red-400', bg: 'bg-red-600/10 dark:bg-red-400/10', icon: '🗡️', label: 'Melee DPS' },
+  ranged: { color: 'text-zinc-600 dark:text-zinc-400', border: 'border-zinc-600 dark:border-zinc-400', bg: 'bg-zinc-600/10 dark:bg-zinc-400/10', icon: '🏹', label: 'Phys Ranged' },
+  caster: { color: 'text-purple-600 dark:text-purple-400', border: 'border-purple-600 dark:border-purple-400', bg: 'bg-purple-600/10 dark:bg-purple-400/10', icon: '🔮', label: 'Magic Ranged' }
 };
 
 function JobSelector({ disabled = false }) {
-  const { theme } = useTheme();
   const { selectedJobs: jobs, toggleJobSelection: contextToggleJobSelection } = useRealtimeJobContext();
   const lastClickTimeRef = useRef(new Map());
-
-  const roleIcons = { tank: '🛡️', healer: '💉', melee: '🗡️', ranged: '🏹', caster: '🔮' };
-  const roleNames = { tank: 'Tanks', healer: 'Healers', melee: 'Melee DPS', ranged: 'Physical Ranged DPS', caster: 'Magical Ranged DPS' };
 
   const toggleJobSelection = (roleKey, jobId) => {
     if (disabled) return;
@@ -30,72 +26,61 @@ function JobSelector({ disabled = false }) {
   };
 
   return (
-    <div className="rounded-md shadow-md bg-[var(--color-secondary)] p-[15px] mb-5">
-      <h3 className="m-0 mb-4 pb-2.5 border-b border-[var(--color-border)] text-[var(--color-text)]">
-        Select FFXIV Jobs
-      </h3>
-
-      <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
-        {Object.entries(jobs).map(([roleKey, roleJobs]) => (
-          <div
-            key={roleKey}
-            className="rounded-lg shadow-sm p-[15px] mb-[25px] bg-[var(--role-card-bg)]"
-            style={{
-              '--role-card-bg': theme.mode === 'dark' ? 'rgba(30,30,30,0.6)' : 'rgba(250,250,250,0.8)',
-              '--role-color': ROLE_COLORS[roleKey],
-              '--role-bg-light': `${ROLE_COLORS[roleKey]}33` // 20% opacity
-            }}
-          >
-            <div className="flex items-center mb-4 pb-2 border-b-2 border-[var(--role-color)]">
-              <div className="mr-4 text-[28px] w-10 h-10 flex items-center justify-center rounded-full bg-[var(--role-bg-light)] text-[var(--role-color)]">
-                {roleIcons[roleKey]}
-              </div>
-              <h4 className="m-0 font-bold text-[var(--role-color)] text-lg">
-                {roleNames[roleKey]}
-              </h4>
-            </div>
-
-            <div className="grid gap-3 grid-cols-2">
-              {roleJobs.map(job => (
-                <div
-                  key={job.id}
-                  className={`
-                    flex flex-col items-center justify-center text-center rounded-md
-                    transition-all duration-200 ease-in-out
-                    px-2.5 py-2 min-h-[90px] w-full
-                    border-2
-                    ${job.selected
-                      ? 'border-[var(--color-primary)] bg-[var(--job-selected-bg)]'
-                      : 'border-[var(--color-border)] bg-[var(--job-bg)]'
-                    }
-                    ${disabled
-                      ? 'opacity-60 cursor-not-allowed'
-                      : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-primary)]'
-                    }
-                  `.trim().replace(/\s+/g, ' ')}
-                  onClick={() => toggleJobSelection(roleKey, job.id)}
-                  style={{
-                    '--job-bg': theme.mode === 'dark' ? 'var(--color-cardBackground)' : 'white',
-                    '--job-selected-bg': theme.mode === 'dark' ? 'rgba(51,153,255,0.2)' : '#e6f7ff'
-                  }}
-                >
-                  <div className="mb-1.5 h-12 flex items-center justify-center">
-                    {typeof job.icon === 'string' && job.icon.startsWith('/') ? (
-                      <img src={job.icon} alt={job.name} className="max-h-12 max-w-12" />
-                    ) : (
-                      job.icon
-                    )}
-                  </div>
-                  <div className={`text-sm mt-1 text-[var(--color-text)] ${job.selected ? 'font-bold' : 'font-normal'}`}>
-                    {job.name}
-                  </div>
+    <Card className="mb-5 bg-card">
+      <CardHeader className="pb-3 border-b border-border">
+        <CardTitle className="text-lg font-semibold text-foreground">
+          Select FFXIV Jobs
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 grid gap-4 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
+        {Object.entries(jobs).map(([roleKey, roleJobs]) => {
+          const config = ROLE_CONFIG[roleKey] || ROLE_CONFIG.tank;
+          
+          return (
+            <div
+              key={roleKey}
+              className="rounded-lg shadow-sm p-4 bg-card border border-border"
+            >
+              <div className={cn("flex items-center mb-4 pb-2 border-b-2", config.border)}>
+                <div className={cn("mr-4 text-2xl w-10 h-10 flex items-center justify-center rounded-full", config.bg, config.color)}>
+                  {config.icon}
                 </div>
-              ))}
+                <h4 className={cn("m-0 font-bold text-lg", config.color)}>
+                  {config.label}
+                </h4>
+              </div>
+
+              <div className="grid gap-3 grid-cols-2">
+                {roleJobs.map(job => (
+                  <div
+                    key={job.id}
+                    onClick={() => toggleJobSelection(roleKey, job.id)}
+                    className={cn(
+                      "flex flex-col items-center justify-center text-center rounded-md transition-all duration-200 px-2.5 py-2 min-h-[90px] w-full border-2 cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
+                      disabled && "opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-none",
+                      job.selected 
+                        ? "border-primary bg-primary/10" 
+                        : "border-border bg-background hover:border-primary/50"
+                    )}
+                  >
+                    <div className="mb-1.5 h-12 flex items-center justify-center">
+                      {typeof job.icon === 'string' && job.icon.startsWith('/') ? (
+                        <img src={job.icon} alt={job.name} className="max-h-12 max-w-12" />
+                      ) : (
+                        job.icon
+                      )}
+                    </div>
+                    <div className={cn("text-sm mt-1", job.selected ? "font-bold text-foreground" : "font-normal text-muted-foreground")}>
+                      {job.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }
 

@@ -17,11 +17,10 @@ import { useFilterContext } from '../../contexts';
 
 
 
-const PrecastInput = ({ className = '', style, ...rest }) => (
+const PrecastInput = ({ className = '', ...rest }) => (
   <input
     {...rest}
-    className={`w-10 text-center border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-800 transition-colors focus:border-blue-500 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${className}`}
-    style={{ ...(style || {}), MozAppearance: 'textfield' }}
+    className={`min-w-[18px] w-auto mx-[2px] text-center border border-border rounded bg-background text-foreground transition-colors focus:border-blue-500 [field-sizing:content] appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${className}`}
   />
 );
 
@@ -36,17 +35,17 @@ const RemoveButton = ({ children, className = '', ...rest }) => (
 
 
 const CasterBadge = ({ children, className = '', ...rest }) => (
-  <span {...rest} className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1 py-[1px] rounded ml-1 bg-neutral-300/40 dark:bg-neutral-600/40 text-neutral-800 dark:text-neutral-100 ${className}`}>{children}</span>
+  <span {...rest} className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1 py-[1px] rounded ml-1 bg-muted text-foreground ${className}`}>{children}</span>
 );
 
 const TankPositionBadge = ({ children, className = '', $position, ...rest }) => {
   const bg = $position === 'mainTank'
-    ? 'bg-blue-500/20 dark:bg-blue-500/30'
+    ? 'bg-blue-100 dark:bg-blue-500/30'
     : $position === 'offTank'
-      ? 'bg-cyan-400/20 dark:bg-cyan-400/30'
+      ? 'bg-cyan-100 dark:bg-cyan-400/30'
       : 'bg-transparent';
   return (
-    <span {...rest} className={`inline-flex items-center justify-center text-[9px] font-bold px-[3px] py-[1px] rounded ml-1 uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-100 sm:text-[7px] sm:px-[2px] sm:ml-[2px] ${bg} ${className}`}>{children}</span>
+    <span {...rest} className={`inline-flex items-center justify-center text-[9px] font-bold px-[3px] py-[1px] rounded ml-1 uppercase tracking-[0.5px] text-foreground sm:text-[7px] sm:px-[2px] sm:ml-[2px] ${bg} ${className}`}>{children}</span>
   );
 };
 
@@ -96,7 +95,7 @@ const AssignedMitigations = ({
     return null;
   }
   return (
-    <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-gray-200 dark:border-gray-700 p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden bg-white/80 dark:bg-black/15 rounded-br-md z-10 shadow-[-3px_0_8px_rgba(0,0,0,0.08)] w-[clamp(220px,16vw,300px)] min-w-[220px] max-w-[320px]">
+    <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-border p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden rounded-br-md z-10 w-[clamp(220px,16vw,300px)] min-w-[220px] max-w-[320px]">
       {/* Render directly assigned mitigations */}
       {filteredDirectMitigations.map((mitigation, index) => {
         // Find the full mitigation data from the abilities array
@@ -121,7 +120,7 @@ const AssignedMitigations = ({
             key={uniqueKey}
             content={tooltipContent}
           >
-            <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[12px] flex items-center border-l-2 border-blue-500 text-gray-900 dark:text-gray-100 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 hover:bg-blue-500/10">
+            <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[12px] flex items-center border-l-2 border-blue-500 text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 hover:bg-blue-500/10">
               <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                 {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
                   <img
@@ -226,7 +225,7 @@ const AssignedMitigations = ({
                 key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
                 content={`${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s${fullMitigation.barrierPotency ? `\nBarrier: ${Math.round(fullMitigation.barrierPotency * 100)}% max HP` : ''}${fullMitigation.barrierFlatPotency ? `\nBarrier: ${fullMitigation.barrierFlatPotency} potency` : ''}${fullMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
               >
-                <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[11px] flex items-center border-l-2 border-gray-500 text-gray-500 dark:text-gray-300 font-normal dark:font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic hover:bg-blue-500/5">
+                <div className="bg-transparent rounded-sm px-[3px] py-[1px] text-[11px] flex items-center border-l-2 border-gray-500 text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic hover:bg-blue-500/5">
                   <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                     {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
                       <img

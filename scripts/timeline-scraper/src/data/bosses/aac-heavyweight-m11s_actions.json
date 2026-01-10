@@ -1,0 +1,552 @@
+[
+  {
+    "id": "crown_of_arcadia_1",
+    "name": "Crown of Arcadia",
+    "time": 12,
+    "unmitigatedDamage": "~209,787",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "heavy_hitter_1",
+    "name": "Heavy Hitter",
+    "time": 26,
+    "unmitigatedDamage": "~151,645",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "raw_steel_1",
+    "name": "Raw Steel",
+    "time": 26,
+    "unmitigatedDamage": "~431,073",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "impact_1",
+    "name": "Impact",
+    "time": 26,
+    "unmitigatedDamage": "~150,272",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "💥"
+  },
+  {
+    "id": "sharp_taste_1",
+    "name": "Sharp Taste",
+    "time": 56,
+    "unmitigatedDamage": "~131,794",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "heavy_weight_1",
+    "name": "Heavy Weight",
+    "time": 57,
+    "unmitigatedDamage": "~133,553",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sweeping_victory_1",
+    "name": "Sweeping Victory",
+    "time": 57,
+    "unmitigatedDamage": "~133,798",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "cometite_1",
+    "name": "Cometite",
+    "time": 89,
+    "unmitigatedDamage": "~144,970",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "crushing_comet_1",
+    "name": "Crushing Comet",
+    "time": 91,
+    "unmitigatedDamage": "~110,947",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "comet_1",
+    "name": "Comet",
+    "time": 91,
+    "unmitigatedDamage": "~108,678",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sharp_taste_2",
+    "name": "Sharp Taste",
+    "time": 101,
+    "unmitigatedDamage": "~129,646",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sweeping_victory_2",
+    "name": "Sweeping Victory",
+    "time": 101,
+    "unmitigatedDamage": "~134,107",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "heavy_weight_2",
+    "name": "Heavy Weight",
+    "time": 102,
+    "unmitigatedDamage": "~134,343",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "cometite_2",
+    "name": "Cometite",
+    "time": 114,
+    "unmitigatedDamage": "~90,420",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "comet_2",
+    "name": "Comet",
+    "time": 117,
+    "unmitigatedDamage": "~105,353",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "crushing_comet_2",
+    "name": "Crushing Comet",
+    "time": 118,
+    "unmitigatedDamage": "~109,832",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "crown_of_arcadia_2",
+    "name": "Crown of Arcadia",
+    "time": 124,
+    "unmitigatedDamage": "~209,367",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dance_of_domination_1",
+    "name": "Dance of Domination",
+    "time": 145,
+    "unmitigatedDamage": "~42,827",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "eye_of_the_hurricane_1",
+    "name": "Eye of the Hurricane",
+    "time": 152,
+    "unmitigatedDamage": "~142,980",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "raw_steel_2",
+    "name": "Raw Steel",
+    "time": 165,
+    "unmitigatedDamage": "~434,811",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "impact_2",
+    "name": "Impact",
+    "time": 165,
+    "unmitigatedDamage": "~152,094",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "💥"
+  },
+  {
+    "id": "heavy_hitter_2",
+    "name": "Heavy Hitter",
+    "time": 166,
+    "unmitigatedDamage": "~150,775",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "assault_evolved_1",
+    "name": "Assault Evolved",
+    "time": 206,
+    "unmitigatedDamage": "~4,730,571",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "sharp_taste_3",
+    "name": "Sharp Taste",
+    "time": 207,
+    "unmitigatedDamage": "~132,861",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "heavy_weight_3",
+    "name": "Heavy Weight",
+    "time": 211,
+    "unmitigatedDamage": "~133,515",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sweeping_victory_3",
+    "name": "Sweeping Victory",
+    "time": 212,
+    "unmitigatedDamage": "~134,146",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "powerful_gust_1",
+    "name": "Powerful Gust",
+    "time": 228,
+    "unmitigatedDamage": "~107,322",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "one_and_only_1",
+    "name": "One and Only",
+    "time": 242,
+    "unmitigatedDamage": "~235,224",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "great_wall_of_fire_1",
+    "name": "Great Wall of Fire",
+    "time": 257,
+    "unmitigatedDamage": "~945,468",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🔥"
+  },
+  {
+    "id": "fire_and_fury_1",
+    "name": "Fire and Fury",
+    "time": 278,
+    "unmitigatedDamage": "~138,172",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🔥"
+  },
+  {
+    "id": "orbital_omen_1",
+    "name": "Orbital Omen",
+    "time": 279,
+    "unmitigatedDamage": "~138,232",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "cosmic_kiss_1",
+    "name": "Cosmic Kiss",
+    "time": 314,
+    "unmitigatedDamage": "~50,651",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "foregone_fatality_1",
+    "name": "Foregone Fatality",
+    "time": 321,
+    "unmitigatedDamage": "~342,394",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fearsome_fireball_1",
+    "name": "Fearsome Fireball",
+    "time": 322,
+    "unmitigatedDamage": "~172,361",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "🔥"
+  },
+  {
+    "id": "flatliner_1",
+    "name": "Flatliner",
+    "time": 364,
+    "unmitigatedDamage": "~209,032",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "explosion_1",
+    "name": "Explosion",
+    "time": 391,
+    "unmitigatedDamage": "~53,554",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "💥"
+  },
+  {
+    "id": "majestic_meteor_1",
+    "name": "Majestic Meteor",
+    "time": 402,
+    "unmitigatedDamage": "~141,618",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "majestic_meteowrath_1",
+    "name": "Majestic Meteowrath",
+    "time": 406,
+    "unmitigatedDamage": "~178,330",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fire_breath_1",
+    "name": "Fire Breath",
+    "time": 406,
+    "unmitigatedDamage": "~179,115",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "🔥"
+  },
+  {
+    "id": "majestic_meteorain_1",
+    "name": "Majestic Meteorain",
+    "time": 406,
+    "unmitigatedDamage": "~87,331",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "explosion_2",
+    "name": "Explosion",
+    "time": 423,
+    "unmitigatedDamage": "~52,924",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "💥"
+  },
+  {
+    "id": "majestic_meteor_2",
+    "name": "Majestic Meteor",
+    "time": 434,
+    "unmitigatedDamage": "~148,406",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "majestic_meteowrath_2",
+    "name": "Majestic Meteowrath",
+    "time": 439,
+    "unmitigatedDamage": "~180,033",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fire_breath_2",
+    "name": "Fire Breath",
+    "time": 439,
+    "unmitigatedDamage": "~181,260",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "🔥"
+  },
+  {
+    "id": "massive_meteor_1",
+    "name": "Massive Meteor",
+    "time": 453,
+    "unmitigatedDamage": "~107,920",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "explosion_3",
+    "name": "Explosion",
+    "time": 461,
+    "unmitigatedDamage": "~54,054",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "💥"
+  },
+  {
+    "id": "crown_of_arcadia_3",
+    "name": "Crown of Arcadia",
+    "time": 484,
+    "unmitigatedDamage": "~205,362",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "great_wall_of_fire_2",
+    "name": "Great Wall of Fire",
+    "time": 495,
+    "unmitigatedDamage": "~334,953",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🔥"
+  },
+  {
+    "id": "orbital_omen_2",
+    "name": "Orbital Omen",
+    "time": 519,
+    "unmitigatedDamage": "~139,981",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "crown_of_arcadia_4",
+    "name": "Crown of Arcadia",
+    "time": 526,
+    "unmitigatedDamage": "~204,377",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "mammoth_meteor_1",
+    "name": "Mammoth Meteor",
+    "time": 546,
+    "unmitigatedDamage": "~54,893",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "atomic_impact_1",
+    "name": "Atomic Impact",
+    "time": 553,
+    "unmitigatedDamage": "~36,004",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "💥"
+  },
+  {
+    "id": "cosmic_kiss_2",
+    "name": "Cosmic Kiss",
+    "time": 561,
+    "unmitigatedDamage": "~374,035",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "weighty_impact_1",
+    "name": "Weighty Impact",
+    "time": 561,
+    "unmitigatedDamage": "~89,794",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "💥"
+  },
+  {
+    "id": "combined_dots_1",
+    "name": "Combined DoTs",
+    "time": 567,
+    "unmitigatedDamage": "~86,858",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burns_1",
+    "name": "Burns",
+    "time": 567,
+    "unmitigatedDamage": "~125,882",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "🔥"
+  },
+  {
+    "id": "majestic_meteowrath_3",
+    "name": "Majestic Meteowrath",
+    "time": 571,
+    "unmitigatedDamage": "~140,299",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_47038_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_47038_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 575,
+    "unmitigatedDamage": "~141,876",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "rsv_46171_1_1_0_0_se2dc5b04_ee2dc5b04_1",
+    "name": "_rsv_46171_-1_1_0_0_SE2DC5B04_EE2DC5B04",
+    "time": 575,
+    "unmitigatedDamage": "~157,848",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "crown_of_arcadia_5",
+    "name": "Crown of Arcadia",
+    "time": 584,
+    "unmitigatedDamage": "~208,142",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "heartbreak_kick_1",
+    "name": "Heartbreak Kick",
+    "time": 619,
+    "unmitigatedDamage": "~106,852",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  }
+]

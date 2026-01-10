@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../common/Toast';
+import { toast } from 'sonner';
 import { createTimeline, getTimeline, updateTimeline, getAllUniqueBossTags } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { ArrowLeft, Plus, Save, Settings, Check, X } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -52,7 +54,7 @@ const TimelineEditor = () => {
   const { timelineId } = useParams();
   const navigate = useNavigate();
   const { user, isAnonymousMode, anonymousUser } = useAuth();
-  const { addToast } = useToast();
+
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -197,12 +199,7 @@ const TimelineEditor = () => {
       setTimelineActions(timeline.actions || []);
     } catch (error) {
       console.error('Error loading timeline:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to load timeline',
-        message: 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to load timeline', { description: 'Please try again.' });
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -237,12 +234,7 @@ const TimelineEditor = () => {
       source: 'boss'
     };
     setTimelineActions([...timelineActions, newAction]);
-    addToast({
-      type: 'success',
-      title: 'Action added',
-      message: `Added "${action.name}" to timeline`,
-      duration: 2000
-    });
+    toast.success('Action added', { description: `Added "${action.name}" to timeline` });
   };
 
   // Handle adding custom action
@@ -285,12 +277,7 @@ const TimelineEditor = () => {
       time: action.time + 5, // Add 5 seconds offset
     };
     setTimelineActions([...timelineActions, duplicatedAction]);
-    addToast({
-      type: 'success',
-      title: 'Action duplicated',
-      message: `Duplicated "${action.name}"`,
-      duration: 2000
-    });
+    toast.success('Action duplicated', { description: `Duplicated "${action.name}"` });
   };
 
   // Handle quick time edit
@@ -352,22 +339,12 @@ const TimelineEditor = () => {
   // Handle save
   const handleSave = async () => {
     if (!timelineName.trim()) {
-      addToast({
-        type: 'error',
-        title: 'Timeline name required',
-        message: 'Please enter a timeline name.',
-        duration: 3000
-      });
+      toast.error('Timeline name required', { description: 'Please enter a timeline name.' });
       return;
     }
 
     if (timelineActions.length === 0) {
-      addToast({
-        type: 'error',
-        title: 'Boss actions required',
-        message: 'Please add at least one boss action.',
-        duration: 3000
-      });
+      toast.error('Boss actions required', { description: 'Please add at least one boss action.' });
       return;
     }
 
@@ -391,30 +368,15 @@ const TimelineEditor = () => {
 
       if (isEditMode) {
         await updateTimeline(timelineId, timelineData);
-        addToast({
-          type: 'success',
-          title: 'Timeline updated!',
-          message: 'Your timeline has been updated successfully.',
-          duration: 3000
-        });
+        toast.success('Timeline updated!', { description: 'Your timeline has been updated successfully.' });
       } else {
         const newTimeline = await createTimeline(userId, timelineData);
-        addToast({
-          type: 'success',
-          title: 'Timeline created!',
-          message: 'Your timeline has been created successfully.',
-          duration: 3000
-        });
+        toast.success('Timeline created!', { description: 'Your timeline has been created successfully.' });
         navigate(`/timeline/edit/${newTimeline.id}`);
       }
     } catch (error) {
       console.error('Error saving timeline:', error);
-      addToast({
-        type: 'error',
-        title: 'Failed to save timeline',
-        message: error.message || 'Please try again.',
-        duration: 4000
-      });
+      toast.error('Failed to save timeline', { description: error.message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -422,10 +384,10 @@ const TimelineEditor = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-[var(--color-textSecondary)]">Loading timeline...</p>
+          <p className="text-muted-foreground">Loading timeline...</p>
         </div>
       </div>
     );
@@ -434,20 +396,21 @@ const TimelineEditor = () => {
   const sortedActions = getSortedActions();
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <div className="bg-[var(--color-cardBackground)] border-b border-[var(--color-border)] sticky top-0 z-20">
+      <div className="bg-card border-b border-border sticky top-0 z-20">
         <div className="max-w-[1800px] mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Left: Back button + Name */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <button
+              <Button
                 onClick={() => navigate('/dashboard')}
-                className="p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors flex-shrink-0"
-                title="Back to dashboard"
+                variant="outline"
+                size="icon"
+                title="Back to Dashboard"
               >
                 <ArrowLeft size={20} />
-              </button>
+              </Button>
               
               {/* Inline editable name */}
               {isEditingName ? (
@@ -460,7 +423,7 @@ const TimelineEditor = () => {
                     onKeyDown={handleNameKeyDown}
                     onBlur={saveName}
                     placeholder="Timeline name..."
-                    className="flex-1 min-w-0 px-3 py-1.5 text-xl font-bold bg-[var(--color-background)] border border-[var(--color-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    className="flex-1 min-w-0 px-3 py-1.5 text-xl font-bold bg-background border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button
                     onClick={saveName}
@@ -471,7 +434,7 @@ const TimelineEditor = () => {
                   </button>
                   <button
                     onClick={cancelNameEdit}
-                    className="p-1.5 text-[var(--color-textSecondary)] hover:bg-[var(--select-bg)] rounded transition-colors"
+                    className="p-1.5 text-muted-foreground hover:bg-muted rounded transition-colors"
                     title="Cancel"
                   >
                     <X size={18} />
@@ -480,7 +443,7 @@ const TimelineEditor = () => {
               ) : (
                 <button
                   onClick={startNameEdit}
-                  className="text-xl font-bold truncate hover:text-[var(--color-primary)] transition-colors text-left"
+                  className="text-xl font-bold truncate hover:text-primary transition-colors text-left"
                   title="Click to edit name"
                 >
                   {timelineName || 'Untitled Timeline'}
@@ -492,7 +455,7 @@ const TimelineEditor = () => {
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => setShowSettingsDrawer(true)}
-                className="p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors flex items-center gap-2"
+                className="p-2 rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
                 title="Timeline settings"
               >
                 <Settings size={20} />
@@ -501,7 +464,7 @@ const TimelineEditor = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={18} />
                 <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
@@ -514,15 +477,15 @@ const TimelineEditor = () => {
       {/* Main Content - Two Panel Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Boss Actions Library */}
-        <div className="w-80 lg:w-96 flex-shrink-0 border-r border-[var(--color-border)] bg-[var(--color-cardBackground)] flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-[var(--color-border)]">
+        <div className="w-80 lg:w-96 flex-shrink-0 border-r border-border bg-card flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-border">
             <h2 className="text-lg font-semibold mb-3">Add Actions</h2>
             <button
               onClick={() => {
                 setEditingAction(null);
                 setShowCustomActionModal(true);
               }}
-              className="w-full px-4 py-2.5 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:brightness-110 transition-all flex items-center justify-center gap-2"
+              className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:brightness-110 transition-all flex items-center justify-center gap-2"
             >
               <Plus size={18} />
               Create Custom Action
@@ -530,10 +493,10 @@ const TimelineEditor = () => {
           </div>
           
           <div className="flex-1 overflow-y-auto p-4">
-            <h3 className="text-sm font-semibold mb-2 text-[var(--color-textSecondary)]">
+            <h3 className="text-sm font-semibold mb-2 text-muted-foreground">
               Boss Actions Library
             </h3>
-            <p className="text-xs text-[var(--color-textSecondary)] mb-3">
+            <p className="text-xs text-muted-foreground mb-3">
               Click to add actions. Customize time after adding.
             </p>
             <BossActionsLibrary onSelectAction={handleAddBossAction} />
@@ -543,7 +506,7 @@ const TimelineEditor = () => {
         {/* Right Panel - Timeline */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Compact Timeline Visualization */}
-          <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-cardBackground)]">
+          <div className="p-4 border-b border-border bg-card">
             <CompactTimelineVisualization 
               actions={sortedActions}
               onActionClick={handleActionClick}
@@ -557,13 +520,13 @@ const TimelineEditor = () => {
               <h2 className="text-lg font-semibold">
                 Timeline Actions
               </h2>
-              <span className="text-sm text-[var(--color-textSecondary)]">
+              <span className="text-sm text-muted-foreground">
                 {sortedActions.length} action{sortedActions.length !== 1 ? 's' : ''}
               </span>
             </div>
 
             {sortedActions.length === 0 ? (
-              <div className="text-center py-16 text-[var(--color-textSecondary)]">
+              <div className="text-center py-16 text-muted-foreground">
                 <div className="text-4xl mb-4">📋</div>
                 <p className="text-lg font-medium mb-2">No actions yet</p>
                 <p className="text-sm">

@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
-import { ToastProvider } from './components/common/Toast';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import LandingPage from './components/landing/LandingPage';
 import Dashboard from './components/dashboard/Dashboard';
 import MitigationPlanner from './components/planner/MitigationPlanner';
@@ -16,21 +17,12 @@ import TimelineBrowser from './components/timeline/TimelineBrowser';
 import CreatePlanFromTimeline from './components/timeline/CreatePlanFromTimeline';
 import MakeTimelinesPublic from './components/admin/MakeTimelinesPublic';
 
-// DEBUGGING: Minimal App to test if React is working
-// TODO: Restore full app once loading issue is resolved
-
-// Global styles
-
-
-
-// Loading component
 const LoadingComponent = () => (
-  <div className="flex items-center justify-center min-h-screen text-[1.1rem] text-gray-500 dark:text-gray-400 bg-white dark:bg-neutral-950">
+  <div className="flex items-center justify-center min-h-screen text-base text-muted-foreground bg-background">
     Loading...
   </div>
 );
 
-// Protected Route component (requires authentication)
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -45,11 +37,9 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Anonymous-Allowed Route component (allows both authenticated and anonymous users)
 const AnonymousAllowedRoute = ({ children }) => {
   const { hasUser, loading, enableAnonymousMode } = useAuth();
 
-  // Use useEffect to enable anonymous mode after render to avoid setState during render
   useEffect(() => {
     if (!loading && !hasUser) {
       enableAnonymousMode();
@@ -63,7 +53,6 @@ const AnonymousAllowedRoute = ({ children }) => {
   return children;
 };
 
-// Main App component that handles routing and authentication
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -72,9 +61,8 @@ const AppContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)] transition-colors">
+    <div className="min-h-screen bg-background text-foreground transition-colors">
     <Routes>
-      {/* Public routes */}
       <Route
         path="/"
         element={
@@ -86,7 +74,6 @@ const AppContent = () => {
         }
       />
 
-      {/* Protected routes */}
       <Route
         path="/dashboard"
         element={
@@ -98,7 +85,6 @@ const AppContent = () => {
         }
       />
 
-      {/* Plan editing routes */}
       <Route
         path="/plan/edit/:planId"
         element={
@@ -135,7 +121,6 @@ const AppContent = () => {
         }
       />
 
-      {/* Shared plan routes - accessible to both authenticated and unauthenticated users */}
       <Route
         path="/plan/shared/:planId"
         element={
@@ -145,7 +130,6 @@ const AppContent = () => {
         }
       />
 
-      {/* Anonymous dashboard and plan routes */}
       <Route
         path="/anonymous"
         element={
@@ -173,7 +157,6 @@ const AppContent = () => {
         }
       />
 
-      {/* Timeline routes */}
       <Route
         path="/timeline/browse"
         element={
@@ -230,7 +213,6 @@ const AppContent = () => {
         }
       />
 
-      {/* Admin utilities */}
       <Route
         path="/admin/make-timelines-public"
         element={
@@ -240,13 +222,11 @@ const AppContent = () => {
         }
       />
 
-      {/* Legal pages - accessible to all users */}
       <Route
         path="/privacy-policy"
         element={<DataPolicy />}
       />
 
-      {/* Catch all route */}
       <Route
         path="*"
         element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />}
@@ -256,19 +236,17 @@ const AppContent = () => {
   );
 };
 
-// Main App component with full routing and authentication
 function App() {
-  console.log('[App] Rendering full application with routing');
-
   return (
     <ThemeProvider>
-      <ToastProvider>
+      <TooltipProvider>
         <AuthProvider>
           <Router>
             <AppContent />
           </Router>
         </AuthProvider>
-      </ToastProvider>
+        <Toaster position="bottom-right" richColors />
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

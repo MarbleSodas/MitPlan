@@ -4,8 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import Tooltip from '../common/Tooltip/Tooltip';
 
 const AetherflowGauge = ({ selectedBossAction }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
+  const { isDarkMode } = useTheme();
   const { cooldownManager, selectedJobs, assignments } = useEnhancedMitigation();
 
   const [forceRefresh, setForceRefresh] = useState(0);
@@ -50,8 +49,8 @@ const AetherflowGauge = ({ selectedBossAction }) => {
         <div className="flex gap-2 mt-1">
           {[...Array(aetherflowState.totalStacks)].map((_, index) => {
             const active = index < aetherflowState.availableStacks;
-            const bg = active ? '#2ecc40' : (theme.mode === 'dark' ? '#333' : '#ddd');
-            const br = active ? '#27ae60' : colors.border;
+            const bg = active ? '#2ecc40' : (isDarkMode ? '#333' : '#ddd');
+            const br = active ? '#27ae60' : 'var(--color-border)';
             const glow = active ? '0 0 8px 3px rgba(46, 204, 64, 0.4)' : 'none';
             return <div key={index} className="w-7 h-7 rounded-full transition-all" style={{ backgroundColor: bg, border: `2px solid ${br}`, boxShadow: glow }} />
           })}

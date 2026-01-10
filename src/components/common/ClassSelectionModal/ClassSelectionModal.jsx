@@ -1,54 +1,50 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { X } from 'lucide-react';
 import { ffxivJobs } from '../../../data';
-import { useTheme } from '../../../contexts/ThemeContext';
-import { BUTTON, MODAL, cn } from '../../../styles/designSystem';
+import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const ClassSelectionModal = ({ isOpen, onClose, mitigation, eligibleJobs = [], onSelectJob }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
-  const modalRef = useRef(null);
-
-  useEffect(() => {
-    const onDown = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
-    };
-    if (isOpen) document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   const jobMetaById = new Map();
   Object.values(ffxivJobs).forEach(list => list.forEach(j => jobMetaById.set(j.id, j)));
 
   return (
-    <div className={cn(MODAL.overlay, 'z-[10000]')}>
-      <div ref={modalRef} className={cn(MODAL.container, 'max-w-[480px] p-5')}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className={cn(MODAL.title, 'text-lg')}>Select Caster</h3>
-          <button onClick={onClose} aria-label="Close" className={cn(BUTTON.ghost, 'p-1 rounded-full')}>
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>Select Caster</DialogTitle>
+        </DialogHeader>
 
-        <div className="mb-3 text-[var(--color-text)]">
+        <div className="mb-3 text-foreground">
           <strong>{mitigation?.name}</strong>
         </div>
 
-        <div className="grid grid-cols-3 gap-[14px]">
+        <div className="grid grid-cols-3 gap-3">
           {eligibleJobs.map(jobId => {
             const meta = jobMetaById.get(jobId);
             return (
-              <button key={jobId} onClick={() => onSelectJob(jobId)} className="flex flex-col items-center justify-center gap-1.5 min-h-[96px] rounded-md text-center transition-transform hover:-translate-y-[3px] p-3 bg-[var(--color-background)] text-[var(--color-text)]">
+              <Button
+                key={jobId}
+                variant="ghost"
+                onClick={() => onSelectJob(jobId)}
+                className="flex flex-col items-center justify-center gap-1.5 min-h-[96px] rounded-lg text-center transition-transform hover:-translate-y-[3px] p-3 bg-background hover:bg-accent"
+              >
                 {meta?.icon && <img src={meta.icon} alt={meta?.name || jobId} className="w-11 h-11" />}
-                <span className="text-[12px] font-bold tracking-[0.3px]">{jobId}</span>
-              </button>
+                <span className="text-xs font-bold tracking-wide">{jobId}</span>
+              </Button>
             );
           })}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

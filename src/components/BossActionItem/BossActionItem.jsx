@@ -21,8 +21,8 @@ import { useTankPositionContext } from '../../contexts';
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 
 const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, $time, $isTouched, ...rest }) => {
-  const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer bg-[var(--color-cardBackground)] text-[var(--color-text)]';
-  const borderSel = $isSelected ? 'border-blue-500' : 'border-[var(--color-border)]';
+  const base = 'relative w-full min-h-[140px] flex flex-col mb-4 rounded-lg p-4 pt-10 shadow-sm border transition-all cursor-pointer bg-card text-foreground';
+  const borderSel = $isSelected ? 'border-blue-500' : 'border-border';
   const leftBorder = $importance === 'critical'
     ? 'border-l-4 border-l-red-500'
     : $importance === 'high'
@@ -45,7 +45,7 @@ const BossAction = ({ children, className = '', $isSelected, $importance, $hasAs
 const ActionTime = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`absolute top-0 left-0 right-0 px-2 h-[30px] flex items-center justify-center text-center font-bold text-[var(--color-text)] bg-black/10 dark:bg-black/30 border-b border-[var(--color-border)] rounded-t-lg select-none z-[1] text-base sm:text-sm ${className}`}
+    className={`absolute top-0 left-0 right-0 px-2 h-[30px] flex items-center justify-center text-center font-bold text-foreground bg-muted border-b border-border rounded-t-lg select-none z-[1] text-base sm:text-sm ${className}`}
   >
     <span className="mr-1">⏱️</span> {children}
   </div>
@@ -58,14 +58,14 @@ const ActionIcon = ({ children, className = '', ...rest }) => (
 
 
 const ActionName = ({ children, className = '', ...rest }) => (
-  <h3 {...rest} className={`m-0 font-bold select-none break-words hyphens-auto leading-snug w-full text-xl md:text-lg sm:text-base ${className}`}>{children}</h3>
+  <h3 {...rest} className={`m-0 font-bold select-none break-words hyphens-auto leading-snug w-full text-xl md:text-lg sm:text-base text-foreground ${className}`}>{children}</h3>
 );
 
 
 const ActionDescription = ({ children, className = '', ...rest }) => (
   <p
     {...rest}
-    className={`m-0 text-[var(--color-textSecondary)] text-base md:text-base sm:text-sm min-h-[40px] leading-relaxed pl-0.5 mb-4 break-words hyphens-auto whitespace-normal w-full ${className}`}
+    className={`m-0 text-muted-foreground text-base md:text-base sm:text-sm min-h-[40px] leading-relaxed pl-0.5 mb-4 break-words hyphens-auto whitespace-normal w-full ${className}`}
   >
     {children}
   </p>
@@ -84,7 +84,7 @@ const TextContainer = ({ children, className = '', ...rest }) => (
 const MitigationPercentage = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`inline-flex items-center justify-center bg-blue-500/10 dark:bg-blue-500/20 text-neutral-800 dark:text-neutral-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mb-3 border border-blue-500/20 dark:border-blue-500/30 select-none ${className}`}
+    className={`inline-flex items-center justify-center bg-blue-100 dark:bg-blue-500/20 text-blue-900 dark:text-blue-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mb-3 border border-blue-200 dark:border-blue-500/30 select-none ${className}`}
   >
     <span className="mr-1">🛡️</span> {children}
   </div>
@@ -93,7 +93,7 @@ const MitigationPercentage = ({ children, className = '', ...rest }) => (
 const MultiHitIndicator = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`inline-flex items-center justify-center bg-orange-500/10 dark:bg-orange-500/20 text-orange-900 dark:text-neutral-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mr-2.5 mb-3 border border-orange-500/20 dark:border-orange-500/30 select-none ${className}`}
+    className={`inline-flex items-center justify-center bg-orange-100 dark:bg-orange-500/20 text-orange-900 dark:text-orange-100 font-bold text-base px-2.5 py-1.5 rounded mt-2 mr-2.5 mb-3 border border-orange-200 dark:border-orange-500/30 select-none ${className}`}
   >
     <span className="mr-1">💥</span> {children}
   </div>

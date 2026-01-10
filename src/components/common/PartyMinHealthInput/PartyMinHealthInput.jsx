@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { RefreshCw } from 'lucide-react';
 import { useRealtimePlan } from '../../../contexts/RealtimePlanContext';
 import { useRealtimeBossContext } from '../../../contexts/RealtimeBossContext';
 import { bosses } from '../../../data';
 import { baseHealthValues } from '../../../data/bosses/bossData';
+import { Button } from '@/components/ui/button';
 
 const PartyMinHealthInput = () => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
   const { realtimePlan, batchUpdateRealtime } = useRealtimePlan();
   const { currentBossId, currentBossLevel } = useRealtimeBossContext();
 
@@ -49,8 +48,8 @@ const PartyMinHealthInput = () => {
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md text-sm" style={{ padding: '6px 12px', backgroundColor: colors.secondary }}>
-      <span className="whitespace-nowrap font-medium" style={{ color: colors.text }}>Party Min HP:</span>
+    <div className="flex items-center gap-2 rounded-md text-sm px-3 py-1.5 bg-card border border-border">
+      <span className="whitespace-nowrap font-medium text-foreground">Party Min HP:</span>
       <input
         type="number"
         min="1"
@@ -61,11 +60,11 @@ const PartyMinHealthInput = () => {
         onBlur={onBlur}
         placeholder={defaultPartyHp.toString()}
         aria-label="Minimum party health threshold"
-        className="w-[80px] text-center rounded text-sm"
-        style={{ padding: '2px', border: `1px solid ${colors.border}`, background: colors.background, color: colors.text }}
+        className="min-w-[18px] w-auto mx-[2px] text-center rounded text-sm p-0.5 border border-border bg-background text-foreground [field-sizing:content] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => {
           setPartyMinHealth(defaultPartyHp);
           batchUpdateRealtime({
@@ -77,10 +76,10 @@ const PartyMinHealthInput = () => {
         }}
         aria-label="Reset party min HP to default"
         title="Reset to default"
-        className="flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 text-blue-500 hover:text-white hover:bg-blue-500"
+        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
       >
-        <span aria-hidden="true" className="text-base leading-none">⟳</span>
-      </button>
+        <RefreshCw size={14} />
+      </Button>
     </div>
   );
 };

@@ -205,8 +205,8 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
   }
 
   return (
-    <div className="max-w-[500px] mx-auto p-8 bg-white dark:bg-neutral-900 rounded-xl shadow-md">
-      <h2 className="m-0 mb-6 text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+    <div className="max-w-[500px] mx-auto p-8 bg-card rounded-xl shadow-md border border-border">
+      <h2 className="m-0 mb-6 text-2xl font-semibold text-card-foreground flex items-center gap-2">
         <Plus size={24} />
         {preSelectedBossId
           ? `Create Plan for ${bosses.find(b => b.id === preSelectedBossId)?.name}`
@@ -214,14 +214,14 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
         }
       </h2>
 
-      <div className="text-sm rounded-md border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 p-4 mb-4">
+      <div className="text-sm rounded-md border border-primary/20 bg-primary/5 text-primary p-4 mb-4">
         You're creating a plan in anonymous mode. It will be stored locally in your browser.
         Create an account to save plans permanently and enable sharing.
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-sm font-medium text-gray-800 dark:text-gray-200">Plan Name *</label>
+          <label htmlFor="name" className="text-sm font-medium text-foreground">Plan Name *</label>
           <input
             id="name"
             name="name"
@@ -232,39 +232,39 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             maxLength={100}
             disabled={isCreating}
             required
-            className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+            className="px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-800 dark:text-gray-200">Boss *</label>
+          <label className="text-sm font-medium text-foreground">Boss *</label>
           {preSelectedBossId ? (
-            <div className="text-sm text-gray-500 py-2 px-3 bg-gray-50 dark:bg-neutral-800 rounded-md">
+            <div className="text-sm text-muted-foreground py-2 px-3 bg-muted rounded-md">
               Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
             </div>
           ) : (
-            <div className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
+            <div className="border border-border rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
               {BOSS_TIERS.map(tier => {
                 const tierBosses = tier.bossIds
                   .map(id => bosses.find(b => b.id === id))
                   .filter(Boolean);
                 
                 return (
-                  <div key={tier.id} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                  <div key={tier.id} className="border-b border-border last:border-b-0">
                     <button
                       type="button"
                       onClick={() => toggleTier(tier.id)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors text-left"
+                      className="w-full flex items-center justify-between px-3 py-2.5 bg-muted/50 hover:bg-muted transition-colors text-left"
                     >
-                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{tier.name}</span>
+                      <span className="font-medium text-sm text-foreground">{tier.name}</span>
                       {expandedTiers[tier.id] ? (
-                        <ChevronDown size={16} className="text-gray-500" />
+                        <ChevronDown size={16} className="text-muted-foreground" />
                       ) : (
-                        <ChevronRight size={16} className="text-gray-500" />
+                        <ChevronRight size={16} className="text-muted-foreground" />
                       )}
                     </button>
                     {expandedTiers[tier.id] && (
-                      <div className="bg-white dark:bg-neutral-900">
+                      <div className="bg-background">
                         {tierBosses.map(boss => {
                           const enabled = isBossEnabled(boss.id);
                           const isSelected = formData.bossId === boss.id;
@@ -276,21 +276,21 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
                               onClick={() => handleBossSelect(boss.id)}
                               disabled={!enabled}
                               className={`w-full flex items-center justify-between px-4 py-2 text-left transition-colors text-sm ${
-                                enabled && !isSelected ? 'hover:bg-gray-50 dark:hover:bg-neutral-800 cursor-pointer' : ''
+                                enabled && !isSelected ? 'hover:bg-muted cursor-pointer' : ''
                               } ${
-                                enabled && isSelected ? 'bg-blue-50 dark:bg-blue-950/40 border-l-2 border-blue-500' : ''
+                                enabled && isSelected ? 'bg-primary/10 border-l-2 border-primary' : ''
                               } ${
                                 !enabled ? 'opacity-50 cursor-not-allowed' : ''
                               }`}
                             >
                               <span className={`flex items-center gap-2 ${
-                                enabled ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'
+                                enabled ? 'text-foreground' : 'text-muted-foreground'
                               }`}>
                                 <span>{boss.icon}</span>
                                 <span>{boss.name}</span>
                               </span>
                               {!enabled && (
-                                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                <span className="text-xs text-yellow-500 font-medium">
                                   Coming Soon
                                 </span>
                               )}
@@ -305,7 +305,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             </div>
           )}
           {formData.bossId && (
-            <div className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+            <div className="text-sm text-primary mt-1">
               Selected: {bosses.find(b => b.id === formData.bossId)?.name}
             </div>
           )}
@@ -314,11 +314,11 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
         {/* Timeline Selection - Only show when boss is selected */}
         {formData.bossId && (
           <div className="flex flex-col gap-2">
-            <label htmlFor="timelineId" className="text-sm font-medium text-gray-800 dark:text-gray-200">
+            <label htmlFor="timelineId" className="text-sm font-medium text-foreground">
               Timeline (Optional)
             </label>
             {loadingTimelines ? (
-              <div className="text-sm text-gray-500 py-2">Loading timelines...</div>
+              <div className="text-sm text-muted-foreground py-2">Loading timelines...</div>
             ) : (
               <>
                 <select
@@ -327,7 +327,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
                   value={formData.timelineId}
                   onChange={handleInputChange}
                   disabled={isCreating}
-                  className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+                  className="px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:border-primary"
                 >
                   {availableTimelines.map(timeline => (
                     <option key={timeline.id} value={timeline.id}>
@@ -337,12 +337,12 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
                     </option>
                   ))}
                 </select>
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-sm text-muted-foreground mt-1">
                   {formData.timelineId && (
                     <>
                       Selected timeline will be used as a reference for boss actions.
                       {availableTimelines.find(t => t.id === formData.timelineId)?.official && (
-                        <span className="block mt-1 text-blue-600 dark:text-blue-400">
+                        <span className="block mt-1 text-primary">
                           ⭐ Official timeline automatically selected
                         </span>
                       )}
@@ -355,7 +355,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
         )}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="description" className="text-sm font-medium text-gray-800 dark:text-gray-200">Description (Optional)</label>
+          <label htmlFor="description" className="text-sm font-medium text-foreground">Description (Optional)</label>
           <textarea
             id="description"
             name="description"
@@ -364,12 +364,12 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             placeholder="Add a description for your plan"
             maxLength={500}
             disabled={isCreating}
-            className="min-h-[100px] px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+            className="min-h-[100px] px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
         {error && (
-          <div className="text-red-600 dark:text-red-400 text-sm mt-2 flex items-center gap-2">
+          <div className="text-destructive text-sm mt-2 flex items-center gap-2">
             <AlertCircle size={16} />
             {error}
           </div>
@@ -380,7 +380,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             type="button"
             onClick={handleCancel}
             disabled={isCreating}
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800 disabled:opacity-60"
+            className="px-4 py-2 rounded-md border border-input text-foreground hover:bg-muted disabled:opacity-60"
           >
             Cancel
           </button>
@@ -388,7 +388,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
           <button
             type="submit"
             disabled={isCreating || !formData.name.trim() || !formData.bossId}
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 flex items-center gap-2 justify-center"
           >
             <Save size={16} />
             {isCreating ? 'Creating...' : 'Create Plan'}

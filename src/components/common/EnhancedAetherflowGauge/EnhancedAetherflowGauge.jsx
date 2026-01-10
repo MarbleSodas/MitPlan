@@ -3,8 +3,7 @@ import { useEnhancedMitigation } from '../../../contexts/EnhancedMitigationConte
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const EnhancedAetherflowGauge = memo(({ selectedBossAction, showRefreshButton = false, onRefreshClick = null }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
+  const { isDarkMode } = useTheme();
   const { cooldownManager, selectedJobs, assignments } = useEnhancedMitigation();
 
   const [forceRefresh, setForceRefresh] = useState(0);
@@ -34,8 +33,8 @@ const EnhancedAetherflowGauge = memo(({ selectedBossAction, showRefreshButton = 
     for (let i = 0; i < aetherflowState.totalStacks; i++) {
       const isAvailable = i < aetherflowState.availableStacks;
       const isOnCooldown = !isAvailable && i < (aetherflowState.totalStacks - aetherflowState.availableStacks);
-      const bg = isAvailable ? '#2ecc40' : (isOnCooldown ? '#666' : (theme.mode === 'dark' ? '#333' : '#ddd'));
-      const br = isAvailable ? '#27ae60' : colors.border;
+      const bg = isAvailable ? '#2ecc40' : (isOnCooldown ? '#666' : (isDarkMode ? '#333' : '#ddd'));
+      const br = isAvailable ? '#27ae60' : 'var(--border)';
       const glow = isAvailable ? '0 0 6px 2px rgba(46, 204, 64, 0.4)' : 'none';
       out.push(
         <div key={i} className="w-5 h-5 rounded-full transition-all relative" title={isAvailable ? 'Available' : isOnCooldown ? 'On Cooldown' : 'Empty'}
@@ -46,15 +45,15 @@ const EnhancedAetherflowGauge = memo(({ selectedBossAction, showRefreshButton = 
   };
 
   return (
-    <div className="flex flex-col items-center px-3 py-2 rounded border min-w-[120px] bg-[var(--color-cardBackground)] border-[var(--color-border)]">
-      <div className="text-center font-semibold mb-1 text-xs text-[var(--color-text)]">Aetherflow</div>
+    <div className="flex flex-col items-center px-3 py-2 rounded border min-w-[120px] bg-card border-border">
+      <div className="text-center font-semibold mb-1 text-xs text-foreground">Aetherflow</div>
       <div className="flex gap-1 mb-1">{renderStackIndicators()}</div>
-      <div className="text-center font-semibold mb-1 text-xs text-[var(--color-text)]">{aetherflowState.availableStacks}/{aetherflowState.totalStacks} Stacks</div>
+      <div className="text-center font-semibold mb-1 text-xs text-foreground">{aetherflowState.availableStacks}/{aetherflowState.totalStacks} Stacks</div>
       {showRefreshButton && (
         <button
           onClick={onRefreshClick}
           disabled={!aetherflowState.canRefresh || aetherflowState.availableStacks === aetherflowState.totalStacks}
-          className={`rounded px-2 py-0.5 text-[10px] font-semibold transition-colors border disabled:opacity-60 ${aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? 'bg-[var(--color-primary)] text-[var(--color-buttonText)] border-[var(--color-primary)] cursor-pointer' : 'bg-[var(--color-cardBackground)] text-[var(--color-textSecondary)] border-[var(--color-border)] cursor-not-allowed'}`}
+          className={`rounded px-2 py-0.5 text-[10px] font-semibold transition-colors border disabled:opacity-60 ${aetherflowState.canRefresh && aetherflowState.availableStacks < aetherflowState.totalStacks ? 'bg-primary text-primary-foreground border-primary cursor-pointer' : 'bg-card text-muted-foreground border-border cursor-not-allowed'}`}
           title={aetherflowState.canRefresh ? 'Refresh Aetherflow stacks' : 'Aetherflow on cooldown'}
         >
           Refresh

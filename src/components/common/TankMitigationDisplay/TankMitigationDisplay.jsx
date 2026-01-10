@@ -1,6 +1,6 @@
 import React from 'react';
 import Tooltip from '../Tooltip/Tooltip';
-import { useTheme } from '../../../contexts/ThemeContext';
+
 import { formatMitigation, generateMitigationBreakdown, calculateTotalMitigation } from '../../../utils';
 
 const TankMitigationDisplay = ({
@@ -11,10 +11,7 @@ const TankMitigationDisplay = ({
   mainTankJob,
   offTankJob,
 }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
-  const bg = theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.2)' : 'rgba(51, 153, 255, 0.1)';
-  const border = theme.mode === 'dark' ? 'rgba(51, 153, 255, 0.3)' : 'rgba(51, 153, 255, 0.2)';
+
 
   const Pill = ({ value }) => (
     <div

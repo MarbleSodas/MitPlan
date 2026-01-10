@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId }) => {
   const { maxTime, markers, timeLabels } = useMemo(() => {
@@ -53,8 +54,8 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
 
   if (!actions || actions.length === 0) {
     return (
-      <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg p-3">
-        <div className="text-xs text-[var(--color-textSecondary)] text-center">
+      <div className="bg-card border border-border rounded-lg p-3">
+        <div className="text-xs text-muted-foreground text-center">
           No actions yet - add actions to see timeline visualization
         </div>
       </div>
@@ -62,17 +63,17 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
   }
 
   return (
-    <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg p-3">
+    <div className="bg-card border border-border rounded-lg p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-[var(--color-textSecondary)]">
+        <span className="text-xs font-medium text-muted-foreground">
           Timeline Overview
         </span>
-        <span className="text-xs text-[var(--color-textSecondary)]">
+        <span className="text-xs text-muted-foreground">
           {actions.length} action{actions.length !== 1 ? 's' : ''} • {formatTime(maxTime)} total
         </span>
       </div>
 
-      <div className="relative h-8 bg-[var(--color-background)] rounded border border-[var(--color-border)]">
+      <div className="relative h-8 bg-background rounded border border-border">
         <div className="absolute inset-0 flex items-end">
           {timeLabels.map((label, idx) => (
             <div
@@ -80,8 +81,8 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
               className="absolute bottom-0 transform -translate-x-1/2"
               style={{ left: `${label.position}%` }}
             >
-              <div className="h-2 w-px bg-[var(--color-border)]" />
-              <span className="text-[9px] text-[var(--color-textSecondary)] whitespace-nowrap">
+              <div className="h-2 w-px bg-border" />
+              <span className="text-[9px] text-muted-foreground whitespace-nowrap">
                 {label.label}
               </span>
             </div>
@@ -92,16 +93,18 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
           <button
             key={marker.id}
             onClick={() => onActionClick?.(marker.id)}
-            className={`absolute top-1 transform -translate-x-1/2 w-2 h-4 rounded-sm transition-all hover:scale-125 hover:z-10 ${getMarkerColor(marker)} ${
-              selectedActionId === marker.id ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--color-background)] scale-125 z-10' : ''
-            }`}
+            className={cn(
+              "absolute top-1 transform -translate-x-1/2 w-2 h-4 rounded-sm transition-all hover:scale-125 hover:z-10",
+              getMarkerColor(marker),
+              selectedActionId === marker.id && "ring-2 ring-white ring-offset-1 ring-offset-background scale-125 z-10"
+            )}
             style={{ left: `${marker.position}%` }}
             title={`${formatTime(marker.time)} - ${marker.name}`}
           />
         ))}
       </div>
 
-      <div className="flex items-center gap-3 mt-2 text-[10px] text-[var(--color-textSecondary)]">
+      <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-sm bg-red-500" />
           <span>Critical/TB</span>

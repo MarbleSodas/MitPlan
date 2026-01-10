@@ -1,0 +1,393 @@
+[
+  {
+    "id": "the_fixer_1",
+    "name": "The Fixer",
+    "time": 17,
+    "unmitigatedDamage": "~384,509",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "mortal_slayer_1",
+    "name": "Mortal Slayer",
+    "time": 47,
+    "unmitigatedDamage": "~195,114",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_1",
+    "name": "Dramatic Lysis",
+    "time": 89,
+    "unmitigatedDamage": "~305,875",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "hemorrhagic_projection_1",
+    "name": "Hemorrhagic Projection",
+    "time": 89,
+    "unmitigatedDamage": "~191,304",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "combined_dots_1",
+    "name": "Combined DoTs",
+    "time": 96,
+    "unmitigatedDamage": "~35,904",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burst_1",
+    "name": "Burst",
+    "time": 98,
+    "unmitigatedDamage": "~223,389",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "sustained_damage_1",
+    "name": "Sustained Damage",
+    "time": 98,
+    "unmitigatedDamage": "~51,759",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fourth_wall_fusion_1",
+    "name": "Fourth-Wall Fusion",
+    "time": 99,
+    "unmitigatedDamage": "~184,858",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "visceral_burst_1",
+    "name": "Visceral Burst",
+    "time": 99,
+    "unmitigatedDamage": "~437,672",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "⚔️"
+  },
+  {
+    "id": "the_fixer_2",
+    "name": "The Fixer",
+    "time": 110,
+    "unmitigatedDamage": "~394,226",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_2",
+    "name": "Dramatic Lysis",
+    "time": 159,
+    "unmitigatedDamage": "~134,075",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "roiling_mass_1",
+    "name": "Roiling Mass",
+    "time": 164,
+    "unmitigatedDamage": "~35,746",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "skinsplitter_1",
+    "name": "Skinsplitter",
+    "time": 168,
+    "unmitigatedDamage": "~152,030",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "splattershed_1",
+    "name": "Splattershed",
+    "time": 189,
+    "unmitigatedDamage": "~189,103",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "grand_entrance_1",
+    "name": "Grand Entrance",
+    "time": 214,
+    "unmitigatedDamage": "~160,699",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_3",
+    "name": "Dramatic Lysis",
+    "time": 220,
+    "unmitigatedDamage": "~35,678",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "metamitosis_1",
+    "name": "Metamitosis",
+    "time": 220,
+    "unmitigatedDamage": "~17,823",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "split_scourge_1",
+    "name": "Split Scourge",
+    "time": 230,
+    "unmitigatedDamage": "~436,095",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "venomous_scourge_1",
+    "name": "Venomous Scourge",
+    "time": 233,
+    "unmitigatedDamage": "~178,749",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "the_fixer_3",
+    "name": "The Fixer",
+    "time": 243,
+    "unmitigatedDamage": "~391,170",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "phagocyte_spotlight_1",
+    "name": "Phagocyte Spotlight",
+    "time": 266,
+    "unmitigatedDamage": "~181,168",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "✨"
+  },
+  {
+    "id": "ravenous_reach_1",
+    "name": "Ravenous Reach",
+    "time": 269,
+    "unmitigatedDamage": "~224,961",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "cell_shedding_1",
+    "name": "Cell Shedding",
+    "time": 269,
+    "unmitigatedDamage": "~85,869",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_4",
+    "name": "Dramatic Lysis",
+    "time": 277,
+    "unmitigatedDamage": "~136,457",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burst_2",
+    "name": "Burst",
+    "time": 282,
+    "unmitigatedDamage": "~6,616,020",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "splattershed_2",
+    "name": "Splattershed",
+    "time": 291,
+    "unmitigatedDamage": "~190,256",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "mortal_slayer_2",
+    "name": "Mortal Slayer",
+    "time": 321,
+    "unmitigatedDamage": "~192,685",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "slaughtershed_1",
+    "name": "Slaughtershed",
+    "time": 344,
+    "unmitigatedDamage": "~256,372",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_5",
+    "name": "Dramatic Lysis",
+    "time": 352,
+    "unmitigatedDamage": "~168,436",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fourth_wall_fusion_2",
+    "name": "Fourth-Wall Fusion",
+    "time": 352,
+    "unmitigatedDamage": "~179,157",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burst_3",
+    "name": "Burst",
+    "time": 353,
+    "unmitigatedDamage": "~4,026,819",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "raptor_knuckles_1",
+    "name": "Raptor Knuckles",
+    "time": 363,
+    "unmitigatedDamage": "~35,537",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "slaughtershed_2",
+    "name": "Slaughtershed",
+    "time": 372,
+    "unmitigatedDamage": "~259,197",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_6",
+    "name": "Dramatic Lysis",
+    "time": 381,
+    "unmitigatedDamage": "~176,803",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fourth_wall_fusion_3",
+    "name": "Fourth-Wall Fusion",
+    "time": 381,
+    "unmitigatedDamage": "~177,759",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "burst_4",
+    "name": "Burst",
+    "time": 381,
+    "unmitigatedDamage": "~6,827,321",
+    "damageType": "physical",
+    "importance": "critical",
+    "icon": "🛡️",
+    "isTankBuster": true
+  },
+  {
+    "id": "serpentine_scourge_1",
+    "name": "Serpentine Scourge",
+    "time": 388,
+    "unmitigatedDamage": "~131,998",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "raptor_knuckles_2",
+    "name": "Raptor Knuckles",
+    "time": 392,
+    "unmitigatedDamage": "~35,828",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "slaughtershed_3",
+    "name": "Slaughtershed",
+    "time": 401,
+    "unmitigatedDamage": "~258,733",
+    "damageType": "physical",
+    "importance": "high",
+    "icon": "⚔️"
+  },
+  {
+    "id": "dramatic_lysis_7",
+    "name": "Dramatic Lysis",
+    "time": 410,
+    "unmitigatedDamage": "~175,908",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "fourth_wall_fusion_4",
+    "name": "Fourth-Wall Fusion",
+    "time": 410,
+    "unmitigatedDamage": "~179,695",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  },
+  {
+    "id": "serpentine_scourge_2",
+    "name": "Serpentine Scourge",
+    "time": 416,
+    "unmitigatedDamage": "~228,508",
+    "damageType": "physical",
+    "importance": "medium",
+    "icon": "⚔️"
+  },
+  {
+    "id": "raptor_knuckles_3",
+    "name": "Raptor Knuckles",
+    "time": 420,
+    "unmitigatedDamage": "~34,957",
+    "damageType": "physical",
+    "importance": "low",
+    "icon": "⚔️"
+  }
+]

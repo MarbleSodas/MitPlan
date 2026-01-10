@@ -1,25 +1,20 @@
 import React from 'react';
 import { useFilterContext } from '../../../contexts';
-import { useTheme } from '../../../contexts/ThemeContext';
 import Tooltip from '../Tooltip/Tooltip';
 
 const PrecastToggle = () => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
   const { showPrecastOptions, togglePrecastOptions } = useFilterContext();
   const checked = !!showPrecastOptions;
-  const knobTranslate = checked ? 24 : 0;
-
+  
   const tooltipText = showPrecastOptions ? 'Including precast values' : 'Hiding precast values';
 
   return (
     <Tooltip content={tooltipText}>
-      <div className="flex items-center rounded-md shadow-sm" style={{ padding: '8px 12px', backgroundColor: colors.secondary }}>
-        <span className="mr-2 whitespace-nowrap" style={{ fontSize: theme.fontSizes?.medium, color: colors.text }}>Show Precast Options:</span>
-        <label className="relative inline-block" style={{ width: 48, height: 24 }}>
-          <input type="checkbox" className="sr-only" checked={checked} onChange={togglePrecastOptions} />
-          <span className="absolute inset-0 rounded-full transition-colors" style={{ backgroundColor: checked ? colors.primary : colors.border }} />
-          <span className="absolute rounded-full transition-transform" style={{ height: 18, width: 18, left: 3, bottom: 3, backgroundColor: '#fff', transform: `translateX(${knobTranslate}px)` }} />
+      <div className="flex items-center rounded-md shadow-sm px-3 py-2 bg-card border border-border">
+        <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground">Show Precast Options:</span>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" className="sr-only peer" checked={checked} onChange={togglePrecastOptions} />
+          <div className="w-11 h-6 bg-muted-foreground/30 dark:bg-muted-foreground/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-background after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
         </label>
       </div>
     </Tooltip>

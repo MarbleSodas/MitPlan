@@ -2,10 +2,28 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
 import { bosses } from '../../data';
-import { getTimelinesByBossTag, getOfficialTimelines } from '../../services/timelineService';
-import { INPUT, SELECT, BUTTON, MODAL, cn } from '../../styles/designSystem';
+import { getTimelinesByBossTag } from '../../services/timelineService';
+import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-// Define which bosses have timelines implemented
 const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
   'red-hot-deep-blue-m10s',
@@ -18,7 +36,6 @@ const ENABLED_BOSS_IDS = [
   'statice'
 ];
 
-// Define tier groupings for boss selection
 const BOSS_TIERS = [
   {
     id: 'm9s-m12s',
@@ -45,7 +62,6 @@ const BOSS_TIERS = [
     defaultExpanded: false
   }
 ];
-
 
 const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedBossId = null }) => {
   const { createNewPlan } = usePlan();
@@ -84,7 +100,6 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
 
   const isBossEnabled = (bossId) => ENABLED_BOSS_IDS.includes(bossId);
 
-  // Load timelines when boss is selected
   useEffect(() => {
     if (formData.bossId) {
       loadTimelinesForBoss(formData.bossId);
@@ -96,11 +111,9 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
   const loadTimelinesForBoss = async (bossId) => {
     setLoadingTimelines(true);
     try {
-      // Get both official and custom timelines for this boss
       const timelines = await getTimelinesByBossTag(bossId, false);
       setAvailableTimelines(timelines);
 
-      // Auto-select the official timeline if available
       const officialTimeline = timelines.find(t => t.official === true);
       if (officialTimeline) {
         setFormData(prev => ({
@@ -132,8 +145,6 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       return;
     }
 
-    // Boss is now optional - no validation required
-
     setLoading(true);
     setError('');
 
@@ -141,8 +152,8 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       const planData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        bossId: formData.bossId || null, // Boss is now optional
-        bossTags: formData.bossId ? [formData.bossId] : [], // Convert to array for new structure
+        bossId: formData.bossId || null,
+        bossTags: formData.bossId ? [formData.bossId] : [],
         assignments: {},
         selectedJobs: {},
         tankPositions: {
@@ -151,7 +162,6 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
         }
       };
 
-      // If a timeline is selected, store the reference
       if (formData.timelineId) {
         planData.sourceTimelineId = formData.timelineId;
         const selectedTimeline = availableTimelines.find(t => t.id === formData.timelineId);
@@ -160,13 +170,10 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
         }
       }
 
-      console.log('[CreatePlanModal] Creating plan with data:', planData);
       const newPlan = await createNewPlan(planData);
-      console.log('[CreatePlanModal] Plan created successfully:', newPlan);
 
       onSuccess?.(newPlan);
 
-      // Navigate to planner if requested
       if (onNavigateToPlanner) {
         onNavigateToPlanner(newPlan.id);
       }
@@ -179,22 +186,24 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
   };
 
   return (
-    <div onClick={onClose} className={cn(MODAL.overlay, 'z-[1000]')}>
-      <div onClick={(e) => e.stopPropagation()} className={cn(MODAL.container, 'max-w-xl p-8')}>
-        <div className="flex justify-between items-center mb-8">
-          <h2 className={cn(MODAL.title, 'text-2xl')}>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">
             {preSelectedBossId
               ? `Create Plan for ${bosses.find(b => b.id === preSelectedBossId)?.name}`
               : 'Create New Plan'
             }
-          </h2>
-          <button onClick={onClose} className={cn(BUTTON.ghost, 'w-8 h-8 p-0')}>×</button>
-        </div>
+          </DialogTitle>
+          <DialogDescription>
+            Create a new mitigation plan for your raid team.
+          </DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label htmlFor="name" className="text-[var(--color-text)] font-medium text-sm">Plan Name *</label>
-            <input
+            <Label htmlFor="name">Plan Name *</Label>
+            <Input
               id="name"
               name="name"
               type="text"
@@ -202,39 +211,38 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               value={formData.name}
               onChange={handleInputChange}
               required
-              className={INPUT.medium}
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[var(--color-text)] font-medium text-sm">Boss Encounter</label>
+            <Label>Boss Encounter</Label>
             {preSelectedBossId ? (
-              <div className="text-sm text-[var(--color-textSecondary)] py-2 px-3 bg-[var(--color-bgHover)] rounded-md">
+              <div className="text-sm text-muted-foreground py-2 px-3 bg-muted rounded-md">
                 Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
               </div>
             ) : (
-              <div className="border border-[var(--color-border)] rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
+              <div className="border border-border rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
                 {BOSS_TIERS.map(tier => {
                   const tierBosses = tier.bossIds
                     .map(id => bosses.find(b => b.id === id))
                     .filter(Boolean);
                   
                   return (
-                    <div key={tier.id} className="border-b border-[var(--color-border)] last:border-b-0">
+                    <div key={tier.id} className="border-b border-border last:border-b-0">
                       <button
                         type="button"
                         onClick={() => toggleTier(tier.id)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 bg-[var(--color-bgSecondary)] hover:bg-[var(--color-bgHover)] transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2.5 bg-secondary hover:bg-accent transition-colors text-left"
                       >
-                        <span className="font-medium text-sm text-[var(--color-text)]">{tier.name}</span>
+                        <span className="font-medium text-sm text-foreground">{tier.name}</span>
                         {expandedTiers[tier.id] ? (
-                          <ChevronDown size={16} className="text-[var(--color-textSecondary)]" />
+                          <ChevronDown size={16} className="text-muted-foreground" />
                         ) : (
-                          <ChevronRight size={16} className="text-[var(--color-textSecondary)]" />
+                          <ChevronRight size={16} className="text-muted-foreground" />
                         )}
                       </button>
                       {expandedTiers[tier.id] && (
-                        <div className="bg-[var(--color-bg)]">
+                        <div className="bg-background">
                           {tierBosses.map(boss => {
                             const enabled = isBossEnabled(boss.id);
                             const isSelected = formData.bossId === boss.id;
@@ -247,14 +255,14 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                                 disabled={!enabled}
                                 className={cn(
                                   'w-full flex items-center justify-between px-4 py-2 text-left transition-colors text-sm',
-                                  enabled && !isSelected && 'hover:bg-[var(--color-bgHover)] cursor-pointer',
-                                  enabled && isSelected && 'bg-blue-50 dark:bg-blue-950/40 border-l-2 border-blue-500',
+                                  enabled && !isSelected && 'hover:bg-accent cursor-pointer',
+                                  enabled && isSelected && 'bg-primary/10 border-l-2 border-primary',
                                   !enabled && 'opacity-50 cursor-not-allowed'
                                 )}
                               >
                                 <span className={cn(
                                   'flex items-center gap-2',
-                                  enabled ? 'text-[var(--color-text)]' : 'text-[var(--color-textSecondary)]'
+                                  enabled ? 'text-foreground' : 'text-muted-foreground'
                                 )}>
                                   <span>{boss.icon}</span>
                                   <span>{boss.name}</span>
@@ -275,43 +283,42 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               </div>
             )}
             {formData.bossId && (
-              <div className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+              <div className="text-sm text-primary mt-1">
                 Selected: {bosses.find(b => b.id === formData.bossId)?.name}
               </div>
             )}
           </div>
 
-          {/* Timeline Selection - Only show when boss is selected */}
           {formData.bossId && (
             <div className="flex flex-col gap-2">
-              <label htmlFor="timelineId" className="text-[var(--color-text)] font-medium text-sm">
-                Timeline (Optional)
-              </label>
+              <Label htmlFor="timelineId">Timeline (Optional)</Label>
               {loadingTimelines ? (
-                <div className="text-sm text-[var(--color-textSecondary)] py-2">Loading timelines...</div>
+                <div className="text-sm text-muted-foreground py-2">Loading timelines...</div>
               ) : (
                 <>
-                  <select
-                    id="timelineId"
-                    name="timelineId"
+                  <Select
                     value={formData.timelineId}
-                    onChange={handleInputChange}
-                    className={SELECT.medium}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, timelineId: value }))}
                   >
-                    {availableTimelines.map(timeline => (
-                      <option key={timeline.id} value={timeline.id}>
-                        {timeline.official ? '⭐ ' : '📝 '}
-                        {timeline.name}
-                        {timeline.official ? ' (Official)' : ' (Custom)'}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="text-sm text-gray-500 mt-1">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a timeline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTimelines.map(timeline => (
+                        <SelectItem key={timeline.id} value={timeline.id}>
+                          {timeline.official ? '⭐ ' : '📝 '}
+                          {timeline.name}
+                          {timeline.official ? ' (Official)' : ' (Custom)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="text-sm text-muted-foreground mt-1">
                     {formData.timelineId && (
                       <>
                         Selected timeline will be used as a reference for boss actions.
                         {availableTimelines.find(t => t.id === formData.timelineId)?.official && (
-                          <span className="block mt-1 text-blue-600 dark:text-blue-400">
+                          <span className="block mt-1 text-primary">
                             ⭐ Official timeline automatically selected
                           </span>
                         )}
@@ -324,30 +331,31 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
           )}
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="description" className="text-[var(--color-text)] font-medium text-sm">Description</label>
-            <textarea
+            <Label htmlFor="description">Description</Label>
+            <Textarea
               id="description"
               name="description"
               placeholder="Optional description for your plan"
               value={formData.description}
               onChange={handleInputChange}
-              className={cn(INPUT.medium, 'min-h-[100px] resize-y')}
             />
           </div>
 
           {error && (
-            <div className="text-red-600 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-3 py-2 rounded text-sm">
+            <div className="text-destructive-foreground bg-destructive/10 border border-destructive/20 px-3 py-2 rounded text-sm">
               {error}
             </div>
           )}
 
-          <div className="flex gap-3 justify-end mt-2">
-            <button type="button" onClick={onClose} className={BUTTON.secondary.large}>Cancel</button>
-            <button type="submit" disabled={loading} className={BUTTON.primary.large}>{loading ? 'Creating...' : 'Create Plan'}</button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Plan'}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

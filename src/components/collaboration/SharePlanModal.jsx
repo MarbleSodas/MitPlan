@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Copy, Check, Share2 } from 'lucide-react';
 import * as planService from '../../services/realtimePlanService';
-import { useToast } from '../common/Toast';
-import { useTheme } from '../../contexts/ThemeContext';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const SharePlanModal = ({ isOpen, onClose, plan }) => {
-  const { theme } = useTheme();
-  const colors = theme.colors;
-  const { addToast } = useToast();
   const [isPublic, setIsPublic] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -46,7 +53,7 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      addToast({ type: 'success', title: 'Plan link copied!', message: 'The plan link has been copied to your clipboard.', duration: 3000 });
+      toast.success('Plan link copied!', { description: 'The plan link has been copied to your clipboard.' });
     } catch (err) {
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
@@ -56,7 +63,7 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
       document.body.removeChild(textArea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      addToast({ type: 'success', title: 'Plan link copied!', message: 'The plan link has been copied to your clipboard.', duration: 3000 });
+      toast.success('Plan link copied!', { description: 'The plan link has been copied to your clipboard.' });
     }
   };
 
@@ -67,60 +74,75 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
     onClose();
   };
 
-  if (!isOpen || !plan) return null;
+  if (!plan) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={handleClose}>
-      <div className="rounded-xl w-[90%] max-w-[500px] p-8" style={{ background: colors.background, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 mb-6">
-          <Share2 size={24} color={colors.primary || '#3399ff'} />
-          <h2 className="m-0 text-xl font-semibold" style={{ color: colors.text }}>Share Plan</h2>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Share2 size={24} className="text-primary" />
+            Share Plan
+          </DialogTitle>
+          <DialogDescription>
+            Share "{plan.name}" with others for collaborative editing. Anyone with the link will be able to view and edit this plan.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-base font-semibold mb-2">Share Link</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Universal access enabled - all plans are shareable and editable by anyone.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={shareUrl}
+                readOnly
+                onClick={(e) => e.target.select()}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleCopyUrl}
+                variant={copied ? "default" : "default"}
+                className={cn(
+                  "min-w-[100px]",
+                  copied && "bg-green-500 hover:bg-green-600"
+                )}
+              >
+                {copied ? (
+                  <>
+                    <Check size={16} />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-lg text-sm px-3 py-2 bg-destructive/10 text-destructive border border-destructive/20">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="rounded-lg text-sm px-3 py-2 bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
+              {success}
+            </div>
+          )}
         </div>
 
-        <p className="mb-6" style={{ color: colors.textSecondary, lineHeight: 1.5 }}>
-          Share "{plan.name}" with others for collaborative editing. Anyone with the link will be able to view and edit this plan.
-        </p>
-
-        <div className="mb-6">
-          <h3 className="m-0 mb-2 text-base font-semibold" style={{ color: colors.text }}>Share Link</h3>
-          <p className="mb-4" style={{ color: colors.textSecondary }}>Universal access enabled - all plans are shareable and editable by anyone.</p>
-          <div className="flex gap-2 mb-4">
-            <input
-              value={shareUrl}
-              readOnly
-              onClick={(e) => e.target.select()}
-              className="flex-1 rounded-lg text-sm"
-              style={{ padding: '0.75rem', border: `2px solid ${colors.border}`, background: colors.backgroundSecondary, color: colors.text }}
-            />
-            <button
-              onClick={handleCopyUrl}
-              className={`flex items-center gap-2 rounded-lg font-semibold text-sm min-w-[100px] justify-center transition ${copied ? 'bg-emerald-500 hover:bg-emerald-600' : ''}`}
-              style={{ padding: '0.75rem 1rem', background: copied ? undefined : colors.primary, color: '#fff', border: 'none' }}
-            >
-              {copied ? (<><Check size={16} />Copied!</>) : (<><Copy size={16} />Copy</>)}
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <div className="mb-4 rounded-lg text-sm" style={{ padding: '0.75rem', background: colors.errorBackground || '#fef2f2', color: colors.error || '#ef4444', border: `1px solid ${colors.errorBorder || '#fecaca'}` }}>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 rounded-lg text-sm" style={{ padding: '0.75rem', background: colors.successBackground || '#f0f9ff', color: colors.success || '#10b981', border: `1px solid ${colors.successBorder || '#bfdbfe'}` }}>
-            {success}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3">
-          <button onClick={handleClose} className="rounded-lg font-semibold transition" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: colors.textSecondary, border: `2px solid ${colors.border}` }}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

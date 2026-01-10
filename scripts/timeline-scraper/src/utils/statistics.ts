@@ -179,6 +179,13 @@ export function calculateStats(values: number[]): BasicStats {
   };
 }
 
+export function stdDev(values: number[]): number {
+  if (values.length <= 1) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const squaredDiffs = values.map((v) => Math.pow(v - mean, 2));
+  return Math.sqrt(squaredDiffs.reduce((a, b) => a + b, 0) / values.length);
+}
+
 /**
  * Group numbers into clusters based on proximity
  *

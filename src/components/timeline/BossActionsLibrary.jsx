@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Grid, List, Plus, X } from 'lucide-react';
 import { bossActionsLibrary, categorizedActions, libraryUtils } from '../../data/bossActionsLibrary';
-import { INPUT, SELECT } from '../../styles/designSystem';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const CATEGORY_TABS = [
   { id: 'all', label: 'All' },
@@ -96,37 +98,38 @@ const BossActionsLibrary = ({ onSelectAction }) => {
       case 'high': return 'text-orange-400';
       case 'medium': return 'text-amber-400';
       case 'low': return 'text-green-400';
-      default: return 'text-[var(--color-textSecondary)]';
+      default: return 'text-muted-foreground';
     }
   };
 
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-textSecondary)]" size={16} />
-        <input
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+        <Input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search actions..."
-          className={INPUT.small + ' pl-9 text-sm'}
+          className="pl-9 h-8 text-sm"
         />
       </div>
 
-      <div className="flex border-b border-[var(--color-border)]">
+      <div className="flex border-b border-border">
         {CATEGORY_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setSelectedCategory(tab.id)}
-            className={`px-3 py-2 text-xs font-medium transition-colors relative ${
+            className={cn(
+              "px-3 py-2 text-xs font-medium transition-colors relative",
               selectedCategory === tab.id
-                ? 'text-[var(--color-primary)]'
-                : 'text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
-            }`}
+                ? 'text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
           >
             {tab.label}
             {selectedCategory === tab.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
         ))}
@@ -136,7 +139,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         <select
           value={selectedDamageType}
           onChange={(e) => setSelectedDamageType(e.target.value)}
-          className={SELECT.small + ' text-xs flex-1'}
+          className="h-8 px-2 text-xs flex-1 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="all">All Types</option>
           <option value="magical">Magical</option>
@@ -146,7 +149,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         <select
           value={selectedBossSource}
           onChange={(e) => setSelectedBossSource(e.target.value)}
-          className={SELECT.small + ' text-xs flex-1'}
+          className="h-8 px-2 text-xs flex-1 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="all">All Bosses</option>
           {uniqueBossSources.map(source => (
@@ -154,25 +157,27 @@ const BossActionsLibrary = ({ onSelectAction }) => {
           ))}
         </select>
 
-        <div className="flex border border-[var(--color-border)] rounded-lg overflow-hidden">
+        <div className="flex border border-border rounded-lg overflow-hidden">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-1.5 transition-colors ${
+            className={cn(
+              "p-1.5 transition-colors",
               viewMode === 'list' 
-                ? 'bg-[var(--color-primary)] text-white' 
-                : 'bg-[var(--color-background)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
-            }`}
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-background text-muted-foreground hover:text-foreground'
+            )}
             title="List view"
           >
             <List size={14} />
           </button>
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 transition-colors ${
+            className={cn(
+              "p-1.5 transition-colors",
               viewMode === 'grid' 
-                ? 'bg-[var(--color-primary)] text-white' 
-                : 'bg-[var(--color-background)] text-[var(--color-textSecondary)] hover:text-[var(--color-text)]'
-            }`}
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-background text-muted-foreground hover:text-foreground'
+            )}
             title="Grid view"
           >
             <Grid size={14} />
@@ -180,12 +185,12 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         </div>
       </div>
 
-      <div className="text-xs text-[var(--color-textSecondary)]">
+      <div className="text-xs text-muted-foreground">
         {filteredActions.length} action{filteredActions.length !== 1 ? 's' : ''}
       </div>
 
       {quickAddAction && (
-        <div className="bg-[var(--color-primary)]/10 border border-[var(--color-primary)] rounded-lg p-3">
+        <div className="bg-primary/10 border border-primary rounded-lg p-3">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-lg flex-shrink-0">{quickAddAction.icon}</span>
@@ -193,13 +198,13 @@ const BossActionsLibrary = ({ onSelectAction }) => {
             </div>
             <button 
               onClick={() => setQuickAddAction(null)}
-              className="p-1 text-[var(--color-textSecondary)] hover:text-[var(--color-text)]"
+              className="p-1 text-muted-foreground hover:text-foreground"
             >
               <X size={14} />
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[var(--color-textSecondary)]">Time (s):</label>
+            <label className="text-xs text-muted-foreground">Time (s):</label>
             <input
               ref={quickAddInputRef}
               type="number"
@@ -207,21 +212,18 @@ const BossActionsLibrary = ({ onSelectAction }) => {
               onChange={(e) => setQuickAddTime(parseInt(e.target.value) || 0)}
               onKeyDown={handleQuickAddKeyDown}
               min={0}
-              className="flex-1 px-2 py-1 text-sm bg-[var(--color-background)] border border-[var(--color-border)] rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+              className="flex-1 px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
             />
-            <button
-              onClick={handleQuickAddConfirm}
-              className="px-3 py-1 bg-[var(--color-primary)] text-white text-sm rounded font-medium hover:brightness-110 transition-all"
-            >
+            <Button size="sm" onClick={handleQuickAddConfirm}>
               Add
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'space-y-1.5'}>
         {filteredActions.length === 0 ? (
-          <div className="text-center py-6 text-[var(--color-textSecondary)] text-sm col-span-2">
+          <div className="text-center py-6 text-muted-foreground text-sm col-span-2">
             No actions found
           </div>
         ) : (
@@ -230,13 +232,13 @@ const BossActionsLibrary = ({ onSelectAction }) => {
               <button
                 key={action.libraryId || action.id}
                 onClick={() => handleDirectAdd(action)}
-                className="text-left p-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] transition-colors group"
+                className="text-left p-2 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">{action.icon}</span>
                   <span className="text-xs font-medium truncate flex-1">{action.name}</span>
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-[var(--color-textSecondary)]">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>{formatTime(action.time)}</span>
                   {action.isTankBuster && (
                     <span className="px-1 py-0.5 bg-red-500/20 text-red-400 rounded">TB</span>
@@ -247,7 +249,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
                 </div>
                 <button
                   onClick={(e) => handleQuickAdd(action, e)}
-                  className="mt-1 w-full py-1 text-[10px] bg-[var(--select-bg)] text-[var(--color-textSecondary)] rounded opacity-0 group-hover:opacity-100 transition-opacity hover:text-[var(--color-primary)]"
+                  className="mt-1 w-full py-1 text-[10px] bg-muted text-muted-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary"
                 >
                   + Set Time
                 </button>
@@ -255,7 +257,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
             ) : (
               <div
                 key={action.libraryId || action.id}
-                className="flex items-center gap-2 px-2 py-1.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] transition-colors group"
+                className="flex items-center gap-2 px-2 py-1.5 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
               >
                 <span className="text-lg flex-shrink-0">{action.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -268,7 +270,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
                       <span className="px-1 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded flex-shrink-0">Dual</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-[var(--color-textSecondary)]">
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span>{formatTime(action.time)}</span>
                     {action.damageType && (
                       <span>{action.damageType === 'magical' ? '🔮' : '⚔️'}</span>
@@ -284,17 +286,18 @@ const BossActionsLibrary = ({ onSelectAction }) => {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={(e) => handleQuickAdd(action, e)}
-                    className="p-1 text-[var(--color-textSecondary)] hover:text-[var(--color-primary)] hover:bg-[var(--select-bg)] rounded opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-1 text-muted-foreground hover:text-primary hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-all"
                     title="Add with custom time"
                   >
                     <Plus size={14} />
                   </button>
-                  <button
+                  <Button
+                    size="sm"
                     onClick={() => handleDirectAdd(action)}
-                    className="px-2 py-0.5 text-[10px] bg-[var(--color-primary)] text-white rounded font-medium hover:brightness-110 transition-all opacity-0 group-hover:opacity-100"
+                    className="h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100"
                   >
                     Add
-                  </button>
+                  </Button>
                 </div>
               </div>
             )

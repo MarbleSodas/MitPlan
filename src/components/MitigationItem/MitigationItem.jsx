@@ -10,11 +10,11 @@ import {
 } from '../../utils';
 import { useTankPositionContext } from '../../contexts';
 
-const MitigationItemContainer = ({ children, className = '', $disabled, ...rest }) => {
-  const base = 'group relative w-full transition-all border border-l-4 border-y-[var(--color-borderLight)] border-r-[var(--color-borderLight)] bg-[var(--color-cardBackground)] rounded-sm px-3 py-2 mb-[2px] select-none shadow-sm';
+const MitigationItemContainer = ({ children, className = '', $disabled, $borderColorClass, ...rest }) => {
+  const base = 'group relative w-full transition-all border border-l-4 border-y-border border-r-border bg-card rounded-sm px-3 py-2 mb-[2px] select-none shadow-sm';
   const state = $disabled
-    ? 'cursor-not-allowed opacity-70 border-l-red-500 bg-neutral-100/80 dark:bg-neutral-700/50'
-    : 'cursor-grab opacity-100 border-l-blue-500 hover:bg-black/5 dark:hover:bg-white/5';
+    ? 'cursor-not-allowed opacity-70 border-l-destructive bg-muted'
+    : `cursor-grab opacity-100 ${$borderColorClass || 'border-l-primary'} hover:bg-muted/50`;
   return (
     <div {...rest} className={`${base} ${state} ${className}`}>
       {children}
@@ -31,7 +31,7 @@ const MitigationName = ({ children, className = '', ...rest }) => (
 );
 
 const MitigationDescription = ({ children, className = '', ...rest }) => (
-  <p {...rest} className={`m-0 text-sm text-[var(--color-textSecondary)] ${className}`}>{children}</p>
+  <p {...rest} className={`m-0 text-sm text-muted-foreground ${className}`}>{children}</p>
 );
 
 const CooldownOverlay = ({ children, className = '', ...rest }) => (
@@ -183,8 +183,13 @@ const MitigationItem = memo(({
     `This ability can only be used by ${mitigation.jobs.join(', ')}` :
     cooldownReason;
 
+  const getBorderColor = () => {
+    if (finalDisabled) return 'border-l-destructive';
+    return 'border-l-primary';
+  };
+
   return (
-    <MitigationItemContainer $disabled={finalDisabled}>
+    <MitigationItemContainer $disabled={finalDisabled} $borderColorClass={getBorderColor()}>
       <MitigationIcon>
         {typeof mitigation.icon === 'string' && mitigation.icon.startsWith('/') ?
           <img src={mitigation.icon} alt={mitigation.name} className="h-6 w-6 object-contain" /> :
