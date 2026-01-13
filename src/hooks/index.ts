@@ -1,0 +1,1 @@
+export { useAutoAssignment } from './useAutoAssignment';
