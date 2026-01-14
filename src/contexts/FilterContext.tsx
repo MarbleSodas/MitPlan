@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils';
 import { useRealtimePlan } from './RealtimePlanContext';
 import { useRealtimeBossContext } from './RealtimeBossContext';
@@ -100,7 +100,7 @@ export const FilterProvider = ({ children }) => {
     });
   }, [showAllMitigations, showOnlyMyAbilities, realtimePlan, currentBossLevel]);
 
-  const contextValue = {
+  const contextValue = useMemo(() => ({
     showAllMitigations,
     toggleFilterMode,
     filterMitigations,
@@ -108,7 +108,7 @@ export const FilterProvider = ({ children }) => {
     togglePrecastOptions,
     showOnlyMyAbilities,
     toggleMyAbilitiesFilter,
-  };
+  }), [showAllMitigations, toggleFilterMode, filterMitigations, showPrecastOptions, togglePrecastOptions, showOnlyMyAbilities, toggleMyAbilitiesFilter]);
 
   return (
     <FilterContext.Provider value={contextValue}>

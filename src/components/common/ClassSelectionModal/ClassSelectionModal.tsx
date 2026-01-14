@@ -1,7 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
 import { ffxivJobs } from '../../../data';
-import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,

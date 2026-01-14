@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRealtimeJobContext } from './RealtimeJobContext';
 import { useRealtimePlan } from './RealtimePlanContext';
 
@@ -274,17 +274,19 @@ export const TankPositionProvider = ({ children }) => {
 
 
 
+  const contextValue = useMemo(() => ({
+    tankPositions,
+    assignTankPosition,
+    clearTankPosition,
+    getTankForPosition,
+    isTankAssigned,
+    getPositionForTank,
+    selectedTankJobs,
+    registerTankPositionChangeHandler
+  }), [tankPositions, assignTankPosition, clearTankPosition, getTankForPosition, isTankAssigned, getPositionForTank, selectedTankJobs, registerTankPositionChangeHandler]);
+
   return (
-    <TankPositionContext.Provider value={{
-      tankPositions,
-      assignTankPosition,
-      clearTankPosition,
-      getTankForPosition,
-      isTankAssigned,
-      getPositionForTank,
-      selectedTankJobs,
-      registerTankPositionChangeHandler
-    }}>
+    <TankPositionContext.Provider value={contextValue}>
       {children}
     </TankPositionContext.Provider>
   );

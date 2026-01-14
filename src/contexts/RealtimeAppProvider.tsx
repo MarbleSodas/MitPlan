@@ -7,7 +7,7 @@ import { TankPositionProvider } from './TankPositionContext';
 import { FilterProvider } from './FilterContext';
 import { TankSelectionModalProvider } from './TankSelectionModalContext';
 import { CollaborationProvider } from './CollaborationContext';
-import { ClassSelectionModalProvider } from './ClassSelectionModalContext.jsx';
+import { ClassSelectionModalProvider } from './ClassSelectionModalContext';
 import { PresenceProvider } from './PresenceContext';
 import { UserJobAssignmentProvider } from './UserJobAssignmentContext';
 

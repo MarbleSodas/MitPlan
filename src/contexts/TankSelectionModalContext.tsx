@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useMemo } from 'react';
 import TankSelectionModal from '../components/common/TankSelectionModal';
 import { useTankPositionContext } from './TankPositionContext';
 import { useRealtimeJobContext } from './RealtimeJobContext';
@@ -198,11 +198,13 @@ export const TankSelectionModalProvider = ({ children }) => {
     setIsModalOpen(false);
   }, [modalData]);
 
+  const contextValue = useMemo(() => ({
+    openTankSelectionModal,
+    closeTankSelectionModal
+  }), [openTankSelectionModal, closeTankSelectionModal]);
+
   return (
-    <TankSelectionModalContext.Provider value={{
-      openTankSelectionModal,
-      closeTankSelectionModal
-    }}>
+    <TankSelectionModalContext.Provider value={contextValue}>
       {children}
       <TankSelectionModal
         isOpen={isModalOpen}

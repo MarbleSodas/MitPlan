@@ -13,6 +13,10 @@ export default defineConfig({
   define: {
     __BUILD_TIMESTAMP__: JSON.stringify(Date.now())
   },
+  esbuild: {
+    // Strip console.log and debugger statements in production builds
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
     chunkSizeWarningLimit: 1600
   }

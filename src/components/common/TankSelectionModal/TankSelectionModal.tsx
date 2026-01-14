@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { getJobIcon } from '../../../utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';

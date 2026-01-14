@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import sessionManager from '../services/sessionManager';
 import { loadFromLocalStorage, saveToLocalStorage } from '../utils/storage/storageUtils';
@@ -272,31 +272,24 @@ export const CollaborationProvider = ({ children }) => {
     // CollaborationProvider initialized
   }, []);
 
-  const value = {
-    // State
+  const value = useMemo(() => ({
     activePlanId,
     collaborators,
     isCollaborating,
     sessionId,
     displayName,
     isInitialized,
-
-    // Actions
     joinCollaborativeSession,
     leaveCollaborativeSession,
     setDisplayName,
-
-    // Utilities
     debouncedUpdate,
     batchUpdate,
     setChangeOrigin,
     isOwnChange,
     trackPerformance,
     isUpdating: isUpdatingRef.current,
-
-    // Performance metrics (for debugging)
     getPerformanceMetrics: () => performanceMetrics.current
-  };
+  }), [activePlanId, collaborators, isCollaborating, sessionId, displayName, isInitialized, joinCollaborativeSession, leaveCollaborativeSession, debouncedUpdate, batchUpdate, setChangeOrigin, isOwnChange, trackPerformance]);
 
   // Only log when there are issues
   if (!isInitialized || typeof joinCollaborativeSession !== 'function') {

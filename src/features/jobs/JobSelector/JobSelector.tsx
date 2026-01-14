@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, memo } from 'react';
 import { useRealtimeJobContext } from '../../../contexts/RealtimeJobContext';
 import { usePresenceOptional } from '../../../contexts/PresenceContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -109,4 +109,6 @@ function JobSelector({ disabled = false }) {
   );
 }
 
-export default JobSelector;
+JobSelector.displayName = 'JobSelector';
+
+export default memo(JobSelector);
