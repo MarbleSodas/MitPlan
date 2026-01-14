@@ -516,7 +516,13 @@ export const EnhancedMitigationProvider = ({ children }) => {
       const isRoleShared = !!abilityDef?.isRoleShared;
       const isMultiInstance = isRoleShared && getRoleSharedAbilityCount(abilityDef, selectedJobs) > 1;
       const chosenCasterJobId = options?.casterJobId || null;
-      const effectiveCasterJobId = isMultiInstance ? chosenCasterJobId : null;
+      const abilityJobs = abilityDef?.jobs || [];
+      const casterJobBelongsToAbility = chosenCasterJobId && abilityJobs.includes(chosenCasterJobId);
+      const validatedCasterJobId = casterJobBelongsToAbility 
+        ? chosenCasterJobId 
+        : (abilityJobs.length === 1 ? abilityJobs[0] : null);
+      
+      const effectiveCasterJobId = isMultiInstance ? validatedCasterJobId : null;
       const instanceId = isRoleShared ? `${mitigation.id}_${effectiveCasterJobId || Date.now()}` : null;
 
       const cooldownSec = getAbilityCooldownForLevel(mitigation, currentBossLevel);
@@ -530,7 +536,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
         chargeIndex: preAvailability.availableCharges > 1 ? (preAvailability.totalCharges - preAvailability.availableCharges) : 0,
         instanceId,
         cooldownManagerVersion: cooldownManagerRef.current?.lastCacheUpdate || Date.now(),
-        casterJobId: chosenCasterJobId || (abilityDef?.jobs?.length === 1 ? abilityDef.jobs[0] : null),
+        casterJobId: validatedCasterJobId,
         casterUserId: options?.casterUserId || null,
         casterDisplayName: options?.casterDisplayName || null,
         casterColor: options?.casterColor || null

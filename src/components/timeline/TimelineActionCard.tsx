@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Edit2, Trash2, GripVertical, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const TimelineActionCard = ({
   action,
@@ -75,14 +77,15 @@ const TimelineActionCard = ({
         </div>
 
         {isEditingTime ? (
-          <input
+          <Input
             type="number"
             value={tempTime}
             onChange={(e) => setTempTime(parseInt(e.target.value) || 0)}
             onKeyDown={handleTimeKeyDown}
             onBlur={handleTimeBlur}
             autoFocus
-            className="w-16 px-2 py-1 text-sm font-mono bg-card border border-primary rounded focus:outline-none"
+            variant="compact"
+            className="w-16"
             min={0}
           />
         ) : (
@@ -133,27 +136,33 @@ const TimelineActionCard = ({
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onToggleExpand(action.id)}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+            className="h-8 w-8"
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onEdit(action)}
-            className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors"
+            className="h-8 w-8 hover:text-primary"
             title="Edit action"
           >
             <Edit2 size={16} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onDelete(action.id)}
-            className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+            className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
             title="Delete action"
           >
             <Trash2 size={16} />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -195,20 +204,24 @@ const TimelineActionCard = ({
             )}
 
             <div className="flex items-center gap-2 pt-2 border-t border-border">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => onDuplicate(action)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                className="h-7 px-2 text-xs"
               >
                 <Copy size={12} />
                 Duplicate
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => onEdit(action)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted rounded transition-colors"
+                className="h-7 px-2 text-xs hover:text-primary"
               >
                 <Edit2 size={12} />
                 Edit All
-              </button>
+              </Button>
             </div>
           </div>
         </div>

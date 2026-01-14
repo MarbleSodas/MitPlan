@@ -3,6 +3,8 @@ import { Search, Grid, List, Plus, X } from 'lucide-react';
 import { bossActionsLibrary, categorizedActions, libraryUtils } from '../../data/bossActionsLibrary';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_TABS = [
@@ -117,11 +119,13 @@ const BossActionsLibrary = ({ onSelectAction }) => {
 
       <div className="flex border-b border-border">
         {CATEGORY_TABS.map((tab) => (
-          <button
+          <Button
             key={tab.id}
+            variant="ghost"
+            size="sm"
             onClick={() => setSelectedCategory(tab.id)}
             className={cn(
-              "px-3 py-2 text-xs font-medium transition-colors relative",
+              "px-3 py-2 text-xs font-medium rounded-none relative",
               selectedCategory === tab.id
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
@@ -131,57 +135,53 @@ const BossActionsLibrary = ({ onSelectAction }) => {
             {selectedCategory === tab.id && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
-          </button>
+          </Button>
         ))}
       </div>
 
       <div className="flex items-center gap-2">
-        <select
-          value={selectedDamageType}
-          onChange={(e) => setSelectedDamageType(e.target.value)}
-          className="h-8 px-2 text-xs flex-1 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="all">All Types</option>
-          <option value="magical">Magical</option>
-          <option value="physical">Physical</option>
-        </select>
+        <Select value={selectedDamageType} onValueChange={setSelectedDamageType}>
+          <SelectTrigger className="h-8 text-xs flex-1">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="magical">Magical</SelectItem>
+            <SelectItem value="physical">Physical</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <select
-          value={selectedBossSource}
-          onChange={(e) => setSelectedBossSource(e.target.value)}
-          className="h-8 px-2 text-xs flex-1 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="all">All Bosses</option>
-          {uniqueBossSources.map(source => (
-            <option key={source} value={source}>{source}</option>
-          ))}
-        </select>
+        <Select value={selectedBossSource} onValueChange={setSelectedBossSource}>
+          <SelectTrigger className="h-8 text-xs flex-1">
+            <SelectValue placeholder="All Bosses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Bosses</SelectItem>
+            {uniqueBossSources.map(source => (
+              <SelectItem key={source} value={source}>{source}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="flex border border-border rounded-lg overflow-hidden">
-          <button
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="icon"
             onClick={() => setViewMode('list')}
-            className={cn(
-              "p-1.5 transition-colors",
-              viewMode === 'list' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-background text-muted-foreground hover:text-foreground'
-            )}
+            className="h-8 w-8 rounded-none"
             title="List view"
           >
             <List size={14} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="icon"
             onClick={() => setViewMode('grid')}
-            className={cn(
-              "p-1.5 transition-colors",
-              viewMode === 'grid' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-background text-muted-foreground hover:text-foreground'
-            )}
+            className="h-8 w-8 rounded-none"
             title="Grid view"
           >
             <Grid size={14} />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -196,23 +196,26 @@ const BossActionsLibrary = ({ onSelectAction }) => {
               <span className="text-lg flex-shrink-0">{quickAddAction.icon}</span>
               <span className="font-medium text-sm truncate">{quickAddAction.name}</span>
             </div>
-            <button 
+            <Button 
+              variant="ghost"
+              size="icon"
               onClick={() => setQuickAddAction(null)}
-              className="p-1 text-muted-foreground hover:text-foreground"
+              className="h-6 w-6"
             >
               <X size={14} />
-            </button>
+            </Button>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Time (s):</label>
-            <input
+            <Label className="text-xs text-muted-foreground">Time (s):</Label>
+            <Input
               ref={quickAddInputRef}
               type="number"
               value={quickAddTime}
               onChange={(e) => setQuickAddTime(parseInt(e.target.value) || 0)}
               onKeyDown={handleQuickAddKeyDown}
               min={0}
-              className="flex-1 px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+              variant="compact"
+              className="flex-1"
             />
             <Button size="sm" onClick={handleQuickAddConfirm}>
               Add
@@ -229,10 +232,10 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         ) : (
           filteredActions.map((action) => (
             viewMode === 'grid' ? (
-              <button
+              <div
                 key={action.libraryId || action.id}
                 onClick={() => handleDirectAdd(action)}
-                className="text-left p-2 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
+                className="cursor-pointer text-left p-2 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">{action.icon}</span>
@@ -247,13 +250,15 @@ const BossActionsLibrary = ({ onSelectAction }) => {
                     <span className="px-1 py-0.5 bg-orange-500/20 text-orange-400 rounded">Dual</span>
                   )}
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={(e) => handleQuickAdd(action, e)}
-                  className="mt-1 w-full py-1 text-[10px] bg-muted text-muted-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary"
+                  className="mt-1 w-full h-6 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   + Set Time
-                </button>
-              </button>
+                </Button>
+              </div>
             ) : (
               <div
                 key={action.libraryId || action.id}
@@ -284,13 +289,15 @@ const BossActionsLibrary = ({ onSelectAction }) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => handleQuickAdd(action, e)}
-                    className="p-1 text-muted-foreground hover:text-primary hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-all"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all"
                     title="Add with custom time"
                   >
                     <Plus size={14} />
-                  </button>
+                  </Button>
                   <Button
                     size="sm"
                     onClick={() => handleDirectAdd(action)}

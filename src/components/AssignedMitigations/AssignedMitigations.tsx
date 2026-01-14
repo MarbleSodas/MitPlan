@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import Tooltip from '../common/Tooltip/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   getAbilityDescriptionForLevel,
   getAbilityDurationForLevel,
@@ -72,6 +72,7 @@ const AssignedMitigations = ({
   const jobAssignment = useUserJobAssignmentOptional();
   const myUserId = jobAssignment?.myUserId || null;
   const myColor = jobAssignment?.myColor || null;
+  const myAssignedJob = jobAssignment?.myAssignedJob || null;
 
   // Get directly assigned mitigations
   const directMitigations = (assignments && assignments[action.id]) || [];
@@ -106,7 +107,7 @@ const AssignedMitigations = ({
     return null;
   }
   return (
-    <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-border p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden rounded-br-md z-10 w-[clamp(220px,16vw,300px)] min-w-[220px] max-w-[320px]">
+    <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-border p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden rounded-br-md z-10 w-[clamp(260px,20vw,360px)] 2xl:w-[clamp(280px,18vw,380px)] xl:w-[clamp(240px,16vw,320px)] md:w-[clamp(200px,26vw,260px)] sm:w-[clamp(160px,33vw,220px)] max-w-[400px] bg-card">
       {/* Render directly assigned mitigations */}
       {filteredDirectMitigations.map((mitigation, index) => {
         // Find the full mitigation data from the abilities array
@@ -130,21 +131,21 @@ const AssignedMitigations = ({
           ? jobAssignment.getJobAssignment(displayMitigation.casterJobId)?.color || null
           : displayMitigation.casterColor || null;
 
-        const isMyMitigation = myUserId && displayMitigation.casterUserId === myUserId;
+        const isMyMitigation = myUserId && 
+          displayMitigation.casterUserId === myUserId && 
+          displayMitigation.casterJobId === myAssignedJob;
         const highlightColor = isMyMitigation ? (myColor || '#3b82f6') : null;
 
         return (
-          <Tooltip
-            key={uniqueKey}
-            content={tooltipContent}
-          >
-            <div 
-              className={`rounded-sm px-[3px] py-[1px] text-[12px] flex items-center text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 ${isMyMitigation ? 'border-l-[3px]' : 'border-l-2 border-blue-500'} ${isMyMitigation ? 'hover:opacity-90' : 'hover:bg-blue-500/10'}`}
-              style={isMyMitigation ? { 
-                borderLeftColor: highlightColor, 
-                backgroundColor: `${highlightColor}10`
-              } : undefined}
-            >
+          <Tooltip key={uniqueKey}>
+            <TooltipTrigger asChild>
+              <div 
+                className={`rounded-sm px-[3px] py-[1px] text-[12px] flex items-center text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 ${isMyMitigation ? 'border-l-[3px]' : 'border-l-2 border-blue-500'} ${isMyMitigation ? 'hover:opacity-90' : 'hover:bg-blue-500/10'}`}
+                style={isMyMitigation ? { 
+                  borderLeftColor: highlightColor, 
+                  backgroundColor: `${highlightColor}10`
+                } : undefined}
+              >
               <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
                 {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
                   <img
@@ -228,7 +229,9 @@ const AssignedMitigations = ({
                   ×
                 </RemoveButton>
               </div>
-            </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="whitespace-pre-line max-w-xs">{tooltipContent}</TooltipContent>
           </Tooltip>
         );
       })}
@@ -245,49 +248,53 @@ const AssignedMitigations = ({
               ? jobAssignment.getJobAssignment(mitigation.casterJobId)?.color || null
               : mitigation.casterColor || null;
 
-            const isMyInheritedMitigation = myUserId && mitigation.casterUserId === myUserId;
+            const isMyInheritedMitigation = myUserId && 
+              mitigation.casterUserId === myUserId &&
+              mitigation.casterJobId === myAssignedJob;
             const inheritedHighlightColor = isMyInheritedMitigation ? (myColor || '#3b82f6') : null;
 
-            return (
-              <Tooltip
-                key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}
-                content={`${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s${fullMitigation.barrierPotency ? `\nBarrier: ${Math.round(fullMitigation.barrierPotency * 100)}% max HP` : ''}${fullMitigation.barrierFlatPotency ? `\nBarrier: ${fullMitigation.barrierFlatPotency} potency` : ''}${fullMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).physical * 100}% physical, ${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel).magical * 100}% magical` : `${getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) * 100}%`}` : ''}`}
-              >
-                <div 
-                  className={`rounded-sm px-[3px] py-[1px] text-[11px] flex items-center text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic ${isMyInheritedMitigation ? 'border-l-[3px]' : 'border-l-2 border-gray-500'} hover:bg-blue-500/5`}
-                  style={isMyInheritedMitigation ? { 
-                    borderLeftColor: inheritedHighlightColor, 
-                    backgroundColor: `${inheritedHighlightColor}08`
-                  } : undefined}
-                >
-                  <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
-                    {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
-                      <img
-                        src={fullMitigation.icon}
-                        alt={fullMitigation.name}
-                        className="max-h-[18px] max-w-[18px] opacity-70 block"
-                      /> :
-                      fullMitigation.icon
-                    }
-                  </span>
-                  <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal flex items-center">
-                    {fullMitigation.name}
-                    {mitigation.casterJobId && (
-                      <CasterBadge color={inheritedCasterColor} jobId={mitigation.casterJobId}>
-                        {mitigation.casterJobId}
-                      </CasterBadge>
-                    )}
+            const inheritedTooltipContent = `${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s${fullMitigation.barrierPotency ? `\nBarrier: ${Math.round(fullMitigation.barrierPotency * 100)}% max HP` : ''}${fullMitigation.barrierFlatPotency ? `\nBarrier: ${fullMitigation.barrierFlatPotency} potency` : ''}${fullMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${(getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) as { physical: number; magical: number }).physical * 100}% physical, ${(getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) as { physical: number; magical: number }).magical * 100}% magical` : `${(getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) as number) * 100}%`}` : ''}`;
 
-                    {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
-                      <TankPositionBadge $position={mitigation.tankPosition}>
-                        {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
-                      </TankPositionBadge>
-                    )}
-                  </span>
-                  <small className="text-[9px] opacity-80 shrink-0">
-                    {mitigation.remainingDuration.toFixed(1)}s
-                  </small>
-                </div>
+            return (
+              <Tooltip key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}>
+                <TooltipTrigger asChild>
+                  <div 
+                    className={`rounded-sm px-[3px] py-[1px] text-[11px] flex items-center text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic ${isMyInheritedMitigation ? 'border-l-[3px]' : 'border-l-2 border-gray-500'} hover:bg-blue-500/5`}
+                    style={isMyInheritedMitigation ? { 
+                      borderLeftColor: inheritedHighlightColor, 
+                      backgroundColor: `${inheritedHighlightColor}08`
+                    } : undefined}
+                  >
+                    <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
+                      {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
+                        <img
+                          src={fullMitigation.icon}
+                          alt={fullMitigation.name}
+                          className="max-h-[18px] max-w-[18px] opacity-70 block"
+                        /> :
+                        fullMitigation.icon
+                      }
+                    </span>
+                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal flex items-center">
+                      {fullMitigation.name}
+                      {mitigation.casterJobId && (
+                        <CasterBadge color={inheritedCasterColor} jobId={mitigation.casterJobId}>
+                          {mitigation.casterJobId}
+                        </CasterBadge>
+                      )}
+
+                      {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
+                        <TankPositionBadge $position={mitigation.tankPosition}>
+                          {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
+                        </TankPositionBadge>
+                      )}
+                    </span>
+                    <small className="text-[9px] opacity-80 shrink-0">
+                      {mitigation.remainingDuration.toFixed(1)}s
+                    </small>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="whitespace-pre-line max-w-xs">{inheritedTooltipContent}</TooltipContent>
               </Tooltip>
             );
           })}

@@ -5,6 +5,10 @@ import { useToast } from '../common/Toast';
 import { getAllPublicTimelines, getAllUniqueBossTags, addToCollection, toggleLike, hasUserLiked, getCollectionTimelineIds } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { ArrowLeft, Search, Filter, Copy, Eye, Plus, Heart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 const TimelineBrowser = () => {
   const navigate = useNavigate();
@@ -252,12 +256,13 @@ const TimelineBrowser = () => {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => navigate('/dashboard')}
-                className="p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors"
               >
                 <ArrowLeft size={20} />
-              </button>
+              </Button>
               <div>
                 <h1 className="text-2xl font-bold m-0">Browse Timelines</h1>
                 <p className="text-sm text-[var(--color-textSecondary)] m-0 mt-1">
@@ -265,12 +270,14 @@ const TimelineBrowser = () => {
                 </p>
               </div>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors"
+              className="md:hidden"
             >
               <Filter size={20} />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -284,49 +291,48 @@ const TimelineBrowser = () => {
               
               {/* Sort By */}
               <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                >
-                  <option value="popularity">Popularity</option>
-                  <option value="recent">Recently Updated</option>
-                  <option value="name">Name (A-Z)</option>
-                  <option value="actions">Most Actions</option>
-                </select>
+                <Label className="block text-sm font-medium mb-2">Sort By</Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="popularity">Popularity</SelectItem>
+                    <SelectItem value="recent">Recently Updated</SelectItem>
+                    <SelectItem value="name">Name (A-Z)</SelectItem>
+                    <SelectItem value="actions">Most Actions</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Boss Tags Filter */}
               <div>
-                <label className="block text-sm font-medium mb-2">Boss Tags</label>
+                <Label className="block text-sm font-medium mb-2">Boss Tags</Label>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {availableBossTags.map(tag => {
                     const bossInfo = getBossInfo(tag);
                     const isSelected = selectedBossTags.includes(tag);
                     return (
-                      <button
+                      <Button
                         key={tag}
+                        variant={isSelected ? 'secondary' : 'outline'}
                         onClick={() => handleToggleBossTag(tag)}
-                        className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
-                          isSelected
-                            ? 'bg-[var(--select-bg)] border-[var(--color-primary)] font-semibold'
-                            : 'bg-[var(--color-background)] border-[var(--color-border)] hover:bg-[var(--select-bg)]'
-                        }`}
+                        className={`w-full justify-start ${isSelected ? 'font-semibold border-primary' : ''}`}
                       >
                         <span className="mr-2">{bossInfo.icon}</span>
                         {bossInfo.name}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
                 {selectedBossTags.length > 0 && (
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => setSelectedBossTags([])}
-                    className="mt-2 text-sm text-[var(--color-primary)] hover:underline"
+                    className="mt-2 p-0 h-auto text-sm"
                   >
                     Clear all filters
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -338,12 +344,12 @@ const TimelineBrowser = () => {
             <div className="mb-6">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-textSecondary)]" size={20} />
-                <input
+                <Input
                   type="text"
                   placeholder="Search timelines..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  className="w-full pl-10"
                 />
               </div>
             </div>
@@ -414,14 +420,16 @@ const TimelineBrowser = () => {
                       {/* Like Button Row - Only for non-official timelines */}
                       {!timeline.official && (
                         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-[var(--color-border)]">
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={(e) => handleToggleLike(timeline.id, e)}
                             disabled={likingInProgress.has(timeline.id)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-md transition-all ${
+                            className={`flex items-center gap-1.5 ${
                               likedTimelines.has(timeline.id)
                                 ? 'bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20'
-                                : 'bg-[var(--color-background)] border-[var(--color-border)] hover:border-red-500/30 hover:text-red-500'
-                            } ${likingInProgress.has(timeline.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                : 'hover:border-red-500/30 hover:text-red-500'
+                            }`}
                             title={likedTimelines.has(timeline.id) ? 'Unlike this timeline' : 'Like this timeline'}
                           >
                             <Heart
@@ -429,7 +437,7 @@ const TimelineBrowser = () => {
                               fill={likedTimelines.has(timeline.id) ? 'currentColor' : 'none'}
                             />
                             <span className="font-medium">{timeline.likeCount || 0}</span>
-                          </button>
+                          </Button>
                           <span className="text-xs text-[var(--color-textSecondary)]">
                             {(timeline.likeCount || 0) === 1 ? '1 player likes this' : `${timeline.likeCount || 0} players like this`}
                           </span>
@@ -437,20 +445,22 @@ const TimelineBrowser = () => {
                       )}
 
                       <div className="flex gap-2">
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() => handleViewTimeline(timeline.id)}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--select-bg)] transition-colors"
+                          className="flex-1"
                         >
                           <Eye size={16} />
                           View
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant={timeline.official || collectionTimelineIds.has(timeline.id) ? 'outline' : 'default'}
                           onClick={() => handleAddToCollection(timeline)}
                           disabled={timeline.official || collectionTimelineIds.has(timeline.id) || addingToCollection.has(timeline.id)}
-                          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                          className={`flex-1 ${
                             timeline.official || collectionTimelineIds.has(timeline.id)
-                              ? 'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-textSecondary)] cursor-not-allowed opacity-50'
-                              : 'bg-[var(--color-primary)] text-[var(--color-buttonText)] hover:brightness-110'
+                              ? 'opacity-50'
+                              : ''
                           } ${addingToCollection.has(timeline.id) ? 'opacity-70' : ''}`}
                           title={
                             timeline.official
@@ -462,7 +472,7 @@ const TimelineBrowser = () => {
                         >
                           <Plus size={16} />
                           {collectionTimelineIds.has(timeline.id) ? 'In Collection' : 'Add to Collection'}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   );

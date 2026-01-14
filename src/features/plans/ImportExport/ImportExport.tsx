@@ -7,6 +7,10 @@ import {
   generateShareableUrl
 } from '../../../utils';
 import { useToast } from '../../../components/common/Toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 
 
@@ -514,8 +518,8 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
           <div className="mb-5">
             <div className="mb-4">
-              <label className="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-200">Plan Name</label>
-              <input className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:border-blue-500"
+              <Label className="block mb-1 text-sm font-semibold">Plan Name</Label>
+              <Input
                 type="text"
                 placeholder="Enter a name for your plan"
                 value={planName}
@@ -524,36 +528,36 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              <button className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700" onClick={handleSave}>
+              <Button onClick={handleSave}>
                 💾 Save Current Plan
-              </button>
-              <button className="px-4 py-2 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={handleExport}>
+              </Button>
+              <Button variant="outline" onClick={handleExport}>
                 📤 Export to File
-              </button>
-              <button className="px-4 py-2 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={handleCopyPlanLink}>
+              </Button>
+              <Button variant="outline" onClick={handleCopyPlanLink}>
                 📋 Copy Plan
-              </button>
+              </Button>
             </div>
 
             {exportData && (
               <div>
                 <div className="mb-2">
-                  <button className="px-4 py-2 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={downloadExportFile}>
+                  <Button variant="outline" onClick={downloadExportFile}>
                     📥 Download File
-                  </button>
+                  </Button>
                 </div>
-                <textarea
-                  className="w-full min-h-[150px] px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 text-sm font-mono focus:outline-none focus:border-blue-500"
+                <Textarea
+                  className="min-h-[150px] font-mono"
                   value={exportData}
                   readOnly
-                  onClick={(e) => e.target.select()}
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
                 />
               </div>
             )}
           </div>
 
           <div className="mb-5">
-            <label className="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-200">Saved Plans</label>
+            <Label className="block mb-1 text-sm font-semibold">Saved Plans</Label>
             {savedPlans.length === 0 ? (
               <p>No saved plans yet.</p>
             ) : (
@@ -563,15 +567,15 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
                     <div className="flex-1 text-gray-900 dark:text-gray-100">{plan.name}</div>
                     <div className="text-xs text-gray-500 mr-2">{new Date(plan.date).toLocaleDateString()}</div>
                     <div className="flex gap-1">
-                      <button className="px-2 py-1 rounded hover:text-blue-600" onClick={() => handleLoadPlan(plan)} title="Load Plan">
+                      <Button variant="ghost" size="sm" onClick={() => handleLoadPlan(plan)} title="Load Plan">
                         📂
-                      </button>
-                      <button className="px-2 py-1 rounded hover:text-blue-600" onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleCopyPlanLinkFromSaved(plan)} title="Copy Link">
                         📋
-                      </button>
-                      <button className="px-2 py-1 rounded hover:text-red-600" onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)} title="Delete Plan">
                         🗑️
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -586,9 +590,9 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
           <div className="mb-5">
             <div className="mb-4">
-              <label className="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-200">Import from File or JSON</label>
+              <Label className="block mb-1 text-sm font-semibold">Import from File or JSON</Label>
               <div className="flex flex-wrap gap-2 mb-3">
-                <label className="inline-flex items-center justify-center px-4 py-2 h-9 rounded border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800">
+                <label className="inline-flex items-center justify-center px-4 py-2 h-9 rounded border border-input bg-background text-foreground cursor-pointer hover:bg-accent hover:text-accent-foreground">
                   📂 Choose File
                   <input
                     className="hidden"
@@ -598,17 +602,16 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
                   />
                 </label>
 
-                <button
-                  className="px-4 py-2 h-9 rounded bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+                <Button
                   onClick={handleImport}
                   disabled={!importData.trim()}
                 >
                   📥 Import Data
-                </button>
+                </Button>
               </div>
 
-              <textarea
-                className="w-full min-h-[150px] px-3 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 text-sm font-mono focus:outline-none focus:border-blue-500"
+              <Textarea
+                className="min-h-[150px] font-mono"
                 value={importData}
                 onChange={(e) => setImportData(e.target.value)}
                 placeholder="Paste JSON data here or use the file chooser above"

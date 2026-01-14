@@ -1,8 +1,3 @@
-/**
- * Anonymous Plan Creator Component
- * Handles creation of new plans for anonymous users
- */
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Save, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
@@ -10,8 +5,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import localStoragePlanService from '../../services/localStoragePlanService';
 import { bosses } from '../../data';
 import { getTimelinesByBossTag } from '../../services/timelineService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
-// Define which bosses have timelines implemented
 const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
   'red-hot-deep-blue-m10s',
@@ -24,7 +30,6 @@ const ENABLED_BOSS_IDS = [
   'statice'
 ];
 
-// Define tier groupings for boss selection
 const BOSS_TIERS = [
   {
     id: 'm9s-m12s',
@@ -92,7 +97,6 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
 
   const isBossEnabled = (bossId) => ENABLED_BOSS_IDS.includes(bossId);
 
-  // Load timelines when boss is selected
   useEffect(() => {
     if (formData.bossId) {
       loadTimelinesForBoss(formData.bossId);
@@ -104,11 +108,9 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
   const loadTimelinesForBoss = async (bossId) => {
     setLoadingTimelines(true);
     try {
-      // Get both official and custom timelines for this boss
       const timelines = await getTimelinesByBossTag(bossId, false);
       setAvailableTimelines(timelines);
 
-      // Auto-select the official timeline if available
       const officialTimeline = timelines.find(t => t.official === true);
       if (officialTimeline) {
         setFormData(prev => ({
@@ -131,7 +133,6 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
       [name]: value
     }));
 
-    // Clear error when user starts typing
     if (error) {
       setError('');
     }
@@ -154,7 +155,6 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
     setError('');
 
     try {
-      // Create the plan using local storage service
       const planData = {
         name: formData.name.trim(),
         bossId: formData.bossId,
@@ -165,7 +165,6 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
         tankPositions: {}
       };
 
-      // If a timeline is selected, store the reference
       if (formData.timelineId) {
         planData.sourceTimelineId = formData.timelineId;
         const selectedTimeline = availableTimelines.find(t => t.id === formData.timelineId);
@@ -178,10 +177,8 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
 
       console.log('[AnonymousPlanCreator] Plan created:', createdPlan);
 
-      // Navigate to the new plan
       navigate(`/anonymous/plan/${createdPlan.id}`);
 
-      // Call success callback
       onSuccess?.(createdPlan);
       
     } catch (err) {
@@ -196,7 +193,7 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
     if (onCancel) {
       onCancel();
     } else {
-      navigate(-1); // Go back
+      navigate(-1);
     }
   };
 
@@ -221,8 +218,8 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-sm font-medium text-foreground">Plan Name *</label>
-          <input
+          <Label htmlFor="name">Plan Name *</Label>
+          <Input
             id="name"
             name="name"
             type="text"
@@ -232,12 +229,11 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             maxLength={100}
             disabled={isCreating}
             required
-            className="px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Boss *</label>
+          <Label>Boss *</Label>
           {preSelectedBossId ? (
             <div className="text-sm text-muted-foreground py-2 px-3 bg-muted rounded-md">
               Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
@@ -275,17 +271,17 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
                               type="button"
                               onClick={() => handleBossSelect(boss.id)}
                               disabled={!enabled}
-                              className={`w-full flex items-center justify-between px-4 py-2 text-left transition-colors text-sm ${
-                                enabled && !isSelected ? 'hover:bg-muted cursor-pointer' : ''
-                              } ${
-                                enabled && isSelected ? 'bg-primary/10 border-l-2 border-primary' : ''
-                              } ${
-                                !enabled ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
+                              className={cn(
+                                'w-full flex items-center justify-between px-4 py-2 text-left transition-colors text-sm',
+                                enabled && !isSelected && 'hover:bg-muted cursor-pointer',
+                                enabled && isSelected && 'bg-primary/10 border-l-2 border-primary',
+                                !enabled && 'opacity-50 cursor-not-allowed'
+                              )}
                             >
-                              <span className={`flex items-center gap-2 ${
+                              <span className={cn(
+                                'flex items-center gap-2',
                                 enabled ? 'text-foreground' : 'text-muted-foreground'
-                              }`}>
+                              )}>
                                 <span>{boss.icon}</span>
                                 <span>{boss.name}</span>
                               </span>
@@ -311,32 +307,31 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
           )}
         </div>
 
-        {/* Timeline Selection - Only show when boss is selected */}
         {formData.bossId && (
           <div className="flex flex-col gap-2">
-            <label htmlFor="timelineId" className="text-sm font-medium text-foreground">
-              Timeline (Optional)
-            </label>
+            <Label>Timeline (Optional)</Label>
             {loadingTimelines ? (
               <div className="text-sm text-muted-foreground py-2">Loading timelines...</div>
             ) : (
               <>
-                <select
-                  id="timelineId"
-                  name="timelineId"
+                <Select
                   value={formData.timelineId}
-                  onChange={handleInputChange}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, timelineId: value }))}
                   disabled={isCreating}
-                  className="px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:border-primary"
                 >
-                  {availableTimelines.map(timeline => (
-                    <option key={timeline.id} value={timeline.id}>
-                      {timeline.official ? '⭐ ' : '📝 '}
-                      {timeline.name}
-                      {timeline.official ? ' (Official)' : ' (Custom)'}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a timeline" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTimelines.map(timeline => (
+                      <SelectItem key={timeline.id} value={timeline.id}>
+                        {timeline.official ? '⭐ ' : '📝 '}
+                        {timeline.name}
+                        {timeline.official ? ' (Official)' : ' (Custom)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <div className="text-sm text-muted-foreground mt-1">
                   {formData.timelineId && (
                     <>
@@ -355,8 +350,8 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
         )}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="description" className="text-sm font-medium text-foreground">Description (Optional)</label>
-          <textarea
+          <Label htmlFor="description">Description (Optional)</Label>
+          <Textarea
             id="description"
             name="description"
             value={formData.description}
@@ -364,7 +359,6 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
             placeholder="Add a description for your plan"
             maxLength={500}
             disabled={isCreating}
-            className="min-h-[100px] px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -376,23 +370,22 @@ const AnonymousPlanCreator = ({ onCancel, onSuccess, preSelectedBossId = null })
         )}
 
         <div className="flex gap-3 mt-4">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={handleCancel}
             disabled={isCreating}
-            className="px-4 py-2 rounded-md border border-input text-foreground hover:bg-muted disabled:opacity-60"
           >
             Cancel
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="submit"
             disabled={isCreating || !formData.name.trim() || !formData.bossId}
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 flex items-center gap-2 justify-center"
           >
             <Save size={16} />
             {isCreating ? 'Creating...' : 'Create Plan'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

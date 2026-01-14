@@ -10,6 +10,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast/Toast';
 import unifiedPlanService from '../../services/unifiedPlanService';
 import localStoragePlanService from '../../services/localStoragePlanService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
 import { BossSelectionModal, UserProfile } from '../dashboard';
@@ -196,10 +198,10 @@ const AnonymousDashboard = () => {
           <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Your Plans ({categorizedPlans.totalPlans})</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" onClick={handleCreatePlanByBoss}>
+          <Button onClick={handleCreatePlanByBoss}>
             <Plus size={16} />
             Create New Plan
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -213,10 +215,10 @@ const AnonymousDashboard = () => {
           <h3>No plans yet</h3>
           <p>Create your first mitigation plan to get started.</p>
           <div className="flex gap-4 justify-center flex-wrap mt-4">
-            <button className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" onClick={handleCreatePlanByBoss}>
+            <Button onClick={handleCreatePlanByBoss}>
               <Plus size={16} />
               Create Your First Plan
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -229,11 +231,9 @@ const AnonymousDashboard = () => {
             </div>
 
             {categorizedPlans.ownedPlans.length === 0 ? (
-              <SectionEmptyState>
-                <SectionEmptyText>
-                  You haven't created any plans yet. Click "Create New Plan" to get started!
-                </SectionEmptyText>
-              </SectionEmptyState>
+              <div className="p-8 text-center text-muted-foreground bg-muted/50 rounded-lg">
+                You haven't created any plans yet. Click "Create New Plan" to get started!
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {categorizedPlans.ownedPlans.map((plan) => (
@@ -241,7 +241,7 @@ const AnonymousDashboard = () => {
                     <div className="flex items-center gap-3 mb-2">
                       {editingPlanId === plan.id ? (
                         <>
-                          <input className="bg-white dark:bg-neutral-900 border-2 border-blue-500 rounded-md p-2 text-lg font-semibold text-gray-900 dark:text-gray-100 w-full outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+                          <Input
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
                             onKeyDown={(e) => handleNameKeyPress(e, plan.id)}
@@ -249,9 +249,13 @@ const AnonymousDashboard = () => {
                             autoFocus
                             disabled={savingName}
                             onClick={(e) => e.stopPropagation()}
+                            className="text-lg font-semibold"
                           />
                           <div className="flex gap-1 ml-2">
-                            <button className="text-green-600 hover:bg-green-100 p-1 rounded"
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-green-600 hover:bg-green-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSaveName(plan.id);
@@ -260,8 +264,11 @@ const AnonymousDashboard = () => {
                               title="Save name"
                             >
                               <Check size={12} />
-                            </button>
-                            <button className="text-gray-500 hover:bg-gray-100 p-1 rounded"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-gray-500 hover:bg-gray-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCancelEditName();
@@ -270,13 +277,16 @@ const AnonymousDashboard = () => {
                               title="Cancel"
                             >
                               <X size={12} />
-                            </button>
+                            </Button>
                           </div>
                         </>
                       ) : (
                         <>
                           <h3 className="m-0 text-lg font-semibold text-gray-900 dark:text-gray-100 flex-1">{plan.name}</h3>
-                          <button className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 p-1 rounded opacity-70 hover:opacity-100"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-70 hover:opacity-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleStartEditName(plan.id, plan.name);
@@ -285,7 +295,7 @@ const AnonymousDashboard = () => {
                             title="Edit plan name"
                           >
                             <Edit size={16} />
-                          </button>
+                          </Button>
                         </>
                       )}
                     </div>
@@ -302,14 +312,14 @@ const AnonymousDashboard = () => {
                     </div>
 
                     <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
-                      <button className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-neutral-800 flex items-center gap-1" onClick={() => handleEditPlan(plan.id)}>
+                      <Button variant="outline" onClick={() => handleEditPlan(plan.id)}>
                         <Edit size={14} />
                         Edit
-                      </button>
-                      <button className="px-3 py-2 rounded-md text-red-600 hover:bg-red-600 hover:text-white flex items-center gap-1" onClick={() => handleDeletePlan(plan.id, plan.name)}>
+                      </Button>
+                      <Button variant="destructive" onClick={() => handleDeletePlan(plan.id, plan.name)}>
                         <Trash2 size={14} />
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}

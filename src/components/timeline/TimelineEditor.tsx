@@ -425,20 +425,24 @@ const TimelineEditor = () => {
                     placeholder="Timeline name..."
                     className="flex-1 min-w-0 px-3 py-1.5 text-xl font-bold bg-background border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={saveName}
-                    className="p-1.5 text-green-500 hover:bg-green-500/10 rounded transition-colors"
+                    className="h-8 w-8 text-green-500 hover:bg-green-500/10"
                     title="Save"
                   >
                     <Check size={18} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={cancelNameEdit}
-                    className="p-1.5 text-muted-foreground hover:bg-muted rounded transition-colors"
+                    className="h-8 w-8"
                     title="Cancel"
                   >
                     <X size={18} />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <button
@@ -453,22 +457,21 @@ const TimelineEditor = () => {
 
             {/* Right: Settings + Save */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setShowSettingsDrawer(true)}
-                className="p-2 rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
                 title="Timeline settings"
               >
                 <Settings size={20} />
-                <span className="hidden sm:inline text-sm">Settings</span>
-              </button>
-              <button
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 <Save size={18} />
                 <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -480,16 +483,16 @@ const TimelineEditor = () => {
         <div className="w-80 lg:w-96 flex-shrink-0 border-r border-border bg-card flex flex-col overflow-hidden">
           <div className="p-4 border-b border-border">
             <h2 className="text-lg font-semibold mb-3">Add Actions</h2>
-            <button
-              onClick={() => {
-                setEditingAction(null);
-                setShowCustomActionModal(true);
-              }}
-              className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:brightness-110 transition-all flex items-center justify-center gap-2"
-            >
-              <Plus size={18} />
-              Create Custom Action
-            </button>
+              <Button
+                onClick={() => {
+                  setEditingAction(null);
+                  setShowCustomActionModal(true);
+                }}
+                className="w-full"
+              >
+                <Plus size={18} />
+                Create Custom Action
+              </Button>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4">

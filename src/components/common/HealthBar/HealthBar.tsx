@@ -1,5 +1,5 @@
 import React from 'react';
-import Tooltip from '../Tooltip/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { formatHealth, formatPercentage, formatHealthCompact } from '../../../utils';
 
 const HEALTH_COLORS = {
@@ -60,25 +60,28 @@ const HealthBar = ({
     : '';
 
   return (
-    <Tooltip content={enhancedTooltipContent}>
-      <div className={`flex flex-col basis-0 flex-1 min-w-40 w-full my-2 ${isDualTankBuster && tankPosition ? `pl-2 rounded border-l-4 ${dualBorderClass}` : ''}`}>
-        <div className="flex justify-between items-center mb-1 text-xs tabular-nums min-w-0 overflow-hidden text-foreground/70 dark:text-[var(--color-muted-foreground)] dark:opacity-70">
-          <span className="truncate">{label}</span>
-          <span className="whitespace-nowrap">{formatHealthCompact(remainingHealth)} / {formatHealthCompact(maxHealth)}</span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={`flex flex-col basis-0 flex-1 min-w-40 w-full my-2 ${isDualTankBuster && tankPosition ? `pl-2 rounded border-l-4 ${dualBorderClass}` : ''}`}>
+          <div className="flex justify-between items-center mb-1 text-xs tabular-nums min-w-0 overflow-hidden text-foreground/70 dark:text-[var(--color-muted-foreground)] dark:opacity-70">
+            <span className="truncate">{label}</span>
+            <span className="whitespace-nowrap">{formatHealthCompact(remainingHealth)} / {formatHealthCompact(maxHealth)}</span>
+          </div>
+
+          <div className="w-full h-4 rounded overflow-hidden relative bg-[var(--color-muted)]">
+            <div className="h-full transition-[width] duration-300" style={{ width: `${healthPercentage}%`, backgroundColor: barColor }} />
+
+            {barrierAmount > 0 && (
+              <div className="absolute top-0 h-full opacity-70 transition-all" style={{ left: `${healthPercentage}%`, width: `${barrierPercentage}%`, backgroundColor: HEALTH_COLORS.barrier }} />
+            )}
+
+            {damageAmount > 0 && (
+              <div className="absolute top-0 h-full transition-all" style={{ left: `${damageStartPercentage}%`, width: `${damagePercentage}%`, backgroundColor: 'rgba(255, 0, 0, 0.3)' }} />
+            )}
+          </div>
         </div>
-
-        <div className="w-full h-4 rounded overflow-hidden relative bg-[var(--color-muted)]">
-          <div className="h-full transition-[width] duration-300" style={{ width: `${healthPercentage}%`, backgroundColor: barColor }} />
-
-          {barrierAmount > 0 && (
-            <div className="absolute top-0 h-full opacity-70 transition-all" style={{ left: `${healthPercentage}%`, width: `${barrierPercentage}%`, backgroundColor: HEALTH_COLORS.barrier }} />
-          )}
-
-          {damageAmount > 0 && (
-            <div className="absolute top-0 h-full transition-all" style={{ left: `${damageStartPercentage}%`, width: `${damagePercentage}%`, backgroundColor: 'rgba(255, 0, 0, 0.3)' }} />
-          )}
-        </div>
-      </div>
+      </TooltipTrigger>
+      <TooltipContent className="whitespace-pre-line">{enhancedTooltipContent}</TooltipContent>
     </Tooltip>
   );
 };

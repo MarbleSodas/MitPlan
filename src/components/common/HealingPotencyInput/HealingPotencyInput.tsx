@@ -3,7 +3,7 @@ import { RefreshCw } from 'lucide-react';
 import { useRealtimeBossContext } from '../../../contexts/RealtimeBossContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import Tooltip from '../Tooltip/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 const HEALING_POTENCY_VALUES: Record<number, number> = {
   90: 5000,
@@ -56,17 +56,19 @@ const HealingPotencyInput = () => {
         onChange={(e) => setHealingPotency(Number(e.target.value))}
         placeholder={defaultValue.toString()}
       />
-      <Tooltip content="Reset to default">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleReset}
-          aria-label="Reset cure potency to default"
-          title="Reset to default"
-          className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-        >
-          <RefreshCw size={14} />
-        </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleReset}
+            aria-label="Reset cure potency to default"
+            className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+          >
+            <RefreshCw size={14} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Reset to default</TooltipContent>
       </Tooltip>
     </div>
   );

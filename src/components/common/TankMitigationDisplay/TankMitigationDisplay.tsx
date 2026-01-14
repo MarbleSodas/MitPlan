@@ -1,5 +1,5 @@
 import React from 'react';
-import Tooltip from '../Tooltip/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 import { formatMitigation, generateMitigationBreakdown, calculateTotalMitigation } from '../../../utils';
 
@@ -26,15 +26,25 @@ const TankMitigationDisplay = ({
     <div className="flex flex-col gap-2 mt-2 mb-3">
       <div className="flex items-center gap-2">
         <div className="font-bold text-base min-w-[120px] truncate">{`Main Tank${mainTankJob ? ` (${mainTankJob})` : ''}:`}</div>
-        <Tooltip content={generateMitigationBreakdown(mainTankMitigations, damageType, bossLevel)}>
-          <Pill value={mainTankMitigations.length > 0 ? calculateTotalMitigation(mainTankMitigations, damageType, bossLevel) : 0} />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Pill value={mainTankMitigations.length > 0 ? calculateTotalMitigation(mainTankMitigations, damageType, bossLevel) : 0} />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="whitespace-pre-line">{generateMitigationBreakdown(mainTankMitigations, damageType, bossLevel)}</TooltipContent>
         </Tooltip>
       </div>
 
       <div className="flex items-center gap-2">
         <div className="font-bold text-base min-w-[120px] truncate">{`Off Tank${offTankJob ? ` (${offTankJob})` : ''}:`}</div>
-        <Tooltip content={generateMitigationBreakdown(offTankMitigations, damageType, bossLevel)}>
-          <Pill value={offTankMitigations.length > 0 ? calculateTotalMitigation(offTankMitigations, damageType, bossLevel) : 0} />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Pill value={offTankMitigations.length > 0 ? calculateTotalMitigation(offTankMitigations, damageType, bossLevel) : 0} />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="whitespace-pre-line">{generateMitigationBreakdown(offTankMitigations, damageType, bossLevel)}</TooltipContent>
         </Tooltip>
       </div>
     </div>

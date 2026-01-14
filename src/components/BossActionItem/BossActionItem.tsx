@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useMemo } from 'react';
-import Tooltip from '../common/Tooltip/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import HealthBar from '../common/HealthBar';
 import HealingHealthBar from '../common/HealingHealthBar';
 import TankMitigationDisplay from '../common/TankMitigationDisplay';
@@ -33,7 +33,7 @@ const BossAction = ({ children, className = '', $isSelected, $importance, $hasAs
         : 'border-l-4 border-l-green-500';
   const hover = 'hover:shadow-md hover:border-blue-500';
   const prAssignments = $hasAssignments
-    ? 'pr-[clamp(240px,18vw,320px)] 2xl:pr-[clamp(260px,16vw,340px)] xl:pr-[clamp(220px,15vw,300px)] md:pr-[clamp(170px,24vw,220px)] sm:pr-[clamp(120px,30vw,180px)] xs:pr-[clamp(100px,34vw,150px)]'
+    ? 'pr-[clamp(280px,22vw,380px)] 2xl:pr-[clamp(300px,20vw,400px)] xl:pr-[clamp(260px,18vw,340px)] md:pr-[clamp(220px,28vw,280px)] sm:pr-[clamp(180px,35vw,240px)]'
     : '';
   return (
     <div {...rest} className={`${base} ${borderSel} ${leftBorder} ${hover} ${prAssignments} ${className}`}>
@@ -663,10 +663,13 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
       {/* Display multi-hit indicator for multi-hit tank busters and raid-wide abilities */}
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         {action.isMultiHit && action.hitCount > 1 && (
-          <Tooltip content={`This ${action.isTankBuster ? 'tank buster' : 'ability'} consists of ${action.hitCount} hits ${action.originalDamagePerHit ? `with ${action.originalDamagePerHit} damage per hit` : ''}`}>
-            <MultiHitIndicator>
-              {action.hitCount}-Hit {action.isTankBuster ? 'Tank Buster' : 'Ability'}
-            </MultiHitIndicator>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <MultiHitIndicator>
+                {action.hitCount}-Hit {action.isTankBuster ? 'Tank Buster' : 'Ability'}
+              </MultiHitIndicator>
+            </TooltipTrigger>
+            <TooltipContent>{`This ${action.isTankBuster ? 'tank buster' : 'ability'} consists of ${action.hitCount} hits ${action.originalDamagePerHit ? `with ${action.originalDamagePerHit} damage per hit` : ''}`}</TooltipContent>
           </Tooltip>
         )}
 
@@ -697,12 +700,13 @@ const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'b
             />
           ) : (
             /* For non-dual tank busters, show the standard mitigation display */
-            <Tooltip
-              content={generateMitigationBreakdown(allMitigations, action.damageType, currentBossLevel)}
-            >
-              <MitigationPercentage>
-                Damage Mitigated: {formatMitigation(mitigationPercentage)}
-              </MitigationPercentage>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <MitigationPercentage>
+                  Damage Mitigated: {formatMitigation(mitigationPercentage)}
+                </MitigationPercentage>
+              </TooltipTrigger>
+              <TooltipContent className="whitespace-pre-line">{generateMitigationBreakdown(allMitigations, action.damageType, currentBossLevel)}</TooltipContent>
             </Tooltip>
           )}
         </>
