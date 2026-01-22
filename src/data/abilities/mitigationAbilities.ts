@@ -493,18 +493,18 @@ export const mitigationAbilities: MitigationAbility[] = [
   {
     id: 'dark_missionary',
     name: 'Dark Missionary',
-    description: 'Reduces magic damage taken by party members by 10%',
+    description: 'Reduces magic damage taken by party members by 10% and physical damage by 5%',
     levelRequirement: 66,
     levelDescriptions: {
-      66: 'Reduces magic damage taken by party members by 10% for 15s'
+      66: 'Reduces magic damage taken by party members by 10% and physical damage by 5% for 15s'
     },
     duration: 15,
     cooldown: 90,
     jobs: ['DRK'],
     icon: '/abilities-gamerescape/dark_missionary.png',
     type: 'mitigation',
-    mitigationValue: 0.10,
-    damageType: 'magical', // Only works on magic damage
+    mitigationValue: { magical: 0.10, physical: 0.05 },
+    damageType: 'both',
     target: 'party', // Affects all party members
     forTankBusters: false, // Not typically used for tank busters
     forRaidWide: true, // Primarily used for raid-wide damage
@@ -618,18 +618,18 @@ export const mitigationAbilities: MitigationAbility[] = [
   {
     id: 'heart_of_light',
     name: 'Heart of Light',
-    description: 'Reduces magic damage taken by party members by 10%',
+    description: 'Reduces magic damage taken by party members by 10% and physical damage by 5%',
     levelRequirement: 64,
     levelDescriptions: {
-      64: 'Reduces magic damage taken by party members by 10% for 15s'
+      64: 'Reduces magic damage taken by party members by 10% and physical damage by 5% for 15s'
     },
     duration: 15,
     cooldown: 90,
     jobs: ['GNB'],
     icon: '/abilities-gamerescape/heart_of_light.png',
     type: 'mitigation',
-    mitigationValue: 0.10,
-    damageType: 'magical', // Only works on magic damage
+    mitigationValue: { magical: 0.10, physical: 0.05 },
+    damageType: 'both',
     target: 'party', // Affects all party members
     forTankBusters: false, // Not typically used for tank busters
     forRaidWide: true, // Primarily used for raid-wide damage
@@ -1408,6 +1408,29 @@ export const mitigationAbilities: MitigationAbility[] = [
     count: 1
   },
   {
+    id: 'whispering_dawn',
+    name: 'Whispering Dawn',
+    description: 'Gradually restores the HP of all nearby party members',
+    levelRequirement: 20,
+    levelDescriptions: {
+      20: 'Gradually restores the HP of all nearby party members with a potency of 80 for 21s'
+    },
+    duration: 21,
+    cooldown: 60,
+    jobs: ['SCH'],
+    icon: '/abilities-gamerescape/whispering_dawn.png',
+    type: 'healing',
+    healingPotency: 0,
+    regenPotency: 80,
+    healingType: 'regen',
+    regenDuration: 21,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
     id: 'fey_illumination',
     name: 'Fey/Seraphic Illumination',
     description: 'Increases healing potency by 10% and reduces magic damage taken by party members by 5% for 20s',
@@ -2133,7 +2156,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 180,
     jobs: ['SGE'],
-    icon: '/abilities-official/philosophia.png',
+    icon: '/abilities-gamerescape/philosophia.png',
     type: 'healing',
     healingPotency: 0, // Healing boost, not direct healing
     healingType: 'boost',
