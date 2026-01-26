@@ -2360,7 +2360,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     description: 'Reduces physical damage dealt by target by 10% and magic damage by 5%',
     levelRequirement: 22,
     levelDescriptions: {
-      22: 'Reduces target\'s physical damage dealt by 10% for 10s',
+      22: 'Reduces target\'s physical damage dealt by 10% and magic damage dealt by 5% for 10s', //Feint reduces magic damage by 5% at all levels
       98: 'Reduces target\'s physical damage dealt by 10% and magic damage dealt by 5% for 15s'
     },
     duration: 15,
@@ -2370,7 +2370,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     type: 'mitigation',
     mitigationValue: { physical: 0.10, magical: 0.05 },
     levelMitigationValues: {
-      22: { physical: 0.10, magical: 0.00 },
+      22: { physical: 0.10, magical: 0.05 },
       98: { physical: 0.10, magical: 0.05 }
     },
     damageType: 'both',
@@ -2385,7 +2385,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     description: 'Reduces magic damage dealt by target by 10% and physical damage by 5%',
     levelRequirement: 8,
     levelDescriptions: {
-      8: 'Reduces target\'s magic damage dealt by 10% for 10s',
+      8: 'Reduces target\'s magic damage dealt by 10% and physical damage dealt by 5% for 10s', //Addle reduces physical damage by 5% at all levels
       98: 'Reduces target\'s magic damage dealt by 10% and physical damage dealt by 5% for 15s'
     },
     duration: 15,
@@ -2395,7 +2395,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     type: 'mitigation',
     mitigationValue: { magical: 0.10, physical: 0.05 },
     levelMitigationValues: {
-      8: { magical: 0.10, physical: 0.00 },
+      8: { magical: 0.10, physical: 0.05 },
       98: { magical: 0.10, physical: 0.05 }
     },
     damageType: 'both',
