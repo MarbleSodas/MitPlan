@@ -1,0 +1,2 @@
+[console_scripts]
+mitplan-timeline = cli.main:main

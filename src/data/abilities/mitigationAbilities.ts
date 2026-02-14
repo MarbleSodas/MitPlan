@@ -1645,6 +1645,53 @@ export const mitigationAbilities: MitigationAbility[] = [
     forRaidWide: true
   },
   {
+    id: 'celestial_intersection',
+    name: 'Celestial Intersection',
+    description: 'Restores HP and erects barrier on single target. Nocturnal Sect adds shield',
+    levelRequirement: 74,
+    levelDescriptions: {
+      74: 'Restores target\'s HP with 200 potency. Nocturnal Sect: Erects barrier (200% of heal). Maximum Charges: 2'
+    },
+    duration: 30,
+    cooldown: 30,
+    count: 2,
+    jobs: ['AST'],
+    icon: '/abilities-official/celestial_intersection.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    barrierFlatPotency: 400,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    scaleBarrierWithHealing: true
+  },
+  {
+    id: 'exaltation',
+    name: 'Exaltation',
+    description: 'Reduces damage taken by a party member by 10% and delivers healing after effect expires',
+    levelRequirement: 86,
+    levelDescriptions: {
+      86: 'Reduces damage taken by a party member by 10% for 8s. After 8s, restores HP with 500 potency'
+    },
+    duration: 8,
+    cooldown: 60,
+    jobs: ['AST'],
+    icon: '/abilities-official/exaltation.png',
+    type: 'mitigation',
+    mitigationValue: 0.10,
+    healingPotency: 500,
+    healingType: 'triggered',
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true
+  },
+  {
     id: 'neutral_sect',
     name: 'Neutral Sect',
     description: 'Increases healing magic potency by 20%. Grants Suntouched and erects barriers on Aspected Benefic/Helios Conjunction.',
@@ -1762,6 +1809,39 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'single',
     forTankBusters: true,
     forRaidWide: false
+  },
+  {
+    id: 'essential_dignity',
+    name: 'Essential Dignity',
+    description: 'Restores target\'s HP. Potency increases as target\'s HP decreases, reaching max at 30% HP or below',
+    levelRequirement: 15,
+    levelDescriptions: {
+      15: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below',
+      78: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below. Maximum Charges: 2'
+    },
+    duration: 0,
+    cooldown: 40,
+    levelCooldowns: {
+      15: 40,
+      78: 40
+    },
+    count: 2,
+    jobs: ['AST'],
+    icon: '/abilities-official/essential_dignity.png',
+    type: 'healing',
+    healingPotency: 900,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    hpBasedPotencyScaling: {
+      minPotency: 400,
+      maxPotency: 900,
+      thresholdPercent: 30,
+      scalingType: 'step'
+    }
   },
   {
     id: 'helios',
@@ -2214,7 +2294,8 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'party',
     forTankBusters: false,
     forRaidWide: true,
-    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' }
+    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' },
+    healingReceivedBonus: 0.10
   },
   {
     id: 'krasis',
@@ -2237,7 +2318,232 @@ export const mitigationAbilities: MitigationAbility[] = [
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
-    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' },
+    healingReceivedBonus: 0.20
+  },
+  {
+    id: 'kerachole',
+    name: 'Kerachole',
+    description: 'Reduces damage taken by self and nearby party members by 10%. Also grants regen and restores MP',
+    levelRequirement: 50,
+    levelDescriptions: {
+      50: 'Reduces damage taken by self and nearby party members by 10% for 15s. Additional Effect: Regen (100 potency). Additional Effect: Restores 7% MP'
+    },
+    duration: 15,
+    cooldown: 30,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/kerachole.png',
+    type: 'mitigation',
+    mitigationValue: 0.10,
+    regenPotency: 100,
+    regenDuration: 15,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    consumesAddersgall: true
+  },
+  {
+    id: 'taurochole',
+    name: 'Taurochole',
+    description: 'Restores target party member\'s HP and reduces their damage taken by 10%',
+    levelRequirement: 62,
+    levelDescriptions: {
+      62: 'Restores target\'s HP with 700 potency. Reduces target\'s damage taken by 10% for 15s. Restores 7% MP'
+    },
+    duration: 15,
+    cooldown: 45,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/taurochole.png',
+    type: 'healing',
+    healingPotency: 700,
+    healingType: 'instant',
+    mitigationValue: 0.10,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    consumesAddersgall: true
+  },
+  {
+    id: 'haima',
+    name: 'Haima',
+    description: 'Erects a multi-stack barrier that re-applies when absorbed',
+    levelRequirement: 70,
+    levelDescriptions: {
+      70: 'Erects a magicked barrier that absorbs 300 potency damage. Grants 5 stacks of Haima. Duration: 15s. When barrier is consumed, a stack is used to reapply barrier. On expire, heals 150 potency per remaining stack'
+    },
+    duration: 15,
+    cooldown: 120,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/haima.png',
+    type: 'barrier',
+    barrierFlatPotency: 300,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    stackBarrierEffect: {
+      initialBarrierPotency: 300,
+      stackCount: 5,
+      barrierRefreshOnBreak: true,
+      healingOnExpire: {
+        enabled: true,
+        potencyPerStack: 150
+      },
+      stackConsumptionPerHit: 1
+    }
+  },
+  {
+    id: 'panhaima',
+    name: 'Panhaima',
+    description: 'Erects a multi-stack AoE barrier that re-applies when absorbed',
+    levelRequirement: 80,
+    levelDescriptions: {
+      80: 'Erects a magicked barrier on party that absorbs 200 potency damage. Grants 5 stacks of Panhaima. Duration: 15s. When barrier is consumed, a stack is used to reapply barrier. On expire, heals 100 potency per remaining stack'
+    },
+    duration: 15,
+    cooldown: 120,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/panhaima.png',
+    type: 'barrier',
+    barrierFlatPotency: 200,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    stackBarrierEffect: {
+      initialBarrierPotency: 200,
+      stackCount: 5,
+      barrierRefreshOnBreak: true,
+      healingOnExpire: {
+        enabled: true,
+        potencyPerStack: 100
+      },
+      stackConsumptionPerHit: 1
+    }
+  },
+  {
+    id: 'holos',
+    name: 'Holos',
+    description: 'Heals party, erects barrier, and reduces damage taken',
+    levelRequirement: 76,
+    levelDescriptions: {
+      76: 'Restores party HP with 300 potency. Erects barrier (300 potency). Reduces party damage taken by 10% for 20s'
+    },
+    duration: 20,
+    cooldown: 120,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/holos.png',
+    type: 'mitigation',
+    mitigationValue: 0.10,
+    barrierFlatPotency: 300,
+    healingPotency: 300,
+    healingType: 'instant',
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true
+  },
+  {
+    id: 'rhizomata',
+    name: 'Rhizomata',
+    description: 'Grants 1 stack of Addersgall',
+    levelRequirement: 74,
+    levelDescriptions: {
+      74: 'Grants 1 stack of Addersgall'
+    },
+    duration: 0,
+    cooldown: 90,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/rhizomata.png',
+    type: 'utility',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'self',
+    forTankBusters: false,
+    forRaidWide: false,
+    providesAddersgall: true
+  },
+  {
+    id: 'eukrasian_diagnosis',
+    name: 'Eukrasian Diagnosis',
+    description: 'Restores HP and erects barrier. Grants additional barrier on critical heal',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores HP with 300 potency. Erects barrier (180% of heal). On critical heal, grants additional barrier (180% of heal)'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/eukrasian_diagnosis.png',
+    type: 'healing',
+    healingPotency: 300,
+    healingType: 'instant',
+    barrierFlatPotency: 540,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    isSpell: true,
+    scaleBarrierWithHealing: true,
+    conditionalBarrierOnCrit: {
+      additionalBarrierMultiplier: 1.8,
+      stackingRule: 'add',
+      incompatibleWith: ['eukrasian_prognosis', 'scholar_galvanize']
+    }
+  },
+  {
+    id: 'eukrasian_prognosis',
+    name: 'Eukrasian Prognosis',
+    description: 'Restores party HP and erects barrier',
+    levelRequirement: 30,
+    levelDescriptions: {
+      30: 'Restores party HP with 100 potency. Erects barrier (320% of heal)'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/eukrasian_prognosis.png',
+    type: 'healing',
+    healingPotency: 100,
+    healingType: 'instant',
+    barrierFlatPotency: 320,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    isSpell: true,
+    scaleBarrierWithHealing: true
+  },
+  {
+    id: 'toxikon',
+    name: 'Toxikon',
+    description: 'Deals damage and restores HP to Kardia target. Requires Addersting',
+    levelRequirement: 66,
+    levelDescriptions: {
+      66: 'Deals 300 potency AoE damage. Heals Kardia target for 170 potency. Requires 1 Addersting'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/toxikon.png',
+    type: 'healing',
+    healingPotency: 170,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'area',
+    forTankBusters: false,
+    forRaidWide: true,
+    isSpell: true,
+    adderstingCost: 1
   },
 
   // SAGE HEALING ABILITIES
@@ -2616,6 +2922,54 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'self',
     forTankBusters: false,
     forRaidWide: false
+  },
+
+  // WHITE MAGE LILY ABILITIES
+  {
+    id: 'afflatus_solace',
+    name: 'Afflatus Solace',
+    description: 'Restores target\'s HP. Consumes 1 Lily',
+    levelRequirement: 52,
+    levelDescriptions: {
+      52: 'Restores target\'s HP with 800 potency. Cost: 1 Lily'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-gamerescape/afflatus_solace.png',
+    type: 'healing',
+    healingPotency: 800,
+    healingType: 'instant',
+    consumesLily: true,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    isSpell: true
+  },
+  {
+    id: 'afflatus_rapture',
+    name: 'Afflatus Rapture',
+    description: 'Restores HP of all nearby party members. Consumes 1 Lily',
+    levelRequirement: 76,
+    levelDescriptions: {
+      76: 'Restores own HP and the HP of all nearby party members with 400 potency. Cost: 1 Lily'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['WHM'],
+    icon: '/abilities-gamerescape/afflatus_rapture.png',
+    type: 'healing',
+    healingPotency: 400,
+    healingType: 'instant',
+    consumesLily: true,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    isSpell: true
   }
 ];
 

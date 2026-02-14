@@ -13,7 +13,6 @@ export { ClassSelectionModalProvider, useClassSelectionModalContext } from './Cl
 
 export { RealtimeBossProvider, useRealtimeBossContext } from './RealtimeBossContext';
 export { RealtimeJobProvider, useRealtimeJobContext } from './RealtimeJobContext';
-export { RealtimeMitigationProvider, useRealtimeMitigationContext } from './RealtimeMitigationContext';
 
 export { default as AppProvider } from './RealtimeAppProvider';
 

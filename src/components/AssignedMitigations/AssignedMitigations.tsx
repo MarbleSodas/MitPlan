@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 const RemoveButton = ({ children, className = '', ...rest }) => (
   <button
     {...rest}
-    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-red-500 text-white p-0 ml-[4px] leading-none shrink-0 relative z-[15] select-none touch-manipulation hover:bg-red-600 active:bg-red-400 active:scale-95 ${className}`}
+    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-red-500 text-white p-0 ml-[4px] leading-none shrink-0 relative z-[15] select-none hover:bg-red-600 active:bg-red-400 active:scale-95 ${className}`}
   >
     {children}
   </button>
@@ -107,7 +107,11 @@ const AssignedMitigations = ({
     return null;
   }
   return (
-    <div className="absolute top-[30px] right-0 flex flex-col gap-1.5 border-l-2 border-border p-2.5 h-[calc(100%-40px)] overflow-y-auto overflow-x-hidden rounded-br-md z-10 w-[clamp(260px,20vw,360px)] 2xl:w-[clamp(280px,18vw,380px)] xl:w-[clamp(240px,16vw,320px)] md:w-[clamp(200px,26vw,260px)] sm:w-[clamp(160px,33vw,220px)] max-w-[400px] bg-card">
+    <div className="flex flex-col gap-1 border-l border-border p-1.5 min-h-0 overflow-y-auto overflow-x-hidden rounded-br-md z-10 w-[clamp(240px,18vw,320px)] 2xl:w-[clamp(260px,16vw,340px)] xl:w-[clamp(220px,14vw,280px)] md:w-[clamp(180px,24vw,220px)] sm:w-[clamp(140px,30vw,180px)] max-w-[360px] bg-card/20 backdrop-blur-[1px] self-stretch">
+      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 px-1 flex items-center justify-between opacity-80">
+        <span>Assignments</span>
+        <span className="bg-muted/50 px-1.5 py-0 rounded-full text-[10px]">{filteredDirectMitigations.length + filteredActiveMitigations.length}</span>
+      </div>
       {/* Render directly assigned mitigations */}
       {filteredDirectMitigations.map((mitigation, index) => {
         // Find the full mitigation data from the abilities array

@@ -129,13 +129,6 @@ export interface RealtimeJobContextValue {
   clearJobSelections: () => void;
 }
 
-export interface RealtimeMitigationContextValue {
-  assignments: MitigationAssignments;
-  assignMitigation: (actionId: string, mitigation: MitigationAssignment) => Promise<void>;
-  removeMitigation: (actionId: string, mitigationId: string, instanceId?: string) => Promise<void>;
-  clearAssignments: () => void;
-}
-
 export interface MitigationAssignment {
   id: string;
   name?: string;

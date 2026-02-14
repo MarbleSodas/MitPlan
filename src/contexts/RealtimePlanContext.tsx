@@ -1,19 +1,48 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
 import * as planService from '../services/realtimePlanService';
 import unifiedPlanService from '../services/unifiedPlanService';
 import localStoragePlanService from '../services/localStoragePlanService';
 
-const RealtimePlanContext = createContext({});
+export const RealtimePlanDataContext = createContext(null);
+export const RealtimePlanActionsContext = createContext(null);
 
-export const useRealtimePlan = () => {
-  const context = useContext(RealtimePlanContext);
+export const useRealtimePlanData = () => {
+  const context = useContext(RealtimePlanDataContext);
   if (!context) {
-    throw new Error('useRealtimePlan must be used within a RealtimePlanProvider');
+    throw new Error('useRealtimePlanData must be used within a RealtimePlanProvider');
   }
   return context;
 };
+
+export const useRealtimePlanActions = () => {
+  const context = useContext(RealtimePlanActionsContext);
+  if (!context) {
+    throw new Error('useRealtimePlanActions must be used within a RealtimePlanProvider');
+  }
+  return context;
+};
+
+export const useRealtimePlan = () => {
+  const data = useContext(RealtimePlanDataContext);
+  const actions = useContext(RealtimePlanActionsContext);
+  
+  // Legacy support: check if we are in a provider that supplies both
+  // If we are in a legacy provider (if I hadn't changed it), this would fail.
+  // But I am changing the provider.
+  
+  if (!data || !actions) {
+     throw new Error('useRealtimePlan must be used within a RealtimePlanProvider');
+  }
+
+  // Combine them for backward compatibility
+  return useMemo(() => ({
+    ...data,
+    ...actions
+  }), [data, actions]);
+};
+
 
 export const RealtimePlanProvider = ({ children, planId }) => {
   const { user, isAnonymousMode, anonymousUser } = useAuth();
@@ -38,8 +67,15 @@ export const RealtimePlanProvider = ({ children, planId }) => {
   const changeOriginRef = useRef(null);
   const pendingChangesRef = useRef(new Set());
   const planListenerRef = useRef(null);
+  const realtimePlanRef = useRef(realtimePlan);
+
+  // Keep ref in sync
+  useEffect(() => {
+    realtimePlanRef.current = realtimePlan;
+  }, [realtimePlan]);
 
   // Load plan data directly from Firebase Realtime Database
+
   useEffect(() => {
     if (!planId) {
       console.log('[RealtimePlanContext] No planId provided');
@@ -197,126 +233,102 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     return trackingId;
   }, [sessionId]);
 
-  // Real-time update functions that immediately update Firebase
   const updateBossRealtime = useCallback((bossId) => {
     if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
 
-    // Check if this is actually a change
-    if (realtimePlan?.bossId === bossId) return;
+    if (realtimePlanRef.current?.bossId === bossId) return;
 
-    // Track this change
     trackChange('boss', bossId);
     setChangeOrigin(sessionId);
 
-    // Update local state immediately for better UX
     setRealtimePlan(prev => prev ? { ...prev, bossId } : null);
+    
+    const previousBossId = realtimePlanRef.current?.bossId;
 
     debouncedUpdate(`boss-${planId}`, async () => {
       try {
         await planService.updatePlanBossRealtime(planId, bossId, user.uid, sessionId);
       } catch (error) {
         console.error('Error updating boss realtime:', error);
-        // Revert local state on error
-        setRealtimePlan(prev => prev ? { ...prev, bossId: realtimePlan?.bossId } : null);
+        setRealtimePlan(prev => prev ? { ...prev, bossId: previousBossId } : null);
       }
     }, 300);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, realtimePlan]);
+  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange]);
 
   const updateJobsRealtime = useCallback((selectedJobs) => {
     if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
 
-    // Convert full job objects to optimized format (only selected job IDs)
     const optimizedSelectedJobs = {};
     Object.entries(selectedJobs).forEach(([roleKey, jobs]) => {
-      // Filter to only include selected jobs and store only their IDs
       const selectedJobIds = jobs
         .filter(job => job.selected)
         .map(job => job.id);
 
-      // Only include the role if it has selected jobs
       if (selectedJobIds.length > 0) {
         optimizedSelectedJobs[roleKey] = selectedJobIds;
       }
     });
 
-    // Check if this is actually a change
-    const currentJobsString = JSON.stringify(realtimePlan?.selectedJobs || {});
+    const currentJobsString = JSON.stringify(realtimePlanRef.current?.selectedJobs || {});
     const newJobsString = JSON.stringify(optimizedSelectedJobs);
     if (currentJobsString === newJobsString) return;
 
-    // Track this change
     trackChange('jobs', newJobsString);
     setChangeOrigin(sessionId);
 
-    // Store the previous state for potential rollback
-    const previousJobs = realtimePlan?.selectedJobs;
+    const previousJobs = realtimePlanRef.current?.selectedJobs;
 
-    // Update local state immediately with optimized format
     setRealtimePlan(prev => prev ? { ...prev, selectedJobs: optimizedSelectedJobs } : null);
 
     debouncedUpdate(`jobs-${planId}`, async () => {
       try {
         if (isLocalPlan) {
-          // For local plans, update localStorage directly
           await localStoragePlanService.updatePlan(planId, { selectedJobs: optimizedSelectedJobs });
         } else {
-          // For Firebase plans, use realtime service
           await planService.updatePlanJobsRealtime(planId, optimizedSelectedJobs, user?.uid, sessionId);
         }
         console.log('[RealtimePlanContext] Jobs updated successfully');
       } catch (error) {
         console.error('Error updating jobs realtime:', error);
-        // Revert local state on error
         setRealtimePlan(prev => prev ? { ...prev, selectedJobs: previousJobs } : null);
         setError('Failed to update job selection. Please try again.');
 
-        // Clear error after a delay
         setTimeout(() => setError(null), 5000);
       }
     }, 150);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, realtimePlan, isLocalPlan]);
+  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, isLocalPlan]);
 
   const updateAssignmentsRealtime = useCallback((assignments) => {
     if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return Promise.resolve();
 
-    // Check if this is actually a change
-    const currentAssignmentsString = JSON.stringify(realtimePlan?.assignments || {});
+    const currentAssignmentsString = JSON.stringify(realtimePlanRef.current?.assignments || {});
     const newAssignmentsString = JSON.stringify(assignments);
     if (currentAssignmentsString === newAssignmentsString) return Promise.resolve();
 
-    // Track this change
     trackChange('assignments', newAssignmentsString);
     setChangeOrigin(sessionId);
 
-    // Store the previous state for potential rollback
-    const previousAssignments = realtimePlan?.assignments;
+    const previousAssignments = realtimePlanRef.current?.assignments;
 
-    // Update local state immediately
     setRealtimePlan(prev => prev ? { ...prev, assignments } : null);
 
-    // Create a Promise that will be resolved/rejected by the debounced update
     const updatePromise = new Promise((resolve, reject) => {
-      // Store the resolve/reject functions so the debounced update can call them
       const updateKey = `assignments-${planId}`;
 
       debouncedUpdate(updateKey, async () => {
         try {
           if (isLocalPlan) {
-            // For local plans, update localStorage directly
             await localStoragePlanService.updatePlan(planId, { assignments });
           } else {
-            // For Firebase plans, use realtime service
             await planService.updatePlanAssignmentsRealtime(planId, assignments, user?.uid, sessionId);
           }
           console.log('[RealtimePlanContext] Assignments updated successfully');
           resolve(true);
         } catch (error) {
           console.error('Error updating assignments realtime:', error);
-          // Revert local state on error
           setRealtimePlan(prev => prev ? { ...prev, assignments: previousAssignments } : null);
           setError('Failed to update mitigation assignments. Please try again.');
 
-          // Clear error after a delay
           setTimeout(() => setError(null), 5000);
           reject(error);
         }
@@ -324,47 +336,39 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     });
 
     return updatePromise;
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, realtimePlan, isLocalPlan]);
+  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, isLocalPlan]);
 
   const updateTankPositionsRealtime = useCallback((tankPositions) => {
     if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
 
-    // Check if this is actually a change
-    const currentTankPositionsString = JSON.stringify(realtimePlan?.tankPositions || {});
+    const currentTankPositionsString = JSON.stringify(realtimePlanRef.current?.tankPositions || {});
     const newTankPositionsString = JSON.stringify(tankPositions);
     if (currentTankPositionsString === newTankPositionsString) return;
 
-    // Track this change
     trackChange('tankPositions', newTankPositionsString);
     setChangeOrigin(sessionId);
 
-    // Store the previous state for potential rollback
-    const previousTankPositions = realtimePlan?.tankPositions;
+    const previousTankPositions = realtimePlanRef.current?.tankPositions;
 
-    // Update local state immediately
     setRealtimePlan(prev => prev ? { ...prev, tankPositions } : null);
 
     debouncedUpdate(`tankPositions-${planId}`, async () => {
       try {
         if (isLocalPlan) {
-          // For local plans, update localStorage directly
           await localStoragePlanService.updatePlan(planId, { tankPositions });
         } else {
-          // For Firebase plans, use realtime service
-          await planService.updateTankPositionsRealtime(planId, tankPositions, user?.uid, sessionId);
+          await planService.updatePlanTankPositionsRealtime(planId, tankPositions, user?.uid, sessionId);
         }
         console.log('[RealtimePlanContext] Tank positions updated successfully');
       } catch (error) {
         console.error('Error updating tank positions realtime:', error);
-        // Revert local state on error
         setRealtimePlan(prev => prev ? { ...prev, tankPositions: previousTankPositions } : null);
         setError('Failed to update tank positions. Please try again.');
 
-        // Clear error after a delay
         setTimeout(() => setError(null), 5000);
       }
     }, 300);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, realtimePlan, isLocalPlan]);
+  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, isLocalPlan]);
 
   // Batch update function for multiple fields
   const batchUpdateRealtime = useCallback((updates) => {
@@ -372,15 +376,14 @@ export const RealtimePlanProvider = ({ children, planId }) => {
 
     setChangeOrigin(sessionId);
 
-    // Store the previous state for potential rollback
     const previousState = {};
+    const currentPlan = realtimePlanRef.current;
     Object.keys(updates).forEach(key => {
-      if (realtimePlan && realtimePlan[key] !== undefined) {
-        previousState[key] = realtimePlan[key];
+      if (currentPlan && currentPlan[key] !== undefined) {
+        previousState[key] = currentPlan[key];
       }
     });
 
-    // Update local state immediately
     setRealtimePlan(prev => {
       if (!prev) return null;
       return { ...prev, ...updates };
@@ -389,27 +392,24 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     debouncedUpdate(`batch-${planId}`, async () => {
       try {
         if (isLocalPlan) {
-          // For local plans, update localStorage directly
           await localStoragePlanService.updatePlan(planId, updates);
         } else {
-          // For Firebase plans, use realtime service
           await planService.batchUpdatePlanRealtime(planId, updates, user?.uid, sessionId);
         }
         console.log('[RealtimePlanContext] Batch update successful');
       } catch (error) {
         console.error('Error batch updating plan realtime:', error);
-        // Revert local state on error
         setRealtimePlan(prev => {
           if (!prev) return null;
           return { ...prev, ...previousState };
         });
         setError('Failed to update settings. Please try again.');
 
-        // Clear error after a delay
         setTimeout(() => setError(null), 5000);
       }
     }, 500);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, realtimePlan, isLocalPlan, isAnonymousMode]);
+  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, isLocalPlan, isAnonymousMode]);
+
 
   // Recovery function to reload plan data from Firebase
   const recoverPlanData = useCallback(async () => {
@@ -432,36 +432,41 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     }
   }, [planId]);
 
-  const value = {
+  const dataValue = useMemo(() => ({
     planId,
-    
-    // Real-time plan data
     realtimePlan,
     loading,
     error,
     isInitialized,
-
-    // Convenience accessors for plan data
     bossId: realtimePlan?.bossId,
     selectedJobs: realtimePlan?.selectedJobs || {},
     assignments: realtimePlan?.assignments || {},
     tankPositions: realtimePlan?.tankPositions || {},
-    planName: realtimePlan?.name,
+    planName: realtimePlan?.name
+  }), [planId, realtimePlan, loading, error, isInitialized]);
 
-    // Update functions
+  const actionsValue = useMemo(() => ({
     updateBossRealtime,
     updateJobsRealtime,
     updateAssignmentsRealtime,
     updateTankPositionsRealtime,
     batchUpdateRealtime,
-
-    // Recovery function
     recoverPlanData
-  };
+  }), [
+    updateBossRealtime,
+    updateJobsRealtime,
+    updateAssignmentsRealtime,
+    updateTankPositionsRealtime,
+    batchUpdateRealtime,
+    recoverPlanData
+  ]);
 
   return (
-    <RealtimePlanContext.Provider value={value}>
-      {children}
-    </RealtimePlanContext.Provider>
+    <RealtimePlanDataContext.Provider value={dataValue}>
+      <RealtimePlanActionsContext.Provider value={actionsValue}>
+        {children}
+      </RealtimePlanActionsContext.Provider>
+    </RealtimePlanDataContext.Provider>
   );
 };
+

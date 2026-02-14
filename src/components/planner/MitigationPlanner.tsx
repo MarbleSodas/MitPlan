@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCenter, useSensor, useSensors, MouseSensor, KeyboardSensor } from '@dnd-kit/core';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCollaboration } from '../../contexts/CollaborationContext';
 import { mitigationAbilities } from '../../data';
@@ -392,6 +392,14 @@ const PlanningInterface = () => {
     setActiveMitigation(null);
   }, [sortedBossActions, availableMitigations, setActiveMitigation, addMitigation, checkAbilityAvailability, openTankSelectionModal, getCasterOptions, openClassSelectionModal, tankPositions, selectedJobs]);
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
 
   // Show loading state while data is being loaded (AFTER all hooks are called)
@@ -419,6 +427,7 @@ const PlanningInterface = () => {
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -456,7 +465,8 @@ const PlanningInterface = () => {
 
 
       <div ref={splitContainerRef} className="flex w-full gap-4">
-        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+
           <div className="relative flex flex-col p-4 w-full grow">
             {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
@@ -499,8 +509,9 @@ const PlanningInterface = () => {
             <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
               <div className="my-2 w-px bg-[var(--color-border)]" />
             </div>
-            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] min-w-0">
-            <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
+            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] min-w-0">
+            <div className="flex flex-col gap-4 grow overflow-y-auto">
+
               {filteredMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
                 const availability = selectedBossAction ? checkAbilityAvailability(
@@ -564,7 +575,8 @@ const PlanningInterface = () => {
 	            <div className="flex w-full gap-4 h-[calc(100vh-64px)]">
 	              {/* Timeline column */}
 	              <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
-	                   className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-full min-h-[400px] flex flex-col min-w-0 bg-background">
+	                   className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] flex flex-col min-w-0 bg-background">
+
 	                <div className="relative flex flex-col p-4 w-full grow">
 	                  {sortedBossActions.map((action, idx) => {
 	                    const isSelected = selectedBossAction?.id === action.id;
@@ -608,8 +620,9 @@ const PlanningInterface = () => {
 	              </div>
 	              {/* Mitigations column */}
 	              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
-	                   className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-y h-full min-h-[400px] min-w-0 bg-background">
-	                <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
+	                   className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] min-w-0 bg-background">
+	                <div className="flex flex-col gap-4 grow overflow-y-auto">
+
 	                  {filteredMitigations.map(mitigation => {
 	                    const availability = selectedBossAction ? checkAbilityAvailability(
 	                      mitigation.id,

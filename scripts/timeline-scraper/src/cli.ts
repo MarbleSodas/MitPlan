@@ -4,23 +4,15 @@ config();
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import ora, { Ora } from 'ora';
+import ora from 'ora';
 import {
-  generateTimeline,
-  autoGenerateTimeline,
-  updateTimeline,
-  clearCredentials,
   listAvailableBosses,
   analyzeReport,
-  scrapeTimeline,
 } from './generator/index.js';
 import { processCactbotFirst } from './generator/cactbotFirstProcessor.js';
-import { processTimelines, generateTimelineReport } from './generator/enhancedProcessor.js';
 import { extractDamageTimeline } from './generator/damageExtractor.js';
-import { getBossMultiHitAbilities, getBossFirstAction } from './config/index.js';
 import { getAccessToken, clearCachedToken } from './sources/fflogs/auth.js';
-import { createConfig, getBossMapping, getAllBossIds } from './config/index.js';
-import { getRateLimitStatus } from './sources/fflogs/client.js';
+import { createConfig, getBossMapping } from './config/index.js';
 
 const program = new Command();
 
@@ -293,7 +285,7 @@ program
     const spinner = ora('Clearing credentials...').start();
 
     try {
-      await clearCredentials();
+      await clearCachedToken();
       spinner.succeed(chalk.green('Credentials cleared'));
     } catch (error) {
       spinner.fail(chalk.red('Failed to clear credentials'));
@@ -307,3 +299,4 @@ program.parse();
 if (!process.argv.slice(2).length) {
   program.outputHelp();
 }
+

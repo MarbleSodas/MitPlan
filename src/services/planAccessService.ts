@@ -3,7 +3,7 @@
  * Handles plan ownership and access control tracking
  */
 
-import { ref, get, set, update, serverTimestamp } from 'firebase/database';
+import { ref, get, set, update, serverTimestamp, query, orderByChild, equalTo } from 'firebase/database';
 import { database } from '../config/firebase';
 import anonymousUserService from './anonymousUserService';
 
@@ -47,6 +47,18 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
     // Handle authenticated user access tracking in Firebase
     const now = Date.now();
     const accessPath = `plans/${planId}/accessedBy/${userId}`;
+    const userAccessPath = `userProfiles/${userId}/accessedPlans/${planId}`;
+
+    // Update user's personal access list (Reverse Index)
+    try {
+      await update(ref(database, userAccessPath), {
+        lastAccess: now,
+        planId: planId
+      });
+    } catch (error) {
+       console.error('[PlanAccessService] Error updating user profile accessed plans:', error);
+       // Non-blocking error
+    }
 
     console.log('[PlanAccessService] Setting access path:', accessPath);
     console.log('[PlanAccessService] Database instance:', database);
@@ -259,12 +271,45 @@ export const migratePlanOwnership = (planId, planData) => {
  * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<Array>} Array of owned plans
  */
+
 export const getUserOwnedPlans = async (userId, isAnonymous = false) => {
   try {
-    const allPlans = await getUserAccessiblePlans(userId, isAnonymous);
+    if (isAnonymous) {
+      const localStoragePlanService = (await import('./localStoragePlanService')).default;
+      const allPlans = await localStoragePlanService.getUserPlans();
+      return allPlans.filter(plan => plan.isOwner);
+    }
 
-    // Filter to only owned plans
-    const ownedPlans = allPlans.filter(plan => plan.isOwner);
+    const plansRef = ref(database, 'plans');
+    const ownedPlansQuery = query(plansRef, orderByChild('ownerId'), equalTo(userId));
+    const snapshot = await get(ownedPlansQuery);
+
+    const ownedPlans = [];
+
+    if (snapshot.exists()) {
+      snapshot.forEach((childSnapshot) => {
+        const planData = childSnapshot.val();
+        const planId = childSnapshot.key;
+        
+        ownedPlans.push({
+          id: planId,
+          ...planData,
+          name: planData.title || planData.name || 'Untitled Plan',
+          isOwner: true,
+          hasAccessed: true,
+          accessInfo: { 
+            lastAccess: planData.lastAccessedAt || Date.now(),
+            accessCount: 1 
+          }
+        });
+      });
+    }
+
+    ownedPlans.sort((a, b) => {
+      const aTime = a.updatedAt || a.lastAccessedAt || a.createdAt || 0;
+      const bTime = b.updatedAt || b.lastAccessedAt || b.createdAt || 0;
+      return bTime - aTime;
+    });
 
     return ownedPlans;
   } catch (error) {
@@ -273,44 +318,77 @@ export const getUserOwnedPlans = async (userId, isAnonymous = false) => {
   }
 };
 
+
 /**
  * Get plans shared with a user (accessed but not owned)
  * @param {string} userId - The user ID
  * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<Array>} Array of shared plans
  */
+
 export const getUserSharedPlans = async (userId, isAnonymous = false) => {
   try {
     if (isAnonymous) {
-      // For anonymous users, there are no "shared" plans since they only work with localStorage
-      // All plans are either owned or not accessible
       console.log('[PlanAccessService] Anonymous user - no shared plans');
       return [];
     }
 
-    const allPlans = await getUserAccessiblePlans(userId, isAnonymous);
-    console.log('[PlanAccessService] All accessible plans for user:', userId, allPlans.length);
+    const userAccessRef = ref(database, `userProfiles/${userId}/accessedPlans`);
+    const snapshot = await get(userAccessRef);
 
-    // Filter to only shared plans (accessed but not owned)
-    const sharedPlans = allPlans.filter(plan => {
-      const isShared = !plan.isOwner && plan.hasAccessed;
-      if (isShared) {
-        console.log('[PlanAccessService] Found shared plan:', plan.id, plan.name, {
-          isOwner: plan.isOwner,
-          hasAccessed: plan.hasAccessed,
-          accessInfo: plan.accessInfo
-        });
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const accessedPlansMap = snapshot.val();
+    const planIds = Object.keys(accessedPlansMap);
+    
+    const planPromises = planIds.map(async (planId) => {
+      try {
+        const planRef = ref(database, `plans/${planId}`);
+        const planSnapshot = await get(planRef);
+        
+        if (!planSnapshot.exists()) return null;
+        
+        const planData = planSnapshot.val();
+        
+        if (planData.ownerId === userId || planData.userId === userId) {
+          return null;
+        }
+
+        return {
+          id: planId,
+          ...planData,
+          name: planData.title || planData.name || 'Untitled Plan',
+          isOwner: false,
+          hasAccessed: true,
+          accessInfo: {
+            lastAccess: accessedPlansMap[planId].lastAccess || 0,
+            accessCount: 1
+          }
+        };
+      } catch (e) {
+        console.error(`[PlanAccessService] Failed to fetch shared plan ${planId}`, e);
+        return null;
       }
-      return isShared;
     });
 
-    console.log('[PlanAccessService] Filtered shared plans:', sharedPlans.length);
+    const results = await Promise.all(planPromises);
+    const sharedPlans = results.filter(p => p !== null);
+
+    sharedPlans.sort((a, b) => {
+      const aTime = a.accessInfo?.lastAccess || 0;
+      const bTime = b.accessInfo?.lastAccess || 0;
+      return bTime - aTime;
+    });
+
     return sharedPlans;
   } catch (error) {
     console.error('[PlanAccessService] Error getting shared plans:', error);
     return [];
   }
 };
+
 
 /**
  * Get categorized plans for dashboard display
