@@ -305,6 +305,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
       manager.chargesTracker.update({
         bossActions: currentBossActions,
         bossLevel: currentBossLevel,
+        selectedJobs,
         assignments
       });
     }
@@ -335,7 +336,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
   // Memoized cooldown manager instance
   const cooldownManager = useMemo(() => {
     return cooldownManagerRef.current || getCooldownManager();
-  }, [cooldownManagerRef.current]);
+  }, [cooldownManagerRef.current, selectedJobs]);
 
   /**
    * Check if an ability is available at a specific time

@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useEffect, useState } from 'react';
+import React, { memo, useMemo, useEffect, useState, useRef } from 'react';
 import { useEnhancedMitigation } from '../../../contexts/EnhancedMitigationContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 
@@ -7,6 +7,16 @@ const HealerGaugeDisplay = memo(({ selectedBossAction, className = "" }) => {
   const { cooldownManager, selectedJobs, assignments } = useEnhancedMitigation();
 
   const [forceRefresh, setForceRefresh] = useState(0);
+  const prevSelectedJobsRef = useRef(selectedJobs);
+  
+  useEffect(() => { 
+    // Force refresh when selectedJobs changes
+    if (JSON.stringify(prevSelectedJobsRef.current) !== JSON.stringify(selectedJobs)) {
+      prevSelectedJobsRef.current = selectedJobs;
+      setForceRefresh(p => p + 1);
+    }
+  }, [selectedJobs]);
+  
   useEffect(() => { setForceRefresh((p) => p + 1); }, [assignments]);
 
   const isScholarSelected = useMemo(() => {
@@ -17,7 +27,7 @@ const HealerGaugeDisplay = memo(({ selectedBossAction, className = "" }) => {
       if (typeof selectedJobs.healer[0] === 'object' && selectedJobs.healer.some(j => j && j.id === 'SCH' && j.selected)) return true;
     }
     return false;
-  }, [selectedJobs]);
+  }, [selectedJobs, JSON.stringify(selectedJobs)]);
 
   const isSageSelected = useMemo(() => {
     if (!selectedJobs) return false;
@@ -27,7 +37,7 @@ const HealerGaugeDisplay = memo(({ selectedBossAction, className = "" }) => {
       if (typeof selectedJobs.healer[0] === 'object' && selectedJobs.healer.some(j => j && j.id === 'SGE' && j.selected)) return true;
     }
     return false;
-  }, [selectedJobs]);
+  }, [selectedJobs, JSON.stringify(selectedJobs)]);
 
   const isWhiteMageSelected = useMemo(() => {
     if (!selectedJobs) return false;
@@ -37,28 +47,56 @@ const HealerGaugeDisplay = memo(({ selectedBossAction, className = "" }) => {
       if (typeof selectedJobs.healer[0] === 'object' && selectedJobs.healer.some(j => j && j.id === 'WHM' && j.selected)) return true;
     }
     return false;
-  }, [selectedJobs]);
+  }, [selectedJobs, JSON.stringify(selectedJobs)]);
 
   const aetherflowState = useMemo(() => {
-    if (!isScholarSelected || !selectedBossAction || !cooldownManager?.aetherflowTracker) {
+    if (!isScholarSelected || !selectedBossAction) {
       return { availableStacks: 0, totalStacks: 3, canRefresh: false, timeUntilRefresh: 0, lastRefreshTime: null };
     }
-    return cooldownManager.aetherflowTracker.getAetherflowState(selectedBossAction.time);
-  }, [isScholarSelected, selectedBossAction, cooldownManager, assignments, forceRefresh]);
+    if (!cooldownManager?.aetherflowTracker) {
+      return { availableStacks: 3, totalStacks: 3, canRefresh: true, timeUntilRefresh: 0, lastRefreshTime: null };
+    }
+    const state = cooldownManager.aetherflowTracker.getAetherflowState(selectedBossAction.time);
+    return { 
+      availableStacks: state.availableStacks ?? 3, 
+      totalStacks: state.totalStacks ?? 3, 
+      canRefresh: state.canRefresh ?? true, 
+      timeUntilRefresh: state.timeUntilRefresh ?? 0, 
+      lastRefreshTime: state.lastRefreshTime 
+    };
+  }, [isScholarSelected, selectedBossAction, cooldownManager, selectedJobs, assignments, forceRefresh]);
 
   const addersgallState = useMemo(() => {
-    if (!isSageSelected || !selectedBossAction || !cooldownManager?.addersgallTracker) {
+    if (!isSageSelected || !selectedBossAction) {
       return { availableStacks: 0, totalStacks: 3, canRefresh: false, timeUntilRefresh: 0, lastRefreshTime: null };
     }
-    return cooldownManager.addersgallTracker.getAddersgallState(selectedBossAction.time);
-  }, [isSageSelected, selectedBossAction, cooldownManager, assignments, forceRefresh]);
+    if (!cooldownManager?.addersgallTracker) {
+      return { availableStacks: 3, totalStacks: 3, canRefresh: true, timeUntilRefresh: 0, lastRefreshTime: null };
+    }
+    const state = cooldownManager.addersgallTracker.getAddersgallState(selectedBossAction.time);
+    return { 
+      availableStacks: state.availableStacks ?? 3, 
+      totalStacks: state.totalStacks ?? 3, 
+      canRefresh: state.canRefresh ?? true, 
+      timeUntilRefresh: state.timeUntilRefresh ?? 0, 
+      lastRefreshTime: state.lastRefreshTime 
+    };
+  }, [isSageSelected, selectedBossAction, cooldownManager, selectedJobs, assignments, forceRefresh]);
 
   const lilyState = useMemo(() => {
-    if (!isWhiteMageSelected || !selectedBossAction || !cooldownManager?.lilyTracker) {
+    if (!isWhiteMageSelected || !selectedBossAction) {
       return { availableLilies: 0, canGenerate: false, timeUntilNextLily: 0 };
     }
-    return cooldownManager.lilyTracker.getLilyState(selectedBossAction.time);
-  }, [isWhiteMageSelected, selectedBossAction, cooldownManager, assignments, forceRefresh]);
+    if (!cooldownManager?.lilyTracker) {
+      return { availableLilies: 3, canGenerate: true, timeUntilNextLily: 0 };
+    }
+    const state = cooldownManager.lilyTracker.getLilyState(selectedBossAction.time);
+    return { 
+      availableLilies: state.availableLilies ?? 3, 
+      canGenerate: state.canGenerate ?? true, 
+      timeUntilNextLily: state.timeUntilNextLily ?? 0 
+    };
+  }, [isWhiteMageSelected, selectedBossAction, cooldownManager, selectedJobs, assignments, forceRefresh]);
 
   const renderStackIndicators = (available, total, color) => {
     const out = [];

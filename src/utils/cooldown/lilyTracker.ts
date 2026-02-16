@@ -90,7 +90,7 @@ export class LilyTracker {
 
   isWhiteMageSelected() {
     if (!this.selectedJobs) return false;
-    if (this.selectedJobs['WHM']) return true;
+    // Check healer array for White Mage - handles both string array and object array formats
     if (this.selectedJobs.healer && Array.isArray(this.selectedJobs.healer)) {
       if (typeof this.selectedJobs.healer[0] === 'string' && this.selectedJobs.healer.includes('WHM')) {
         return true;
@@ -126,7 +126,7 @@ export class LilyTracker {
       .filter(action => action.time <= targetTime)
       .sort((a, b) => a.time - b.time);
 
-    let currentLilies = 0;
+    let currentLilies = 3;
     let lastLilyGeneratedTime = 0;
     const lilyUsageHistory = [];
 

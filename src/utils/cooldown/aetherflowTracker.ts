@@ -164,10 +164,7 @@ export class AetherflowTracker {
   isScholarSelected() {
     if (!this.selectedJobs) return false;
 
-    // Direct format: selectedJobs['SCH']
-    if (this.selectedJobs['SCH']) return true;
-
-    // Check healer array for Scholar
+    // Check healer array for Scholar - handles both string array and object array formats
     if (this.selectedJobs.healer && Array.isArray(this.selectedJobs.healer)) {
       // Optimized format: ["SCH", "WHM"]
       if (typeof this.selectedJobs.healer[0] === 'string' && this.selectedJobs.healer.includes('SCH')) {
