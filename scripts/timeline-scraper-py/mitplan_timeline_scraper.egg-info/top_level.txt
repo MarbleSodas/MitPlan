@@ -1,5 +1,0 @@
-agents
-cli
-config
-schemas
-tools
