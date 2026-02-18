@@ -10,33 +10,6 @@ export const BUILD_TIMESTAMP: number = (typeof window !== 'undefined' && window.
   ? window.__BUILD_TIMESTAMP__
   : Date.now();
 
-export const checkForUpdates = (): boolean => {
-  try {
-    const storedVersion = localStorage.getItem('mitPlanVersion');
-
-    if (!storedVersion) {
-      localStorage.setItem('mitPlanVersion', BUILD_TIMESTAMP.toString());
-      return false;
-    }
-
-    if (storedVersion !== BUILD_TIMESTAMP.toString()) {
-      console.log('%c[VERSION] Update detected! Clearing localStorage and refreshing...',
-        'background: #FF5722; color: white; padding: 2px 5px; border-radius: 3px;',
-        { storedVersion, currentVersion: BUILD_TIMESTAMP });
-
-      localStorage.clear();
-      localStorage.setItem('mitPlanVersion', BUILD_TIMESTAMP.toString());
-      window.location.reload();
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error('Error checking for updates:', error);
-    return false;
-  }
-};
-
 interface LegacyPlanData {
   version?: string;
   bossId?: string;
@@ -160,7 +133,6 @@ export const validatePlanData = (planData: Partial<Plan> | null | undefined): bo
 
 export default {
   BUILD_TIMESTAMP,
-  checkForUpdates,
   migratePlanData,
   validatePlanData
 };

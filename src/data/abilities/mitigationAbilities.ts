@@ -1645,6 +1645,31 @@ export const mitigationAbilities: MitigationAbility[] = [
     forRaidWide: true
   },
   {
+    id: 'celestial_intersection',
+    name: 'Celestial Intersection',
+    description: 'Restores HP and erects barrier on single target. Nocturnal Sect adds shield',
+    levelRequirement: 74,
+    levelDescriptions: {
+      74: 'Restores target\'s HP with 200 potency. Nocturnal Sect: Erects barrier (200% of heal). Maximum Charges: 2'
+    },
+    duration: 30,
+    cooldown: 30,
+    count: 2,
+    jobs: ['AST'],
+    icon: '/abilities-official/celestial_intersection.png',
+    type: 'healing',
+    healingPotency: 200,
+    healingType: 'instant',
+    barrierFlatPotency: 400,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    scaleBarrierWithHealing: true
+  },
+  {
     id: 'neutral_sect',
     name: 'Neutral Sect',
     description: 'Increases healing magic potency by 20%. Grants Suntouched and erects barriers on Aspected Benefic/Helios Conjunction.',
@@ -1764,6 +1789,39 @@ export const mitigationAbilities: MitigationAbility[] = [
     forRaidWide: false
   },
   {
+    id: 'essential_dignity',
+    name: 'Essential Dignity',
+    description: 'Restores target\'s HP. Potency increases as target\'s HP decreases, reaching max at 30% HP or below',
+    levelRequirement: 15,
+    levelDescriptions: {
+      15: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below',
+      78: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below. Maximum Charges: 2'
+    },
+    duration: 0,
+    cooldown: 40,
+    levelCooldowns: {
+      15: 40,
+      78: 40
+    },
+    count: 2,
+    jobs: ['AST'],
+    icon: '/abilities-official/essential_dignity.png',
+    type: 'healing',
+    healingPotency: 900,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    hpBasedPotencyScaling: {
+      minPotency: 400,
+      maxPotency: 900,
+      thresholdPercent: 30,
+      scalingType: 'step'
+    }
+  },
+  {
     id: 'helios',
     name: 'Helios',
     description: 'Restores own HP and the HP of all nearby party members',
@@ -1833,28 +1891,6 @@ export const mitigationAbilities: MitigationAbility[] = [
   },
 
   {
-    id: 'essential_dignity',
-    name: 'Essential Dignity',
-    description: 'Restores target\'s HP with potency that increases as target\'s HP decreases',
-    levelRequirement: 15,
-    levelDescriptions: {
-      15: 'Restores target\'s HP with 400-900 potency based on current HP'
-    },
-    duration: 0,
-    cooldown: 40,
-    count: 3,
-    jobs: ['AST'],
-    icon: '/abilities-official/essential_dignity.png',
-    type: 'healing',
-    healingPotency: 650, // Average potency
-    healingType: 'instant',
-    mitigationValue: 0,
-    damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false
-  },
-  {
     id: 'aspected_benefic',
     name: 'Aspected Benefic',
     description: 'Restores target\'s HP and grants regen',
@@ -1898,29 +1934,6 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'party',
     forTankBusters: false,
     forRaidWide: true
-  },
-  {
-    id: 'celestial_intersection',
-    name: 'Celestial Intersection',
-    description: 'Restores HP and erects a magicked barrier which nullifies damage',
-    levelRequirement: 74,
-    levelDescriptions: {
-      74: 'Restores HP and erects a magicked barrier which nullifies damage for 30s'
-    },
-    duration: 30,
-    cooldown: 30,
-    count: 2, // Has 2 charges
-    jobs: ['AST'],
-    icon: '/abilities-official/celestial_intersection.png',
-    type: 'barrier',
-    mitigationValue: 0, // Shield, not direct mitigation
-    barrierFlatPotency: 400, // Official: absorbs damage equivalent to a heal of 400 potency
-    damageType: 'both',
-    target: 'single',
-    forTankBusters: true,
-    forRaidWide: false,
-    targetsTank: true,
-    scaleBarrierWithHealing: true
   },
   {
     id: 'sun_sign',
@@ -2214,7 +2227,8 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'party',
     forTankBusters: false,
     forRaidWide: true,
-    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' }
+    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' },
+    healingReceivedBonus: 0.10
   },
   {
     id: 'krasis',
@@ -2237,7 +2251,51 @@ export const mitigationAbilities: MitigationAbility[] = [
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
-    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' }
+    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' },
+    healingReceivedBonus: 0.20
+  },
+  {
+    id: 'rhizomata',
+    name: 'Rhizomata',
+    description: 'Grants 1 stack of Addersgall',
+    levelRequirement: 74,
+    levelDescriptions: {
+      74: 'Grants 1 stack of Addersgall'
+    },
+    duration: 0,
+    cooldown: 90,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/rhizomata.png',
+    type: 'utility',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'self',
+    forTankBusters: false,
+    forRaidWide: false,
+    providesAddersgall: true
+  },
+  {
+    id: 'toxikon',
+    name: 'Toxikon',
+    description: 'Deals damage and restores HP to Kardia target. Requires Addersting',
+    levelRequirement: 66,
+    levelDescriptions: {
+      66: 'Deals 300 potency AoE damage. Heals Kardia target for 170 potency. Requires 1 Addersting'
+    },
+    duration: 0,
+    cooldown: 2.5,
+    jobs: ['SGE'],
+    icon: '/abilities-gamerescape/toxikon.png',
+    type: 'healing',
+    healingPotency: 170,
+    healingType: 'instant',
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'area',
+    forTankBusters: false,
+    forRaidWide: true,
+    isSpell: true,
+    adderstingCost: 1
   },
 
   // SAGE HEALING ABILITIES
@@ -2616,7 +2674,9 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'self',
     forTankBusters: false,
     forRaidWide: false
-  }
+  },
+
+  // SGE REGEN ABILITIES
 ];
 
 export default mitigationAbilities;

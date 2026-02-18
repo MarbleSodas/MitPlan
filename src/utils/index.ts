@@ -13,11 +13,11 @@ export {
 
 export {
   findActiveMitigationsAtTime,
+  precalculateActiveMitigations,
   calculateTotalMitigation,
   formatMitigation,
   generateMitigationBreakdown,
-  isMitigationAvailable,
-  calculateOptimalMitigationPlan
+  isMitigationAvailable
 } from './mitigation/mitigationUtils.js';
 
 export {
@@ -41,17 +41,6 @@ export {
 } from './storage/storageUtils';
 
 export {
-  isMobileDevice,
-  isTabletDevice,
-  isSmallMobileDevice,
-  getDeviceType,
-  isTouchDevice,
-  isPortraitOrientation,
-  isLandscapeOrientation,
-  getViewportDimensions
-} from './device/deviceUtils';
-
-export {
   compressString,
   decompressString,
   generateShareableUrl,
@@ -62,11 +51,11 @@ export {
 } from './url/urlUtils.js';
 
 export {
-  BUILD_TIMESTAMP,
-  checkForUpdates
+  BUILD_TIMESTAMP
 } from './version/versionUtils.js';
 
 export {
+  isDualTankBusterAction,
   processMultiHitTankBusters
 } from './boss/bossActionUtils.js';
 

@@ -4,6 +4,9 @@ import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const LandingPage = ({ onAuthSuccess }) => {
   const features = [
@@ -35,10 +38,29 @@ const LandingPage = ({ onAuthSuccess }) => {
         }}
       />
 
-      <div className="absolute top-8 right-8 z-10 flex items-center gap-2 animate-fade-in">
+      {/* Desktop: All buttons visible */}
+      <div className="hidden md:flex absolute top-8 right-8 z-10 items-center gap-2 animate-fade-in">
         <KofiButton />
         <DiscordButton />
         <ThemeToggle />
+      </div>
+
+      {/* Mobile: Theme toggle + Menu */}
+      <div className="flex md:hidden absolute top-4 right-4 z-10 items-center gap-2 animate-fade-in">
+        <ThemeToggle />
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur">
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[280px]">
+            <div className="flex flex-col gap-4 mt-8">
+              <KofiButton />
+              <DiscordButton />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <main className="flex-1 flex items-center justify-center relative z-10 pb-16">
@@ -77,7 +99,7 @@ const LandingPage = ({ onAuthSuccess }) => {
             </ul>
           </section>
 
-          <section className="animate-scale-in opacity-0 lg:justify-self-end" style={{ animationDelay: '0.4s' }}>
+          <section className="animate-scale-in opacity-0 lg:justify-self-end justify-self-center" style={{ animationDelay: '0.4s' }}>
             <AuthForm onSuccess={onAuthSuccess} />
           </section>
         </div>

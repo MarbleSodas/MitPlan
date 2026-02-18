@@ -15,7 +15,10 @@ import { Input } from '@/components/ui/input';
 
 import AnonymousPlanCreator from './AnonymousPlanCreator';
 import { BossSelectionModal, UserProfile } from '../dashboard';
+import ThemeToggle from '../common/ThemeToggle';
 import Footer from '../layout/Footer';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 
 
 
@@ -186,8 +189,27 @@ const AnonymousDashboard = () => {
             Your plans are stored locally in your browser.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        
+        {/* Desktop: UserProfile visible */}
+        <div className="hidden md:flex items-center gap-3">
           <UserProfile />
+        </div>
+
+        {/* Mobile: Theme toggle + Menu */}
+        <div className="flex md:hidden items-center gap-2">
+          <ThemeToggle />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px]">
+              <div className="flex flex-col gap-4 mt-8">
+                <UserProfile />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 

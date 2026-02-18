@@ -18,6 +18,8 @@ import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 
 
 
@@ -232,10 +234,12 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="max-w-[1200px] mx-auto p-8">
+      <div className="max-w-[1200px] mx-auto p-4 sm:p-8">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="m-0 text-2xl font-semibold text-[var(--color-text)]">Mitigation Plans</h1>
-        <div className="flex items-center gap-2">
+        <h1 className="m-0 text-xl sm:text-2xl font-semibold text-[var(--color-text)]">Mitigation Plans</h1>
+        
+        {/* Desktop: All buttons visible */}
+        <div className="hidden md:flex items-center gap-2">
           <UserProfile />
           <KofiButton />
           <DiscordButton />
@@ -243,6 +247,30 @@ const Dashboard = () => {
           <Button variant="destructive" size="sm" onClick={handleLogout}>
             Sign Out
           </Button>
+        </div>
+
+        {/* Mobile: Theme toggle + Menu */}
+        <div className="flex md:hidden items-center gap-2">
+          <ThemeToggle />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px]">
+              <div className="flex flex-col gap-4 mt-8">
+                <UserProfile />
+                <div className="border-t border-border" />
+                <KofiButton />
+                <DiscordButton />
+                <div className="border-t border-border" />
+                <Button variant="destructive" onClick={handleLogout} className="w-full">
+                  Sign Out
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 

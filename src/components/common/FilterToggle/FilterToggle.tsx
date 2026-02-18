@@ -16,12 +16,15 @@ const FilterToggle = () => {
   const hasJobAssigned = !!jobAssignment?.myAssignedJob;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center rounded-md shadow-sm px-3 py-2 bg-card border border-border">
-            <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground">
+          <div className="flex items-center rounded-md shadow-sm px-2 sm:px-3 py-2 bg-card border border-border">
+            <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground hidden sm:inline">
               Filter Mitigations:
+            </span>
+            <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground sm:hidden">
+              Filter:
             </span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" checked={checked} onChange={toggleFilterMode} />
@@ -35,9 +38,12 @@ const FilterToggle = () => {
       {hasJobAssigned && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center rounded-md shadow-sm px-3 py-2 bg-card border border-border">
-              <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground">
+            <div className="flex items-center rounded-md shadow-sm px-2 sm:px-3 py-2 bg-card border border-border">
+              <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground hidden sm:inline">
                 My Abilities:
+              </span>
+              <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground sm:hidden">
+                Mine:
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 

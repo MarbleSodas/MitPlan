@@ -3,7 +3,7 @@ import { getAbilityDurationForLevel, getAbilityCooldownForLevel, getRoleSharedAb
 import { mitigationAbilities } from '../data';
 import { CooldownManager, getCooldownManager, updateCooldownManager } from '../utils/cooldown/cooldownManager';
 import { initializeCooldownSystem } from '../utils/cooldown';
-import { findActiveMitigationsAtTime } from '../utils';
+import { findActiveMitigationsAtTime, precalculateActiveMitigations } from '../utils';
 import { useTankPositionContext } from './TankPositionContext';
 import { useRealtimePlan } from './RealtimePlanContext';
 import { useRealtimeBossContext } from './RealtimeBossContext';
@@ -305,6 +305,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
       manager.chargesTracker.update({
         bossActions: currentBossActions,
         bossLevel: currentBossLevel,
+        selectedJobs,
         assignments
       });
     }
@@ -335,7 +336,7 @@ export const EnhancedMitigationProvider = ({ children }) => {
   // Memoized cooldown manager instance
   const cooldownManager = useMemo(() => {
     return cooldownManagerRef.current || getCooldownManager();
-  }, [cooldownManagerRef.current]);
+  }, [cooldownManagerRef.current, selectedJobs]);
 
   /**
    * Check if an ability is available at a specific time
@@ -417,13 +418,27 @@ export const EnhancedMitigationProvider = ({ children }) => {
     );
   }, [pendingAssignments]);
 
+  const activeMitigationsMap = useMemo(() => {
+    if (!assignments || !currentBossActions) return new Map();
+    
+    return precalculateActiveMitigations(
+      assignments,
+      currentBossActions,
+      mitigationAbilities,
+      currentBossLevel
+    );
+  }, [assignments, currentBossActions, currentBossLevel]);
+
   /**
    * Get active mitigations at a specific time (for compatibility with existing components)
    */
   const getActiveMitigations = useCallback((targetActionId, targetTime, tankPosition = null) => {
+    if (activeMitigationsMap && activeMitigationsMap.has(targetActionId)) {
+      return activeMitigationsMap.get(targetActionId) || [];
+    }
+
     if (!currentBossActions) return [];
 
-    // Use the existing utility function for finding active mitigations
     return findActiveMitigationsAtTime(
       assignments,
       currentBossActions,
@@ -432,7 +447,8 @@ export const EnhancedMitigationProvider = ({ children }) => {
       targetTime,
       currentBossLevel
     );
-  }, [assignments, currentBossActions, currentBossLevel]);
+  }, [assignments, currentBossActions, currentBossLevel, activeMitigationsMap]);
+
 
   /**
    * Add a mitigation to a boss action with enhanced conflict resolution

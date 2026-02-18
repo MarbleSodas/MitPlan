@@ -1286,3 +1286,17 @@ export const getUserCurrentJob = async (planId, userId) => {
     return null;
   }
 };
+
+export const updatePlanTankPositionsRealtime = async (planId, tankPositions, userId, sessionId) => {
+  try {
+    const tankPositionsRef = ref(database, `${PLANS_PATH}/${planId}/tankPositions`);
+    
+    await set(tankPositionsRef, tankPositions);
+    
+    console.log('[updatePlanTankPositionsRealtime] Successfully updated tank positions:', tankPositions);
+    return true;
+  } catch (error) {
+    console.error('[updatePlanTankPositionsRealtime] Error updating tank positions:', error);
+    throw error;
+  }
+};

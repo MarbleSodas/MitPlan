@@ -38,6 +38,12 @@ import {
   getAetherflowTracker as _getAetherflowTracker
 } from './aetherflowTracker';
 import {
+  getAddersgallTracker as _getAddersgallTracker
+} from './addersgallTracker';
+import {
+  getLilyTracker as _getLilyTracker
+} from './lilyTracker';
+import {
   getRealtimeCooldownSync as _getRealtimeCooldownSync
 } from './realtimeSync';
 import {
@@ -69,6 +75,22 @@ export {
   getAetherflowTracker,
   updateAetherflowTracker
 } from './aetherflowTracker';
+
+// Addersgall tracking for Sage abilities
+export {
+  AddersgallTracker,
+  AddersgallState,
+  getAddersgallTracker,
+  updateAddersgallTracker
+} from './addersgallTracker';
+
+// Lily tracking for White Mage abilities
+export {
+  LilyTracker,
+  LilyState,
+  getLilyTracker,
+  updateLilyTracker
+} from './lilyTracker';
 
 // Real-time synchronization
 export {

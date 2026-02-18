@@ -43,7 +43,7 @@ const HealingHealthBar = ({
       <TooltipTrigger asChild>
         <div
           className={cn(
-              "flex flex-col basis-0 flex-1 min-w-40 w-full my-2",
+              "flex flex-col basis-0 flex-1 min-w-40 w-full my-1.5",
               isDualTankBuster && tankPosition && "pl-2 rounded border-l-4",
               isDualTankBuster && tankPosition && (tankPosition === 'mainTank' ? "border-l-primary" : "border-l-secondary")
           )}
@@ -53,7 +53,7 @@ const HealingHealthBar = ({
             <span className="whitespace-nowrap">&nbsp;{formatHealthCompact(healthAfterHealing)} / {formatHealthCompact(maxHealth)}</span>
           </div>
 
-          <div className="w-full h-4 rounded overflow-hidden relative bg-[var(--color-muted)]">
+          <div className="w-full h-5 rounded overflow-hidden relative bg-[var(--color-muted)]">
             <div
               className="h-full transition-[width] duration-300"
               style={{ 

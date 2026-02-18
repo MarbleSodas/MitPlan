@@ -39,6 +39,40 @@ export interface LevelCooldown {
   [level: number]: number;
 }
 
+// New type for abilities that scale potency based on target's HP
+export interface HpBasedPotencyScaling {
+  minPotency: number;      // Potency at 100% HP
+  maxPotency: number;      // Potency at threshold HP
+  thresholdPercent: number; // HP threshold for max potency (e.g., 30)
+  scalingType: 'linear' | 'step'; // How potency scales with HP
+}
+
+// New type for stack-based barriers (Haima, Panhaima)
+export interface StackBarrierEffect {
+  initialBarrierPotency: number; // Initial barrier potency
+  stackCount: number;           // Number of stacks granted
+  barrierRefreshOnBreak: boolean; // Whether barrier refreshes when consumed
+  healingOnExpire: {
+    enabled: boolean;
+    potencyPerStack: number; // Healing per remaining stack
+  };
+  stackConsumptionPerHit: number; // How many stacks consumed per hit (usually 1)
+}
+
+// New type for low HP triggered healing (Excogitation)
+export interface LowHpTrigger {
+  thresholdPercent: number; // HP threshold to trigger (e.g., 50)
+  triggerOnExpire: boolean; // Also trigger when effect expires
+  healingPotency: number;  // Potency of healing when triggered
+}
+
+// New type for conditional barrier on critical heal
+export interface ConditionalBarrierOnCrit {
+  additionalBarrierMultiplier: number; // Additional barrier (e.g., 1.8 = 180%)
+  stackingRule: 'override' | 'add' | 'none';
+  incompatibleWith: string[]; // Ability IDs that cannot stack
+}
+
 export interface MitigationAbility {
   id: string;
   name: string;
@@ -77,9 +111,30 @@ export interface MitigationAbility {
   isFullHeal?: boolean;
   consumesLily?: boolean;
   lilyStacks?: number;
+  providesLily?: boolean;
   scaleBarrierWithHealing?: boolean;
   consumesAddersgall?: boolean;
+  providesAddersgall?: boolean;
+  providesAddersting?: boolean;
+  adderstingCost?: number;
   requiresActiveWindow?: { abilityId: string; windowDuration?: number };
+  
+  // NEW FIELDS FOR EXPANDED MECHANICS:
+  
+  // HP-based potency scaling (Essential Dignity)
+  hpBasedPotencyScaling?: HpBasedPotencyScaling;
+  
+  // Stack-based barriers (Haima, Panhaima)
+  stackBarrierEffect?: StackBarrierEffect;
+  
+  // Low HP triggered healing (Excogitation)
+  lowHpTrigger?: LowHpTrigger;
+  
+  // Conditional barrier on critical heal (Eukrasian Diagnosis)
+  conditionalBarrierOnCrit?: ConditionalBarrierOnCrit;
+  
+  // Healing received bonus (Krasis, Physis II)
+  healingReceivedBonus?: number; // e.g., 0.10 = 10% increase
 }
 
 export interface BossAction {
@@ -175,6 +230,18 @@ export interface AetherflowState {
   totalStacks: number;
   lastRefreshTime: number;
   canRefresh: (time: number) => boolean;
+}
+
+export interface AddersgallState {
+  availableStacks: number;
+  totalStacks: number;
+  lastRefreshTime: number;
+  refreshInterval: number;
+  canRefresh: (time: number) => boolean;
+}
+
+export interface LilyState {
+  availableLillies: number;
 }
 
 export interface UserJobAssignment {

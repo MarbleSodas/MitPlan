@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCenter, useSensor, useSensors, MouseSensor, KeyboardSensor } from '@dnd-kit/core';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCollaboration } from '../../contexts/CollaborationContext';
-import { mitigationAbilities } from '../../data';
+import { mitigationAbilities, ffxivJobs } from '../../data';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import { getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 import { useNavigate } from 'react-router-dom';
 
-
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Search, X, Menu, ArrowLeft } from 'lucide-react';
 
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
@@ -22,6 +21,7 @@ import { Button } from '../ui/button';
 import HealingPotencyInput from '../common/HealingPotencyInput/HealingPotencyInput';
 import PrecastToggle from '../common/PrecastToggle';
 import Footer from '../layout/Footer';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 
 // Import planning components
@@ -30,10 +30,11 @@ import JobSelector from '../../features/jobs/JobSelector/JobSelector';
 import BossActionItem from '../BossActionItem/BossActionItem';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import AssignedMitigations from '../AssignedMitigations/AssignedMitigations';
+import MobileBossTimeline from './MobileBossTimeline';
+import MitigationBottomSheet from './MitigationBottomSheet';
 
 import FilterToggle from '../common/FilterToggle';
 import TankSelectionModal from '../common/TankSelectionModal';
-import { PartyAssignmentPanel } from '../PartyAssignment';
 import Draggable from '../DragAndDrop/Draggable';
 import Droppable from '../DragAndDrop/Droppable';
 import PartyMinHealthInput from '../common/PartyMinHealthInput/PartyMinHealthInput';
@@ -72,10 +73,10 @@ import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentCo
 
 
 // Planning interface component that gets data from real-time contexts
-const PlanningInterface = () => {
+const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
 
   // Get real-time plan data
-  const { loading, error } = useRealtimePlan();
+  const { loading, error, realtimePlan } = useRealtimePlan();
 
   // Get real-time contexts - ALWAYS call all hooks before any early returns
   const { sortedBossActions, selectedBossAction, toggleBossActionSelection, currentBossLevel, currentBaseHealth } = useRealtimeBossContext();
@@ -176,8 +177,14 @@ const PlanningInterface = () => {
   // Local state for drag and drop
   const [activeMitigation, setActiveMitigation] = useState(null);
 
+  // Search and filter state for mitigations
+  const [mitigationSearchQuery, setMitigationSearchQuery] = useState('');
+  const [selectedJobFilter, setSelectedJobFilter] = useState<string | null>(null);
 
-	  // Fullscreen overlay state and handlers for timeline + mitigations
+  // Mobile bottom sheet state
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  // Fullscreen overlay state and handlers for timeline + mitigations
 	  const [fsMounted, setFsMounted] = useState(false);
 	  const [fsOpen, setFsOpen] = useState(false);
 	  const openFullscreen = useCallback(() => {
@@ -222,6 +229,11 @@ const PlanningInterface = () => {
       presence.updateMySelection('bossAction', isBeingSelected ? action.id : null);
     }
 
+    // On mobile, open bottom sheet when selecting a boss action
+    if (window.innerWidth < 1024 && isBeingSelected) {
+      setIsBottomSheetOpen(true);
+    }
+
     console.log('[MitigationPlanner] Boss action selected:', {
       actionId: action.id,
       actionName: action.name,
@@ -243,6 +255,58 @@ const PlanningInterface = () => {
 
     return filterMitigations(availableMitigations, selectedBossAction, myAssignedJob);
   }, [availableMitigations, selectedBossAction, filterMitigations, myAssignedJob]);
+
+  // Get jobs that have mitigations AND are selected in the raid
+  const availableJobs = useMemo(() => {
+    const jobs = new Set<string>();
+    if (selectedJobs && typeof selectedJobs === 'object') {
+      Object.values(selectedJobs).forEach(roleJobs => {
+        if (Array.isArray(roleJobs)) {
+          roleJobs.forEach(job => {
+            if (job?.selected) {
+              jobs.add(job.id);
+            }
+          });
+        }
+      });
+    }
+    return Array.from(jobs).sort();
+  }, [selectedJobs]);
+
+  // Fuzzy search function for mitigation names
+  const fuzzyMatch = (text: string, query: string): boolean => {
+    if (!query.trim()) return true;
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerText.includes(lowerQuery)) return true;
+    
+    let queryIndex = 0;
+    for (let i = 0; i < lowerText.length && queryIndex < lowerQuery.length; i++) {
+      if (lowerText[i] === lowerQuery[queryIndex]) {
+        queryIndex++;
+      }
+    }
+    return queryIndex === lowerQuery.length;
+  };
+
+  // Filter mitigations by search query and job
+  const searchedMitigations = useMemo(() => {
+    let result = filteredMitigations;
+    
+    if (selectedJobFilter) {
+      result = result.filter(m => m.jobs?.includes(selectedJobFilter));
+    }
+    
+    if (mitigationSearchQuery.trim()) {
+      result = result.filter(m => 
+        fuzzyMatch(m.name, mitigationSearchQuery) ||
+        fuzzyMatch(m.description || '', mitigationSearchQuery)
+      );
+    }
+    
+    return result;
+  }, [filteredMitigations, selectedJobFilter, mitigationSearchQuery]);
 
   // Drag and drop handlers - MUST be called before early returns
   const handleDragStart = useCallback((event) => {
@@ -392,6 +456,14 @@ const PlanningInterface = () => {
     setActiveMitigation(null);
   }, [sortedBossActions, availableMitigations, setActiveMitigation, addMitigation, checkAbilityAvailability, openTankSelectionModal, getCasterOptions, openClassSelectionModal, tankPositions, selectedJobs]);
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
 
   // Show loading state while data is being loaded (AFTER all hooks are called)
@@ -419,27 +491,103 @@ const PlanningInterface = () => {
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col gap-4 mb-4">
+      {/* Unified Header - responsive: mobile (< lg) vs desktop (>= lg) */}
+      <header className="mb-6">
+        {/* Mobile header: < 1024px */}
+        <div className="lg:hidden">
+          <div className="flex items-center justify-between gap-2 px-2 mb-2">
+            <span className="text-lg font-semibold text-foreground truncate min-w-0 flex-1">{realtimePlan?.name || 'Mitigation Planner'}</span>
+            
+            <div className="flex items-center gap-1 shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onSave} 
+                disabled={saving}
+                className="h-9 text-sm"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+              <ThemeToggle />
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px]">
+                  <div className="flex flex-col gap-4 mt-8">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      onClick={() => {
+                        handleBack();
+                      }}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to {isSharedPlan ? 'Home' : 'Dashboard'}
+                    </Button>
+                    <KofiButton />
+                    <DiscordButton />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+          
+          {/* Active users display */}
+          <div className="px-2">
+            <ActiveUsersDisplay 
+              collaborators={presence?.presenceMap ? Array.from(presence.presenceMap.values()).map(p => ({ sessionId: p.sessionId, userId: p.userId, displayName: p.displayName, isActive: true })) : []}
+              currentSessionId={presence?.currentSessionId}
+            />
+          </div>
+        </div>
 
-        <JobSelector
-          disabled={false}
-        />
-        <PartyAssignmentPanel />
+        {/* Desktop header: >= 1024px */}
+        <div className="hidden lg:block">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-foreground">{realtimePlan?.name || 'Mitigation Planner'}</h1>
+            <div className="flex items-center gap-2">
+              <KofiButton />
+              <DiscordButton />
+              <ThemeToggle />
+              <Button onClick={onSave} disabled={saving} className="px-4 py-2">
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+              <Button onClick={handleBack} variant="outline">
+                {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
+              </Button>
+            </div>
+          </div>
+          <ActiveUsersDisplay 
+            collaborators={presence?.presenceMap ? Array.from(presence.presenceMap.values()).map(p => ({ sessionId: p.sessionId, userId: p.userId, displayName: p.displayName, isActive: true })) : []}
+            currentSessionId={presence?.currentSessionId}
+          />
+        </div>
+      </header>
+
+      {/* Desktop only: JobSelector and Filter toggles */}
+      <div className="hidden lg:block">
+        <div className="flex flex-col gap-4 mb-4">
+          <JobSelector
+            disabled={false}
+          />
+        </div>
+      
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-8 p-4 rounded-lg border border-border bg-card">
+          <FilterToggle />
+          <PrecastToggle />
+        </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-lg border border-border bg-card">
-        <FilterToggle />
-        <PrecastToggle />
-        <PartyMinHealthInput />
-        <HealingPotencyInput />
-      </div>
-
-      {/* Section headers with fullscreen toggle */}
-      <div className="flex items-center justify-between mb-2">
+      {/* Desktop: Boss Timeline with fullscreen toggle */}
+      <div className="hidden lg:flex items-center justify-between mb-2">
         <div className="flex items-center gap-8">
           <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
         </div>
@@ -455,8 +603,28 @@ const PlanningInterface = () => {
       </div>
 
 
-      <div ref={splitContainerRef} className="flex w-full gap-4">
-        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+      {/* Mobile: Boss Timeline with bottom sheet trigger */}
+      <div className="lg:hidden mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
+          <span className="text-xs text-muted-foreground">Tap to select</span>
+        </div>
+        <MobileBossTimeline
+          sortedBossActions={sortedBossActions}
+          selectedBossAction={selectedBossAction}
+          assignments={assignments}
+          getActiveMitigations={getActiveMitigations}
+          selectedJobs={selectedJobs}
+          currentBossLevel={currentBossLevel}
+          baseHealth={currentBaseHealth}
+          onSelectAction={handleBossActionSelection}
+        />
+      </div>
+
+      {/* Desktop: Split pane layout */}
+      <div ref={splitContainerRef} className="hidden lg:flex w-full gap-4">
+        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+
           <div className="relative flex flex-col p-4 w-full grow">
             {sortedBossActions.map((action, idx) => {
               const isSelected = selectedBossAction?.id === action.id;
@@ -499,9 +667,67 @@ const PlanningInterface = () => {
             <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
               <div className="my-2 w-px bg-[var(--color-border)]" />
             </div>
-            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-[calc(100vh-100px)] min-h-[500px] min-w-0">
-            <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
-              {filteredMitigations.map(mitigation => {
+            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] min-w-0">
+              {/* Search and filter bar */}
+              <div className="flex flex-col gap-2 mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search mitigations..."
+                    value={mitigationSearchQuery}
+                    onChange={(e) => setMitigationSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  {mitigationSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setMitigationSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-muted"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedJobFilter(null)}
+                    className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                      selectedJobFilter === null
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {availableJobs.map(jobId => {
+                    const jobInfo = Object.values(ffxivJobs).flat().find(j => j.id === jobId);
+                    if (!jobInfo) return null;
+                    return (
+                      <button
+                        key={jobId}
+                        type="button"
+                        onClick={() => setSelectedJobFilter(selectedJobFilter === jobId ? null : jobId)}
+                        className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md border transition-colors ${
+                          selectedJobFilter === jobId
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-background hover:border-primary/50'
+                        }`}
+                        title={jobInfo.name}
+                      >
+                        {jobInfo.icon && typeof jobInfo.icon === 'string' && jobInfo.icon.startsWith('/') ? (
+                          <img src={jobInfo.icon} alt={jobInfo.name} className="w-4 h-4 object-contain" />
+                        ) : null}
+                        <span className="text-foreground">{jobId}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            <div className="flex flex-col gap-4 grow overflow-y-auto">
+
+              {searchedMitigations.map(mitigation => {
                 // Use enhanced cooldown checking
                 const availability = selectedBossAction ? checkAbilityAvailability(
                   mitigation.id,
@@ -564,7 +790,8 @@ const PlanningInterface = () => {
 	            <div className="flex w-full gap-4 h-[calc(100vh-64px)]">
 	              {/* Timeline column */}
 	              <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
-	                   className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x h-full min-h-[400px] flex flex-col min-w-0 bg-background">
+	                   className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] flex flex-col min-w-0 bg-background">
+
 	                <div className="relative flex flex-col p-4 w-full grow">
 	                  {sortedBossActions.map((action, idx) => {
 	                    const isSelected = selectedBossAction?.id === action.id;
@@ -606,11 +833,68 @@ const PlanningInterface = () => {
 	              <div className="mx-1 w-2 flex items-stretch justify-center select-none">
 	                <div className="my-2 w-px bg-border" />
 	              </div>
-	              {/* Mitigations column */}
-	              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
-	                   className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto overscroll-contain touch-pan-y h-full min-h-[400px] min-w-0 bg-background">
-	                <div className="flex flex-col gap-4 grow overflow-y-auto overscroll-contain touch-pan-y">
-	                  {filteredMitigations.map(mitigation => {
+              {/* Mitigations column */}
+              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
+                   className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] min-w-0 bg-background">
+                <div className="flex flex-col gap-2 mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search mitigations..."
+                      value={mitigationSearchQuery}
+                      onChange={(e) => setMitigationSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    {mitigationSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setMitigationSearchQuery('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-muted"
+                      >
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedJobFilter(null)}
+                      className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                        selectedJobFilter === null
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border bg-background text-muted-foreground hover:border-primary/50'
+                      }`}
+                    >
+                      All
+                    </button>
+                    {availableJobs.map(jobId => {
+                      const jobInfo = Object.values(ffxivJobs).flat().find(j => j.id === jobId);
+                      if (!jobInfo) return null;
+                      return (
+                        <button
+                          key={jobId}
+                          type="button"
+                          onClick={() => setSelectedJobFilter(selectedJobFilter === jobId ? null : jobId)}
+                          className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md border transition-colors ${
+                            selectedJobFilter === jobId
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border bg-background hover:border-primary/50'
+                          }`}
+                          title={jobInfo.name}
+                        >
+                          {jobInfo.icon && typeof jobInfo.icon === 'string' && jobInfo.icon.startsWith('/') ? (
+                            <img src={jobInfo.icon} alt={jobInfo.name} className="w-4 h-4 object-contain" />
+                          ) : null}
+                          <span className="text-foreground">{jobId}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-4 grow overflow-y-auto">
+
+              {searchedMitigations.map(mitigation => {
 	                    const availability = selectedBossAction ? checkAbilityAvailability(
 	                      mitigation.id,
 	                      selectedBossAction.time,
@@ -665,6 +949,21 @@ const PlanningInterface = () => {
       </DragOverlay>
 
       <TankSelectionModal />
+
+      <MitigationBottomSheet
+        isOpen={isBottomSheetOpen}
+        onClose={() => setIsBottomSheetOpen(false)}
+        selectedBossAction={selectedBossAction}
+        selectedJobs={selectedJobs}
+        currentBossLevel={currentBossLevel}
+        assignments={assignments}
+        addMitigation={addMitigation}
+        removeMitigation={removeMitigation}
+        checkAbilityAvailability={checkAbilityAvailability}
+        pendingAssignments={pendingAssignments}
+        getActiveMitigations={getActiveMitigations}
+        sortedBossActions={sortedBossActions}
+      />
     </DndContext>
   );
 };
@@ -815,29 +1114,6 @@ const MitigationPlannerContent = ({
   return (
     <>
       <div className="min-h-screen p-8 bg-background text-foreground">
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
-        <h1 className="text-2xl font-semibold text-foreground">
-          {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
-        </h1>
-        <div className="flex items-center gap-2">
-          {isCollaborating && (
-            <CollaboratorsList
-              collaborators={collaborators}
-              currentSessionId={sessionId}
-              isReadOnly={false}
-            />
-          )}
-          <KofiButton />
-          <DiscordButton />
-          <ThemeToggle />
-<Button onClick={handleSave} disabled={saving} className="px-4 py-2">
-            {saving ? 'Saving...' : 'Save Plan'}
-          </Button>
-          <Button onClick={handleBack} variant="outline">
-            {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
-          </Button>
-        </div>
-      </div>
 
       {error && (
         <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-600">
@@ -845,21 +1121,11 @@ const MitigationPlannerContent = ({
         </div>
       )}
 
-      {/* Universal access enabled - no read-only restrictions */}
-
-      {isCollaborating && collaborators.length > 0 && (
-        <ActiveUsersDisplay
-          collaborators={collaborators}
-          currentSessionId={sessionId}
-          maxDisplayUsers={8}
-        />
-      )}
-
-
-
       <PlanningInterface
         onSave={handleSave}
         saving={saving}
+        handleBack={handleBack}
+        isSharedPlan={isSharedPlan}
       />
 
       {/* No longer showing display name modal for anonymous users */}

@@ -15,6 +15,8 @@ import {
 import { ChargesTracker, getChargesTracker, updateChargesTracker } from './chargesTracker.js';
 import { InstancesTracker, getInstancesTracker, updateInstancesTracker } from './instancesTracker.js';
 import { AetherflowTracker, getAetherflowTracker, updateAetherflowTracker } from './aetherflowTracker.js';
+import { AddersgallTracker, getAddersgallTracker, updateAddersgallTracker } from './addersgallTracker.js';
+import { LilyTracker, getLilyTracker, updateLilyTracker } from './lilyTracker.js';
 
 /**
  * Represents the availability status of a mitigation ability
@@ -131,6 +133,8 @@ export class CooldownManager {
     this.chargesTracker = getChargesTracker();
     this.instancesTracker = getInstancesTracker();
     this.aetherflowTracker = getAetherflowTracker();
+    this.addersgallTracker = getAddersgallTracker();
+    this.lilyTracker = getLilyTracker();
   }
 
   /**
@@ -172,6 +176,8 @@ export class CooldownManager {
       updateChargesTracker(trackerData);
       updateInstancesTracker(trackerData);
       updateAetherflowTracker(trackerData);
+      updateAddersgallTracker(trackerData);
+      updateLilyTracker(trackerData);
     }
   }
 
