@@ -238,7 +238,7 @@ const MitigationBottomSheet = memo(({
               {allAssignedMitigations.map((mit, idx) => (
                 <div
                   key={`${mit.id}-${idx}`}
-                  className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md text-xs pr-1"
+                  className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md text-xs pr-1 text-foreground"
                 >
                   {mit.icon && typeof mit.icon === 'string' && mit.icon.startsWith('/') ? (
                     <img src={mit.icon} alt="" className="w-4 h-4 object-contain" />
@@ -303,8 +303,8 @@ const MitigationBottomSheet = memo(({
                   className={cn(
                     "flex items-center gap-1 px-2 py-1 text-xs rounded-md border transition-colors whitespace-nowrap",
                     selectedJobFilter === jobId
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border bg-background hover:border-primary/50'
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'border-border bg-background hover:border-primary/50 text-muted-foreground'
                   )}
                 >
                   {jobInfo.icon && typeof jobInfo.icon === 'string' && jobInfo.icon.startsWith('/') ? (

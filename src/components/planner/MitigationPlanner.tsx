@@ -496,51 +496,84 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Mobile Header - visible on screens < xl */}
-      <div className="xl:hidden flex items-center justify-between mb-4 p-2 -mx-2 gap-2">
-        <div className="flex items-center gap-2 shrink-0 min-w-0 flex-1">
-          <span className="text-lg font-semibold text-foreground truncate min-w-0">{realtimePlan?.name || 'Mitigation Planner'}</span>
-        </div>
-        
-        <div className="flex items-center gap-1 shrink-0">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onSave} 
-            disabled={saving}
-            className="h-9 text-sm"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-          <ThemeToggle />
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="h-9 w-9">
-                <Menu className="h-4 w-4" />
+      {/* Unified Header - responsive: mobile (< lg) vs desktop (>= lg) */}
+      <header className="mb-6">
+        {/* Mobile header: < 1024px */}
+        <div className="lg:hidden">
+          <div className="flex items-center justify-between gap-2 px-2 mb-2">
+            <span className="text-lg font-semibold text-foreground truncate min-w-0 flex-1">{realtimePlan?.name || 'Mitigation Planner'}</span>
+            
+            <div className="flex items-center gap-1 shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onSave} 
+                disabled={saving}
+                className="h-9 text-sm"
+              >
+                {saving ? 'Saving...' : 'Save'}
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[280px]">
-              <div className="flex flex-col gap-4 mt-8">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  onClick={() => {
-                    handleBack();
-                  }}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to {isSharedPlan ? 'Home' : 'Dashboard'}
-                </Button>
-                <KofiButton />
-                <DiscordButton />
-              </div>
-            </SheetContent>
-          </Sheet>
+              <ThemeToggle />
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px]">
+                  <div className="flex flex-col gap-4 mt-8">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      onClick={() => {
+                        handleBack();
+                      }}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to {isSharedPlan ? 'Home' : 'Dashboard'}
+                    </Button>
+                    <KofiButton />
+                    <DiscordButton />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+          
+          {/* Active users display */}
+          <div className="px-2">
+            <ActiveUsersDisplay 
+              collaborators={presence?.presenceMap ? Array.from(presence.presenceMap.values()).map(p => ({ sessionId: p.sessionId, userId: p.userId, displayName: p.displayName, isActive: true })) : []}
+              currentSessionId={presence?.currentSessionId}
+            />
+          </div>
         </div>
-      </div>
+
+        {/* Desktop header: >= 1024px */}
+        <div className="hidden lg:block">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-foreground">{realtimePlan?.name || 'Mitigation Planner'}</h1>
+            <div className="flex items-center gap-2">
+              <KofiButton />
+              <DiscordButton />
+              <ThemeToggle />
+              <Button onClick={onSave} disabled={saving} className="px-4 py-2">
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+              <Button onClick={handleBack} variant="outline">
+                {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
+              </Button>
+            </div>
+          </div>
+          <ActiveUsersDisplay 
+            collaborators={presence?.presenceMap ? Array.from(presence.presenceMap.values()).map(p => ({ sessionId: p.sessionId, userId: p.userId, displayName: p.displayName, isActive: true })) : []}
+            currentSessionId={presence?.currentSessionId}
+          />
+        </div>
+      </header>
 
       {/* Desktop only: JobSelector and Filter toggles */}
-      <div className="hidden xl:block">
+      <div className="hidden lg:block">
         <div className="flex flex-col gap-4 mb-4">
           <JobSelector
             disabled={false}
@@ -554,7 +587,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
       </div>
 
       {/* Desktop: Boss Timeline with fullscreen toggle */}
-      <div className="hidden xl:flex items-center justify-between mb-2">
+      <div className="hidden lg:flex items-center justify-between mb-2">
         <div className="flex items-center gap-8">
           <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
         </div>
@@ -571,7 +604,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
 
 
       {/* Mobile: Boss Timeline with bottom sheet trigger */}
-      <div className="xl:hidden mb-4">
+      <div className="lg:hidden mb-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
           <span className="text-xs text-muted-foreground">Tap to select</span>
@@ -589,7 +622,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
       </div>
 
       {/* Desktop: Split pane layout */}
-      <div ref={splitContainerRef} className="hidden xl:flex w-full gap-4">
+      <div ref={splitContainerRef} className="hidden lg:flex w-full gap-4">
         <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
 
           <div className="relative flex flex-col p-4 w-full grow">
@@ -1081,47 +1114,12 @@ const MitigationPlannerContent = ({
   return (
     <>
       <div className="min-h-screen p-8 bg-background text-foreground">
-      <div className="hidden xl:flex items-center justify-between mb-8 pb-4 border-b border-border">
-        <h1 className="text-2xl font-semibold text-foreground">
-          {realtimePlan ? `${isSharedPlan ? 'Shared Plan: ' : ''}${realtimePlan.name}` : 'Mitigation Planner'}
-        </h1>
-        <div className="flex items-center gap-2">
-          {isCollaborating && (
-            <CollaboratorsList
-              collaborators={collaborators}
-              currentSessionId={sessionId}
-              isReadOnly={false}
-            />
-          )}
-          <KofiButton />
-          <DiscordButton />
-          <ThemeToggle />
-<Button onClick={handleSave} disabled={saving} className="px-4 py-2">
-            {saving ? 'Saving...' : 'Save Plan'}
-          </Button>
-          <Button onClick={handleBack} variant="outline">
-            {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
-          </Button>
-        </div>
-      </div>
 
       {error && (
         <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-600">
           Error: {error}
         </div>
       )}
-
-      {/* Universal access enabled - no read-only restrictions */}
-
-      {isCollaborating && collaborators.length > 0 && (
-        <ActiveUsersDisplay
-          collaborators={collaborators}
-          currentSessionId={sessionId}
-          maxDisplayUsers={8}
-        />
-      )}
-
-
 
       <PlanningInterface
         onSave={handleSave}
