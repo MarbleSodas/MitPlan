@@ -3,7 +3,6 @@ import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 import { AppLayout } from '../layout';
 import { bosses } from '../../data/bosses/bossData';
-import { bossActionsMap } from '../../data/bosses/bossActions';
 
 const ConsolidatedViewInner = () => {
   const { realtimePlan, loading, error } = useRealtimePlan();
@@ -22,8 +21,6 @@ const ConsolidatedViewInner = () => {
 
   // Derive boss definition
   const boss = bosses.find(b => b.id === realtimePlan.bossId);
-  const bossActions = bossActionsMap[realtimePlan.bossId] || [];
-  const currentBossLevel = boss?.level || 100;
 
   // Format date
   const dateGenerated = new Date().toLocaleDateString('en-US', {
