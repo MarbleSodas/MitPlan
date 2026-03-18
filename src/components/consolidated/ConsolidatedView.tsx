@@ -4,7 +4,6 @@ import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 import { AppLayout } from '../layout';
 
 const ConsolidatedViewInner = () => {
-  const { planId } = useParams();
   const { realtimePlan, loading, error } = useRealtimePlan();
 
   if (loading) {
