@@ -16,6 +16,7 @@ import TimelineViewer from './components/timeline/TimelineViewer';
 import TimelineBrowser from './components/timeline/TimelineBrowser';
 import CreatePlanFromTimeline from './components/timeline/CreatePlanFromTimeline';
 import MakeTimelinesPublic from './components/admin/MakeTimelinesPublic';
+import ConsolidatedView from './components/consolidated';
 
 const LoadingComponent = () => (
   <div className="flex items-center justify-center min-h-screen text-base text-muted-foreground bg-background">
@@ -131,6 +132,15 @@ const AppContent = () => {
           <AnonymousAllowedRoute>
             <MitigationPlanner isSharedPlan={true} />
           </AnonymousAllowedRoute>
+        }
+      />
+
+      <Route
+        path="/plan/:planId/print"
+        element={
+          <UnauthenticatedPlanGuard>
+            <ConsolidatedView />
+          </UnauthenticatedPlanGuard>
         }
       />
 
