@@ -9,6 +9,7 @@ import { useClassSelectionModalContext } from '../../contexts/ClassSelectionModa
 import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentContext';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import { cn } from '@/lib/utils';
+import { getBossActionTypeLabel } from '../../utils/boss/bossActionUtils';
 
 interface MitigationBottomSheetProps {
   isOpen: boolean;
@@ -222,7 +223,7 @@ const MitigationBottomSheet = memo(({
           </SheetTitle>
           {selectedBossAction && (
             <p className="text-xs text-muted-foreground">
-              ⏱️ {selectedBossAction.time}s • {selectedBossAction.isTankBuster ? 'Tank Buster' : selectedBossAction.isDualTankBuster ? 'Dual Tank Buster' : 'Raidwide'}
+              ⏱️ {selectedBossAction.time}s • {getBossActionTypeLabel(selectedBossAction)}
             </p>
           )}
         </SheetHeader>

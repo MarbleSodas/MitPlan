@@ -8,7 +8,6 @@ import {
   isSelfTargetingAbilityUsableByTank
 } from '../../utils';
 import { useTankPositionContext } from '../../contexts';
-import { usePresenceOptional } from '../../contexts/PresenceContext';
 import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentContext';
 import SelectionBorder from '../collaboration/SelectionBorder';
 
@@ -72,23 +71,11 @@ const MitigationItem = memo(({
   isDragging = false
 }) => {
   const { tankPositions } = useTankPositionContext();
-  const presence = usePresenceOptional();
   const jobAssignment = useUserJobAssignmentOptional();
   
   const canICastThis = jobAssignment?.canICast(mitigation) || false;
   const myColor = jobAssignment?.myColor || null;
 
-  const handleMouseEnter = useCallback(() => {
-    if (presence && mitigation?.id) {
-      presence.updateMySelection('mitigation', mitigation.id);
-    }
-  }, [presence, mitigation?.id]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (presence) {
-      presence.updateMySelection('mitigation', null);
-    }
-  }, [presence]);
   // Render charge counter for abilities with multiple charges
   const renderChargeCounter = () => {
     if (getAbilityChargeCount(mitigation, currentBossLevel) <= 1) {
@@ -233,12 +220,11 @@ const MitigationItem = memo(({
       showIndicator={true}
       indicatorPosition="top-right"
       className="rounded-sm"
+      publishHover={true}
     >
       <MitigationItemContainer
         $disabled={finalDisabled}
         $borderColorClass={getBorderColor()}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         style={myAbilityStyle}
       >
         <MitigationIcon>

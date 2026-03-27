@@ -1,0 +1,555 @@
+{
+  "name": "Statice - Official Adaptive Timeline",
+  "description": "Linear migrated adaptive timeline for Statice. The existing mitigation-focused action library is preserved and wrapped in the canonical adaptive timeline schema without artificial phase segmentation.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "statice",
+  "bossTags": [
+    "statice"
+  ],
+  "bossMetadata": {
+    "level": 90,
+    "name": "Statice",
+    "icon": "🔫",
+    "description": "The final boss of Another Aloalo Island (Savage), wielding a gun and powerful magic.",
+    "baseHealth": {
+      "party": 80000,
+      "tank": 120000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/06-ew/dungeon/another_aloalo_island-savage.txt",
+      "title": "cactbot statice timeline",
+      "lastVerifiedAt": "2026-03-26"
+    },
+    {
+      "site": "consolegameswiki",
+      "url": "https://ffxiv.consolegameswiki.com/wiki/Another_Aloalo_Island_(Savage)",
+      "title": "Another Aloalo Island (Savage)",
+      "lastVerifiedAt": "2026-03-26"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/06-ew/dungeon/another_aloalo_island-savage.txt",
+      "title": "cactbot statice timeline",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "The cactbot timeline is cited for encounter sequencing while the planner route remains intentionally linear."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "The canonical adaptive format keeps FF Logs-compatible source metadata even when the planner route remains linear."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan legacy criterion migration",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "The current local mitigation timeline is preserved as a linear adaptive route because the encounter remains planner-linear for this project."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "statice-branch-0"
+  },
+  "phases": [],
+  "actions": [
+    {
+      "id": "aero_iv_1",
+      "name": "Aero IV",
+      "time": 1,
+      "description": "Aero IV - high party-wide damage.",
+      "unmitigatedDamage": "73035",
+      "importance": "high",
+      "icon": "🌪️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Aero IV"
+      ]
+    },
+    {
+      "id": "trapshooting_1",
+      "name": "Trapshooting",
+      "time": 29,
+      "description": "Trapshooting - high party-wide damage.",
+      "unmitigatedDamage": "67362",
+      "importance": "high",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Trapshooting"
+      ]
+    },
+    {
+      "id": "trapshooting_2",
+      "name": "Trapshooting",
+      "time": 61,
+      "description": "Trapshooting - high party-wide damage.",
+      "unmitigatedDamage": "69361",
+      "importance": "high",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Trapshooting"
+      ]
+    },
+    {
+      "id": "trapshooting_3",
+      "name": "Trapshooting",
+      "time": 111,
+      "description": "Trapshooting - high party-wide damage.",
+      "unmitigatedDamage": "68108",
+      "importance": "high",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Trapshooting"
+      ]
+    },
+    {
+      "id": "pop_1",
+      "name": "Pop",
+      "time": 137,
+      "description": "Pop - moderate party-wide damage.",
+      "unmitigatedDamage": "N/A",
+      "importance": "low",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Pop"
+      ]
+    },
+    {
+      "id": "trapshooting_4",
+      "name": "Trapshooting",
+      "time": 151,
+      "description": "Trapshooting - high party-wide damage.",
+      "unmitigatedDamage": "67193",
+      "importance": "high",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Trapshooting"
+      ]
+    },
+    {
+      "id": "aero_iv_2",
+      "name": "Aero IV",
+      "time": 159,
+      "description": "Aero IV - high party-wide damage.",
+      "unmitigatedDamage": "73556",
+      "importance": "high",
+      "icon": "🌪️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Aero IV"
+      ]
+    },
+    {
+      "id": "fireworks_1",
+      "name": "Fireworks",
+      "time": 191,
+      "description": "Fireworks - high party-wide damage.",
+      "unmitigatedDamage": "60798",
+      "importance": "medium",
+      "icon": "🔥",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Fireworks"
+      ]
+    },
+    {
+      "id": "shocking_abandon_1",
+      "name": "Shocking Abandon",
+      "time": 199,
+      "description": "Shocking Abandon - high tank buster damage.",
+      "unmitigatedDamage": "267868",
+      "importance": "high",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Shocking Abandon"
+      ]
+    },
+    {
+      "id": "fireworks_2",
+      "name": "Fireworks",
+      "time": 227,
+      "description": "Fireworks - high party-wide damage.",
+      "unmitigatedDamage": "60226",
+      "importance": "medium",
+      "icon": "🔥",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Fireworks"
+      ]
+    },
+    {
+      "id": "aero_iv_3",
+      "name": "Aero IV",
+      "time": 240,
+      "description": "Aero IV - high party-wide damage.",
+      "unmitigatedDamage": "71716",
+      "importance": "high",
+      "icon": "🌪️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Aero IV"
+      ]
+    },
+    {
+      "id": "trapshooting_5",
+      "name": "Trapshooting",
+      "time": 279,
+      "description": "Trapshooting - high party-wide damage.",
+      "unmitigatedDamage": "65847",
+      "importance": "high",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Trapshooting"
+      ]
+    },
+    {
+      "id": "trapshooting_6",
+      "name": "Trapshooting",
+      "time": 306,
+      "description": "Trapshooting - high party-wide damage.",
+      "unmitigatedDamage": "232712",
+      "importance": "high",
+      "icon": "⚔️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Trapshooting"
+      ]
+    },
+    {
+      "id": "aero_iv_4",
+      "name": "Aero IV",
+      "time": 322,
+      "description": "Aero IV - high party-wide damage.",
+      "unmitigatedDamage": "73540",
+      "importance": "high",
+      "icon": "🌪️",
+      "isTankBuster": false,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "statice-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Aero IV"
+      ]
+    }
+  ],
+  "adaptiveModel": {
+    "branches": [
+      {
+        "id": "statice-branch-0",
+        "label": "Linear Route",
+        "description": "Linear migrated route built from the existing MitPlan action library.",
+        "sampleCount": 1,
+        "sampleRatio": 1,
+        "isPrimaryBranch": true,
+        "firstDivergenceTimestampMs": null,
+        "firstDivergenceTimestamp": null,
+        "eventCount": 14,
+        "events": [
+          {
+            "id": "aero_iv_1",
+            "name": "Aero IV",
+            "time": 1,
+            "description": "Aero IV - high party-wide damage.",
+            "unmitigatedDamage": "73035",
+            "importance": "high",
+            "icon": "🌪️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Aero IV"
+            ]
+          },
+          {
+            "id": "trapshooting_1",
+            "name": "Trapshooting",
+            "time": 29,
+            "description": "Trapshooting - high party-wide damage.",
+            "unmitigatedDamage": "67362",
+            "importance": "high",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Trapshooting"
+            ]
+          },
+          {
+            "id": "trapshooting_2",
+            "name": "Trapshooting",
+            "time": 61,
+            "description": "Trapshooting - high party-wide damage.",
+            "unmitigatedDamage": "69361",
+            "importance": "high",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Trapshooting"
+            ]
+          },
+          {
+            "id": "trapshooting_3",
+            "name": "Trapshooting",
+            "time": 111,
+            "description": "Trapshooting - high party-wide damage.",
+            "unmitigatedDamage": "68108",
+            "importance": "high",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Trapshooting"
+            ]
+          },
+          {
+            "id": "pop_1",
+            "name": "Pop",
+            "time": 137,
+            "description": "Pop - moderate party-wide damage.",
+            "unmitigatedDamage": "N/A",
+            "importance": "low",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Pop"
+            ]
+          },
+          {
+            "id": "trapshooting_4",
+            "name": "Trapshooting",
+            "time": 151,
+            "description": "Trapshooting - high party-wide damage.",
+            "unmitigatedDamage": "67193",
+            "importance": "high",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Trapshooting"
+            ]
+          },
+          {
+            "id": "aero_iv_2",
+            "name": "Aero IV",
+            "time": 159,
+            "description": "Aero IV - high party-wide damage.",
+            "unmitigatedDamage": "73556",
+            "importance": "high",
+            "icon": "🌪️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Aero IV"
+            ]
+          },
+          {
+            "id": "fireworks_1",
+            "name": "Fireworks",
+            "time": 191,
+            "description": "Fireworks - high party-wide damage.",
+            "unmitigatedDamage": "60798",
+            "importance": "medium",
+            "icon": "🔥",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Fireworks"
+            ]
+          },
+          {
+            "id": "shocking_abandon_1",
+            "name": "Shocking Abandon",
+            "time": 199,
+            "description": "Shocking Abandon - high tank buster damage.",
+            "unmitigatedDamage": "267868",
+            "importance": "high",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Shocking Abandon"
+            ]
+          },
+          {
+            "id": "fireworks_2",
+            "name": "Fireworks",
+            "time": 227,
+            "description": "Fireworks - high party-wide damage.",
+            "unmitigatedDamage": "60226",
+            "importance": "medium",
+            "icon": "🔥",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Fireworks"
+            ]
+          },
+          {
+            "id": "aero_iv_3",
+            "name": "Aero IV",
+            "time": 240,
+            "description": "Aero IV - high party-wide damage.",
+            "unmitigatedDamage": "71716",
+            "importance": "high",
+            "icon": "🌪️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Aero IV"
+            ]
+          },
+          {
+            "id": "trapshooting_5",
+            "name": "Trapshooting",
+            "time": 279,
+            "description": "Trapshooting - high party-wide damage.",
+            "unmitigatedDamage": "65847",
+            "importance": "high",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Trapshooting"
+            ]
+          },
+          {
+            "id": "trapshooting_6",
+            "name": "Trapshooting",
+            "time": 306,
+            "description": "Trapshooting - high party-wide damage.",
+            "unmitigatedDamage": "232712",
+            "importance": "high",
+            "icon": "⚔️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Trapshooting"
+            ]
+          },
+          {
+            "id": "aero_iv_4",
+            "name": "Aero IV",
+            "time": 322,
+            "description": "Aero IV - high party-wide damage.",
+            "unmitigatedDamage": "73540",
+            "importance": "high",
+            "icon": "🌪️",
+            "isTankBuster": false,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "statice-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Aero IV"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

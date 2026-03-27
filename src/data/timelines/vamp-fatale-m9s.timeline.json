@@ -1,0 +1,1361 @@
+{
+  "name": "Vamp Fatale (M9S) - Official Adaptive Timeline",
+  "description": "Phase-aware migrated adaptive timeline for Vamp Fatale (M9S). Phase names follow the cactbot r9s arena sections while keeping the existing mitigation-focused MitPlan action library intact.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "vamp-fatale-m9s",
+  "bossTags": [
+    "vamp-fatale-m9s",
+    "M9S",
+    "vamp-fatale"
+  ],
+  "bossMetadata": {
+    "level": 100,
+    "name": "Vamp Fatale (M9S)",
+    "icon": "🧛",
+    "description": "The bloodthirsty diva, first boss of AAC Heavyweight Tier (Savage).",
+    "baseHealth": {
+      "party": 143000,
+      "tank": 225000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r9s.txt",
+      "title": "cactbot M9S timeline",
+      "lastVerifiedAt": "2026-03-25"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r9s.txt",
+      "title": "cactbot M9S timeline",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Major arena section labels seed the planner-visible phases and anchor ordering."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Phase override handling follows the same fight-phase timing model used for FF Logs report analysis."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan heavyweight migration",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Actions are migrated from the existing local boss library and annotated with phase anchors plus skip-eligible windows."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "vamp-fatale-m9s-branch-0"
+  },
+  "phases": [
+    {
+      "id": "phase_coffinmaker_return",
+      "name": "Coffinmaker / Finale 1",
+      "anchorActionId": "sadistic_screech_2",
+      "order": 0,
+      "branchIds": [
+        "vamp-fatale-m9s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_circular_arena",
+      "name": "Circular Arena",
+      "anchorActionId": "aetherletting_1",
+      "order": 1,
+      "branchIds": [
+        "vamp-fatale-m9s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_doornail_flail",
+      "name": "Doornail / Flail",
+      "anchorActionId": "plummet_1",
+      "order": 2,
+      "branchIds": [
+        "vamp-fatale-m9s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_finale_return",
+      "name": "Finale 2",
+      "anchorActionId": "crowd_kill_2",
+      "order": 3,
+      "branchIds": [
+        "vamp-fatale-m9s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_charnel_cell",
+      "name": "Charnel Cell / Deathmatch",
+      "anchorActionId": "bloody_bondage_1",
+      "order": 4,
+      "branchIds": [
+        "vamp-fatale-m9s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    }
+  ],
+  "actions": [
+    {
+      "id": "killer_voice_1",
+      "name": "Killer Voice",
+      "time": 12,
+      "unmitigatedDamage": "~153,447",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🎤",
+      "description": "Raidwide Party Damage",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Killer Voice"
+      ]
+    },
+    {
+      "id": "hardcore_1",
+      "name": "Hardcore",
+      "time": 22,
+      "unmitigatedDamage": "~387,103",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🤼",
+      "description": "Dual Tank Buster",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Hardcore"
+      ]
+    },
+    {
+      "id": "blast_beat_1",
+      "name": "Blast Beat",
+      "time": 34,
+      "unmitigatedDamage": "~101,357",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🥁",
+      "description": "Staggered Raidwide",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Blast Beat"
+      ]
+    },
+    {
+      "id": "brutal_rain_1",
+      "name": "Brutal Rain (3 hits)",
+      "time": 49,
+      "unmitigatedDamage": "~86,027 per hit",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌧️",
+      "description": "Multi-Hit Party Stack",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Brutal Rain (3 hits)"
+      ]
+    },
+    {
+      "id": "sadistic_screech_1",
+      "name": "Sadistic Screech",
+      "time": 62,
+      "unmitigatedDamage": "~176,815",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "📢",
+      "description": "Raidwide Party Damage",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sadistic Screech"
+      ]
+    },
+    {
+      "id": "sadistic_screech_2",
+      "name": "Sadistic Screech",
+      "time": 140,
+      "unmitigatedDamage": "~147,642",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "📢",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_coffinmaker_return",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sadistic Screech"
+      ]
+    },
+    {
+      "id": "crowd_kill_1",
+      "name": "Crowd Kill",
+      "time": 154,
+      "unmitigatedDamage": "~191,113",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🏟️",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_coffinmaker_return",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Crowd Kill"
+      ]
+    },
+    {
+      "id": "finale_fatale_1",
+      "name": "Finale Fatale",
+      "time": 173,
+      "unmitigatedDamage": "~201,039",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🏁",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_coffinmaker_return",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Finale Fatale"
+      ]
+    },
+    {
+      "id": "aetherletting_1",
+      "name": "Aetherletting",
+      "time": 198,
+      "unmitigatedDamage": "~127,449",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🩸",
+      "description": "Staggered Baits Per Person",
+      "phaseId": "phase_circular_arena",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Aetherletting"
+      ]
+    },
+    {
+      "id": "hardcore_2",
+      "name": "Hardcore",
+      "time": 222,
+      "unmitigatedDamage": "~407,042",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🤼",
+      "description": "Dual Tank Buster",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_circular_arena",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Hardcore"
+      ]
+    },
+    {
+      "id": "blast_beat_2",
+      "name": "Blast Beat",
+      "time": 238,
+      "unmitigatedDamage": "~107,083",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🥁",
+      "description": "Staggered Raidwide",
+      "phaseId": "phase_circular_arena",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Blast Beat"
+      ]
+    },
+    {
+      "id": "brutal_rain_2",
+      "name": "Brutal Rain (3 hits)",
+      "time": 260,
+      "unmitigatedDamage": "~90,585 per hit",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌧️",
+      "description": "Multi-Hit Party Stack",
+      "phaseId": "phase_circular_arena",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Brutal Rain (3 hits)"
+      ]
+    },
+    {
+      "id": "insatiable_thirst_1",
+      "name": "Insatiable Thirst",
+      "time": 272,
+      "unmitigatedDamage": "~138,912",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🍷",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_circular_arena",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Insatiable Thirst"
+      ]
+    },
+    {
+      "id": "sadistic_screech_3",
+      "name": "Sadistic Screech",
+      "time": 285,
+      "unmitigatedDamage": "~191,487",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "📢",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_circular_arena",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sadistic Screech"
+      ]
+    },
+    {
+      "id": "plummet_1",
+      "name": "Plummet",
+      "time": 297,
+      "unmitigatedDamage": "~146,870",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⬇️",
+      "description": "Dual Tank Buster Tower Bait",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plummet"
+      ]
+    },
+    {
+      "id": "killer_voice_2",
+      "name": "Killer Voice",
+      "time": 307,
+      "unmitigatedDamage": "~157,297",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🎤",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Killer Voice"
+      ]
+    },
+    {
+      "id": "plummet_2",
+      "name": "Plummet",
+      "time": 316,
+      "unmitigatedDamage": "~147,922",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⬇️",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plummet"
+      ]
+    },
+    {
+      "id": "flesh_wound_1",
+      "name": "Flesh Wound",
+      "time": 324,
+      "unmitigatedDamage": "~47,678",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "🩹",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Flesh Wound"
+      ]
+    },
+    {
+      "id": "killer_voice_3",
+      "name": "Killer Voice",
+      "time": 326,
+      "unmitigatedDamage": "~159,559",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🎤",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Killer Voice"
+      ]
+    },
+    {
+      "id": "plummet_3",
+      "name": "Plummet",
+      "time": 334,
+      "unmitigatedDamage": "~150,500",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⬇️",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plummet"
+      ]
+    },
+    {
+      "id": "electrocution_1",
+      "name": "Electrocution",
+      "time": 343,
+      "unmitigatedDamage": "~44,682",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "⚡",
+      "description": "Some Dots throughout",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Electrocution"
+      ]
+    },
+    {
+      "id": "sadistic_screech_4",
+      "name": "Sadistic Screech",
+      "time": 358,
+      "unmitigatedDamage": "~154,287",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "📢",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_doornail_flail",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sadistic Screech"
+      ]
+    },
+    {
+      "id": "crowd_kill_2",
+      "name": "Crowd Kill",
+      "time": 372,
+      "unmitigatedDamage": "~197,303",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🏟️",
+      "description": "Raidwide Party Damage",
+      "phaseId": "phase_finale_return",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Crowd Kill"
+      ]
+    },
+    {
+      "id": "finale_fatale_2",
+      "name": "Finale Fatale",
+      "time": 391,
+      "unmitigatedDamage": "~203,073",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🏁",
+      "phaseId": "phase_finale_return",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Finale Fatale"
+      ]
+    },
+    {
+      "id": "bloody_bondage_1",
+      "name": "Bloody Bondage",
+      "time": 403,
+      "unmitigatedDamage": "~35,088",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⛓️",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bloody Bondage"
+      ]
+    },
+    {
+      "id": "blood_lash_1",
+      "name": "Blood Lash",
+      "time": 417,
+      "unmitigatedDamage": "~34,872",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "〰️",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Blood Lash"
+      ]
+    },
+    {
+      "id": "bloody_bondage_2",
+      "name": "Bloody Bondage",
+      "time": 425,
+      "unmitigatedDamage": "~35,686",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⛓️",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bloody Bondage"
+      ]
+    },
+    {
+      "id": "ultrasonic_spread_1",
+      "name": "Ultrasonic Amp",
+      "time": 425,
+      "unmitigatedDamage": "~370,809",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🔊",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Ultrasonic Amp"
+      ]
+    },
+    {
+      "id": "ultrasonic_spread_2",
+      "name": "Ultrasonic Spread",
+      "time": 432,
+      "unmitigatedDamage": "~146,850",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🔊",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Ultrasonic Spread"
+      ]
+    },
+    {
+      "id": "bloody_bondage_3",
+      "name": "Bloody Bondage",
+      "time": 455,
+      "unmitigatedDamage": "~151,010",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⛓️",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bloody Bondage"
+      ]
+    },
+    {
+      "id": "brutal_rain_3",
+      "name": "Brutal Rain (3 hits)",
+      "time": 503,
+      "unmitigatedDamage": "~95,610 per hit",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌧️",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Brutal Rain (3 hits)"
+      ]
+    },
+    {
+      "id": "blast_beat_3",
+      "name": "Blast Beat",
+      "time": 520,
+      "unmitigatedDamage": "~116,145",
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🥁",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Blast Beat"
+      ]
+    },
+    {
+      "id": "half_moon_2",
+      "name": "Half Moon",
+      "time": 532,
+      "unmitigatedDamage": "~159,754",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "🌓",
+      "isTankBuster": true,
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Half Moon"
+      ]
+    },
+    {
+      "id": "hardcore_3",
+      "name": "Hardcore",
+      "time": 540,
+      "unmitigatedDamage": "~428,512",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🤼",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Hardcore"
+      ]
+    },
+    {
+      "id": "insatiable_thirst_2",
+      "name": "Insatiable Thirst",
+      "time": 572,
+      "unmitigatedDamage": "~152,935",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🍷",
+      "phaseId": "phase_charnel_cell",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "vamp-fatale-m9s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Insatiable Thirst"
+      ]
+    }
+  ],
+  "adaptiveModel": {
+    "branches": [
+      {
+        "id": "vamp-fatale-m9s-branch-0",
+        "label": "Default Route",
+        "description": "Phase-aware migrated route built from the existing MitPlan action library.",
+        "sampleCount": 1,
+        "sampleRatio": 1,
+        "isPrimaryBranch": true,
+        "firstDivergenceTimestampMs": null,
+        "firstDivergenceTimestamp": null,
+        "eventCount": 35,
+        "events": [
+          {
+            "id": "killer_voice_1",
+            "name": "Killer Voice",
+            "time": 12,
+            "unmitigatedDamage": "~153,447",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🎤",
+            "description": "Raidwide Party Damage",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Killer Voice"
+            ]
+          },
+          {
+            "id": "hardcore_1",
+            "name": "Hardcore",
+            "time": 22,
+            "unmitigatedDamage": "~387,103",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🤼",
+            "description": "Dual Tank Buster",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Hardcore"
+            ]
+          },
+          {
+            "id": "blast_beat_1",
+            "name": "Blast Beat",
+            "time": 34,
+            "unmitigatedDamage": "~101,357",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🥁",
+            "description": "Staggered Raidwide",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Blast Beat"
+            ]
+          },
+          {
+            "id": "brutal_rain_1",
+            "name": "Brutal Rain (3 hits)",
+            "time": 49,
+            "unmitigatedDamage": "~86,027 per hit",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🌧️",
+            "description": "Multi-Hit Party Stack",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Brutal Rain (3 hits)"
+            ]
+          },
+          {
+            "id": "sadistic_screech_1",
+            "name": "Sadistic Screech",
+            "time": 62,
+            "unmitigatedDamage": "~176,815",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "📢",
+            "description": "Raidwide Party Damage",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sadistic Screech"
+            ]
+          },
+          {
+            "id": "sadistic_screech_2",
+            "name": "Sadistic Screech",
+            "time": 140,
+            "unmitigatedDamage": "~147,642",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "📢",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_coffinmaker_return",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sadistic Screech"
+            ]
+          },
+          {
+            "id": "crowd_kill_1",
+            "name": "Crowd Kill",
+            "time": 154,
+            "unmitigatedDamage": "~191,113",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🏟️",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_coffinmaker_return",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Crowd Kill"
+            ]
+          },
+          {
+            "id": "finale_fatale_1",
+            "name": "Finale Fatale",
+            "time": 173,
+            "unmitigatedDamage": "~201,039",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🏁",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_coffinmaker_return",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Finale Fatale"
+            ]
+          },
+          {
+            "id": "aetherletting_1",
+            "name": "Aetherletting",
+            "time": 198,
+            "unmitigatedDamage": "~127,449",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🩸",
+            "description": "Staggered Baits Per Person",
+            "phaseId": "phase_circular_arena",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Aetherletting"
+            ]
+          },
+          {
+            "id": "hardcore_2",
+            "name": "Hardcore",
+            "time": 222,
+            "unmitigatedDamage": "~407,042",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🤼",
+            "description": "Dual Tank Buster",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_circular_arena",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Hardcore"
+            ]
+          },
+          {
+            "id": "blast_beat_2",
+            "name": "Blast Beat",
+            "time": 238,
+            "unmitigatedDamage": "~107,083",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🥁",
+            "description": "Staggered Raidwide",
+            "phaseId": "phase_circular_arena",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Blast Beat"
+            ]
+          },
+          {
+            "id": "brutal_rain_2",
+            "name": "Brutal Rain (3 hits)",
+            "time": 260,
+            "unmitigatedDamage": "~90,585 per hit",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🌧️",
+            "description": "Multi-Hit Party Stack",
+            "phaseId": "phase_circular_arena",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Brutal Rain (3 hits)"
+            ]
+          },
+          {
+            "id": "insatiable_thirst_1",
+            "name": "Insatiable Thirst",
+            "time": 272,
+            "unmitigatedDamage": "~138,912",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🍷",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_circular_arena",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Insatiable Thirst"
+            ]
+          },
+          {
+            "id": "sadistic_screech_3",
+            "name": "Sadistic Screech",
+            "time": 285,
+            "unmitigatedDamage": "~191,487",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "📢",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_circular_arena",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sadistic Screech"
+            ]
+          },
+          {
+            "id": "plummet_1",
+            "name": "Plummet",
+            "time": 297,
+            "unmitigatedDamage": "~146,870",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⬇️",
+            "description": "Dual Tank Buster Tower Bait",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plummet"
+            ]
+          },
+          {
+            "id": "killer_voice_2",
+            "name": "Killer Voice",
+            "time": 307,
+            "unmitigatedDamage": "~157,297",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🎤",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Killer Voice"
+            ]
+          },
+          {
+            "id": "plummet_2",
+            "name": "Plummet",
+            "time": 316,
+            "unmitigatedDamage": "~147,922",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⬇️",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plummet"
+            ]
+          },
+          {
+            "id": "flesh_wound_1",
+            "name": "Flesh Wound",
+            "time": 324,
+            "unmitigatedDamage": "~47,678",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "🩹",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Flesh Wound"
+            ]
+          },
+          {
+            "id": "killer_voice_3",
+            "name": "Killer Voice",
+            "time": 326,
+            "unmitigatedDamage": "~159,559",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🎤",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Killer Voice"
+            ]
+          },
+          {
+            "id": "plummet_3",
+            "name": "Plummet",
+            "time": 334,
+            "unmitigatedDamage": "~150,500",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⬇️",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plummet"
+            ]
+          },
+          {
+            "id": "electrocution_1",
+            "name": "Electrocution",
+            "time": 343,
+            "unmitigatedDamage": "~44,682",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "⚡",
+            "description": "Some Dots throughout",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Electrocution"
+            ]
+          },
+          {
+            "id": "sadistic_screech_4",
+            "name": "Sadistic Screech",
+            "time": 358,
+            "unmitigatedDamage": "~154,287",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "📢",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_doornail_flail",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sadistic Screech"
+            ]
+          },
+          {
+            "id": "crowd_kill_2",
+            "name": "Crowd Kill",
+            "time": 372,
+            "unmitigatedDamage": "~197,303",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🏟️",
+            "description": "Raidwide Party Damage",
+            "phaseId": "phase_finale_return",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Crowd Kill"
+            ]
+          },
+          {
+            "id": "finale_fatale_2",
+            "name": "Finale Fatale",
+            "time": 391,
+            "unmitigatedDamage": "~203,073",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🏁",
+            "phaseId": "phase_finale_return",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Finale Fatale"
+            ]
+          },
+          {
+            "id": "bloody_bondage_1",
+            "name": "Bloody Bondage",
+            "time": 403,
+            "unmitigatedDamage": "~35,088",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⛓️",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bloody Bondage"
+            ]
+          },
+          {
+            "id": "blood_lash_1",
+            "name": "Blood Lash",
+            "time": 417,
+            "unmitigatedDamage": "~34,872",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "〰️",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Blood Lash"
+            ]
+          },
+          {
+            "id": "bloody_bondage_2",
+            "name": "Bloody Bondage",
+            "time": 425,
+            "unmitigatedDamage": "~35,686",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⛓️",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bloody Bondage"
+            ]
+          },
+          {
+            "id": "ultrasonic_spread_1",
+            "name": "Ultrasonic Amp",
+            "time": 425,
+            "unmitigatedDamage": "~370,809",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🔊",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Ultrasonic Amp"
+            ]
+          },
+          {
+            "id": "ultrasonic_spread_2",
+            "name": "Ultrasonic Spread",
+            "time": 432,
+            "unmitigatedDamage": "~146,850",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🔊",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Ultrasonic Spread"
+            ]
+          },
+          {
+            "id": "bloody_bondage_3",
+            "name": "Bloody Bondage",
+            "time": 455,
+            "unmitigatedDamage": "~151,010",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⛓️",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bloody Bondage"
+            ]
+          },
+          {
+            "id": "brutal_rain_3",
+            "name": "Brutal Rain (3 hits)",
+            "time": 503,
+            "unmitigatedDamage": "~95,610 per hit",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🌧️",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Brutal Rain (3 hits)"
+            ]
+          },
+          {
+            "id": "blast_beat_3",
+            "name": "Blast Beat",
+            "time": 520,
+            "unmitigatedDamage": "~116,145",
+            "damageType": "magical",
+            "importance": "low",
+            "icon": "🥁",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Blast Beat"
+            ]
+          },
+          {
+            "id": "half_moon_2",
+            "name": "Half Moon",
+            "time": 532,
+            "unmitigatedDamage": "~159,754",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "🌓",
+            "isTankBuster": true,
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Half Moon"
+            ]
+          },
+          {
+            "id": "hardcore_3",
+            "name": "Hardcore",
+            "time": 540,
+            "unmitigatedDamage": "~428,512",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🤼",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Hardcore"
+            ]
+          },
+          {
+            "id": "insatiable_thirst_2",
+            "name": "Insatiable Thirst",
+            "time": 572,
+            "unmitigatedDamage": "~152,935",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🍷",
+            "phaseId": "phase_charnel_cell",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "vamp-fatale-m9s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Insatiable Thirst"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

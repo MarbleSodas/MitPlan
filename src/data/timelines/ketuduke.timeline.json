@@ -1,0 +1,691 @@
+{
+  "name": "Ketuduke - Official Adaptive Timeline",
+  "description": "Linear migrated adaptive timeline for Ketuduke. The existing mitigation-focused action library is preserved and wrapped in the canonical adaptive timeline schema without artificial phase segmentation.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "ketuduke",
+  "bossTags": [
+    "ketuduke"
+  ],
+  "bossMetadata": {
+    "level": 90,
+    "name": "Ketuduke",
+    "icon": "🌊",
+    "description": "The Soul of the South Seas, first boss of Another Aloalo Island (Savage).",
+    "baseHealth": {
+      "party": 80000,
+      "tank": 120000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/06-ew/dungeon/another_aloalo_island-savage.txt",
+      "title": "cactbot ketuduke timeline",
+      "lastVerifiedAt": "2026-03-26"
+    },
+    {
+      "site": "consolegameswiki",
+      "url": "https://ffxiv.consolegameswiki.com/wiki/Another_Aloalo_Island_(Savage)",
+      "title": "Another Aloalo Island (Savage)",
+      "lastVerifiedAt": "2026-03-26"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/06-ew/dungeon/another_aloalo_island-savage.txt",
+      "title": "cactbot ketuduke timeline",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "The cactbot timeline is cited for encounter sequencing while the planner route remains intentionally linear."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "The canonical adaptive format keeps FF Logs-compatible source metadata even when the planner route remains linear."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan legacy criterion migration",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "The current local mitigation timeline is preserved as a linear adaptive route because the encounter remains planner-linear for this project."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "ketuduke-branch-0"
+  },
+  "phases": [],
+  "actions": [
+    {
+      "id": "tidal_roar_1",
+      "name": "Tidal Roar",
+      "time": 10,
+      "description": "High party-wide magical damage that inflicts Dropsy debuff, requiring mitigation and healing. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).",
+      "unmitigatedDamage": "~81,436",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⭕",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Tidal Roar"
+      ]
+    },
+    {
+      "id": "bubble_net_1",
+      "name": "Bubble Net",
+      "time": 29,
+      "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+      "unmitigatedDamage": "~71,090",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🫧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Bubble Net"
+      ]
+    },
+    {
+      "id": "hydro_combo_1",
+      "name": "Hydrofall || Hydrobullet",
+      "time": 59,
+      "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+      "unmitigatedDamage": "~42,098",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall || Hydrobullet"
+      ]
+    },
+    {
+      "id": "hydro_combo_2",
+      "name": "Hydrofall || Hydrobullet",
+      "time": 91,
+      "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+      "unmitigatedDamage": "~43,461",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall || Hydrobullet"
+      ]
+    },
+    {
+      "id": "hydro_combo_3",
+      "name": "Hydrofall || Hydrobullet",
+      "time": 97,
+      "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+      "unmitigatedDamage": "~43,341",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall || Hydrobullet"
+      ]
+    },
+    {
+      "id": "hydrofall_3",
+      "name": "Hydrofall",
+      "time": 128,
+      "description": "Moderate party-wide magical damage with stack mechanics. Players must group together to split the damage and avoid lethal damage.",
+      "unmitigatedDamage": "~42,239",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall"
+      ]
+    },
+    {
+      "id": "bubble_net_2",
+      "name": "Bubble Net",
+      "time": 160,
+      "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+      "unmitigatedDamage": "~70,362",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🫧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Bubble Net"
+      ]
+    },
+    {
+      "id": "hydrobullet_3",
+      "name": "Hydrobullet",
+      "time": 171,
+      "description": "Moderate party-wide magical damage with spread mechanics. Players must spread out to avoid overlapping damage areas and inflicting Magic Vulnerability Up on each other.",
+      "unmitigatedDamage": "~42,730",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrobullet"
+      ]
+    },
+    {
+      "id": "angry_seas_1",
+      "name": "Angry Seas",
+      "time": 205,
+      "description": "Low party-wide mixed damage with knockback mechanics. Creates a lethal line AoE in the middle that partitions the arena into two sides, with knockbacks on both sides.",
+      "unmitigatedDamage": "~27,199",
+      "damageType": "both",
+      "importance": "medium",
+      "icon": "🌊",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Angry Seas"
+      ]
+    },
+    {
+      "id": "hydro_combo_4",
+      "name": "Hydrofall || Hydrobullet",
+      "time": 207,
+      "description": "High party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+      "unmitigatedDamage": "~68,233",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall || Hydrobullet"
+      ]
+    },
+    {
+      "id": "hydro_combo_5",
+      "name": "Hydrofall || Hydrobullet",
+      "time": 212,
+      "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+      "unmitigatedDamage": "~41,126",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall || Hydrobullet"
+      ]
+    },
+    {
+      "id": "bubble_net_3",
+      "name": "Bubble Net",
+      "time": 218,
+      "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+      "unmitigatedDamage": "~71,767",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🫧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Bubble Net"
+      ]
+    },
+    {
+      "id": "burst_1",
+      "name": "Burst",
+      "time": 234,
+      "description": "Low party-wide magical damage. Associated with tower mechanics where players must soak specific positions to prevent a wipe.",
+      "unmitigatedDamage": "~27,279",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💥",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Burst"
+      ]
+    },
+    {
+      "id": "bubble_net_4",
+      "name": "Bubble Net",
+      "time": 250,
+      "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+      "unmitigatedDamage": "~70,824",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🫧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Bubble Net"
+      ]
+    },
+    {
+      "id": "hydro_combo_6",
+      "name": "Hydrofall || Hydrobullet",
+      "time": 280,
+      "description": "Moderate party-wide magical damage with both stack (Hydrofall) and spread (Hydrobullet) mechanics occurring simultaneously. Players must coordinate to handle both mechanics at once.",
+      "unmitigatedDamage": "~43,424",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall || Hydrobullet"
+      ]
+    },
+    {
+      "id": "hydrofall_6",
+      "name": "Hydrofall",
+      "time": 310,
+      "description": "Moderate party-wide magical damage with stack mechanics. Players must group together to split the damage and avoid lethal damage.",
+      "unmitigatedDamage": "~40,537",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💧",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Hydrofall"
+      ]
+    },
+    {
+      "id": "tidal_roar_2",
+      "name": "Tidal Roar",
+      "time": 320,
+      "description": "High party-wide magical damage that inflicts Dropsy debuff, requiring mitigation and healing. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).",
+      "unmitigatedDamage": "~81,436",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⭕",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Tidal Roar"
+      ]
+    },
+    {
+      "id": "tidal_roar_enrage",
+      "name": "Tidal Roar (enrage)",
+      "time": 330,
+      "description": "Wipe",
+      "unmitigatedDamage": "N/A",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "💀",
+      "isPhaseAnchor": false,
+      "skipEligible": false,
+      "branchId": "ketuduke-branch-0",
+      "sourceKind": "legacy_linear_migrated",
+      "sourceAbilities": [
+        "Tidal Roar (enrage)"
+      ]
+    }
+  ],
+  "adaptiveModel": {
+    "branches": [
+      {
+        "id": "ketuduke-branch-0",
+        "label": "Linear Route",
+        "description": "Linear migrated route built from the existing MitPlan action library.",
+        "sampleCount": 1,
+        "sampleRatio": 1,
+        "isPrimaryBranch": true,
+        "firstDivergenceTimestampMs": null,
+        "firstDivergenceTimestamp": null,
+        "eventCount": 18,
+        "events": [
+          {
+            "id": "tidal_roar_1",
+            "name": "Tidal Roar",
+            "time": 10,
+            "description": "High party-wide magical damage that inflicts Dropsy debuff, requiring mitigation and healing. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).",
+            "unmitigatedDamage": "~81,436",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⭕",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Tidal Roar"
+            ]
+          },
+          {
+            "id": "bubble_net_1",
+            "name": "Bubble Net",
+            "time": 29,
+            "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+            "unmitigatedDamage": "~71,090",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🫧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Bubble Net"
+            ]
+          },
+          {
+            "id": "hydro_combo_1",
+            "name": "Hydrofall || Hydrobullet",
+            "time": 59,
+            "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+            "unmitigatedDamage": "~42,098",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall || Hydrobullet"
+            ]
+          },
+          {
+            "id": "hydro_combo_2",
+            "name": "Hydrofall || Hydrobullet",
+            "time": 91,
+            "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+            "unmitigatedDamage": "~43,461",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall || Hydrobullet"
+            ]
+          },
+          {
+            "id": "hydro_combo_3",
+            "name": "Hydrofall || Hydrobullet",
+            "time": 97,
+            "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+            "unmitigatedDamage": "~43,341",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall || Hydrobullet"
+            ]
+          },
+          {
+            "id": "hydrofall_3",
+            "name": "Hydrofall",
+            "time": 128,
+            "description": "Moderate party-wide magical damage with stack mechanics. Players must group together to split the damage and avoid lethal damage.",
+            "unmitigatedDamage": "~42,239",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall"
+            ]
+          },
+          {
+            "id": "bubble_net_2",
+            "name": "Bubble Net",
+            "time": 160,
+            "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+            "unmitigatedDamage": "~70,362",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🫧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Bubble Net"
+            ]
+          },
+          {
+            "id": "hydrobullet_3",
+            "name": "Hydrobullet",
+            "time": 171,
+            "description": "Moderate party-wide magical damage with spread mechanics. Players must spread out to avoid overlapping damage areas and inflicting Magic Vulnerability Up on each other.",
+            "unmitigatedDamage": "~42,730",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrobullet"
+            ]
+          },
+          {
+            "id": "angry_seas_1",
+            "name": "Angry Seas",
+            "time": 205,
+            "description": "Low party-wide mixed damage with knockback mechanics. Creates a lethal line AoE in the middle that partitions the arena into two sides, with knockbacks on both sides.",
+            "unmitigatedDamage": "~27,199",
+            "damageType": "both",
+            "importance": "medium",
+            "icon": "🌊",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Angry Seas"
+            ]
+          },
+          {
+            "id": "hydro_combo_4",
+            "name": "Hydrofall || Hydrobullet",
+            "time": 207,
+            "description": "High party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+            "unmitigatedDamage": "~68,233",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall || Hydrobullet"
+            ]
+          },
+          {
+            "id": "hydro_combo_5",
+            "name": "Hydrofall || Hydrobullet",
+            "time": 212,
+            "description": "Moderate party-wide magical damage with either stack (Hydrofall) or spread (Hydrobullet) mechanics. Players receive debuffs that resolve after a delay, requiring proper positioning.",
+            "unmitigatedDamage": "~41,126",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall || Hydrobullet"
+            ]
+          },
+          {
+            "id": "bubble_net_3",
+            "name": "Bubble Net",
+            "time": 218,
+            "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+            "unmitigatedDamage": "~71,767",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🫧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Bubble Net"
+            ]
+          },
+          {
+            "id": "burst_1",
+            "name": "Burst",
+            "time": 234,
+            "description": "Low party-wide magical damage. Associated with tower mechanics where players must soak specific positions to prevent a wipe.",
+            "unmitigatedDamage": "~27,279",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💥",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Burst"
+            ]
+          },
+          {
+            "id": "bubble_net_4",
+            "name": "Bubble Net",
+            "time": 250,
+            "description": "Party-wide magical damage that assigns Bubble Weave or Foamy Fetters debuffs to players. Bubble Weave lifts players in bubbles making them susceptible to knockbacks, while Foamy Fetters binds players in place.",
+            "unmitigatedDamage": "~70,824",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🫧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Bubble Net"
+            ]
+          },
+          {
+            "id": "hydro_combo_6",
+            "name": "Hydrofall || Hydrobullet",
+            "time": 280,
+            "description": "Moderate party-wide magical damage with both stack (Hydrofall) and spread (Hydrobullet) mechanics occurring simultaneously. Players must coordinate to handle both mechanics at once.",
+            "unmitigatedDamage": "~43,424",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall || Hydrobullet"
+            ]
+          },
+          {
+            "id": "hydrofall_6",
+            "name": "Hydrofall",
+            "time": 310,
+            "description": "Moderate party-wide magical damage with stack mechanics. Players must group together to split the damage and avoid lethal damage.",
+            "unmitigatedDamage": "~40,537",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "💧",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Hydrofall"
+            ]
+          },
+          {
+            "id": "tidal_roar_2",
+            "name": "Tidal Roar",
+            "time": 320,
+            "description": "High party-wide magical damage that inflicts Dropsy debuff, requiring mitigation and healing. Also applies a DoT effect (initial hit: ~81,436, total DoT damage: ~82,755).",
+            "unmitigatedDamage": "~81,436",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⭕",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Tidal Roar"
+            ]
+          },
+          {
+            "id": "tidal_roar_enrage",
+            "name": "Tidal Roar (enrage)",
+            "time": 330,
+            "description": "Wipe",
+            "unmitigatedDamage": "N/A",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "💀",
+            "isPhaseAnchor": false,
+            "skipEligible": false,
+            "branchId": "ketuduke-branch-0",
+            "sourceKind": "legacy_linear_migrated",
+            "sourceAbilities": [
+              "Tidal Roar (enrage)"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

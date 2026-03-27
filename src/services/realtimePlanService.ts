@@ -8,68 +8,253 @@ import {
   serverTimestamp,
   onValue,
   off,
-  runTransaction
+  runTransaction,
+  query,
+  orderByChild,
+  equalTo
 } from 'firebase/database';
 import { database } from '../config/firebase';
 import { initializePlanOwnership, trackPlanAccess, getUserAccessiblePlans } from './planAccessService';
+import {
+  getActiveUsersPath,
+  getJobAssignmentPath,
+  getJobAssignmentsPath
+} from './collaborationPaths';
+import { isPermissionDeniedError } from './firebaseErrorUtils';
+import { getTimeline } from './timelineService';
+import {
+  createPlanTimelineLayoutFromLegacyPlan,
+  getPlanTimelineLayout,
+  getPlanTimelineMirrorFields,
+  normalizePlanTimelineLayout,
+} from '../utils/timeline/planTimelineLayoutUtils';
 
 const PLANS_PATH = 'plans';
+
+const getBossName = (bossId) => {
+  const bossNames = {
+    'ketuduke': 'Ketuduke',
+    'lala': 'Lala',
+    'statice': 'Statice',
+    'dancing-green-m5s': 'Dancing Green (M5S)',
+    'sugar-riot': 'Sugar Riot (M6S)',
+    'brute-abominator-m7s': 'Brute Abominator (M7S)',
+    'howling-blade-m8s': 'Howling Blade (M8S)',
+    'necron': 'Necron'
+  };
+  return bossNames[bossId] || 'Unknown Boss';
+};
+
+const getCanonicalBossId = (planData = {}) => {
+  return planData.timelineLayout?.bossId || planData.bossId || planData.selectedBoss?.id || 'ketuduke';
+};
+
+const sanitizeFirebaseValue = (value) => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => sanitizeFirebaseValue(entry))
+      .filter((entry) => entry !== undefined);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).reduce((acc, [key, entryValue]) => {
+      const sanitizedEntryValue = sanitizeFirebaseValue(entryValue);
+      if (sanitizedEntryValue !== undefined) {
+        acc[key] = sanitizedEntryValue;
+      }
+      return acc;
+    }, {});
+  }
+
+  return value;
+};
+
+const withTimelineLayoutMirrors = (planData = {}) => {
+  if (!planData.timelineLayout) {
+    return planData;
+  }
+
+  const timelineLayout = normalizePlanTimelineLayout(planData.timelineLayout);
+  if (!timelineLayout) {
+    return {
+      ...planData,
+      timelineLayout: null,
+    };
+  }
+
+  return {
+    ...planData,
+    ...getPlanTimelineMirrorFields(timelineLayout),
+  };
+};
+
+const getCanonicalPlanField = (fieldPath, value) => {
+  switch (fieldPath) {
+    case 'title':
+      return ['name', value];
+    case 'selectedBoss':
+      return ['bossId', typeof value === 'object' ? value?.id || 'ketuduke' : value];
+    case 'assignedMitigations':
+      return ['assignments', value];
+    case 'tankAssignments':
+      return ['tankPositions', value];
+    default:
+      return [fieldPath, value];
+  }
+};
+
+const buildPlanFieldPayload = (planData = {}) => {
+  return withTimelineLayoutMirrors(planData);
+};
+
+const normalizePlanRecord = (planId, planData = {}) => {
+  const planFields = buildPlanFieldPayload(planData);
+  const timelineLayout = getPlanTimelineLayout(planFields);
+  const bossId = getCanonicalBossId(planFields);
+
+  return {
+    id: planId,
+    name: planFields.name || planFields.title || 'Untitled Plan',
+    description: planFields.description || '',
+    bossId: timelineLayout?.bossId || bossId,
+    selectedJobs: planFields.selectedJobs || {},
+    assignments: planFields.assignments || planFields.assignedMitigations || {},
+    tankPositions: planFields.tankPositions || planFields.tankAssignments || {
+      mainTank: null,
+      offTank: null
+    },
+    healthSettings: planFields.healthSettings || {},
+    isPublic: planFields.isPublic || false,
+    userId: planFields.userId || planFields.ownerId || null,
+    ownerId: planFields.ownerId || planFields.userId || null,
+    accessedBy: planFields.accessedBy || {},
+    createdAt: planFields.createdAt,
+    updatedAt: planFields.updatedAt,
+    lastAccessedAt: planFields.lastAccessedAt,
+    version: planFields.version || 4.1,
+    lastModifiedBy: planFields.lastModifiedBy || null,
+    lastChangeOrigin: planFields.lastChangeOrigin || null,
+    sourceTimelineId: planFields.sourceTimelineId || null,
+    sourceTimelineName: planFields.sourceTimelineName || null,
+    phaseOverrides: planFields.phaseOverrides || {},
+    bossTags: timelineLayout?.bossTags || planFields.bossTags || (bossId ? [bossId] : []),
+    bossMetadata: timelineLayout?.bossMetadata || planFields.bossMetadata || null,
+    timelineLayout,
+  };
+};
+
+const preparePlanForStorage = (userId, planData = {}) => {
+  const normalizedPlan = normalizePlanRecord(null, planData);
+
+  return initializePlanOwnership(null, userId, {
+    name: normalizedPlan.name,
+    description: normalizedPlan.description,
+    bossId: normalizedPlan.bossId,
+    selectedJobs: normalizedPlan.selectedJobs,
+    assignments: normalizedPlan.assignments,
+    tankPositions: normalizedPlan.tankPositions,
+    healthSettings: normalizedPlan.healthSettings,
+    isPublic: normalizedPlan.isPublic,
+    lastModifiedBy: userId,
+    lastChangeOrigin: 'creation',
+    version: 4.1,
+    sourceTimelineId: normalizedPlan.sourceTimelineId,
+    sourceTimelineName: normalizedPlan.sourceTimelineName,
+    phaseOverrides: normalizedPlan.phaseOverrides,
+    bossTags: normalizedPlan.bossTags,
+    bossMetadata: normalizedPlan.bossMetadata,
+    timelineLayout: normalizedPlan.timelineLayout,
+  });
+};
+
+const hydratePlanFieldsFromSourceTimeline = async (planData = {}) => {
+  if (planData.timelineLayout) {
+    return buildPlanFieldPayload(planData);
+  }
+
+  if (!planData.sourceTimelineId) {
+    return planData;
+  }
+
+  const sourceTimeline = await getTimeline(planData.sourceTimelineId);
+  const timelineLayout = createPlanTimelineLayoutFromLegacyPlan(
+    sourceTimeline,
+    planData.healthSettings || {}
+  );
+
+  return {
+    ...planData,
+    ...getPlanTimelineMirrorFields(timelineLayout),
+  };
+};
+
+const buildPlanUpdates = (planId, planData, userId = null, sessionId = null) => {
+  const updates = {};
+  const expandedPlanData = buildPlanFieldPayload(planData);
+
+  Object.entries(expandedPlanData).forEach(([fieldPath, value]) => {
+    const [canonicalFieldPath, canonicalValue] = getCanonicalPlanField(fieldPath, value);
+    const sanitizedValue = sanitizeFirebaseValue(canonicalValue);
+    if (sanitizedValue !== undefined) {
+      updates[`${PLANS_PATH}/${planId}/${canonicalFieldPath}`] = sanitizedValue;
+    }
+  });
+
+  updates[`${PLANS_PATH}/${planId}/updatedAt`] = serverTimestamp();
+
+  if (userId) {
+    updates[`${PLANS_PATH}/${planId}/lastModifiedBy`] = userId;
+  }
+
+  if (sessionId) {
+    updates[`${PLANS_PATH}/${planId}/lastChangeOrigin`] = sessionId;
+  }
+
+  return updates;
+};
+
+const getRecentPlanTimestamp = (plan) =>
+  plan.updatedAt ||
+  plan.lastAccessedAt ||
+  plan.createdAt ||
+  0;
+
+const sortUserPlansByRecent = (plans) => {
+  plans.sort((a, b) => getRecentPlanTimestamp(b) - getRecentPlanTimestamp(a));
+  return plans;
+};
+
+const mergeOwnedPlanCollections = (...planGroups) => {
+  const mergedPlans = new Map();
+
+  planGroups.flat().forEach((plan) => {
+    if (!plan?.id || mergedPlans.has(plan.id)) {
+      return;
+    }
+
+    mergedPlans.set(plan.id, plan);
+  });
+
+  return sortUserPlansByRecent(Array.from(mergedPlans.values()));
+};
 
 /**
  * Create a new mitigation plan
  */
 export const createPlan = async (userId, planData) => {
   try {
-    // Helper function to get boss name from ID
-    const getBossName = (bossId) => {
-      const bossNames = {
-        'ketuduke': 'Ketuduke',
-        'lala': 'Lala',
-        'statice': 'Statice',
-        'dancing-green-m5s': 'Dancing Green (M5S)',
-        'sugar-riot': 'Sugar Riot (M6S)',
-        'brute-abominator-m7s': 'Brute Abominator (M7S)',
-        'howling-blade-m8s': 'Howling Blade (M8S)',
-        'necron': 'Necron'
-      };
-      return bossNames[bossId] || 'Unknown Boss';
-    };
-
-    // Ensure all required fields are present with proper defaults
-    const bossId = planData.selectedBoss?.id || planData.bossId || 'ketuduke';
-    const basePlanDoc = {
-      title: planData.title || planData.name || 'Untitled Plan',
-      selectedBoss: planData.selectedBoss || {
-        id: bossId,
-        name: getBossName(bossId),
-        actions: {}
-      },
-      selectedJobs: planData.selectedJobs || {},
-      tankPositions: planData.tankPositions || planData.tankAssignments || {
-        mainTank: null,
-        offTank: null
-      },
-      assignedMitigations: planData.assignedMitigations || planData.assignments || {},
-      connectedUsers: {},
-      isPublic: planData.isPublic || false,
-      lastModifiedBy: userId,
-      lastChangeOrigin: 'creation',
-      version: 4.0, // New version for updated Realtime Database structure
-      // Timeline references (optional)
-      sourceTimelineId: planData.sourceTimelineId || null,
-      sourceTimelineName: planData.sourceTimelineName || null,
-      // Boss tags for flexible boss associations
-      bossTags: planData.bossTags || (bossId ? [bossId] : [])
-    };
-
-    // Initialize ownership and access control
-    const planDoc = initializePlanOwnership(null, userId, basePlanDoc);
+    const hydratedPlanData = await hydratePlanFieldsFromSourceTimeline(planData);
+    const planDoc = sanitizeFirebaseValue(preparePlanForStorage(userId, hydratedPlanData));
 
     console.log('[createPlan] Creating plan with data:', {
-      title: planDoc.title,
-      selectedBoss: planDoc.selectedBoss?.id,
+      name: planDoc.name,
+      bossId: planDoc.bossId || getBossName(planDoc.bossId),
       selectedJobsKeys: planDoc.selectedJobs ? Object.keys(planDoc.selectedJobs) : [],
-      assignedMitigationsKeys: planDoc.assignedMitigations ? Object.keys(planDoc.assignedMitigations) : [],
+      assignmentsKeys: planDoc.assignments ? Object.keys(planDoc.assignments) : [],
       ownerId: planDoc.ownerId
     });
 
@@ -78,7 +263,7 @@ export const createPlan = async (userId, planData) => {
     await set(newPlanRef, planDoc);
 
     console.log('[createPlan] Plan created successfully with ID:', newPlanRef.key);
-    return { id: newPlanRef.key, ...planDoc };
+    return normalizePlanRecord(newPlanRef.key, planDoc);
   } catch (error) {
     console.error('Error creating plan:', error);
     throw new Error('Failed to create plan');
@@ -91,25 +276,11 @@ export const createPlan = async (userId, planData) => {
 export const updatePlan = async (planId, planData) => {
   try {
     console.log('[updatePlan] Updating plan:', { planId, updates: planData });
-
-    // Prepare updates object for partial update
-    const updates = {};
-    Object.entries(planData).forEach(([key, value]) => {
-      updates[`${PLANS_PATH}/${planId}/${key}`] = value;
-    });
-
-    // Add timestamp
-    updates[`${PLANS_PATH}/${planId}/updatedAt`] = serverTimestamp();
-
+    const updates = buildPlanUpdates(planId, planData);
     console.log('[updatePlan] Firebase updates:', updates);
-
-    // Use update() for partial updates instead of set() which replaces everything
     await update(ref(database), updates);
-
     console.log('[updatePlan] Update successful');
-
-    // Return the updated data
-    return { id: planId, ...planData, updatedAt: Date.now() };
+    return { id: planId, ...normalizePlanRecord(planId, planData), updatedAt: Date.now() };
   } catch (error) {
     console.error('[updatePlan] Error updating plan:', error);
     throw new Error('Failed to update plan');
@@ -140,50 +311,33 @@ export const getPlan = async (planId) => {
 
     if (snapshot.exists()) {
       const planData = snapshot.val();
+      const completePlan = normalizePlanRecord(planId, planData);
       console.log('[getPlan] Retrieved plan data:', {
         id: planId,
-        name: planData.name,
-        bossId: planData.bossId,
-        selectedJobsKeys: Object.keys(planData.selectedJobs || {}),
-        assignmentsKeys: Object.keys(planData.assignments || {}),
-        hasUserId: !!planData.userId,
-        isPublic: !!planData.isPublic
+        name: completePlan.name,
+        bossId: completePlan.bossId,
+        selectedJobsKeys: Object.keys(completePlan.selectedJobs || {}),
+        assignmentsKeys: Object.keys(completePlan.assignments || {}),
+        hasUserId: !!completePlan.userId,
+        isPublic: !!completePlan.isPublic
       });
 
       // Apply backward compatibility migration
       const { migratePlanOwnership } = await import('./planAccessService');
-      const migratedPlanData = migratePlanOwnership(planId, planData);
-
-      // Ensure all required fields exist with proper defaults
-      const completePlan = {
-        id: planId,
-        name: migratedPlanData.title || migratedPlanData.name || 'Untitled Plan',
-        description: migratedPlanData.description || '',
-        bossId: migratedPlanData.bossId || 'ketuduke',
-        selectedJobs: migratedPlanData.selectedJobs || {},
-        assignments: migratedPlanData.assignments || {},
-        tankPositions: migratedPlanData.tankPositions || {},
-        healthSettings: migratedPlanData.healthSettings || {},
-        isPublic: migratedPlanData.isPublic || false,
-        userId: migratedPlanData.userId,
-        ownerId: migratedPlanData.ownerId,
-        accessedBy: migratedPlanData.accessedBy || {},
-        createdAt: migratedPlanData.createdAt,
-        updatedAt: migratedPlanData.updatedAt,
-        lastAccessedAt: migratedPlanData.lastAccessedAt,
-        version: migratedPlanData.version || 3.0,
-        lastModifiedBy: migratedPlanData.lastModifiedBy,
-        lastChangeOrigin: migratedPlanData.lastChangeOrigin
-      };
+      const migratedPlanData = migratePlanOwnership(planId, {
+        ...planData,
+        ...completePlan
+      });
+      const migratedPlan = normalizePlanRecord(planId, migratedPlanData);
 
       // If migration added fields, update the plan in Firebase
       if (!planData.accessedBy || !planData.ownerId) {
         console.log('[getPlan] Migrating plan to new schema:', planId);
         try {
           await update(planRef, {
-            ownerId: completePlan.ownerId,
-            accessedBy: completePlan.accessedBy,
-            lastAccessedAt: completePlan.lastAccessedAt
+            ownerId: migratedPlan.ownerId,
+            accessedBy: migratedPlan.accessedBy,
+            lastAccessedAt: migratedPlan.lastAccessedAt
           });
         } catch (updateError) {
           console.warn('[getPlan] Failed to update plan with migration data:', updateError);
@@ -191,7 +345,7 @@ export const getPlan = async (planId) => {
         }
       }
 
-      return completePlan;
+      return migratedPlan;
     } else {
       throw new Error('Plan not found');
     }
@@ -199,7 +353,7 @@ export const getPlan = async (planId) => {
     console.error('Error getting plan:', error);
 
     // Provide more specific error messages
-    if (error.code === 'PERMISSION_DENIED' || error.message?.includes('Permission denied')) {
+    if (isPermissionDeniedError(error)) {
       throw new Error('Permission denied: You do not have access to this plan');
     } else if (error.message === 'Plan not found') {
       throw error; // Re-throw the specific "Plan not found" error
@@ -218,7 +372,7 @@ export const getPlanWithAccessTracking = async (planId, userId) => {
 
     // Track access if user is provided and plan exists
     if (plan && userId) {
-      await trackPlanAccess(planId, userId, false);
+      await trackPlanAccess(planId, userId);
     }
 
     return plan;
@@ -234,7 +388,7 @@ export const getPlanWithAccessTracking = async (planId, userId) => {
 export const getUserPlans = async (userId) => {
   try {
     // Use the new access control service to get accessible plans
-    return await getUserAccessiblePlans(userId, false);
+    return await getUserAccessiblePlans(userId);
   } catch (error) {
     console.error('Error getting user plans:', error);
     throw new Error('Failed to get user plans');
@@ -313,6 +467,13 @@ export const importPlan = async (userId, importData, planName) => {
       selectedJobs: migratedData.selectedJobs || {},
       tankPositions: migratedData.tankPositions || {},
       description: migratedData.description || '',
+      sourceTimelineId: migratedData.sourceTimelineId || null,
+      sourceTimelineName: migratedData.sourceTimelineName || null,
+      phaseOverrides: migratedData.phaseOverrides || {},
+      bossTags: migratedData.bossTags || [],
+      bossMetadata: migratedData.bossMetadata || null,
+      timelineLayout: migratedData.timelineLayout || null,
+      healthSettings: migratedData.healthSettings || {},
       importedAt: new Date().toISOString(),
       originalVersion: importData.version || 'unknown',
       migratedVersion: migratedData.version
@@ -334,38 +495,15 @@ export const subscribeToPlan = (planId, callback) => {
   const unsubscribe = onValue(planRef, (snapshot) => {
     if (snapshot.exists()) {
       const planData = snapshot.val();
+      const completePlan = normalizePlanRecord(planId, planData);
       console.log('[subscribeToPlan] Received plan update:', {
         id: planId,
-        name: planData.title || planData.name,
-        bossId: planData.bossId,
-        selectedJobsKeys: Object.keys(planData.selectedJobs || {}),
-        assignmentsKeys: Object.keys(planData.assignments || {}),
-        lastChangeOrigin: planData.lastChangeOrigin
+        name: completePlan.name,
+        bossId: completePlan.bossId,
+        selectedJobsKeys: Object.keys(completePlan.selectedJobs || {}),
+        assignmentsKeys: Object.keys(completePlan.assignments || {}),
+        lastChangeOrigin: completePlan.lastChangeOrigin
       });
-
-      // Ensure all required fields exist with proper defaults
-      const completePlan = {
-        id: planId,
-        name: planData.title || planData.name || 'Untitled Plan',
-        description: planData.description || '',
-        bossId: planData.bossId || 'ketuduke',
-        selectedJobs: planData.selectedJobs || {},
-        assignments: planData.assignments || {},
-        tankPositions: planData.tankPositions || planData.tankAssignments || {},
-        healthSettings: planData.healthSettings || {},
-        isPublic: planData.isPublic || false,
-        userId: planData.userId,
-        createdAt: planData.createdAt,
-        updatedAt: planData.updatedAt,
-        version: planData.version || 3.0,
-        lastModifiedBy: planData.lastModifiedBy,
-        lastChangeOrigin: planData.lastChangeOrigin,
-        // Timeline references (optional)
-        sourceTimelineId: planData.sourceTimelineId || null,
-        sourceTimelineName: planData.sourceTimelineName || null,
-        // Boss tags for flexible boss associations
-        bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
-      };
 
       callback(completePlan);
     } else {
@@ -384,56 +522,86 @@ export const subscribeToPlan = (planId, callback) => {
  */
 export const subscribeToUserPlans = (userId, callback) => {
   const plansRef = ref(database, PLANS_PATH);
+  const ownerPlansQuery = query(plansRef, orderByChild('ownerId'), equalTo(userId));
+  const legacyPlansQuery = query(plansRef, orderByChild('userId'), equalTo(userId));
+  const subscriptionPlans = {
+    ownerId: new Map(),
+    userId: new Map(),
+  };
+  const initialLoads = {
+    ownerId: false,
+    userId: false,
+  };
+  let hasErrored = false;
+  let isClosed = false;
 
-  const unsubscribe = onValue(plansRef, (snapshot) => {
-    const plans = [];
+  const emitMergedPlans = () => {
+    if (isClosed || hasErrored || !initialLoads.ownerId || !initialLoads.userId) {
+      return;
+    }
+
+    callback(
+      mergeOwnedPlanCollections(
+        Array.from(subscriptionPlans.ownerId.values()),
+        Array.from(subscriptionPlans.userId.values())
+      )
+    );
+  };
+
+  const buildSnapshotHandler = (fieldName) => (snapshot) => {
+    if (isClosed || hasErrored) {
+      return;
+    }
+
+    const nextPlans = subscriptionPlans[fieldName];
+    nextPlans.clear();
+
     if (snapshot.exists()) {
       snapshot.forEach((childSnapshot) => {
-        const planData = childSnapshot.val();
-        // Only include plans owned by this user (check both userId and ownerId for compatibility)
-        if (planData && (planData.ownerId === userId || planData.userId === userId)) {
-          // Transform the plan data to ensure consistent field mapping
-          const transformedPlan = {
-            id: childSnapshot.key,
-            name: planData.title || planData.name || 'Untitled Plan',
-            description: planData.description || '',
-            bossId: planData.bossId || 'ketuduke',
-            selectedJobs: planData.selectedJobs || {},
-            assignments: planData.assignments || {},
-            tankPositions: planData.tankPositions || planData.tankAssignments || {},
-            isPublic: planData.isPublic || false,
-            userId: planData.userId,
-            ownerId: planData.ownerId,
-            createdAt: planData.createdAt,
-            updatedAt: planData.updatedAt,
-            version: planData.version || 3.0,
-            lastModifiedBy: planData.lastModifiedBy,
-            lastChangeOrigin: planData.lastChangeOrigin,
-            // Timeline references (optional)
-            sourceTimelineId: planData.sourceTimelineId || null,
-            sourceTimelineName: planData.sourceTimelineName || null,
-            // Boss tags for flexible boss associations
-            bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
-          };
-          plans.push(transformedPlan);
-        }
+        nextPlans.set(childSnapshot.key, normalizePlanRecord(childSnapshot.key, childSnapshot.val()));
       });
     }
 
-    // Sort by updatedAt in descending order (most recent first)
-    plans.sort((a, b) => {
-      const aTime = a.updatedAt || a.createdAt || 0;
-      const bTime = b.updatedAt || b.createdAt || 0;
-      return bTime - aTime;
-    });
+    initialLoads[fieldName] = true;
+    emitMergedPlans();
+  };
 
-    callback(plans);
-  }, (error) => {
+  const handleSubscriptionError = (error) => {
+    if (isClosed || hasErrored) {
+      return;
+    }
+
+    hasErrored = true;
     console.error('Error listening to user plans changes:', error);
     callback([], error);
-  });
+  };
 
-  return () => off(plansRef, 'value', unsubscribe);
+  const ownerUnsubscribe = onValue(
+    ownerPlansQuery,
+    buildSnapshotHandler('ownerId'),
+    handleSubscriptionError
+  );
+  const legacyUnsubscribe = onValue(
+    legacyPlansQuery,
+    buildSnapshotHandler('userId'),
+    handleSubscriptionError
+  );
+
+  return () => {
+    isClosed = true;
+
+    if (typeof ownerUnsubscribe === 'function') {
+      ownerUnsubscribe();
+    } else {
+      off(ownerPlansQuery);
+    }
+
+    if (typeof legacyUnsubscribe === 'function') {
+      legacyUnsubscribe();
+    } else {
+      off(legacyPlansQuery);
+    }
+  };
 };
 
 /**
@@ -441,22 +609,7 @@ export const subscribeToUserPlans = (userId, callback) => {
  */
 export const updatePlanField = async (planId, fieldPath, value, userId = null) => {
   try {
-    const fieldRef = ref(database, `${PLANS_PATH}/${planId}/${fieldPath}`);
-    await set(fieldRef, value);
-
-    // Update the plan's last modified timestamp and user
-    const metaRef = ref(database, `${PLANS_PATH}/${planId}`);
-    const metaUpdate = {
-      updatedAt: serverTimestamp()
-    };
-
-    if (userId) {
-      metaUpdate.lastModifiedBy = userId;
-    }
-
-    await set(metaRef, metaUpdate);
-
-    return true;
+    return await updatePlanFieldsWithOrigin(planId, { [fieldPath]: value }, userId);
   } catch (error) {
     console.error('Error updating plan field:', error);
     throw new Error('Failed to update plan field');
@@ -737,35 +890,7 @@ export const updatePlanFieldWithOrigin = async (planId, fieldPath, value, userId
       sessionId
     });
 
-    // Get current plan data first
-    const planRef = ref(database, `${PLANS_PATH}/${planId}`);
-    const snapshot = await get(planRef);
-
-    if (!snapshot.exists()) {
-      throw new Error('Plan not found');
-    }
-
-    const currentPlan = snapshot.val();
-
-    // Prepare the updated plan data
-    const updatedPlan = {
-      ...currentPlan,
-      [fieldPath]: value,
-      updatedAt: serverTimestamp()
-    };
-
-    if (userId) {
-      updatedPlan.lastModifiedBy = userId;
-    }
-
-    if (sessionId) {
-      updatedPlan.lastChangeOrigin = sessionId;
-    }
-
-    console.log('[updatePlanFieldWithOrigin] Executing single plan update');
-    await set(planRef, updatedPlan);
-    console.log('[updatePlanFieldWithOrigin] Update completed successfully');
-    return true;
+    return await updatePlanFieldsWithOrigin(planId, { [fieldPath]: value }, userId, sessionId);
   } catch (error) {
     console.error('Error updating plan field with origin:', error);
     console.error('Update details:', { planId, fieldPath, valueType: typeof value });
@@ -778,24 +903,7 @@ export const updatePlanFieldWithOrigin = async (planId, fieldPath, value, userId
  */
 export const updatePlanFieldsWithOrigin = async (planId, fields, userId = null, sessionId = null) => {
   try {
-    const updates = {};
-
-    // Add all field updates
-    Object.entries(fields).forEach(([fieldPath, value]) => {
-      updates[`${PLANS_PATH}/${planId}/${fieldPath}`] = value;
-    });
-
-    // Add metadata
-    updates[`${PLANS_PATH}/${planId}/updatedAt`] = serverTimestamp();
-
-    if (userId) {
-      updates[`${PLANS_PATH}/${planId}/lastModifiedBy`] = userId;
-    }
-
-    if (sessionId) {
-      updates[`${PLANS_PATH}/${planId}/lastChangeOrigin`] = sessionId;
-    }
-
+    const updates = buildPlanUpdates(planId, fields, userId, sessionId);
     await update(ref(database), updates);
     return true;
   } catch (error) {
@@ -815,6 +923,7 @@ export const subscribeToPlanWithOrigin = (planId, callback, sessionId = null) =>
     if (snapshot.exists()) {
       const planData = snapshot.val();
       const changeOrigin = planData.lastChangeOrigin;
+      const completePlan = normalizePlanRecord(planId, planData);
 
       // Always trigger callback on first load, then filter by origin
       if (isFirstLoad || !sessionId || changeOrigin !== sessionId) {
@@ -823,35 +932,11 @@ export const subscribeToPlanWithOrigin = (planId, callback, sessionId = null) =>
           isFirstLoad,
           changeOrigin,
           sessionId,
-          name: planData.name,
-          bossId: planData.bossId,
-          selectedJobsKeys: Object.keys(planData.selectedJobs || {}),
-          assignmentsKeys: Object.keys(planData.assignments || {})
+          name: completePlan.name,
+          bossId: completePlan.bossId,
+          selectedJobsKeys: Object.keys(completePlan.selectedJobs || {}),
+          assignmentsKeys: Object.keys(completePlan.assignments || {})
         });
-
-        // Ensure all required fields exist with proper defaults
-        const completePlan = {
-          id: planId,
-          name: planData.title || planData.name || 'Untitled Plan',
-          description: planData.description || '',
-          bossId: planData.bossId || 'ketuduke',
-          selectedJobs: planData.selectedJobs || {},
-          assignments: planData.assignments || {},
-          tankPositions: planData.tankPositions || planData.tankAssignments || {},
-          healthSettings: planData.healthSettings || {},
-          isPublic: planData.isPublic || false,
-          userId: planData.userId,
-          createdAt: planData.createdAt,
-          updatedAt: planData.updatedAt,
-          version: planData.version || 3.0,
-          lastModifiedBy: planData.lastModifiedBy,
-          lastChangeOrigin: planData.lastChangeOrigin,
-          // Timeline references (optional)
-          sourceTimelineId: planData.sourceTimelineId || null,
-          sourceTimelineName: planData.sourceTimelineName || null,
-          // Boss tags for flexible boss associations
-          bossTags: planData.bossTags || (planData.bossId ? [planData.bossId] : [])
-        };
 
         callback(completePlan, changeOrigin);
       }
@@ -931,6 +1016,35 @@ export const updatePlanBossRealtime = async (planId, bossId, userId = null, sess
   }
 };
 
+export const updatePlanTimelineLayoutRealtime = async (
+  planId,
+  timelineLayout,
+  userId = null,
+  sessionId = null
+) => {
+  try {
+    const normalizedTimelineLayout = normalizePlanTimelineLayout(timelineLayout);
+    if (!normalizedTimelineLayout) {
+      throw new Error('A valid timeline layout is required');
+    }
+
+    const result = await updatePlanFieldsWithOrigin(
+      planId,
+      {
+        ...getPlanTimelineMirrorFields(normalizedTimelineLayout),
+        phaseOverrides: {},
+      },
+      userId,
+      sessionId
+    );
+    console.log('[updatePlanTimelineLayoutRealtime] Update successful');
+    return result;
+  } catch (error) {
+    console.error('Error updating plan timeline layout realtime:', error);
+    throw new Error('Failed to update plan timeline layout');
+  }
+};
+
 
 
 /**
@@ -945,6 +1059,29 @@ export const batchUpdatePlanRealtime = async (planId, updates, userId = null, se
   }
 };
 
+export const hydratePlanTimelineLayoutIfMissing = async (planId, userId = null, sessionId = null) => {
+  try {
+    const plan = await getPlan(planId);
+
+    if (plan.timelineLayout || !plan.sourceTimelineId) {
+      return plan.timelineLayout || null;
+    }
+
+    const sourceTimeline = await getTimeline(plan.sourceTimelineId);
+    const timelineLayout = createPlanTimelineLayoutFromLegacyPlan(
+      sourceTimeline,
+      plan.healthSettings || {}
+    );
+    const updateFields = getPlanTimelineMirrorFields(timelineLayout);
+
+    await updatePlanFieldsWithOrigin(planId, updateFields, userId, sessionId);
+    return timelineLayout;
+  } catch (error) {
+    console.error('[hydratePlanTimelineLayoutIfMissing] Failed to hydrate plan timeline layout:', error);
+    throw new Error('Failed to hydrate plan timeline layout');
+  }
+};
+
 /**
  * Session management functions
  */
@@ -954,7 +1091,7 @@ export const batchUpdatePlanRealtime = async (planId, updates, userId = null, se
  */
 export const cleanupInactiveSessions = async (planId) => {
   try {
-    const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
+    const sessionsRef = ref(database, getActiveUsersPath(planId));
     const snapshot = await get(sessionsRef);
 
     if (!snapshot.exists()) return;
@@ -970,7 +1107,7 @@ export const cleanupInactiveSessions = async (planId) => {
 
       // Remove sessions that haven't been active for 10+ minutes
       if (lastActivity && lastActivity < tenMinutesAgo) {
-        updates[`plans/${planId}/collaboration/activeUsers/${childSnapshot.key}`] = null;
+        updates[`${getActiveUsersPath(planId)}/${childSnapshot.key}`] = null;
       }
     });
 
@@ -987,7 +1124,7 @@ export const cleanupInactiveSessions = async (planId) => {
  */
 export const getActiveCollaborators = async (planId) => {
   try {
-    const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
+    const sessionsRef = ref(database, getActiveUsersPath(planId));
     const snapshot = await get(sessionsRef);
 
     const collaborators = [];
@@ -1027,7 +1164,7 @@ export const isPlanBeingCollaborated = async (planId) => {
  * Subscribe to collaboration changes for a plan
  */
 export const subscribeToCollaboration = (planId, callback) => {
-  const collaborationRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
+  const collaborationRef = ref(database, getActiveUsersPath(planId));
 
   const unsubscribe = onValue(collaborationRef, (snapshot) => {
     const collaborators = [];
@@ -1120,6 +1257,11 @@ export const ensurePlanStructure = async (planId) => {
       needsUpdate = true;
     }
 
+    if (!plan.phaseOverrides || typeof plan.phaseOverrides !== 'object') {
+      updates.phaseOverrides = {};
+      needsUpdate = true;
+    }
+
     if (!plan.bossId) {
       updates.bossId = 'ketuduke';
       needsUpdate = true;
@@ -1172,7 +1314,7 @@ export const ensurePlanStructure = async (planId) => {
     console.error('Error ensuring plan structure:', error);
 
     // Handle permission errors more gracefully
-    if (error.message?.includes('Permission denied')) {
+    if (isPermissionDeniedError(error)) {
       throw new Error('Permission denied: You do not have access to this plan');
     } else {
       throw new Error('Failed to ensure plan structure');
@@ -1182,7 +1324,7 @@ export const ensurePlanStructure = async (planId) => {
 
 export const claimJob = async (planId, jobId, userId, displayName, color) => {
   try {
-    const jobAssignmentsRef = ref(database, `${PLANS_PATH}/${planId}/jobAssignments`);
+    const jobAssignmentsRef = ref(database, getJobAssignmentsPath(planId));
     
     const result = await runTransaction(jobAssignmentsRef, (currentAssignments) => {
       const assignments = currentAssignments || {};
@@ -1226,7 +1368,7 @@ export const claimJob = async (planId, jobId, userId, displayName, color) => {
 
 export const releaseJob = async (planId, jobId, userId) => {
   try {
-    const jobRef = ref(database, `${PLANS_PATH}/${planId}/jobAssignments/${jobId}`);
+    const jobRef = ref(database, getJobAssignmentPath(planId, jobId));
     
     const result = await runTransaction(jobRef, (currentAssignment) => {
       if (!currentAssignment) {
@@ -1254,7 +1396,7 @@ export const releaseJob = async (planId, jobId, userId) => {
 };
 
 export const subscribeToJobAssignments = (planId, callback) => {
-  const jobAssignmentsRef = ref(database, `${PLANS_PATH}/${planId}/jobAssignments`);
+  const jobAssignmentsRef = ref(database, getJobAssignmentsPath(planId));
   
   const unsubscribe = onValue(jobAssignmentsRef, (snapshot) => {
     const assignments = snapshot.exists() ? snapshot.val() : {};
@@ -1269,7 +1411,7 @@ export const subscribeToJobAssignments = (planId, callback) => {
 
 export const getUserCurrentJob = async (planId, userId) => {
   try {
-    const jobAssignmentsRef = ref(database, `${PLANS_PATH}/${planId}/jobAssignments`);
+    const jobAssignmentsRef = ref(database, getJobAssignmentsPath(planId));
     const snapshot = await get(jobAssignmentsRef);
     
     if (!snapshot.exists()) return null;

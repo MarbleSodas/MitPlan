@@ -5,12 +5,13 @@ import { usePlan } from '../../contexts/PlanContext';
 import { useToast } from '../common/Toast';
 import { getTimeline } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
+import { createPlanTimelineLayoutFromTimeline } from '../../utils/timeline/planTimelineLayoutUtils';
 import { ArrowLeft } from 'lucide-react';
 
 const CreatePlanFromTimeline = () => {
   const { timelineId } = useParams();
   const navigate = useNavigate();
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+  const { user } = useAuth();
   const { createNewPlan } = usePlan();
   const { addToast } = useToast();
 
@@ -52,6 +53,11 @@ const CreatePlanFromTimeline = () => {
   };
 
   const handleCreatePlan = async () => {
+    if (!user?.uid) {
+      navigate(`/?next=${encodeURIComponent(`/plan/create-from-timeline/${timelineId}`)}`);
+      return;
+    }
+
     if (!planName.trim()) {
       addToast({
         type: 'error',
@@ -75,8 +81,9 @@ const CreatePlanFromTimeline = () => {
           mainTank: null,
           offTank: null
         },
+        timelineLayout: createPlanTimelineLayoutFromTimeline(timeline),
         // Store timeline reference for potential future use
-        sourceTimelineId: timelineId,
+        sourceTimelineId: timeline.id,
         sourceTimelineName: timeline.name
       };
 

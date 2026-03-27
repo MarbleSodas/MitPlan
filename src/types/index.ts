@@ -17,6 +17,13 @@ export interface Job {
 export type JobsByRole = Record<Role, Job[]>;
 
 export type DamageType = 'physical' | 'magical' | 'both';
+export type BossActionImportance = 'critical' | 'high' | 'medium' | 'low';
+export type BossActionClassification =
+  | 'raidwide'
+  | 'tankbuster'
+  | 'dual_tankbuster'
+  | 'small_parties'
+  | 'mechanic';
 
 export type AbilityType =
   | 'invulnerability'
@@ -142,7 +149,7 @@ export interface BossAction {
   name: string;
   time: number;
   description?: string;
-  damageType?: string;
+  damageType?: DamageType;
   isTankBuster?: boolean;
   isDualTankBuster?: boolean;
   isRaidwide?: boolean;
@@ -150,9 +157,171 @@ export interface BossAction {
   targetTank?: 'mainTank' | 'offTank' | 'both' | 'shared';
   mechanic?: string;
   notes?: string;
-  importance?: string;
+  importance?: BossActionImportance;
   icon?: string;
   timeRange?: string | number[];
+  isCustom?: boolean;
+  source?: string;
+  sourceBoss?: string;
+  libraryId?: string;
+  phaseId?: string;
+  branchId?: string;
+  sourceAbilities?: string[];
+  isMultiHit?: boolean;
+  hitCount?: number;
+  hitIntervalMs?: number;
+  hasDot?: boolean;
+  classification?: BossActionClassification;
+  sourceKind?: string;
+  originalDamagePerHit?: number | string;
+  isPhaseAnchor?: boolean;
+  skipEligible?: boolean;
+  hiddenByPhaseOverride?: boolean;
+}
+
+export interface BossActionTemplate extends Omit<BossAction, 'time'> {
+  time?: never;
+  sourceBoss: string;
+  libraryId: string;
+  occurrenceCount: number;
+}
+
+export interface BossMetadata {
+  level: number;
+  name?: string;
+  icon?: string;
+  description?: string;
+  baseHealth?: {
+    party: number;
+    tank: number;
+  };
+}
+
+export type TimelineFormat = 'legacy_flat' | 'adaptive_damage';
+
+export interface AdaptiveTimelineEvent extends BossAction {}
+
+export interface AdaptiveTimelineBranch {
+  id: string;
+  label?: string;
+  description?: string;
+  fightIndex?: number;
+  branchIndex?: number;
+  sampleCount?: number;
+  sampleRatio?: number;
+  isPrimaryBranch?: boolean;
+  firstDivergenceTimestampMs?: number | null;
+  firstDivergenceTimestamp?: string | null;
+  eventCount?: number;
+  events: AdaptiveTimelineEvent[];
+}
+
+export interface AdaptiveTimelineModel {
+  branches: AdaptiveTimelineBranch[];
+}
+
+export interface TimelineResolution {
+  defaultBranchId: string;
+}
+
+export type TimelinePhaseSource = 'cactbot' | 'fflogs' | 'manual';
+export type TimelinePhaseSkipWindowMode = 'hide_pre_anchor' | 'keep_visible';
+
+export interface TimelinePhase {
+  id: string;
+  name: string;
+  order: number;
+  anchorActionId: string;
+  branchIds: string[];
+  source: TimelinePhaseSource;
+  skipWindowMode: TimelinePhaseSkipWindowMode;
+}
+
+export interface TimelineSource {
+  site: string;
+  url: string;
+  title?: string;
+  lastVerifiedAt?: string;
+}
+
+export interface TimelineAnalysisSource {
+  kind: 'cactbot' | 'fflogs' | 'manual';
+  url?: string;
+  title?: string;
+  lastVerifiedAt?: string;
+  notes?: string;
+}
+
+export interface PhaseOverride {
+  startTime: number;
+}
+
+export interface ResolvedTimelinePhaseSummary {
+  phaseId: string;
+  phaseName: string;
+  order: number;
+  anchorActionId: string;
+  canonicalStartTime: number | null;
+  effectiveStartTime: number | null;
+  inheritedOffset: number;
+  effectiveOffset: number;
+  overrideStartTime: number | null;
+  hiddenActionCount: number;
+}
+
+export interface Timeline {
+  id: string;
+  name: string;
+  bossTags?: string[];
+  bossId?: string | null;
+  bossMetadata?: BossMetadata | null;
+  userId?: string;
+  ownerId?: string;
+  actions: BossAction[];
+  adaptiveModel?: AdaptiveTimelineModel | null;
+  resolution?: TimelineResolution | null;
+  phases?: TimelinePhase[];
+  analysisSources?: TimelineAnalysisSource[];
+  schemaVersion?: number;
+  format?: TimelineFormat;
+  description?: string;
+  isPublic?: boolean;
+  official?: boolean;
+  createdAt?: number;
+  updatedAt?: number;
+  version?: number;
+  likeCount?: number;
+  likedBy?: Record<string, unknown>;
+  guideSources?: TimelineSource[];
+  [key: string]: unknown;
+}
+
+export interface PlanTimelineHealthConfig {
+  party: number;
+  defaultTank: number;
+  mainTank: number;
+  offTank: number;
+}
+
+export interface PlanTimelineLayout {
+  bossId?: string | null;
+  bossTags?: string[];
+  bossMetadata?: BossMetadata | null;
+  actions: BossAction[];
+  adaptiveModel?: AdaptiveTimelineModel | null;
+  resolution?: TimelineResolution | null;
+  phases?: TimelinePhase[];
+  analysisSources?: TimelineAnalysisSource[];
+  schemaVersion?: number;
+  format?: TimelineFormat;
+  description?: string;
+  guideSources?: TimelineSource[];
+  healthConfig: PlanTimelineHealthConfig;
+}
+
+export interface ResolvedTimeline {
+  branchId: string;
+  actions: BossAction[];
 }
 
 export interface Boss {
@@ -208,7 +377,10 @@ export interface Plan {
   lastChangeOrigin?: string;
   sourceTimelineId?: string | null;
   sourceTimelineName?: string | null;
+  phaseOverrides?: Record<string, PhaseOverride>;
   bossTags?: string[];
+  bossMetadata?: BossMetadata | null;
+  timelineLayout?: PlanTimelineLayout | null;
   isLocal?: boolean;
 }
 

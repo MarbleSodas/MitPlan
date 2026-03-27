@@ -1,0 +1,1122 @@
+{
+  "name": "Sugar Riot (M6S) - Official Adaptive Timeline",
+  "description": "Phase-aware migrated adaptive timeline for Sugar Riot (M6S). Phases are seeded from the cactbot r6s timeline sections and mapped onto the existing mitigation-focused MitPlan action library.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "sugar-riot",
+  "bossTags": [
+    "sugar-riot",
+    "M6S"
+  ],
+  "bossMetadata": {
+    "level": 100,
+    "name": "Sugar Riot (M6S)",
+    "icon": "🎨",
+    "description": "The artistic genius of Solution Nine, second boss of AAC Cruiserweight Tier (Savage).",
+    "baseHealth": {
+      "party": 143000,
+      "tank": 225000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r6s.txt",
+      "title": "cactbot M6S timeline",
+      "lastVerifiedAt": "2026-03-25"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r6s.txt",
+      "title": "cactbot M6S timeline",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Section labels seed the planner-visible phase names and ordering."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Planner phase overrides follow the same fight-phase timing model used for FF Logs report analysis."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan pilot migration",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Actions are migrated from the existing local boss library and annotated with phase anchors plus skip-eligible windows."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "sugar-riot-branch-0"
+  },
+  "phases": [
+    {
+      "id": "phase_blank_canvas_1",
+      "name": "Blank Canvas 1",
+      "anchorActionId": "mousse_mural_1",
+      "order": 0,
+      "branchIds": [
+        "sugar-riot-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_desert",
+      "name": "Desert",
+      "anchorActionId": "desert_layer_1",
+      "order": 1,
+      "branchIds": [
+        "sugar-riot-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_adds",
+      "name": "Adds",
+      "anchorActionId": "ready_ore_not_1",
+      "order": 2,
+      "branchIds": [
+        "sugar-riot-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_river",
+      "name": "River",
+      "anchorActionId": "mousse_mural_2",
+      "order": 3,
+      "branchIds": [
+        "sugar-riot-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_blank_canvas_2",
+      "name": "Blank Canvas 2",
+      "anchorActionId": "mousse_mural_3",
+      "order": 4,
+      "branchIds": [
+        "sugar-riot-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    }
+  ],
+  "actions": [
+    {
+      "id": "mousse_mural_1",
+      "name": "Mousse Mural",
+      "time": 10,
+      "description": "Raidwide magical damage that marks the beginning of the fight.",
+      "unmitigatedDamage": "80,000",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🎨",
+      "phaseId": "phase_blank_canvas_1",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Mousse Mural"
+      ]
+    },
+    {
+      "id": "color_riot_1",
+      "name": "Color Riot",
+      "time": 19,
+      "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+      "unmitigatedDamage": "110,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🔫",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_blank_canvas_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Riot"
+      ]
+    },
+    {
+      "id": "color_clash_1",
+      "name": "Color Clash",
+      "time": 34,
+      "description": "Sugar Riot fires her gun into the air. Creates unmarked stack AoEs on healers or role-based stacks depending on the number of shots fired.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💥",
+      "phaseId": "phase_blank_canvas_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Clash"
+      ]
+    },
+    {
+      "id": "sticky_mousse_1",
+      "name": "Sticky Mousse",
+      "time": 54,
+      "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🍮",
+      "phaseId": "phase_blank_canvas_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sticky Mousse"
+      ]
+    },
+    {
+      "id": "color_riot_2",
+      "name": "Color Riot",
+      "time": 69,
+      "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+      "unmitigatedDamage": "110,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🔫",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_blank_canvas_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Riot"
+      ]
+    },
+    {
+      "id": "desert_layer_1",
+      "name": "Desert Layer 1",
+      "time": 94,
+      "description": "Sugar Riot paints cacti on the desert, creating six sets of cacti AoEs that spawn on the arena.",
+      "unmitigatedDamage": "80,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌵",
+      "phaseId": "phase_desert",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Desert Layer 1"
+      ]
+    },
+    {
+      "id": "heating_up_1",
+      "name": "Heating Up",
+      "time": 109,
+      "description": "The marked tank and DPS with Heating Up debuffs explode in a large AoE and inflict damage down debuffs.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🔥",
+      "phaseId": "phase_desert",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Heating Up"
+      ]
+    },
+    {
+      "id": "sticky_mousse_2",
+      "name": "Sticky Mousse",
+      "time": 124,
+      "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🍮",
+      "phaseId": "phase_desert",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sticky Mousse"
+      ]
+    },
+    {
+      "id": "pudding_graf_1",
+      "name": "Pudding Graf",
+      "time": 154,
+      "description": "Sugar Riot jumps to the middle. The next Double Style will tether one role with Normal Paint Bombs and the other role with Winged Paint Bombs.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🎭",
+      "phaseId": "phase_desert",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Pudding Graf"
+      ]
+    },
+    {
+      "id": "color_riot_3",
+      "name": "Color Riot",
+      "time": 165,
+      "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+      "unmitigatedDamage": "110,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🔫",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_desert",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Riot"
+      ]
+    },
+    {
+      "id": "ready_ore_not_1",
+      "name": "Ready Ore Not",
+      "time": 209,
+      "description": "Raidwide magical damage. After this, any alive Mu adds will begin to cast Ore-Rigato, which deals damage and inflicts a stacking DoT to all players.",
+      "unmitigatedDamage": "80,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⛏️",
+      "phaseId": "phase_adds",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Ready Ore Not"
+      ]
+    },
+    {
+      "id": "ready_ore_not_2",
+      "name": "Ready Ore Not",
+      "time": 279,
+      "description": "Raidwide magical damage. After this, any alive Mu adds will begin to cast Ore-Rigato, which deals damage and inflicts a stacking DoT to all players.",
+      "unmitigatedDamage": "80,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⛏️",
+      "phaseId": "phase_adds",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Ready Ore Not"
+      ]
+    },
+    {
+      "id": "color_riot_4",
+      "name": "Color Riot",
+      "time": 359,
+      "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+      "unmitigatedDamage": "110,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🔫",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_adds",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Riot"
+      ]
+    },
+    {
+      "id": "mousse_mural_2",
+      "name": "Mousse Mural",
+      "time": 369,
+      "description": "Raidwide magical damage that marks the end of the adds phase.",
+      "unmitigatedDamage": "80,000",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🎨",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Mousse Mural"
+      ]
+    },
+    {
+      "id": "double_style_2",
+      "name": "Double Style",
+      "time": 399,
+      "description": "Spawns Sweet Shot arrows at the edge of the arena and either Taste of Fire or Taste of Thunder.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🖌️",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Double Style"
+      ]
+    },
+    {
+      "id": "taste_of_lightning_1",
+      "name": "Taste of Lightning",
+      "time": 424,
+      "description": "The screen flashes with lightning. Unmarked AoEs spawn under all players when this happens, and they need to move away from where they were when the flash happened.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Taste of Lightning"
+      ]
+    },
+    {
+      "id": "lightning_storm_1",
+      "name": "Lightning Storm",
+      "time": 434,
+      "description": "One support and one DPS are targeted with a lightning prey marker. This will do an AoE around them and strike the island they are on. This will repeat for all players.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌩️",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Lightning Storm"
+      ]
+    },
+    {
+      "id": "pudding_party_1",
+      "name": "Pudding Party",
+      "time": 449,
+      "description": "A multi-hit stack marker that deals high magical damage. Hits five times.",
+      "unmitigatedDamage": "150,000",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🍰",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Pudding Party"
+      ]
+    },
+    {
+      "id": "mousse_drip_1",
+      "name": "Mousse Drip",
+      "time": 479,
+      "description": "The furthest two players are targeted with a multi-hit stack AoE. Inflicts a short magic vuln each hit, and leaves behind a puddle. Hits four times.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💧",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Mousse Drip"
+      ]
+    },
+    {
+      "id": "moussacre_1",
+      "name": "Moussacre",
+      "time": 484,
+      "description": "Conal AoEs giving a magic vuln on the four closest players.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "📐",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Moussacre"
+      ]
+    },
+    {
+      "id": "taste_of_lightning_2",
+      "name": "Taste of Lightning",
+      "time": 494,
+      "description": "The screen flashes with lightning. Unmarked AoEs spawn under all players when this happens, and they need to move away from where they were when the flash happened.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Taste of Lightning"
+      ]
+    },
+    {
+      "id": "explosion_1",
+      "name": "Explosion",
+      "time": 509,
+      "description": "Summons eight towers which must be soaked. Players must bait Taste of Lightning AoEs outside of the tower before going into their tower.",
+      "unmitigatedDamage": "450,000",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "💣",
+      "phaseId": "phase_river",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Explosion"
+      ]
+    },
+    {
+      "id": "mousse_mural_3",
+      "name": "Mousse Mural",
+      "time": 529,
+      "description": "Raidwide magical damage.",
+      "unmitigatedDamage": "80,000",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🎨",
+      "phaseId": "phase_blank_canvas_2",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Mousse Mural"
+      ]
+    },
+    {
+      "id": "sticky_mousse_3",
+      "name": "Sticky Mousse",
+      "time": 544,
+      "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🍮",
+      "phaseId": "phase_blank_canvas_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sticky Mousse"
+      ]
+    },
+    {
+      "id": "color_riot_5",
+      "name": "Color Riot",
+      "time": 559,
+      "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+      "unmitigatedDamage": "110,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🔫",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_blank_canvas_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Riot"
+      ]
+    },
+    {
+      "id": "color_clash_2",
+      "name": "Color Clash",
+      "time": 579,
+      "description": "Sugar Riot fires her gun into the air. Creates unmarked stack AoEs on healers or role-based stacks depending on the number of shots fired.",
+      "unmitigatedDamage": "74,000",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💥",
+      "phaseId": "phase_blank_canvas_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Color Clash"
+      ]
+    },
+    {
+      "id": "artistic_anarchy",
+      "name": "Artistic Anarchy (Enrage)",
+      "time": 693,
+      "description": "Enrage wipe mechanic that occurs at 11:24 into the fight.",
+      "unmitigatedDamage": "N/A",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "💀",
+      "phaseId": "phase_blank_canvas_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "sugar-riot-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Artistic Anarchy (Enrage)"
+      ]
+    }
+  ],
+  "adaptiveModel": {
+    "branches": [
+      {
+        "id": "sugar-riot-branch-0",
+        "label": "Default Route",
+        "description": "Phase-aware migrated route built from the existing MitPlan action library.",
+        "sampleCount": 1,
+        "sampleRatio": 1,
+        "isPrimaryBranch": true,
+        "firstDivergenceTimestampMs": null,
+        "firstDivergenceTimestamp": null,
+        "eventCount": 27,
+        "events": [
+          {
+            "id": "mousse_mural_1",
+            "name": "Mousse Mural",
+            "time": 10,
+            "description": "Raidwide magical damage that marks the beginning of the fight.",
+            "unmitigatedDamage": "80,000",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🎨",
+            "phaseId": "phase_blank_canvas_1",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Mousse Mural"
+            ]
+          },
+          {
+            "id": "color_riot_1",
+            "name": "Color Riot",
+            "time": 19,
+            "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+            "unmitigatedDamage": "110,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🔫",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_blank_canvas_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Riot"
+            ]
+          },
+          {
+            "id": "color_clash_1",
+            "name": "Color Clash",
+            "time": 34,
+            "description": "Sugar Riot fires her gun into the air. Creates unmarked stack AoEs on healers or role-based stacks depending on the number of shots fired.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💥",
+            "phaseId": "phase_blank_canvas_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Clash"
+            ]
+          },
+          {
+            "id": "sticky_mousse_1",
+            "name": "Sticky Mousse",
+            "time": 54,
+            "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🍮",
+            "phaseId": "phase_blank_canvas_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sticky Mousse"
+            ]
+          },
+          {
+            "id": "color_riot_2",
+            "name": "Color Riot",
+            "time": 69,
+            "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+            "unmitigatedDamage": "110,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🔫",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_blank_canvas_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Riot"
+            ]
+          },
+          {
+            "id": "desert_layer_1",
+            "name": "Desert Layer 1",
+            "time": 94,
+            "description": "Sugar Riot paints cacti on the desert, creating six sets of cacti AoEs that spawn on the arena.",
+            "unmitigatedDamage": "80,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🌵",
+            "phaseId": "phase_desert",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Desert Layer 1"
+            ]
+          },
+          {
+            "id": "heating_up_1",
+            "name": "Heating Up",
+            "time": 109,
+            "description": "The marked tank and DPS with Heating Up debuffs explode in a large AoE and inflict damage down debuffs.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🔥",
+            "phaseId": "phase_desert",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Heating Up"
+            ]
+          },
+          {
+            "id": "sticky_mousse_2",
+            "name": "Sticky Mousse",
+            "time": 124,
+            "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🍮",
+            "phaseId": "phase_desert",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sticky Mousse"
+            ]
+          },
+          {
+            "id": "pudding_graf_1",
+            "name": "Pudding Graf",
+            "time": 154,
+            "description": "Sugar Riot jumps to the middle. The next Double Style will tether one role with Normal Paint Bombs and the other role with Winged Paint Bombs.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🎭",
+            "phaseId": "phase_desert",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Pudding Graf"
+            ]
+          },
+          {
+            "id": "color_riot_3",
+            "name": "Color Riot",
+            "time": 165,
+            "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+            "unmitigatedDamage": "110,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🔫",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_desert",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Riot"
+            ]
+          },
+          {
+            "id": "ready_ore_not_1",
+            "name": "Ready Ore Not",
+            "time": 209,
+            "description": "Raidwide magical damage. After this, any alive Mu adds will begin to cast Ore-Rigato, which deals damage and inflicts a stacking DoT to all players.",
+            "unmitigatedDamage": "80,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⛏️",
+            "phaseId": "phase_adds",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Ready Ore Not"
+            ]
+          },
+          {
+            "id": "ready_ore_not_2",
+            "name": "Ready Ore Not",
+            "time": 279,
+            "description": "Raidwide magical damage. After this, any alive Mu adds will begin to cast Ore-Rigato, which deals damage and inflicts a stacking DoT to all players.",
+            "unmitigatedDamage": "80,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⛏️",
+            "phaseId": "phase_adds",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Ready Ore Not"
+            ]
+          },
+          {
+            "id": "color_riot_4",
+            "name": "Color Riot",
+            "time": 359,
+            "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+            "unmitigatedDamage": "110,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🔫",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_adds",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Riot"
+            ]
+          },
+          {
+            "id": "mousse_mural_2",
+            "name": "Mousse Mural",
+            "time": 369,
+            "description": "Raidwide magical damage that marks the end of the adds phase.",
+            "unmitigatedDamage": "80,000",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🎨",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Mousse Mural"
+            ]
+          },
+          {
+            "id": "double_style_2",
+            "name": "Double Style",
+            "time": 399,
+            "description": "Spawns Sweet Shot arrows at the edge of the arena and either Taste of Fire or Taste of Thunder.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🖌️",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Double Style"
+            ]
+          },
+          {
+            "id": "taste_of_lightning_1",
+            "name": "Taste of Lightning",
+            "time": 424,
+            "description": "The screen flashes with lightning. Unmarked AoEs spawn under all players when this happens, and they need to move away from where they were when the flash happened.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Taste of Lightning"
+            ]
+          },
+          {
+            "id": "lightning_storm_1",
+            "name": "Lightning Storm",
+            "time": 434,
+            "description": "One support and one DPS are targeted with a lightning prey marker. This will do an AoE around them and strike the island they are on. This will repeat for all players.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🌩️",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Lightning Storm"
+            ]
+          },
+          {
+            "id": "pudding_party_1",
+            "name": "Pudding Party",
+            "time": 449,
+            "description": "A multi-hit stack marker that deals high magical damage. Hits five times.",
+            "unmitigatedDamage": "150,000",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🍰",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Pudding Party"
+            ]
+          },
+          {
+            "id": "mousse_drip_1",
+            "name": "Mousse Drip",
+            "time": 479,
+            "description": "The furthest two players are targeted with a multi-hit stack AoE. Inflicts a short magic vuln each hit, and leaves behind a puddle. Hits four times.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💧",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Mousse Drip"
+            ]
+          },
+          {
+            "id": "moussacre_1",
+            "name": "Moussacre",
+            "time": 484,
+            "description": "Conal AoEs giving a magic vuln on the four closest players.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "📐",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Moussacre"
+            ]
+          },
+          {
+            "id": "taste_of_lightning_2",
+            "name": "Taste of Lightning",
+            "time": 494,
+            "description": "The screen flashes with lightning. Unmarked AoEs spawn under all players when this happens, and they need to move away from where they were when the flash happened.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Taste of Lightning"
+            ]
+          },
+          {
+            "id": "explosion_1",
+            "name": "Explosion",
+            "time": 509,
+            "description": "Summons eight towers which must be soaked. Players must bait Taste of Lightning AoEs outside of the tower before going into their tower.",
+            "unmitigatedDamage": "450,000",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "💣",
+            "phaseId": "phase_river",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Explosion"
+            ]
+          },
+          {
+            "id": "mousse_mural_3",
+            "name": "Mousse Mural",
+            "time": 529,
+            "description": "Raidwide magical damage.",
+            "unmitigatedDamage": "80,000",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🎨",
+            "phaseId": "phase_blank_canvas_2",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Mousse Mural"
+            ]
+          },
+          {
+            "id": "sticky_mousse_3",
+            "name": "Sticky Mousse",
+            "time": 544,
+            "description": "Two players are rooted and take magical damage with a short vuln debuff. They receive a 4 second Mousse Mine debuff that does a stack AoE when it expires.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🍮",
+            "phaseId": "phase_blank_canvas_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sticky Mousse"
+            ]
+          },
+          {
+            "id": "color_riot_5",
+            "name": "Color Riot",
+            "time": 559,
+            "description": "Tank buster that targets the closest and furthest player. The raised gun hits the closest player and the lowered gun hits the furthest player. Applies Warm/Cold Tint debuffs that must be alternated.",
+            "unmitigatedDamage": "110,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🔫",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_blank_canvas_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Riot"
+            ]
+          },
+          {
+            "id": "color_clash_2",
+            "name": "Color Clash",
+            "time": 579,
+            "description": "Sugar Riot fires her gun into the air. Creates unmarked stack AoEs on healers or role-based stacks depending on the number of shots fired.",
+            "unmitigatedDamage": "74,000",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💥",
+            "phaseId": "phase_blank_canvas_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Color Clash"
+            ]
+          },
+          {
+            "id": "artistic_anarchy",
+            "name": "Artistic Anarchy (Enrage)",
+            "time": 693,
+            "description": "Enrage wipe mechanic that occurs at 11:24 into the fight.",
+            "unmitigatedDamage": "N/A",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "💀",
+            "phaseId": "phase_blank_canvas_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "sugar-riot-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Artistic Anarchy (Enrage)"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

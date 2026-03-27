@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
 import { bosses } from '../../data';
 import { getTimelinesByBossTag } from '../../services/timelineService';
+import { createPlanTimelineLayoutFromTimeline } from '../../utils/timeline/planTimelineLayoutUtils';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -27,6 +28,7 @@ import {
 const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
   'red-hot-deep-blue-m10s',
+  'the-tyrant-m11s',
   'dancing-green-m5s',
   'sugar-riot',
   'brute-abominator-m7s',
@@ -167,6 +169,10 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
         const selectedTimeline = availableTimelines.find(t => t.id === formData.timelineId);
         if (selectedTimeline) {
           planData.sourceTimelineName = selectedTimeline.name;
+          planData.timelineLayout = createPlanTimelineLayoutFromTimeline(selectedTimeline);
+          planData.bossMetadata = selectedTimeline.bossMetadata || null;
+          planData.bossTags = selectedTimeline.bossTags || planData.bossTags;
+          planData.bossId = selectedTimeline.bossId || planData.bossId;
         }
       }
 

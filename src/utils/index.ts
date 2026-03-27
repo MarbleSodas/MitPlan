@@ -56,6 +56,7 @@ export {
 
 export {
   isDualTankBusterAction,
+  parseUnmitigatedDamage,
   processMultiHitTankBusters
 } from './boss/bossActionUtils.js';
 

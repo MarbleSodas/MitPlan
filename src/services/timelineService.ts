@@ -6,9 +6,55 @@
 
 import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from 'firebase/database';
 import { database } from '../config/firebase';
+import {
+  getOfficialLocalTimelineByBossId,
+  getOfficialLocalTimelineById,
+  isOfficialLocalTimelineId,
+  officialLocalTimelines,
+} from '../data';
+import {
+  createFlatTimelineCopy,
+  normalizeTimelineRecord,
+  prepareTimelineForStorage,
+} from '../utils/timeline/adaptiveTimelineUtils';
+import { syncTimelineBossActionsWithClassification } from '../utils/boss/bossActionUtils';
+import { isPermissionDeniedError } from './firebaseErrorUtils';
 
 const TIMELINES_PATH = 'timelines';
 const USER_COLLECTIONS_PATH = 'userCollections';
+
+const normalizeTimelineEntity = (timelineId, timelineData) =>
+  syncTimelineBossActionsWithClassification(
+    normalizeTimelineRecord({
+      id: timelineId,
+      ...timelineData
+    })
+  );
+
+const getLocalOfficialTimeline = (timelineId) =>
+  getOfficialLocalTimelineById(timelineId) || getOfficialLocalTimelineByBossId(timelineId);
+
+const getCanonicalOfficialTimelineFromRecord = (timelineId, timelineData) => {
+  if (timelineData?.official !== true) {
+    return null;
+  }
+
+  return getOfficialLocalTimelineByBossId(timelineData.bossId) || getOfficialLocalTimelineById(timelineId);
+};
+
+const assertMutableTimelineId = (timelineId, actionDescription = 'modified') => {
+  if (getLocalOfficialTimeline(timelineId) || isOfficialLocalTimelineId(timelineId)) {
+    throw new Error(`Official timelines are managed locally and cannot be ${actionDescription}.`);
+  }
+};
+
+const sortBossTagTimelines = (timelines) => {
+  timelines.sort((a, b) => {
+    if (a.official && !b.official) return -1;
+    if (!a.official && b.official) return 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+};
 
 /**
  * @typedef {Object} BossAction
@@ -82,25 +128,32 @@ export const createTimeline = async (userId, timelineData) => {
       throw new Error('User ID is required to create a timeline');
     }
 
-    // Prepare timeline document with new flexible structure
+    const preparedTimeline = prepareTimelineForStorage(timelineData);
+
+    // Prepare timeline document with adaptive-compatible structure
     const timelineDoc = {
       name: timelineData.name || 'Untitled Timeline',
-      // Support both new bossTags array and legacy bossId
-      bossTags: timelineData.bossTags || (timelineData.bossId ? [timelineData.bossId] : []),
-      bossId: timelineData.bossId || null, // Keep for backward compatibility
-      // Store boss metadata if provided (level, name, icon, etc.)
+      bossTags: preparedTimeline.bossTags || [],
+      bossId: preparedTimeline.bossId || null,
       bossMetadata: timelineData.bossMetadata || null,
       userId: userId,
-      ownerId: userId, // For backward compatibility
-      actions: timelineData.actions || [], // Array of boss actions (both existing and custom)
+      ownerId: userId,
+      actions: preparedTimeline.actions || [],
+      adaptiveModel: preparedTimeline.adaptiveModel || null,
+      resolution: preparedTimeline.resolution || null,
+      phases: preparedTimeline.phases || [],
+      analysisSources: preparedTimeline.analysisSources || [],
+      format: preparedTimeline.format || 'legacy_flat',
+      schemaVersion: preparedTimeline.schemaVersion || 1,
       description: timelineData.description || '',
       isPublic: timelineData.isPublic || false,
-      official: timelineData.official || false, // Mark official timelines
+      official: timelineData.official || false,
       createdAt: timelineData.createdAt || Date.now(),
       updatedAt: Date.now(),
-      version: 2.1, // Increment version for boss metadata support
-      likeCount: 0, // Initialize like count
-      likedBy: {} // Initialize empty liked by map
+      version: preparedTimeline.format === 'adaptive_damage' ? 3.0 : 2.1,
+      likeCount: 0,
+      likedBy: {},
+      guideSources: timelineData.guideSources || preparedTimeline.guideSources || []
     };
 
     // Create timeline in Firebase
@@ -109,7 +162,7 @@ export const createTimeline = async (userId, timelineData) => {
     await set(newTimelineRef, timelineDoc);
 
     console.log('[TimelineService] Timeline created successfully with ID:', newTimelineRef.key);
-    return { id: newTimelineRef.key, ...timelineDoc };
+    return normalizeTimelineEntity(newTimelineRef.key, timelineDoc);
   } catch (error) {
     console.error('[TimelineService] Error creating timeline:', error);
     throw new Error('Failed to create timeline');
@@ -125,19 +178,41 @@ export const getTimeline = async (timelineId) => {
   try {
     console.log('[TimelineService] Fetching timeline:', timelineId);
 
+    const localOfficialTimeline = getLocalOfficialTimeline(timelineId);
+    if (localOfficialTimeline) {
+      console.log('[TimelineService] Resolved local official timeline:', {
+        id: localOfficialTimeline.id,
+        bossId: localOfficialTimeline.bossId,
+        format: localOfficialTimeline.format
+      });
+      return localOfficialTimeline;
+    }
+
     const timelineRef = ref(database, `${TIMELINES_PATH}/${timelineId}`);
     const snapshot = await get(timelineRef);
 
     if (snapshot.exists()) {
       const timelineData = snapshot.val();
+      const normalizedTimeline = normalizeTimelineEntity(timelineId, timelineData);
+      const canonicalOfficialTimeline = getCanonicalOfficialTimelineFromRecord(timelineId, normalizedTimeline);
+      if (canonicalOfficialTimeline) {
+        console.log('[TimelineService] Replacing remote official timeline with local canonical data:', {
+          requestedId: timelineId,
+          canonicalId: canonicalOfficialTimeline.id,
+          bossId: canonicalOfficialTimeline.bossId
+        });
+        return canonicalOfficialTimeline;
+      }
+
       console.log('[TimelineService] Retrieved timeline:', {
         id: timelineId,
-        name: timelineData.name,
-        bossId: timelineData.bossId,
-        actionsCount: timelineData.actions?.length || 0
+        name: normalizedTimeline.name,
+        bossId: normalizedTimeline.bossId,
+        actionsCount: normalizedTimeline.actions?.length || 0,
+        format: normalizedTimeline.format
       });
 
-      return { id: timelineId, ...timelineData };
+      return normalizedTimeline;
     } else {
       throw new Error('Timeline not found');
     }
@@ -156,12 +231,44 @@ export const getTimeline = async (timelineId) => {
 export const updateTimeline = async (timelineId, updates) => {
   try {
     console.log('[TimelineService] Updating timeline:', { timelineId, updates });
+    assertMutableTimelineId(timelineId, 'updated');
 
-    // Prepare updates object
-    const updateData = {
+    let updateData = {
       ...updates,
       updatedAt: Date.now()
     };
+
+    if (
+      updates.actions ||
+      updates.adaptiveModel ||
+      updates.resolution ||
+      updates.phases ||
+      updates.analysisSources ||
+      updates.format ||
+      updates.schemaVersion ||
+      updates.bossTags ||
+      updates.bossId
+    ) {
+      const existingTimeline = await getTimeline(timelineId);
+      const preparedTimeline = prepareTimelineForStorage({
+        ...existingTimeline,
+        ...updates,
+      });
+
+      updateData = {
+        ...updates,
+        bossTags: preparedTimeline.bossTags || existingTimeline.bossTags || [],
+        bossId: preparedTimeline.bossId || existingTimeline.bossId || null,
+        actions: preparedTimeline.actions || [],
+        adaptiveModel: preparedTimeline.adaptiveModel || null,
+        resolution: preparedTimeline.resolution || null,
+        phases: preparedTimeline.phases || [],
+        analysisSources: preparedTimeline.analysisSources || [],
+        format: preparedTimeline.format || existingTimeline.format || 'legacy_flat',
+        schemaVersion: preparedTimeline.schemaVersion || existingTimeline.schemaVersion || 1,
+        updatedAt: Date.now()
+      };
+    }
 
     const timelineRef = ref(database, `${TIMELINES_PATH}/${timelineId}`);
     await update(timelineRef, updateData);
@@ -182,6 +289,7 @@ export const updateTimeline = async (timelineId, updates) => {
 export const deleteTimeline = async (timelineId, userId) => {
   try {
     console.log('[TimelineService] Deleting timeline:', { timelineId, userId });
+    assertMutableTimelineId(timelineId, 'deleted');
 
     // First, verify ownership
     const timeline = await getTimeline(timelineId);
@@ -208,21 +316,26 @@ export const getUserTimelines = async (userId) => {
   try {
     console.log('[TimelineService] Fetching timelines for user:', userId);
 
-    // Fetch owned timelines
-    const timelinesRef = ref(database, TIMELINES_PATH);
-    const userTimelinesQuery = query(timelinesRef, orderByChild('userId'), equalTo(userId));
-    const ownedSnapshot = await get(userTimelinesQuery);
-
     const ownedTimelines = [];
-    if (ownedSnapshot.exists()) {
-      ownedSnapshot.forEach((childSnapshot) => {
-        ownedTimelines.push({
-          id: childSnapshot.key,
-          ...childSnapshot.val(),
-          isOwned: true,
-          inCollection: false
+    try {
+      const timelinesRef = ref(database, TIMELINES_PATH);
+      const userTimelinesQuery = query(timelinesRef, orderByChild('userId'), equalTo(userId));
+      const ownedSnapshot = await get(userTimelinesQuery);
+
+      if (ownedSnapshot.exists()) {
+        ownedSnapshot.forEach((childSnapshot) => {
+          ownedTimelines.push({
+            ...normalizeTimelineEntity(childSnapshot.key, childSnapshot.val()),
+            id: childSnapshot.key,
+            isOwned: true,
+            inCollection: false
+          });
         });
-      });
+      }
+    } catch (error) {
+      if (!isPermissionDeniedError(error)) {
+        throw error;
+      }
     }
 
     // Fetch collection timeline IDs
@@ -234,17 +347,21 @@ export const getUserTimelines = async (userId) => {
       try {
         const timeline = await getTimeline(timelineId);
         if (timeline) {
+          const resolvedTimelineId = timeline.id;
           // Check if this timeline is already in owned timelines
-          const isAlreadyOwned = ownedTimelines.some(t => t.id === timelineId);
+          const isAlreadyOwned = ownedTimelines.some(t => t.id === resolvedTimelineId);
           if (!isAlreadyOwned) {
-            collectionTimelines.push({
-              ...timeline,
-              isOwned: false,
-              inCollection: true
-            });
+            const isAlreadyCollected = collectionTimelines.some((entry) => entry.id === resolvedTimelineId);
+            if (!isAlreadyCollected) {
+              collectionTimelines.push({
+                ...timeline,
+                isOwned: false,
+                inCollection: true
+              });
+            }
           } else {
             // Mark owned timeline as also in collection
-            const ownedTimeline = ownedTimelines.find(t => t.id === timelineId);
+            const ownedTimeline = ownedTimelines.find(t => t.id === resolvedTimelineId);
             if (ownedTimeline) {
               ownedTimeline.inCollection = true;
             }
@@ -270,6 +387,9 @@ export const getUserTimelines = async (userId) => {
 
     return allTimelines;
   } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      return [];
+    }
     console.error('[TimelineService] Error fetching user timelines:', error);
     throw error;
   }
@@ -287,12 +407,17 @@ export const duplicateTimeline = async (timelineId, userId, newName = null) => {
     console.log('[TimelineService] Duplicating timeline:', { timelineId, userId });
 
     const originalTimeline = await getTimeline(timelineId);
+    const editableTimeline = createFlatTimelineCopy(originalTimeline);
 
     const duplicateData = {
-      name: newName || `${originalTimeline.name} (Copy)`,
-      bossId: originalTimeline.bossId,
-      actions: originalTimeline.actions || [],
-      description: originalTimeline.description || '',
+      name: newName || `${editableTimeline.name} (Copy)`,
+      bossId: editableTimeline.bossId,
+      bossTags: editableTimeline.bossTags || [],
+      bossMetadata: editableTimeline.bossMetadata || null,
+      actions: editableTimeline.actions || [],
+      phases: editableTimeline.phases || [],
+      analysisSources: editableTimeline.analysisSources || [],
+      description: editableTimeline.description || '',
       isPublic: false, // Duplicates are private by default
       duplicatedFrom: timelineId,
       duplicatedAt: Date.now()
@@ -331,7 +456,16 @@ export const exportTimeline = async (timelineId) => {
       data: {
         name: timeline.name,
         bossId: timeline.bossId,
+        bossTags: timeline.bossTags || [],
+        bossMetadata: timeline.bossMetadata || null,
         actions: timeline.actions,
+        adaptiveModel: timeline.adaptiveModel || null,
+        resolution: timeline.resolution || null,
+        phases: timeline.phases || [],
+        analysisSources: timeline.analysisSources || [],
+        guideSources: timeline.guideSources || [],
+        format: timeline.format || 'legacy_flat',
+        schemaVersion: timeline.schemaVersion || 1,
         description: timeline.description
       }
     };
@@ -356,10 +490,17 @@ export const importTimeline = async (importData, userId, timelineName = null) =>
       throw new Error('Invalid timeline import data');
     }
 
+    const editableImport = createFlatTimelineCopy(importData.data);
+
     const timelineData = {
       name: timelineName || importData.data.name || 'Imported Timeline',
-      bossId: importData.data.bossId,
-      actions: importData.data.actions || [],
+      bossId: editableImport.bossId,
+      bossTags: editableImport.bossTags || [],
+      bossMetadata: editableImport.bossMetadata || null,
+      actions: editableImport.actions || [],
+      phases: editableImport.phases || [],
+      analysisSources: editableImport.analysisSources || [],
+      guideSources: editableImport.guideSources || [],
       description: importData.data.description || '',
       importedAt: Date.now(),
       originalVersion: importData.version || 'unknown'
@@ -379,29 +520,8 @@ export const importTimeline = async (importData, userId, timelineName = null) =>
 export const getOfficialTimelines = async () => {
   try {
     console.log('[TimelineService] Fetching official timelines');
-
-    const timelinesRef = ref(database, TIMELINES_PATH);
-    const officialTimelinesQuery = query(timelinesRef, orderByChild('official'), equalTo(true));
-    const snapshot = await get(officialTimelinesQuery);
-
-    if (snapshot.exists()) {
-      const timelines = [];
-      snapshot.forEach((childSnapshot) => {
-        timelines.push({
-          id: childSnapshot.key,
-          ...childSnapshot.val()
-        });
-      });
-
-      // Sort by name
-      timelines.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-      console.log('[TimelineService] Retrieved official timelines:', timelines.length);
-      return timelines;
-    } else {
-      console.log('[TimelineService] No official timelines found');
-      return [];
-    }
+    console.log('[TimelineService] Retrieved local official timelines:', officialLocalTimelines.length);
+    return officialLocalTimelines;
   } catch (error) {
     console.error('[TimelineService] Error fetching official timelines:', error);
     throw error;
@@ -416,6 +536,7 @@ export const getOfficialTimelines = async () => {
  */
 export const addBossTag = async (timelineId, bossTag) => {
   try {
+    assertMutableTimelineId(timelineId, 'updated');
     const timeline = await getTimeline(timelineId);
     const currentTags = timeline.bossTags || [];
 
@@ -438,6 +559,7 @@ export const addBossTag = async (timelineId, bossTag) => {
  */
 export const removeBossTag = async (timelineId, bossTag) => {
   try {
+    assertMutableTimelineId(timelineId, 'updated');
     const timeline = await getTimeline(timelineId);
     const currentTags = timeline.bossTags || [];
     const updatedTags = currentTags.filter(tag => tag !== bossTag);
@@ -457,6 +579,7 @@ export const removeBossTag = async (timelineId, bossTag) => {
  */
 export const updateTimelineAction = async (timelineId, actionId, updates) => {
   try {
+    assertMutableTimelineId(timelineId, 'updated');
     const timeline = await getTimeline(timelineId);
     const updatedActions = timeline.actions.map(action =>
       action.id === actionId ? { ...action, ...updates } : action
@@ -475,44 +598,47 @@ export const updateTimelineAction = async (timelineId, actionId, updates) => {
  * @returns {Promise<Array>} Array of timelines matching the boss tag
  */
 export const getTimelinesByBossTag = async (bossTag, officialOnly = false) => {
+  const timelines = [];
+  const localOfficialTimeline = getOfficialLocalTimelineByBossId(bossTag);
+  if (localOfficialTimeline) {
+    timelines.push(localOfficialTimeline);
+  }
+
   try {
     console.log('[TimelineService] Fetching timelines for boss tag:', bossTag);
 
-    const timelinesRef = ref(database, TIMELINES_PATH);
-    const snapshot = await get(timelinesRef);
+    if (!officialOnly) {
+      const timelinesRef = ref(database, TIMELINES_PATH);
+      const snapshot = await get(timelinesRef);
 
-    if (snapshot.exists()) {
-      const timelines = [];
-      snapshot.forEach((childSnapshot) => {
-        const timeline = childSnapshot.val();
-        const bossTags = timeline.bossTags || (timeline.bossId ? [timeline.bossId] : []);
+      if (snapshot.exists()) {
+        snapshot.forEach((childSnapshot) => {
+          const timeline = childSnapshot.val();
+          const bossTags = timeline.bossTags || (timeline.bossId ? [timeline.bossId] : []);
 
-        // Check if timeline matches the boss tag and official filter
-        const matchesBossTag = bossTags.includes(bossTag);
-        const matchesOfficialFilter = !officialOnly || timeline.official === true;
+          if (timeline.official === true) {
+            return;
+          }
 
-        if (matchesBossTag && matchesOfficialFilter) {
-          timelines.push({
-            id: childSnapshot.key,
-            ...timeline
-          });
-        }
-      });
-
-      // Sort by official first, then by name
-      timelines.sort((a, b) => {
-        if (a.official && !b.official) return -1;
-        if (!a.official && b.official) return 1;
-        return (a.name || '').localeCompare(b.name || '');
-      });
-
-      console.log('[TimelineService] Retrieved timelines for boss tag:', timelines.length);
-      return timelines;
-    } else {
-      console.log('[TimelineService] No timelines found');
-      return [];
+          if (bossTags.includes(bossTag)) {
+            timelines.push({
+              ...normalizeTimelineEntity(childSnapshot.key, timeline),
+              id: childSnapshot.key,
+            });
+          }
+        });
+      }
     }
+
+    sortBossTagTimelines(timelines);
+
+    console.log('[TimelineService] Retrieved timelines for boss tag:', timelines.length);
+    return timelines;
   } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      sortBossTagTimelines(timelines);
+      return timelines;
+    }
     console.error('[TimelineService] Error fetching timelines by boss tag:', error);
     throw error;
   }
@@ -525,15 +651,17 @@ export const getTimelinesByBossTag = async (bossTag, officialOnly = false) => {
 export const getAllUniqueBossTags = async () => {
   try {
     console.log('[TimelineService] Fetching all unique boss tags');
+    const tagsSet = new Set();
 
     const timelinesRef = ref(database, TIMELINES_PATH);
     const snapshot = await get(timelinesRef);
 
     if (snapshot.exists()) {
-      const tagsSet = new Set();
-
       snapshot.forEach((childSnapshot) => {
         const timeline = childSnapshot.val();
+        if (timeline.official === true) {
+          return;
+        }
         const bossTags = timeline.bossTags || (timeline.bossId ? [timeline.bossId] : []);
 
         bossTags.forEach(tag => {
@@ -544,88 +672,88 @@ export const getAllUniqueBossTags = async () => {
       });
 
       const uniqueTags = Array.from(tagsSet).sort();
-      console.log('[TimelineService] Retrieved unique boss tags:', uniqueTags.length);
+      console.log('[TimelineService] Retrieved community boss tags:', uniqueTags.length);
       return uniqueTags;
-    } else {
-      console.log('[TimelineService] No timelines found');
+    }
+
+    const uniqueTags = Array.from(tagsSet).sort();
+    console.log('[TimelineService] Retrieved community boss tags:', uniqueTags.length);
+    return uniqueTags;
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
       return [];
     }
-  } catch (error) {
     console.error('[TimelineService] Error fetching unique boss tags:', error);
     throw error;
   }
 };
 
 /**
- * Get all public timelines with optional sorting
+ * Get all public community timelines with optional sorting
  * @param {string} sortBy - Sort method: 'popularity', 'recent', 'name', 'actions'
- * @returns {Promise<Array>} Array of public timelines
+ * @returns {Promise<Array>} Array of public community timelines
  */
 export const getAllPublicTimelines = async (sortBy = 'popularity') => {
   try {
     console.log('[TimelineService] Fetching all public timelines, sortBy:', sortBy);
 
+    const timelines = [];
     const timelinesRef = ref(database, TIMELINES_PATH);
     const publicTimelinesQuery = query(timelinesRef, orderByChild('isPublic'), equalTo(true));
     const snapshot = await get(publicTimelinesQuery);
 
     if (snapshot.exists()) {
-      const timelines = [];
       snapshot.forEach((childSnapshot) => {
+        const timeline = childSnapshot.val();
+        if (timeline.official === true) {
+          return;
+        }
         timelines.push({
+          ...normalizeTimelineEntity(childSnapshot.key, timeline),
           id: childSnapshot.key,
-          ...childSnapshot.val()
         });
       });
+    }
 
-      // Sort based on the sortBy parameter
-      switch (sortBy) {
-        case 'popularity':
-          // Sort by like count, then by official status, then by name
-          timelines.sort((a, b) => {
-            const likesA = a.likeCount || 0;
-            const likesB = b.likeCount || 0;
-            if (likesA !== likesB) return likesB - likesA;
-            if (a.official && !b.official) return -1;
-            if (!a.official && b.official) return 1;
-            return (a.name || '').localeCompare(b.name || '');
-          });
-          break;
-        case 'recent':
-          // Sort by most recently updated
-          timelines.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-          break;
-        case 'name':
-          // Sort alphabetically by name
-          timelines.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-          break;
-        case 'actions':
-          // Sort by number of actions (descending)
-          timelines.sort((a, b) => {
-            const actionsA = a.actions?.length || 0;
-            const actionsB = b.actions?.length || 0;
-            return actionsB - actionsA;
-          });
-          break;
-        default:
-          // Default to popularity
-          timelines.sort((a, b) => {
-            const likesA = a.likeCount || 0;
-            const likesB = b.likeCount || 0;
-            if (likesA !== likesB) return likesB - likesA;
-            if (a.official && !b.official) return -1;
-            if (!a.official && b.official) return 1;
-            return (a.name || '').localeCompare(b.name || '');
-          });
-      }
+    // Sort based on the sortBy parameter
+    switch (sortBy) {
+      case 'popularity':
+        // Sort by like count, then by name
+        timelines.sort((a, b) => {
+          const likesA = a.likeCount || 0;
+          const likesB = b.likeCount || 0;
+          if (likesA !== likesB) return likesB - likesA;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+        break;
+      case 'recent':
+        timelines.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        break;
+      case 'name':
+        timelines.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        break;
+      case 'actions':
+        timelines.sort((a, b) => {
+          const actionsA = a.actions?.length || 0;
+          const actionsB = b.actions?.length || 0;
+          return actionsB - actionsA;
+        });
+        break;
+      default:
+        timelines.sort((a, b) => {
+          const likesA = a.likeCount || 0;
+          const likesB = b.likeCount || 0;
+          if (likesA !== likesB) return likesB - likesA;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+    }
 
-      console.log('[TimelineService] Retrieved public timelines:', timelines.length);
-      return timelines;
-    } else {
-      console.log('[TimelineService] No public timelines found');
+    console.log('[TimelineService] Retrieved public community timelines:', timelines.length);
+    return timelines;
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
       return [];
     }
-  } catch (error) {
     console.error('[TimelineService] Error fetching public timelines:', error);
     throw error;
   }
@@ -685,6 +813,7 @@ export const makeAllTimelinesPublic = async () => {
 export const toggleLike = async (timelineId, userId) => {
   try {
     console.log('[TimelineService] Toggling like:', { timelineId, userId });
+    assertMutableTimelineId(timelineId, 'liked');
 
     if (!timelineId || !userId) {
       throw new Error('Timeline ID and User ID are required');
@@ -752,6 +881,10 @@ export const hasUserLiked = async (timelineId, userId) => {
       return false;
     }
 
+    if (getLocalOfficialTimeline(timelineId)) {
+      return false;
+    }
+
     const likedByRef = ref(database, `${TIMELINES_PATH}/${timelineId}/likedBy/${userId}`);
     const snapshot = await get(likedByRef);
     return snapshot.exists();
@@ -769,6 +902,10 @@ export const hasUserLiked = async (timelineId, userId) => {
 export const getLikeCount = async (timelineId) => {
   try {
     if (!timelineId) {
+      return 0;
+    }
+
+    if (getLocalOfficialTimeline(timelineId)) {
       return 0;
     }
 
@@ -843,6 +980,9 @@ export const isInCollection = async (userId, timelineId) => {
     const snapshot = await get(collectionRef);
     return snapshot.exists();
   } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      return false;
+    }
     console.error('[TimelineService] Error checking collection:', error);
     return false;
   }
@@ -872,6 +1012,9 @@ export const getCollectionTimelineIds = async (userId) => {
       return [];
     }
   } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      return [];
+    }
     console.error('[TimelineService] Error fetching collection timeline IDs:', error);
     throw error;
   }
@@ -886,6 +1029,7 @@ export const getCollectionTimelineIds = async (userId) => {
 export const togglePublicStatus = async (timelineId, isPublic) => {
   try {
     console.log('[TimelineService] Toggling public status for timeline:', timelineId, 'to:', isPublic);
+    assertMutableTimelineId(timelineId, 'reconfigured');
 
     await updateTimeline(timelineId, { isPublic });
 

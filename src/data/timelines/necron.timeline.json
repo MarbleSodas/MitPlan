@@ -1,0 +1,1103 @@
+{
+  "name": "Necron - Official Adaptive Timeline",
+  "description": "Phase-aware migrated adaptive timeline for Necron. The local mitigation route is preserved while cactbot section markers are mapped onto the major Fear of Death, Grand Cross, and post-transition sections.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "necron",
+  "bossTags": [
+    "necron",
+    "necron-ex"
+  ],
+  "bossMetadata": {
+    "level": 100,
+    "name": "Necron",
+    "icon": "💀",
+    "description": "The harbinger of death and darkness, wielding necrotic magic and existential terror.",
+    "baseHealth": {
+      "party": 143000,
+      "tank": 225000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/trial/necron-ex.txt",
+      "title": "cactbot necron-ex timeline",
+      "lastVerifiedAt": "2026-03-26"
+    },
+    {
+      "site": "icy-veins",
+      "url": "https://www.icy-veins.com/ffxiv/necrons-embrace-extreme-trial-guide",
+      "title": "The Minstrel's Ballad: Necron's Embrace Extreme Trial Guide for FFXIV",
+      "lastVerifiedAt": "2026-03-26"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/trial/necron-ex.txt",
+      "title": "cactbot necron-ex timeline",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "Section labels seed the planner-visible phase names and ordering."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "Planner phase overrides follow the same fight-phase timing model used for FF Logs report analysis."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan legacy trial migration",
+      "lastVerifiedAt": "2026-03-26",
+      "notes": "Actions are preserved from the existing local mitigation route and annotated with cactbot-aligned phase anchors plus skip windows."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "necron-branch-0"
+  },
+  "phases": [
+    {
+      "id": "phase_fear_of_death_1",
+      "name": "Fear of Death 1",
+      "anchorActionId": "fear_of_death_1",
+      "order": 0,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_fear_of_death_2",
+      "name": "Fear of Death 2",
+      "anchorActionId": "fear_of_death_2",
+      "order": 1,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_grand_cross_1",
+      "name": "Grand Cross 1",
+      "anchorActionId": "grand_cross_1",
+      "order": 2,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_darkness_of_eternity",
+      "name": "Darkness of Eternity",
+      "anchorActionId": "darkness_of_eternity_1",
+      "order": 3,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_p2_opener",
+      "name": "P2 Opener",
+      "anchorActionId": "ends_embrace_2",
+      "order": 4,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_mass_macabre",
+      "name": "Mass Macabre",
+      "anchorActionId": "macabre_mark_1",
+      "order": 5,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_fear_of_death_3",
+      "name": "Fear of Death 3",
+      "anchorActionId": "fear_of_death_3",
+      "order": 6,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_grand_cross_2",
+      "name": "Grand Cross 2",
+      "anchorActionId": "grand_cross_finale",
+      "order": 7,
+      "branchIds": [
+        "necron-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    }
+  ],
+  "actions": [
+    {
+      "id": "necron_shock_1",
+      "name": "Necron Shock",
+      "time": 14,
+      "description": "Dual tank buster that targets both tanks with electrical damage.",
+      "unmitigatedDamage": "200,368",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_fear_of_death_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Necron Shock"
+      ]
+    },
+    {
+      "id": "fear_of_death_1",
+      "name": "Fear of Death",
+      "time": 28,
+      "description": "Raidwide hit that spawns dark puddles with arms firing line AoEs from them.",
+      "unmitigatedDamage": "91,841",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💀",
+      "phaseId": "phase_fear_of_death_1",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Fear of Death"
+      ]
+    },
+    {
+      "id": "cold_grip_1",
+      "name": "Cold Grip",
+      "time": 35,
+      "description": "Two-part slam on a side; a glowing arm marks the repeat side.",
+      "unmitigatedDamage": "90,728",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🫷",
+      "phaseId": "phase_fear_of_death_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Cold Grip"
+      ]
+    },
+    {
+      "id": "shockwave_1",
+      "name": "Shockwave",
+      "time": 59,
+      "description": "Conal tank buster shockwave aimed forward. Massive damage that requires strong mitigation.",
+      "unmitigatedDamage": "127,779",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "isTankBuster": true,
+      "phaseId": "phase_fear_of_death_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Shockwave"
+      ]
+    },
+    {
+      "id": "shockwave_2",
+      "name": "Shockwave",
+      "time": 79,
+      "description": "Raid-wide shockwave attack hitting all party members with electrical damage.",
+      "unmitigatedDamage": "96,933",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "phaseId": "phase_fear_of_death_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Shockwave"
+      ]
+    },
+    {
+      "id": "fear_of_death_2",
+      "name": "Fear of Death",
+      "time": 92,
+      "description": "Repeated fear-based party-wide magical damage.",
+      "unmitigatedDamage": "91,071",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💀",
+      "phaseId": "phase_fear_of_death_2",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Fear of Death"
+      ]
+    },
+    {
+      "id": "choking_grasp_2",
+      "name": "Choking Grasp",
+      "time": 98,
+      "description": "Continued grasping attack affecting multiple players.",
+      "unmitigatedDamage": "90,997",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤏",
+      "phaseId": "phase_fear_of_death_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Choking Grasp"
+      ]
+    },
+    {
+      "id": "ends_embrace_1",
+      "name": "The End's Embrace",
+      "time": 103,
+      "description": "Party-wide magical damage representing Necron's deadly embrace.",
+      "unmitigatedDamage": "116,046",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤗",
+      "phaseId": "phase_fear_of_death_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "The End's Embrace"
+      ]
+    },
+    {
+      "id": "necron_shock_2",
+      "name": "Necron Shock",
+      "time": 114,
+      "description": "Second dual tank buster targeting both tanks with electrical damage.",
+      "unmitigatedDamage": "208,778",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_fear_of_death_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Necron Shock"
+      ]
+    },
+    {
+      "id": "shockwave_3",
+      "name": "Shockwave",
+      "time": 125,
+      "description": "Third raid-wide shockwave attack hitting all party members with electrical damage.",
+      "unmitigatedDamage": "96,069",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "phaseId": "phase_fear_of_death_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Shockwave"
+      ]
+    },
+    {
+      "id": "grand_cross_1",
+      "name": "Grand Cross",
+      "time": 140,
+      "description": "Necron's signature cross-shaped magical attack dealing massive party-wide damage.",
+      "unmitigatedDamage": "145,287",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "✝️",
+      "phaseId": "phase_grand_cross_1",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Grand Cross"
+      ]
+    },
+    {
+      "id": "grand_cross_2",
+      "name": "Grand Cross",
+      "time": 165,
+      "description": "Second casting of the devastating cross-shaped attack.",
+      "unmitigatedDamage": "124,866",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "✝️",
+      "phaseId": "phase_grand_cross_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Grand Cross"
+      ]
+    },
+    {
+      "id": "neutron_ring_1",
+      "name": "Neutron Ring",
+      "time": 187,
+      "description": "Massive ring-shaped magical attack dealing heavy party-wide damage.",
+      "unmitigatedDamage": "160,852",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "⭕",
+      "phaseId": "phase_grand_cross_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Neutron Ring"
+      ]
+    },
+    {
+      "id": "darkness_of_eternity_1",
+      "name": "Darkness of Eternity",
+      "time": 249,
+      "timeRange": [
+        249,
+        259
+      ],
+      "description": "Necron's ultimate darkness attack dealing massive party-wide magical damage.",
+      "unmitigatedDamage": "179,416",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🌌",
+      "phaseId": "phase_darkness_of_eternity",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Darkness of Eternity"
+      ]
+    },
+    {
+      "id": "ends_embrace_2",
+      "name": "The End's Embrace",
+      "time": 318,
+      "timeRange": [
+        318,
+        332
+      ],
+      "description": "Second instance of Necron's deadly embrace attack.",
+      "unmitigatedDamage": "113,474",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤗",
+      "phaseId": "phase_p2_opener",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "The End's Embrace"
+      ]
+    },
+    {
+      "id": "necron_shock_3",
+      "name": "Necron Shock",
+      "time": 376,
+      "description": "Third dual tank buster targeting both tanks with electrical damage.",
+      "unmitigatedDamage": "111,518",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_p2_opener",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Necron Shock"
+      ]
+    },
+    {
+      "id": "shockwave_4",
+      "name": "Shockwave",
+      "time": 423,
+      "description": "Fourth raid-wide shockwave attack hitting all party members with electrical damage.",
+      "unmitigatedDamage": "97,539",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "phaseId": "phase_p2_opener",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Shockwave"
+      ]
+    },
+    {
+      "id": "macabre_mark_1",
+      "name": "Macabre Mark",
+      "time": 438,
+      "description": "Dark marking attack that targets specific players with death magic.",
+      "unmitigatedDamage": "95,234",
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🔮",
+      "phaseId": "phase_mass_macabre",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Macabre Mark"
+      ]
+    },
+    {
+      "id": "necron_shock_4",
+      "name": "Necron Shock",
+      "time": 448,
+      "description": "Fourth dual tank buster targeting both tanks with electrical damage.",
+      "unmitigatedDamage": "143,020",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_mass_macabre",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Necron Shock"
+      ]
+    },
+    {
+      "id": "shockwave_5",
+      "name": "Shockwave",
+      "time": 510,
+      "description": "Fifth raid-wide shockwave attack hitting all party members with electrical damage.",
+      "unmitigatedDamage": "98,758",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "⚡",
+      "phaseId": "phase_mass_macabre",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Shockwave"
+      ]
+    },
+    {
+      "id": "fear_of_death_3",
+      "name": "Fear of Death",
+      "time": 517,
+      "description": "Repeated fear-based party-wide magical damage.",
+      "unmitigatedDamage": "142,016",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💀",
+      "phaseId": "phase_fear_of_death_3",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Fear of Death"
+      ]
+    },
+    {
+      "id": "choking_grasp_3",
+      "name": "Choking Grasp",
+      "time": 522,
+      "description": "Continued grasping attack affecting multiple players.",
+      "unmitigatedDamage": "105,855",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤏",
+      "phaseId": "phase_fear_of_death_3",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Choking Grasp"
+      ]
+    },
+    {
+      "id": "smite_of_gloom_2",
+      "name": "Smite of Gloom",
+      "time": 566,
+      "description": "Major party-wide magical damage attack imbued with dark energy.",
+      "unmitigatedDamage": "124,015",
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌑",
+      "phaseId": "phase_fear_of_death_3",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Smite of Gloom"
+      ]
+    },
+    {
+      "id": "grand_cross_finale",
+      "name": "Grand Cross",
+      "time": 580,
+      "description": "Final phase Grand Cross with devastating party-wide damage.",
+      "unmitigatedDamage": "124,101",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "✝️",
+      "phaseId": "phase_grand_cross_2",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Grand Cross"
+      ]
+    },
+    {
+      "id": "darkness_of_eternity_enrage",
+      "name": "Darkness of Eternity (Enrage)",
+      "time": 630,
+      "description": "Enrage wipe mechanic that occurs at 10:30 into the fight.",
+      "unmitigatedDamage": "N/A",
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "💀",
+      "phaseId": "phase_grand_cross_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "necron-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Darkness of Eternity (Enrage)"
+      ]
+    }
+  ],
+  "adaptiveModel": {
+    "branches": [
+      {
+        "id": "necron-branch-0",
+        "label": "Default Route",
+        "description": "Phase-aware migrated route built from the existing MitPlan action library.",
+        "sampleCount": 1,
+        "sampleRatio": 1,
+        "isPrimaryBranch": true,
+        "firstDivergenceTimestampMs": null,
+        "firstDivergenceTimestamp": null,
+        "eventCount": 25,
+        "events": [
+          {
+            "id": "necron_shock_1",
+            "name": "Necron Shock",
+            "time": 14,
+            "description": "Dual tank buster that targets both tanks with electrical damage.",
+            "unmitigatedDamage": "200,368",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_fear_of_death_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Necron Shock"
+            ]
+          },
+          {
+            "id": "fear_of_death_1",
+            "name": "Fear of Death",
+            "time": 28,
+            "description": "Raidwide hit that spawns dark puddles with arms firing line AoEs from them.",
+            "unmitigatedDamage": "91,841",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💀",
+            "phaseId": "phase_fear_of_death_1",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Fear of Death"
+            ]
+          },
+          {
+            "id": "cold_grip_1",
+            "name": "Cold Grip",
+            "time": 35,
+            "description": "Two-part slam on a side; a glowing arm marks the repeat side.",
+            "unmitigatedDamage": "90,728",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🫷",
+            "phaseId": "phase_fear_of_death_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Cold Grip"
+            ]
+          },
+          {
+            "id": "shockwave_1",
+            "name": "Shockwave",
+            "time": 59,
+            "description": "Conal tank buster shockwave aimed forward. Massive damage that requires strong mitigation.",
+            "unmitigatedDamage": "127,779",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "isTankBuster": true,
+            "phaseId": "phase_fear_of_death_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Shockwave"
+            ]
+          },
+          {
+            "id": "shockwave_2",
+            "name": "Shockwave",
+            "time": 79,
+            "description": "Raid-wide shockwave attack hitting all party members with electrical damage.",
+            "unmitigatedDamage": "96,933",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "phaseId": "phase_fear_of_death_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Shockwave"
+            ]
+          },
+          {
+            "id": "fear_of_death_2",
+            "name": "Fear of Death",
+            "time": 92,
+            "description": "Repeated fear-based party-wide magical damage.",
+            "unmitigatedDamage": "91,071",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💀",
+            "phaseId": "phase_fear_of_death_2",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Fear of Death"
+            ]
+          },
+          {
+            "id": "choking_grasp_2",
+            "name": "Choking Grasp",
+            "time": 98,
+            "description": "Continued grasping attack affecting multiple players.",
+            "unmitigatedDamage": "90,997",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🤏",
+            "phaseId": "phase_fear_of_death_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Choking Grasp"
+            ]
+          },
+          {
+            "id": "ends_embrace_1",
+            "name": "The End's Embrace",
+            "time": 103,
+            "description": "Party-wide magical damage representing Necron's deadly embrace.",
+            "unmitigatedDamage": "116,046",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🤗",
+            "phaseId": "phase_fear_of_death_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "The End's Embrace"
+            ]
+          },
+          {
+            "id": "necron_shock_2",
+            "name": "Necron Shock",
+            "time": 114,
+            "description": "Second dual tank buster targeting both tanks with electrical damage.",
+            "unmitigatedDamage": "208,778",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_fear_of_death_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Necron Shock"
+            ]
+          },
+          {
+            "id": "shockwave_3",
+            "name": "Shockwave",
+            "time": 125,
+            "description": "Third raid-wide shockwave attack hitting all party members with electrical damage.",
+            "unmitigatedDamage": "96,069",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "phaseId": "phase_fear_of_death_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Shockwave"
+            ]
+          },
+          {
+            "id": "grand_cross_1",
+            "name": "Grand Cross",
+            "time": 140,
+            "description": "Necron's signature cross-shaped magical attack dealing massive party-wide damage.",
+            "unmitigatedDamage": "145,287",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "✝️",
+            "phaseId": "phase_grand_cross_1",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Grand Cross"
+            ]
+          },
+          {
+            "id": "grand_cross_2",
+            "name": "Grand Cross",
+            "time": 165,
+            "description": "Second casting of the devastating cross-shaped attack.",
+            "unmitigatedDamage": "124,866",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "✝️",
+            "phaseId": "phase_grand_cross_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Grand Cross"
+            ]
+          },
+          {
+            "id": "neutron_ring_1",
+            "name": "Neutron Ring",
+            "time": 187,
+            "description": "Massive ring-shaped magical attack dealing heavy party-wide damage.",
+            "unmitigatedDamage": "160,852",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "⭕",
+            "phaseId": "phase_grand_cross_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Neutron Ring"
+            ]
+          },
+          {
+            "id": "darkness_of_eternity_1",
+            "name": "Darkness of Eternity",
+            "time": 249,
+            "timeRange": [
+              249,
+              259
+            ],
+            "description": "Necron's ultimate darkness attack dealing massive party-wide magical damage.",
+            "unmitigatedDamage": "179,416",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "🌌",
+            "phaseId": "phase_darkness_of_eternity",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Darkness of Eternity"
+            ]
+          },
+          {
+            "id": "ends_embrace_2",
+            "name": "The End's Embrace",
+            "time": 318,
+            "timeRange": [
+              318,
+              332
+            ],
+            "description": "Second instance of Necron's deadly embrace attack.",
+            "unmitigatedDamage": "113,474",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🤗",
+            "phaseId": "phase_p2_opener",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "The End's Embrace"
+            ]
+          },
+          {
+            "id": "necron_shock_3",
+            "name": "Necron Shock",
+            "time": 376,
+            "description": "Third dual tank buster targeting both tanks with electrical damage.",
+            "unmitigatedDamage": "111,518",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_p2_opener",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Necron Shock"
+            ]
+          },
+          {
+            "id": "shockwave_4",
+            "name": "Shockwave",
+            "time": 423,
+            "description": "Fourth raid-wide shockwave attack hitting all party members with electrical damage.",
+            "unmitigatedDamage": "97,539",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "phaseId": "phase_p2_opener",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Shockwave"
+            ]
+          },
+          {
+            "id": "macabre_mark_1",
+            "name": "Macabre Mark",
+            "time": 438,
+            "description": "Dark marking attack that targets specific players with death magic.",
+            "unmitigatedDamage": "95,234",
+            "damageType": "magical",
+            "importance": "medium",
+            "icon": "🔮",
+            "phaseId": "phase_mass_macabre",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Macabre Mark"
+            ]
+          },
+          {
+            "id": "necron_shock_4",
+            "name": "Necron Shock",
+            "time": 448,
+            "description": "Fourth dual tank buster targeting both tanks with electrical damage.",
+            "unmitigatedDamage": "143,020",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_mass_macabre",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Necron Shock"
+            ]
+          },
+          {
+            "id": "shockwave_5",
+            "name": "Shockwave",
+            "time": 510,
+            "description": "Fifth raid-wide shockwave attack hitting all party members with electrical damage.",
+            "unmitigatedDamage": "98,758",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "⚡",
+            "phaseId": "phase_mass_macabre",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Shockwave"
+            ]
+          },
+          {
+            "id": "fear_of_death_3",
+            "name": "Fear of Death",
+            "time": 517,
+            "description": "Repeated fear-based party-wide magical damage.",
+            "unmitigatedDamage": "142,016",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "💀",
+            "phaseId": "phase_fear_of_death_3",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Fear of Death"
+            ]
+          },
+          {
+            "id": "choking_grasp_3",
+            "name": "Choking Grasp",
+            "time": 522,
+            "description": "Continued grasping attack affecting multiple players.",
+            "unmitigatedDamage": "105,855",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🤏",
+            "phaseId": "phase_fear_of_death_3",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Choking Grasp"
+            ]
+          },
+          {
+            "id": "smite_of_gloom_2",
+            "name": "Smite of Gloom",
+            "time": 566,
+            "description": "Major party-wide magical damage attack imbued with dark energy.",
+            "unmitigatedDamage": "124,015",
+            "damageType": "magical",
+            "importance": "high",
+            "icon": "🌑",
+            "phaseId": "phase_fear_of_death_3",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Smite of Gloom"
+            ]
+          },
+          {
+            "id": "grand_cross_finale",
+            "name": "Grand Cross",
+            "time": 580,
+            "description": "Final phase Grand Cross with devastating party-wide damage.",
+            "unmitigatedDamage": "124,101",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "✝️",
+            "phaseId": "phase_grand_cross_2",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Grand Cross"
+            ]
+          },
+          {
+            "id": "darkness_of_eternity_enrage",
+            "name": "Darkness of Eternity (Enrage)",
+            "time": 630,
+            "description": "Enrage wipe mechanic that occurs at 10:30 into the fight.",
+            "unmitigatedDamage": "N/A",
+            "damageType": "magical",
+            "importance": "critical",
+            "icon": "💀",
+            "phaseId": "phase_grand_cross_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "necron-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Darkness of Eternity (Enrage)"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -63,7 +63,10 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
             <>
               {currentUser && (
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(currentUser.userId) }}>
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                    style={{ background: currentUser.color || generateUserColor(currentUser.userId) }}
+                  >
                     {getInitials(currentUser.displayName)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -78,7 +81,10 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
 
               {otherUsers.map((c) => (
                 <div key={c.sessionId} className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: generateUserColor(c.userId) }}>
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                    style={{ background: c.color || generateUserColor(c.userId) }}
+                  >
                     {getInitials(c.displayName)}
                   </div>
                   <div className="flex-1 min-w-0">

@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { usePresenceOptional } from '../../contexts/PresenceContext';
-import type { ElementType } from '../../types/presence';
-
+import { describePresenceActivity } from '../../types/presence';
 
 const generateUserColor = (userId) => {
   const colors = [
@@ -33,25 +32,6 @@ const getInitials = (displayName) => {
     .slice(0, 2);
 };
 
-const getActivityDescription = (presence): string | null => {
-  if (!presence) return null;
-  
-  if (presence.selectedBossActionId) {
-    return 'Viewing timeline';
-  }
-  if (presence.focusedMitigationId) {
-    return 'Selecting mitigation';
-  }
-  if (presence.focusedJobId) {
-    return 'Configuring jobs';
-  }
-  if (presence.focusedTankPosition) {
-    const pos = presence.focusedTankPosition === 'mainTank' ? 'MT' : 'OT';
-    return `Setting ${pos}`;
-  }
-  return null;
-};
-
 const ActiveUsersDisplay = ({ collaborators = [], currentSessionId, maxDisplayUsers = 8 }) => {
   const [hoveredUser, setHoveredUser] = useState(null);
   const presence = usePresenceOptional();
@@ -68,7 +48,7 @@ const ActiveUsersDisplay = ({ collaborators = [], currentSessionId, maxDisplayUs
     
     const activities = new Map();
     presence.presenceMap.forEach((userPresence, sessionId) => {
-      const activity = getActivityDescription(userPresence);
+      const activity = describePresenceActivity(userPresence);
       if (activity) {
         activities.set(sessionId, activity);
       }

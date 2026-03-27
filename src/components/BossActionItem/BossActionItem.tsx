@@ -12,13 +12,38 @@ import {
   isMitigationAvailable,
   calculateBarrierAmount,
   getHealingPotency,
-  calculateHealingAmount
+  calculateHealingAmount,
+  parseUnmitigatedDamage
 } from '../../utils';
 
 
 import { mitigationAbilities } from '../../data';
 import { useTankPositionContext } from '../../contexts';
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
+import { getPlanTimelineLayout } from '../../utils/timeline/planTimelineLayoutUtils';
+import type {
+  BossAction as BossActionType,
+  PhaseOverride,
+  ResolvedTimelinePhaseSummary,
+} from '../../types';
+import PhaseOverrideTimeStrip from '../planner/PhaseOverridesPanel';
+
+type BossActionItemProps = {
+  action: BossActionType;
+  isSelected: boolean;
+  assignments: Record<string, unknown[]>;
+  getActiveMitigations: (...args: any[]) => any[];
+  selectedJobs: any;
+  currentBossLevel: number;
+  baseHealth: any;
+  phaseSummary?: ResolvedTimelinePhaseSummary | null;
+  phaseOverrides?: Record<string, PhaseOverride>;
+  skippedActions?: BossActionType[];
+  phaseOverridesDisabled?: boolean;
+  onPhaseOverrideChange?: (nextPhaseOverrides: Record<string, PhaseOverride>) => void;
+  onClick: (event?: unknown) => void;
+  children?: React.ReactNode;
+};
 
 const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, $time, $isTouched, ...rest }) => {
   const base = 'relative w-full min-h-0 flex flex-col mb-2 rounded-lg shadow-sm border transition-all cursor-pointer bg-card text-foreground overflow-hidden';
@@ -38,16 +63,6 @@ const BossAction = ({ children, className = '', $isSelected, $importance, $hasAs
     </div>
   );
 };
-
-
-const ActionTime = ({ children, className = '', ...rest }) => (
-  <div
-    {...rest}
-    className={`w-full px-2.5 h-[26px] flex items-center justify-center text-center font-bold text-foreground bg-muted/40 backdrop-blur-sm border-b border-border select-none shrink-0 text-xs ${className}`}
-  >
-    <span className="mr-1 opacity-60">⏱️</span> {children}
-  </div>
-);
 
 
 const ActionIcon = ({ children, className = '', ...rest }) => (
@@ -106,9 +121,14 @@ const BossActionItem = memo(({
   selectedJobs,
   currentBossLevel,
   baseHealth,
+  phaseSummary = null,
+  phaseOverrides = {},
+  skippedActions = [],
+  phaseOverridesDisabled = false,
+  onPhaseOverrideChange,
   onClick,
   children
-}) => {
+}: BossActionItemProps) => {
   const [isTouched] = useState(false);
   const isTouch = false;
   const { tankPositions } = useTankPositionContext();
@@ -189,12 +209,25 @@ const BossActionItem = memo(({
 
   const effectiveBaseHealth = baseHealth || { party: 143000, tank: 225000 };
   const { realtimePlan } = useRealtimePlan();
-  const healthSettings = realtimePlan?.healthSettings || {};
-  const mainTankBaseMaxHealth = healthSettings.tankMaxHealth?.mainTank || effectiveBaseHealth.tank;
-  const offTankBaseMaxHealth = healthSettings.tankMaxHealth?.offTank || effectiveBaseHealth.tank;
-  const partyBaseMaxHealth = healthSettings.partyMinHealth || effectiveBaseHealth.party;
+  const planTimelineLayout = useMemo(
+    () => getPlanTimelineLayout(realtimePlan),
+    [realtimePlan?.timelineLayout]
+  );
+  const healthConfig = planTimelineLayout?.healthConfig;
+  const legacyHealthSettings = realtimePlan?.healthSettings || {};
+  const mainTankBaseMaxHealth = healthConfig?.mainTank
+    || healthConfig?.defaultTank
+    || legacyHealthSettings.tankMaxHealth?.mainTank
+    || effectiveBaseHealth.tank;
+  const offTankBaseMaxHealth = healthConfig?.offTank
+    || healthConfig?.defaultTank
+    || legacyHealthSettings.tankMaxHealth?.offTank
+    || effectiveBaseHealth.tank;
+  const partyBaseMaxHealth = healthConfig?.party
+    || legacyHealthSettings.partyMinHealth
+    || effectiveBaseHealth.party;
 
-  const unmitigatedDamage = action.unmitigatedDamage ? parseInt(action.unmitigatedDamage.replace(/[^0-9]/g, ''), 10) || 0 : 0;
+  const unmitigatedDamage = parseUnmitigatedDamage(action.unmitigatedDamage);
   const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
 
   const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) ? calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
@@ -293,7 +326,14 @@ const BossActionItem = memo(({
   return (
     <SelectionBorder elementType="bossAction" elementId={action.id} showIndicator indicatorPosition="top-right" className="rounded-lg">
       <BossAction $time={action.time} $importance={action.importance} $isSelected={isSelected} $hasAssignments={hasAssignments} $isTouched={isTouched} onClick={handleClick}>
-        <ActionTime>{action.time}s</ActionTime>
+        <PhaseOverrideTimeStrip
+          time={action.time}
+          summary={phaseSummary}
+          phaseOverrides={phaseOverrides}
+          skippedActions={skippedActions}
+          disabled={phaseOverridesDisabled}
+          onChange={onPhaseOverrideChange}
+        />
         <div className="flex flex-col sm:flex-row flex-1 min-h-0 w-full">
           <div className="flex-1 flex flex-col p-2.5 min-w-0 overflow-hidden gap-2">
             <div className="flex items-start gap-3">
@@ -350,9 +390,14 @@ const BossActionItem = memo(({
                   <div className="ml-auto flex flex-col items-end gap-1">
                     {action.isMultiHit && action.hitCount > 1 && (
                       <Tooltip>
-                        <TooltipTrigger asChild><MultiHitIndicator>{action.hitCount}-Hit {action.isTankBuster ? 'TB' : 'AOE'}</MultiHitIndicator></TooltipTrigger>
+                        <TooltipTrigger asChild><MultiHitIndicator>{action.hitCount}-Hit</MultiHitIndicator></TooltipTrigger>
                         <TooltipContent>Multi-hit: {action.hitCount} hits</TooltipContent>
                       </Tooltip>
+                    )}
+                    {action.hasDot && (
+                      <div className="inline-flex items-center justify-center bg-cyan-100 dark:bg-cyan-500/10 text-cyan-900 dark:text-cyan-100 font-bold text-sm px-2.5 py-1.5 rounded border border-cyan-200 dark:border-cyan-500/20 select-none">
+                        <span className="mr-1">☣️</span> DoT
+                      </div>
                     )}
                   </div>
                 </div>

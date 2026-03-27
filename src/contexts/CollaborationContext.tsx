@@ -1,10 +1,23 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import sessionManager from '../services/sessionManager';
-import { loadFromLocalStorage, saveToLocalStorage } from '../utils/storage/storageUtils';
 import { storeUserProfile } from '../services/userService';
+import {
+  COLLABORATION_UNAVAILABLE_MESSAGE,
+  getErrorMessage,
+  isPermissionDeniedError,
+} from '../services/firebaseErrorUtils';
 
 const CollaborationContext = createContext({});
+
+type CollaboratorRecord = {
+  sessionId: string;
+  userId?: string;
+  displayName: string;
+  email?: string;
+  color?: string;
+  isActive?: boolean;
+};
 
 export const useCollaboration = () => {
   const context = useContext(CollaborationContext);
@@ -14,54 +27,81 @@ export const useCollaboration = () => {
   return context;
 };
 
-// Generate a unique session ID
-const generateSessionId = () => {
-  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+const generateSessionId = () => `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+
+const cleanDisplayName = (name) => {
+  if (!name) return name;
+  if ((name.startsWith('"') && name.endsWith('"')) || (name.startsWith("'") && name.endsWith("'"))) {
+    return name.slice(1, -1);
+  }
+  return name;
 };
 
-export const CollaborationProvider = ({ children }) => {
-  // CollaborationProvider initializing
-  const { user, isAuthenticated, anonymousUser, isAnonymousMode, getCurrentUser } = useAuth();
+const areCollaboratorsEqual = (
+  previousCollaborators: CollaboratorRecord[],
+  nextCollaborators: CollaboratorRecord[]
+): boolean => {
+  if (previousCollaborators.length !== nextCollaborators.length) {
+    return false;
+  }
+
+  return previousCollaborators.every((collaborator, index) => {
+    const otherCollaborator = nextCollaborators[index];
+
+    return (
+      collaborator.sessionId === otherCollaborator?.sessionId &&
+      collaborator.userId === otherCollaborator?.userId &&
+      collaborator.displayName === otherCollaborator?.displayName &&
+      collaborator.email === otherCollaborator?.email &&
+      collaborator.color === otherCollaborator?.color &&
+      collaborator.isActive === otherCollaborator?.isActive
+    );
+  });
+};
+
+export const CollaborationProvider = ({ children, enabled = true }) => {
+  const { user, isAuthenticated, displayName: authDisplayName } = useAuth();
   const [activePlanId, setActivePlanId] = useState(null);
-  const [collaborators, setCollaborators] = useState([]);
+  const [collaborators, setCollaborators] = useState<CollaboratorRecord[]>([]);
   const [isCollaborating, setIsCollaborating] = useState(false);
+  const [collaborationAvailable, setCollaborationAvailable] = useState(true);
+  const [collaborationError, setCollaborationError] = useState<string | null>(null);
   const [sessionId] = useState(() => generateSessionId());
   const [displayName, setDisplayName] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Refs to track listeners and prevent memory leaks
+
+  const activePlanIdRef = useRef(activePlanId);
+  const displayNameRef = useRef(displayName);
   const listenersRef = useRef(new Map());
   const lastChangeOriginRef = useRef(null);
   const debounceTimersRef = useRef(new Map());
-  
-  // Track if we're currently updating to prevent feedback loops
-  const isUpdatingRef = useRef(false);
+  const batchedUpdates = useRef(new Map());
+  const batchTimer = useRef(null);
+  const sessionStartedRef = useRef(false);
+  const joinPromiseRef = useRef<Promise<boolean> | null>(null);
+  const joiningPlanIdRef = useRef<string | null>(null);
+  const loggedCollaborationErrorRef = useRef<string | null>(null);
+  const performanceMetrics = useRef({
+    updateCount: 0,
+    lastUpdateTime: 0,
+    averageUpdateTime: 0
+  });
 
-  // Helper function to clean display names (remove quotes if present)
-  const cleanDisplayName = (name) => {
-    if (!name) return name;
-    // Remove surrounding quotes if present (handles both single and double quotes)
-    if ((name.startsWith('"') && name.endsWith('"')) ||
-        (name.startsWith("'") && name.endsWith("'"))) {
-      return name.slice(1, -1);
-    }
-    return name;
-  };
-
-  // Get user display name
   useEffect(() => {
-    if (user) {
-      setDisplayName(user.displayName || user.email || 'Anonymous User');
-    } else {
-      // For unauthenticated users, try to get from localStorage
-      const savedDisplayName = loadFromLocalStorage('mitplan_display_name');
-      if (savedDisplayName) {
-        setDisplayName(cleanDisplayName(savedDisplayName));
-      }
-    }
-  }, [user]);
+    const resolvedDisplayName = cleanDisplayName(
+      authDisplayName || user?.email?.split('@')[0] || 'User'
+    );
+    setDisplayName(resolvedDisplayName);
+  }, [authDisplayName, user?.email]);
 
-  // Cleanup function to remove all listeners
+  useEffect(() => {
+    activePlanIdRef.current = activePlanId;
+  }, [activePlanId]);
+
+  useEffect(() => {
+    displayNameRef.current = displayName;
+  }, [displayName]);
+
   const cleanupListeners = useCallback(() => {
     listenersRef.current.forEach((unsubscribe) => {
       if (typeof unsubscribe === 'function') {
@@ -69,110 +109,187 @@ export const CollaborationProvider = ({ children }) => {
       }
     });
     listenersRef.current.clear();
-    
-    // Clear debounce timers
+
     debounceTimersRef.current.forEach((timer) => {
       clearTimeout(timer);
     });
     debounceTimersRef.current.clear();
+
+    if (batchTimer.current) {
+      clearTimeout(batchTimer.current);
+      batchTimer.current = null;
+    }
+    batchedUpdates.current.clear();
   }, []);
 
-  // Join a collaborative session for a plan
+  const resetCollaborationHealth = useCallback(() => {
+    loggedCollaborationErrorRef.current = null;
+    setCollaborationAvailable(true);
+    setCollaborationError(null);
+  }, []);
+
+  const markCollaborationUnavailable = useCallback((error, stage) => {
+    const detail = `${stage}:${getErrorMessage(error)}`;
+
+    if (loggedCollaborationErrorRef.current !== detail) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('[CollaborationContext] Realtime collaboration disabled:', getErrorMessage(error));
+      } else {
+        console.error('[CollaborationContext] Collaboration error:', error);
+      }
+      loggedCollaborationErrorRef.current = detail;
+    }
+
+    setCollaborationAvailable(false);
+    setCollaborationError(COLLABORATION_UNAVAILABLE_MESSAGE);
+  }, []);
+
+  const leaveCollaborativeSession = useCallback(async () => {
+    cleanupListeners();
+
+    if (sessionStartedRef.current) {
+      try {
+        await sessionManager.endSession(sessionId);
+      } catch (error) {
+        if (!isPermissionDeniedError(error)) {
+          console.error('Error leaving collaborative session:', error);
+        }
+      }
+    }
+
+    sessionStartedRef.current = false;
+    joinPromiseRef.current = null;
+    joiningPlanIdRef.current = null;
+    activePlanIdRef.current = null;
+    setActivePlanId(null);
+    setCollaborators([]);
+    setIsCollaborating(false);
+  }, [cleanupListeners, sessionId]);
+
   const joinCollaborativeSession = useCallback(async (planId, userDisplayName = null) => {
-    if (!planId) return;
-
-    try {
-      // Leave current session if any
-      if (activePlanId && activePlanId !== planId) {
-        await leaveCollaborativeSession();
-      }
-
-      setActivePlanId(planId);
-      setIsCollaborating(true);
-
-      const currentUser = getCurrentUser();
-      const finalDisplayName = userDisplayName || displayName || currentUser?.displayName || 'Anonymous User';
-
-      // Save display name for anonymous users
-      if (isAnonymousMode && userDisplayName) {
-        saveToLocalStorage('mitplan_display_name', userDisplayName);
-        setDisplayName(userDisplayName);
-
-        // Also update anonymous user's display name
-        if (anonymousUser) {
-          anonymousUser.setDisplayName(userDisplayName);
-        }
-      }
-
-      // Prepare session data with proper user identification
-      // Firebase security rules expect userId to be either auth.uid or exactly 'anonymous'
-      const sessionData = {
-        userId: user?.uid || 'anonymous',
-        displayName: cleanDisplayName(finalDisplayName),
-        email: user?.email || '',
-        isAnonymous: !isAuthenticated,
-        userType: isAuthenticated ? 'authenticated' : 'anonymous'
-      };
-
-      // Store user profile for authenticated users to improve display name resolution
-      if (user?.uid && finalDisplayName) {
-        try {
-          await storeUserProfile(user.uid, finalDisplayName, user.email);
-          console.log('[CollaborationContext] User profile stored for collaboration:', user.uid, finalDisplayName);
-        } catch (error) {
-          console.error('[CollaborationContext] Failed to store user profile:', error);
-        }
-      }
-
-      // Start session using session manager
-      await sessionManager.startSession(planId, sessionId, sessionData);
-
-      // Subscribe to collaborators using session manager
-      const collaboratorsUnsubscribe = sessionManager.subscribeToSessions(planId, (collaboratorsList) => {
-        setCollaborators(collaboratorsList);
-      });
-
-      listenersRef.current.set('collaborators', collaboratorsUnsubscribe);
-
-      return true;
-    } catch (error) {
-      console.error('Error joining collaborative session:', error);
-      setIsCollaborating(false);
+    if (!enabled || !isAuthenticated || !user?.uid || !planId) {
       return false;
     }
-  }, [activePlanId, displayName, user, sessionId]);
 
-  // Leave collaborative session
-  const leaveCollaborativeSession = useCallback(async () => {
-    if (!activePlanId) return;
+    if (joinPromiseRef.current) {
+      if (joiningPlanIdRef.current === planId) {
+        return joinPromiseRef.current;
+      }
 
-    try {
-      // End session using session manager
-      await sessionManager.endSession(sessionId);
-
-      // Cleanup listeners
-      cleanupListeners();
-
-      setActivePlanId(null);
-      setCollaborators([]);
-      setIsCollaborating(false);
-    } catch (error) {
-      console.error('Error leaving collaborative session:', error);
+      try {
+        await joinPromiseRef.current;
+      } catch (error) {
+        console.error('[CollaborationContext] Previous join attempt failed:', error);
+      }
     }
-  }, [activePlanId, sessionId, cleanupListeners]);
 
-  // Enhanced debounced update function with batching and priority
+    const finalDisplayName = cleanDisplayName(
+      userDisplayName || displayNameRef.current || authDisplayName || user.email?.split('@')[0] || 'User'
+    );
+
+    resetCollaborationHealth();
+
+    if (
+      sessionStartedRef.current &&
+      activePlanIdRef.current === planId &&
+      listenersRef.current.has('collaborators')
+    ) {
+      if (finalDisplayName !== displayNameRef.current) {
+        setDisplayName(finalDisplayName);
+      }
+      return true;
+    }
+
+    if (sessionStartedRef.current) {
+      await leaveCollaborativeSession();
+    }
+
+    joiningPlanIdRef.current = planId;
+
+    const joinPromise = (async () => {
+      try {
+        activePlanIdRef.current = planId;
+        setActivePlanId(planId);
+        setDisplayName(finalDisplayName);
+
+        try {
+          await storeUserProfile(user.uid, finalDisplayName, user.email);
+        } catch (profileError) {
+          console.error('[CollaborationContext] Failed to store user profile:', profileError);
+        }
+
+        await sessionManager.startSession(planId, sessionId, {
+          userId: user.uid,
+          displayName: finalDisplayName,
+          email: user.email || ''
+        });
+
+        sessionStartedRef.current = true;
+        setIsCollaborating(true);
+
+        const collaboratorsUnsubscribe = sessionManager.subscribeToSessions(planId, (collaboratorsList) => {
+          setCollaborators((currentCollaborators) => (
+            areCollaboratorsEqual(currentCollaborators, collaboratorsList)
+              ? currentCollaborators
+              : collaboratorsList
+          ));
+        }, {
+          onError: (error) => {
+            if (isPermissionDeniedError(error)) {
+              markCollaborationUnavailable(error, 'subscribing');
+              void leaveCollaborativeSession();
+            }
+          },
+        });
+
+        listenersRef.current.set('collaborators', collaboratorsUnsubscribe);
+        return true;
+      } catch (error) {
+        if (isPermissionDeniedError(error)) {
+          markCollaborationUnavailable(error, 'joining');
+        } else {
+          console.error('Error joining collaborative session:', error);
+        }
+        sessionStartedRef.current = false;
+        setActivePlanId(null);
+        setCollaborators([]);
+        setIsCollaborating(false);
+        cleanupListeners();
+        return false;
+      } finally {
+        if (joiningPlanIdRef.current === planId) {
+          joiningPlanIdRef.current = null;
+          joinPromiseRef.current = null;
+        }
+      }
+    })();
+
+    joinPromiseRef.current = joinPromise;
+    return joinPromise;
+  }, [
+    enabled,
+    isAuthenticated,
+    user?.uid,
+    user?.email,
+    authDisplayName,
+    leaveCollaborativeSession,
+    cleanupListeners,
+    markCollaborationUnavailable,
+    resetCollaborationHealth,
+    sessionId
+  ]);
+
   const debouncedUpdate = useCallback((key, updateFn, delay = 500, priority = 'normal') => {
-    // Clear existing timer for this key
     if (debounceTimersRef.current.has(key)) {
       clearTimeout(debounceTimersRef.current.get(key));
     }
 
-    // Adjust delay based on priority
-    const adjustedDelay = priority === 'high' ? Math.min(delay, 200) :
-                         priority === 'low' ? Math.max(delay, 1000) : delay;
+    const adjustedDelay = priority === 'high'
+      ? Math.min(delay, 200)
+      : priority === 'low'
+        ? Math.max(delay, 1000)
+        : delay;
 
-    // Set new timer
     const timer = setTimeout(async () => {
       try {
         await updateFn();
@@ -186,44 +303,38 @@ export const CollaborationProvider = ({ children }) => {
     debounceTimersRef.current.set(key, timer);
   }, []);
 
-  // Batch multiple updates together for better performance
-  const batchedUpdates = useRef(new Map());
-  const batchTimer = useRef(null);
+  const batchUpdate = useCallback((planId, updates, userId, currentSessionId) => {
+    if (!enabled) return;
 
-  const batchUpdate = useCallback((planId, updates, userId, sessionId) => {
     if (!batchedUpdates.current.has(planId)) {
       batchedUpdates.current.set(planId, {});
     }
 
-    // Merge updates
     const existingUpdates = batchedUpdates.current.get(planId);
     batchedUpdates.current.set(planId, { ...existingUpdates, ...updates });
 
-    // Clear existing batch timer
     if (batchTimer.current) {
       clearTimeout(batchTimer.current);
     }
 
-    // Set new batch timer
     batchTimer.current = setTimeout(async () => {
       const allUpdates = batchedUpdates.current.get(planId);
       if (allUpdates && Object.keys(allUpdates).length > 0) {
         try {
           const planService = await import('../services/realtimePlanService');
-          await planService.batchUpdatePlanRealtime(planId, allUpdates, userId, sessionId);
+          await planService.batchUpdatePlanRealtime(planId, allUpdates, userId, currentSessionId);
         } catch (error) {
           console.error('Error in batch update:', error);
         }
       }
       batchedUpdates.current.delete(planId);
       batchTimer.current = null;
-    }, 300); // Shorter delay for batched updates
-  }, []);
+    }, 300);
+  }, [enabled]);
 
-  // Track change origin to prevent feedback loops
   const setChangeOrigin = useCallback((origin) => {
     lastChangeOriginRef.current = origin;
-    // Clear origin after a short delay
+
     setTimeout(() => {
       if (lastChangeOriginRef.current === origin) {
         lastChangeOriginRef.current = null;
@@ -231,51 +342,53 @@ export const CollaborationProvider = ({ children }) => {
     }, 1000);
   }, []);
 
-  // Check if a change originated from this session
   const isOwnChange = useCallback((changeOrigin) => {
     return changeOrigin === sessionId || changeOrigin === lastChangeOriginRef.current;
   }, [sessionId]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      leaveCollaborativeSession();
-      cleanupListeners();
-    };
-  }, [leaveCollaborativeSession, cleanupListeners]);
-
-  // Performance monitoring
-  const performanceMetrics = useRef({
-    updateCount: 0,
-    lastUpdateTime: 0,
-    averageUpdateTime: 0
-  });
-
   const trackPerformance = useCallback((operation, startTime) => {
-    const endTime = Date.now();
-    const duration = endTime - startTime;
+    const duration = Date.now() - startTime;
 
-    performanceMetrics.current.updateCount++;
+    performanceMetrics.current.updateCount += 1;
     performanceMetrics.current.lastUpdateTime = duration;
     performanceMetrics.current.averageUpdateTime =
       (performanceMetrics.current.averageUpdateTime + duration) / 2;
 
-    // Log performance warnings
     if (duration > 1000) {
       console.warn(`Slow ${operation} operation: ${duration}ms`);
     }
   }, []);
 
-  // Initialize the provider
   useEffect(() => {
     setIsInitialized(true);
-    // CollaborationProvider initialized
   }, []);
+
+  useEffect(() => {
+    if (enabled) return undefined;
+
+    resetCollaborationHealth();
+    leaveCollaborativeSession().catch((error) => {
+      console.error('[CollaborationContext] Error cleaning up disabled collaboration:', error);
+    });
+
+    return undefined;
+  }, [enabled, leaveCollaborativeSession, resetCollaborationHealth]);
+
+  useEffect(() => {
+    return () => {
+      leaveCollaborativeSession().catch((error) => {
+        console.error('[CollaborationContext] Error during unmount cleanup:', error);
+      });
+      cleanupListeners();
+    };
+  }, [leaveCollaborativeSession, cleanupListeners]);
 
   const value = useMemo(() => ({
     activePlanId,
     collaborators,
-    isCollaborating,
+    isCollaborating: enabled ? isCollaborating : false,
+    collaborationAvailable: enabled ? collaborationAvailable : true,
+    collaborationError: enabled ? collaborationError : null,
     sessionId,
     displayName,
     isInitialized,
@@ -287,19 +400,26 @@ export const CollaborationProvider = ({ children }) => {
     setChangeOrigin,
     isOwnChange,
     trackPerformance,
-    isUpdating: isUpdatingRef.current,
+    isUpdating: false,
     getPerformanceMetrics: () => performanceMetrics.current
-  }), [activePlanId, collaborators, isCollaborating, sessionId, displayName, isInitialized, joinCollaborativeSession, leaveCollaborativeSession, debouncedUpdate, batchUpdate, setChangeOrigin, isOwnChange, trackPerformance]);
-
-  // Only log when there are issues
-  if (!isInitialized || typeof joinCollaborativeSession !== 'function') {
-    console.log('[CollaborationProvider] Context status:', {
-      hasJoinFunction: typeof joinCollaborativeSession === 'function',
-      hasLeaveFunction: typeof leaveCollaborativeSession === 'function',
-      isInitialized,
-      valueKeys: Object.keys(value)
-    });
-  }
+  }), [
+    activePlanId,
+    collaborators,
+    enabled,
+    isCollaborating,
+    collaborationAvailable,
+    collaborationError,
+    sessionId,
+    displayName,
+    isInitialized,
+    joinCollaborativeSession,
+    leaveCollaborativeSession,
+    debouncedUpdate,
+    batchUpdate,
+    setChangeOrigin,
+    isOwnChange,
+    trackPerformance
+  ]);
 
   return (
     <CollaborationContext.Provider value={value}>

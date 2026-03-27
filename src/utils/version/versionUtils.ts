@@ -1,4 +1,11 @@
-import type { Plan, MitigationAssignments, SelectedJobs, TankPositions } from '../../types';
+import type {
+  BossMetadata,
+  Plan,
+  PlanTimelineLayout,
+  MitigationAssignments,
+  SelectedJobs,
+  TankPositions,
+} from '../../types';
 
 declare global {
   interface Window {
@@ -21,6 +28,13 @@ interface LegacyPlanData {
   jobs?: SelectedJobs;
   tankPositions?: TankPositions;
   tankAssignments?: TankPositions;
+  healthSettings?: Record<string, unknown>;
+  sourceTimelineId?: string | null;
+  sourceTimelineName?: string | null;
+  phaseOverrides?: Record<string, { startTime: number }>;
+  bossTags?: string[];
+  bossMetadata?: BossMetadata | null;
+  timelineLayout?: PlanTimelineLayout | null;
   name?: string;
   title?: string;
   createdAt?: number | string;
@@ -33,6 +47,13 @@ interface MigratedPlanData {
   assignments: MitigationAssignments;
   selectedJobs: SelectedJobs;
   tankPositions?: TankPositions;
+  healthSettings?: Record<string, unknown>;
+  sourceTimelineId?: string | null;
+  sourceTimelineName?: string | null;
+  phaseOverrides?: Record<string, { startTime: number }>;
+  bossTags?: string[];
+  bossMetadata?: BossMetadata | null;
+  timelineLayout?: PlanTimelineLayout | null;
   name?: string;
   createdAt?: number | string;
 }

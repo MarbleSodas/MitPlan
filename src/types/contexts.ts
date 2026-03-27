@@ -1,16 +1,21 @@
 import type { User } from 'firebase/auth';
 import type { ReactNode } from 'react';
-import type { Job, JobId, Plan, MitigationAssignments, TankPositions, MitigationAbility, BossAction } from './index';
+import type {
+  Job,
+  JobId,
+  Plan,
+  MitigationAssignments,
+  PlanTimelineLayout,
+  TankPositions,
+  MitigationAbility,
+  BossAction,
+  PhaseOverride,
+  ResolvedTimelinePhaseSummary,
+  TimelinePhase,
+} from './index';
 
 export interface ChildrenProp {
   children: ReactNode;
-}
-
-export interface AnonymousUser {
-  id: string;
-  displayName: string;
-  isAnonymous: boolean;
-  setDisplayName: (name: string) => void;
 }
 
 export interface AuthContextValue {
@@ -19,18 +24,10 @@ export interface AuthContextValue {
   error: string | null;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
-  anonymousUser: AnonymousUser | null;
-  isAnonymousMode: boolean;
-  enableAnonymousMode: () => void;
-  disableAnonymousMode: () => void;
-  setAnonymousDisplayName: (name: string) => void;
-  initializeAnonymousUser: (displayName?: string | null) => Promise<AnonymousUser>;
-  getCurrentUser: () => User | AnonymousUser | null;
-  hasUser: boolean;
   hasPendingMigration: boolean;
   setHasPendingMigration: (value: boolean) => void;
   checkForPendingMigration: () => Promise<void>;
-  currentUser: User | AnonymousUser | null;
+  currentUser: User | null;
   displayName: string | null;
   userId: string | null;
 }
@@ -71,6 +68,8 @@ export interface CollaborationContextValue {
   activePlanId: string | null;
   collaborators: Collaborator[];
   isCollaborating: boolean;
+  collaborationAvailable: boolean;
+  collaborationError: string | null;
   displayName: string;
   isInitialized: boolean;
   joinCollaborativeSession: (planId: string, displayName?: string | null) => Promise<void>;
@@ -105,6 +104,7 @@ export interface PlanContextValue {
 export interface RealtimePlanContextValue {
   realtimePlan: Plan | null;
   tankPositions: TankPositions;
+  phaseOverrides: Record<string, PhaseOverride>;
   isInitialized: boolean;
   isLoading: boolean;
   error: string | null;
@@ -112,12 +112,18 @@ export interface RealtimePlanContextValue {
   updatePlanRealtime: (updates: Partial<Plan>) => Promise<void>;
   updateAssignmentsRealtime: (assignments: MitigationAssignments) => Promise<void>;
   updateTankPositionsRealtime: (positions: TankPositions) => Promise<void>;
+  updatePhaseOverridesRealtime: (phaseOverrides: Record<string, PhaseOverride>) => Promise<void> | void;
+  updateTimelineLayoutRealtime: (timelineLayout: PlanTimelineLayout) => Promise<void> | void;
   clearRealtimePlan: () => void;
 }
 
 export interface RealtimeBossContextValue {
   currentBossId: string | null;
   currentBossLevel: number;
+  timelinePhases?: TimelinePhase[];
+  timelinePhaseSummaries?: ResolvedTimelinePhaseSummary[];
+  skippedBossActions?: BossAction[];
+  hasPhaseOverrideSupport?: boolean;
   setCurrentBoss: (bossId: string) => void;
   setCurrentBossLevel: (level: number) => void;
 }

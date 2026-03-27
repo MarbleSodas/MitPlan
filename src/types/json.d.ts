@@ -1,4 +1,4 @@
 declare module '*.json' {
-  const value: import('./index').BossAction[];
+  const value: any;
   export default value;
 }

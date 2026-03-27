@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { useElementSelections } from '../../hooks/useElementSelections';
-import SelectionIndicator from './SelectionIndicator';
-import type { ElementType } from '../../types/presence';
+import type { ElementType, PresenceTargetInput } from '../../types/presence';
+import PresenceTarget from './PresenceTarget';
 
 interface SelectionBorderProps {
   children: ReactNode;
@@ -10,6 +9,13 @@ interface SelectionBorderProps {
   className?: string;
   showIndicator?: boolean;
   indicatorPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  surface?: PresenceTargetInput['surface'];
+  field?: string | null;
+  slotId?: string | null;
+  section?: string | null;
+  panel?: string | null;
+  publishHover?: boolean;
+  publishFocus?: boolean;
 }
 
 const SelectionBorder = ({
@@ -18,47 +24,38 @@ const SelectionBorder = ({
   elementId,
   className = '',
   showIndicator = true,
-  indicatorPosition = 'top-right'
+  indicatorPosition = 'top-right',
+  surface = 'planner',
+  field = null,
+  slotId = null,
+  section = null,
+  panel = null,
+  publishHover = false,
+  publishFocus = false,
 }: SelectionBorderProps) => {
-  const { selections, isSelectedByOthers, primaryColor, allColors } = useElementSelections(
-    elementType,
-    elementId
-  );
-
-  const getBorderStyle = (): React.CSSProperties => {
-    if (!isSelectedByOthers || !primaryColor) {
-      return {};
-    }
-
-    if (allColors.length === 1) {
-      return {
-        boxShadow: `0 0 0 2px ${primaryColor}, 0 0 12px ${primaryColor}40`
-      };
-    }
-
-    if (allColors.length >= 2) {
-      return {
-        boxShadow: `0 0 0 2px ${allColors[0]}, 0 0 0 4px ${allColors[1]}`
-      };
-    }
-
-    return {};
-  };
+  const target = elementId
+    ? {
+        surface,
+        entityType: elementType,
+        entityId: elementId,
+        field,
+        slotId,
+        section,
+        panel,
+      }
+    : null;
 
   return (
-    <div 
-      className={`relative transition-shadow duration-150 ${className}`}
-      style={getBorderStyle()}
+    <PresenceTarget
+      target={target}
+      className={className}
+      showIndicator={showIndicator}
+      indicatorPosition={indicatorPosition}
+      publishHover={publishHover}
+      publishFocus={publishFocus}
     >
       {children}
-      {showIndicator && (
-        <SelectionIndicator
-          selections={selections}
-          position={indicatorPosition}
-          maxDisplay={3}
-        />
-      )}
-    </div>
+    </PresenceTarget>
   );
 };
 

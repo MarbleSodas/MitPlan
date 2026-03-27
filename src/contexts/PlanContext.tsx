@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
 import * as planService from '../services/realtimePlanService';
+import {
+  getDashboardPlanLoadErrorMessage,
+  isPermissionDeniedError,
+  isPlansCollectionPermissionDeniedError,
+} from '../services/firebaseErrorUtils';
 
 const PlanContext = createContext({});
 
@@ -64,14 +69,14 @@ export const PlanProvider = ({ children }) => {
       // Set up real-time listener for user plans
       const unsubscribe = planService.subscribeToUserPlans(user.uid, (userPlans, error) => {
         if (error) {
-          // Handle permission denied errors gracefully
-          if (error.message && error.message.includes('Permission denied')) {
-            setError('Database rules not configured. Please deploy Firebase Realtime Database rules.');
-            console.error('Firebase Realtime Database rules need to be deployed. See deploy-rules.md for instructions.');
+          if (isPlansCollectionPermissionDeniedError(error)) {
+            setError(getDashboardPlanLoadErrorMessage(error));
+          } else if (isPermissionDeniedError(error)) {
+            setError(null);
           } else {
             setError(error.message || 'Error loading plans');
+            console.error('Error loading plans:', error);
           }
-          console.error('Error loading plans:', error);
           setPlans([]); // Set empty array to prevent further errors
         } else {
           setPlans(Array.isArray(userPlans) ? userPlans : []);
@@ -82,8 +87,16 @@ export const PlanProvider = ({ children }) => {
 
       listenersRef.current.set('userPlans', unsubscribe);
     } catch (err) {
-      console.error('Error setting up plans listener:', err);
-      setError(err.message);
+      if (isPlansCollectionPermissionDeniedError(err)) {
+        setError(getDashboardPlanLoadErrorMessage(err));
+        setPlans([]);
+      } else if (isPermissionDeniedError(err)) {
+        setError(null);
+        setPlans([]);
+      } else {
+        console.error('Error setting up plans listener:', err);
+        setError(err.message);
+      }
       setLoading(false);
     }
   }, [user]);
@@ -99,14 +112,14 @@ export const PlanProvider = ({ children }) => {
       const userPlans = await planService.getUserPlans(user.uid);
       setPlans(Array.isArray(userPlans) ? userPlans : []);
     } catch (err) {
-      // Handle permission denied errors gracefully
-      if (err.message.includes('Permission denied')) {
-        setError('Database rules not configured. Please deploy Firebase Realtime Database rules.');
-        console.error('Firebase Realtime Database rules need to be deployed. See deploy-rules.md for instructions.');
+      if (isPlansCollectionPermissionDeniedError(err)) {
+        setError(getDashboardPlanLoadErrorMessage(err));
+      } else if (isPermissionDeniedError(err)) {
+        setError(null);
       } else {
         setError(err.message);
+        console.error('Error loading plans:', err);
       }
-      console.error('Error loading plans:', err);
       setPlans([]); // Set empty array to prevent further errors
     } finally {
       setLoading(false);

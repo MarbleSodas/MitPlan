@@ -42,16 +42,14 @@ const getInitials = (displayName) => {
 };
 
 const UserProfile = () => {
-  const { user, anonymousUser, isAnonymousMode, setAnonymousDisplayName } = useAuth();
+  const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const currentUser = user || anonymousUser;
-  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
-
-  const userId = user?.uid || anonymousUser?.id || 'default';
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const userId = user?.uid || 'default';
 
   const handleEditClick = () => {
     setNewDisplayName(cleanDisplayName(displayName));
@@ -82,13 +80,13 @@ const UserProfile = () => {
     setError('');
 
     try {
-      if (user) {
-        await updateProfile(auth.currentUser, {
-          displayName: trimmedName
-        });
-      } else if (isAnonymousMode && anonymousUser) {
-        setAnonymousDisplayName(trimmedName);
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated');
       }
+
+      await updateProfile(auth.currentUser, {
+        displayName: trimmedName
+      });
 
       setIsEditModalOpen(false);
     } catch (err) {

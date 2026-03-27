@@ -3,13 +3,21 @@ import {
   set,
   remove,
   get,
+  update,
   onValue,
-  off,
   onDisconnect
 } from 'firebase/database';
 import { database } from '../config/firebase';
 import { clearPresence } from './presenceService';
 import { USER_COLORS, MAX_USERS_PER_PLAN } from '../types/presence';
+import {
+  getActiveUserPath,
+  getActiveUsersPath
+} from './collaborationPaths';
+import {
+  COLLABORATION_UNAVAILABLE_MESSAGE,
+  isPermissionDeniedError,
+} from './firebaseErrorUtils';
 
 class SessionManager {
   constructor() {
@@ -24,7 +32,7 @@ class SessionManager {
 
   async getActiveSessionCount(planId) {
     try {
-      const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
+      const sessionsRef = ref(database, getActiveUsersPath(planId));
       const snapshot = await get(sessionsRef);
       
       if (!snapshot.exists()) return 0;
@@ -48,6 +56,36 @@ class SessionManager {
     return USER_COLORS[existingSessionCount % USER_COLORS.length] ?? '#3b82f6';
   }
 
+  normalizeSessionForSubscriber(sessionId, sessionData) {
+    return {
+      sessionId,
+      userId: sessionData?.userId || '',
+      displayName: sessionData?.displayName || 'User',
+      email: sessionData?.email || '',
+      color: sessionData?.color || '#3b82f6',
+      isActive: Boolean(sessionData?.isActive),
+    };
+  }
+
+  areSessionListsEqual(previousSessions = [], nextSessions = []) {
+    if (previousSessions.length !== nextSessions.length) {
+      return false;
+    }
+
+    return previousSessions.every((session, index) => {
+      const otherSession = nextSessions[index];
+
+      return (
+        session.sessionId === otherSession?.sessionId &&
+        session.userId === otherSession?.userId &&
+        session.displayName === otherSession?.displayName &&
+        session.email === otherSession?.email &&
+        session.color === otherSession?.color &&
+        session.isActive === otherSession?.isActive
+      );
+    });
+  }
+
   async startSession(planId, sessionId, userData) {
     try {
       const currentCount = await this.getActiveSessionCount(planId);
@@ -56,7 +94,7 @@ class SessionManager {
       }
 
       const color = this.getColorForSession(planId, currentCount);
-      const sessionRef = ref(database, `plans/${planId}/collaboration/activeUsers/${sessionId}`);
+      const sessionRef = ref(database, getActiveUserPath(planId, sessionId));
 
       const sessionData = {
         ...userData,
@@ -90,6 +128,12 @@ class SessionManager {
 
       return true;
     } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        const permissionError = new Error(COLLABORATION_UNAVAILABLE_MESSAGE) as Error & { code?: string };
+        permissionError.code = 'PERMISSION_DENIED';
+        throw permissionError;
+      }
+
       console.error('Error starting session:', error);
       throw new Error('Failed to start collaborative session');
     }
@@ -122,6 +166,12 @@ class SessionManager {
 
       return true;
     } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        this.stopHeartbeat(sessionId);
+        this.activeSessions.delete(sessionId);
+        return false;
+      }
+
       console.error('Error ending session:', error);
       throw new Error('Failed to end collaborative session');
     }
@@ -136,7 +186,7 @@ class SessionManager {
 
     const heartbeatInterval = setInterval(async () => {
       try {
-        const activityRef = ref(database, `plans/${planId}/collaboration/activeUsers/${sessionId}/lastActivity`);
+        const activityRef = ref(database, `${getActiveUserPath(planId, sessionId)}/lastActivity`);
         await set(activityRef, Date.now());
       } catch (error) {
         console.error('Error updating heartbeat:', error);
@@ -193,7 +243,7 @@ class SessionManager {
    */
   async cleanupInactiveSessions(planId) {
     try {
-      const sessionsRef = ref(database, `shared/${planId}/activeUsers`);
+      const sessionsRef = ref(database, getActiveUsersPath(planId));
       const snapshot = await get(sessionsRef);
 
       if (!snapshot.exists()) {
@@ -213,7 +263,7 @@ class SessionManager {
 
         if (lastActivity && (now - lastActivity) > this.SESSION_TIMEOUT) {
           // Mark for removal
-          updates[`shared/${planId}/activeUsers/${sessionId}`] = null;
+          updates[`${getActiveUsersPath(planId)}/${sessionId}`] = null;
 
           // Also remove from local tracking if it exists
           if (this.activeSessions.has(sessionId)) {
@@ -227,7 +277,7 @@ class SessionManager {
 
       // Apply cleanup updates
       if (Object.keys(updates).length > 0) {
-        await set(ref(database), updates);
+        await update(ref(database), updates);
       }
 
       // If no active sessions remain, stop monitoring
@@ -244,7 +294,7 @@ class SessionManager {
    */
   async getActiveSessions(planId) {
     try {
-      const sessionsRef = ref(database, `collaboration/plans/${planId}/users`);
+      const sessionsRef = ref(database, getActiveUsersPath(planId));
       const snapshot = await get(sessionsRef);
       
       const sessions = [];
@@ -270,8 +320,9 @@ class SessionManager {
   /**
    * Subscribe to session changes for a plan
    */
-  subscribeToSessions(planId, callback) {
-    const sessionsRef = ref(database, `plans/${planId}/collaboration/activeUsers`);
+  subscribeToSessions(planId, callback, options = {}) {
+    const sessionsRef = ref(database, getActiveUsersPath(planId));
+    let lastEmittedSessions = null;
 
     const unsubscribe = onValue(sessionsRef, (snapshot) => {
       const sessions = [];
@@ -279,20 +330,26 @@ class SessionManager {
         snapshot.forEach((childSnapshot) => {
           const sessionData = childSnapshot.val();
           if (sessionData && sessionData.isActive) {
-            sessions.push({
-              sessionId: childSnapshot.key,
-              ...sessionData
-            });
+            sessions.push(this.normalizeSessionForSubscriber(childSnapshot.key, sessionData));
           }
         });
       }
+
+      if (lastEmittedSessions && this.areSessionListsEqual(lastEmittedSessions, sessions)) {
+        return;
+      }
+
+      lastEmittedSessions = sessions;
       callback(sessions);
     }, (error) => {
-      console.error('Error listening to session changes:', error);
+      options.onError?.(error);
+      if (!options.onError || !isPermissionDeniedError(error)) {
+        console.error('Error listening to session changes:', error);
+      }
       callback([]);
     });
 
-    return () => off(sessionsRef, 'value', unsubscribe);
+    return unsubscribe;
   }
 
   /**

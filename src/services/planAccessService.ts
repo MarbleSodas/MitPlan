@@ -3,51 +3,115 @@
  * Handles plan ownership and access control tracking
  */
 
-import { ref, get, set, update, serverTimestamp, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, get, set, update, query, orderByChild, equalTo } from 'firebase/database';
 import { database } from '../config/firebase';
-import anonymousUserService from './anonymousUserService';
+import {
+  getDashboardPlanLoadErrorMessage,
+  getErrorMessage,
+  isPermissionDeniedError,
+  STALE_DATABASE_RULES_MESSAGE,
+} from './firebaseErrorUtils';
+
+const PLANS_PATH = 'plans';
+const USER_PROFILES_PATH = 'userProfiles';
+
+const getRecentPlanTimestamp = (plan) =>
+  plan.accessInfo?.lastAccess ||
+  plan.updatedAt ||
+  plan.lastAccessedAt ||
+  plan.createdAt ||
+  0;
+
+const sortPlansByRecent = (plans) => {
+  plans.sort((a, b) => getRecentPlanTimestamp(b) - getRecentPlanTimestamp(a));
+  return plans;
+};
+
+const normalizeDashboardPlan = (planId, planData, userId, overrides = {}) => {
+  const normalizedName = planData.title || planData.name || 'Untitled Plan';
+  const isOwner =
+    overrides.isOwner ?? (planData.ownerId === userId || planData.userId === userId);
+  const accessInfo = overrides.accessInfo ?? planData.accessedBy?.[userId] ?? null;
+
+  return {
+    id: planId,
+    ...planData,
+    name: normalizedName,
+    isOwner,
+    hasAccessed: overrides.hasAccessed ?? Boolean(accessInfo),
+    accessInfo
+  };
+};
+
+const mergePlansById = (...planGroups) => {
+  const mergedPlans = new Map();
+
+  planGroups.flat().forEach((plan) => {
+    if (!plan?.id) {
+      return;
+    }
+
+    if (!mergedPlans.has(plan.id)) {
+      mergedPlans.set(plan.id, plan);
+      return;
+    }
+
+    const existingPlan = mergedPlans.get(plan.id);
+    if (!existingPlan.isOwner && plan.isOwner) {
+      mergedPlans.set(plan.id, plan);
+    }
+  });
+
+  return Array.from(mergedPlans.values());
+};
+
+const wrapPlanLoadError = (error, prefix) => {
+  const message = getDashboardPlanLoadErrorMessage(error);
+
+  if (message === STALE_DATABASE_RULES_MESSAGE) {
+    return new Error(message);
+  }
+
+  return new Error(`${prefix}: ${message}`);
+};
+
+const getOwnedPlansByField = async (userId, fieldName) => {
+  const plansRef = ref(database, PLANS_PATH);
+  const planQuery = query(plansRef, orderByChild(fieldName), equalTo(userId));
+  const snapshot = await get(planQuery);
+  const plans = [];
+
+  if (snapshot.exists()) {
+    snapshot.forEach((childSnapshot) => {
+      const planData = childSnapshot.val();
+      plans.push(
+        normalizeDashboardPlan(childSnapshot.key, planData, userId, {
+          isOwner: true,
+          hasAccessed: true,
+          accessInfo: {
+            lastAccess: planData.lastAccessedAt || planData.updatedAt || planData.createdAt || Date.now(),
+            accessCount: 1
+          }
+        })
+      );
+    });
+  }
+
+  return plans;
+};
 
 /**
  * Track when a user accesses a plan
  * @param {string} planId - The plan ID
- * @param {string} userId - The user ID (can be anonymous user ID)
- * @param {boolean} isAnonymous - Whether this is an anonymous user
+ * @param {string} userId - The authenticated user ID
  */
-export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
+export const trackPlanAccess = async (planId, userId) => {
   try {
-    console.log('[PlanAccessService] trackPlanAccess called:', { planId, userId, isAnonymous });
+    console.log('[PlanAccessService] trackPlanAccess called:', { planId, userId });
 
-    if (isAnonymous) {
-      // Handle anonymous user access tracking in localStorage
-      const anonymousUser = anonymousUserService.getCurrentUser();
-      anonymousUser.addAccessedPlan(planId);
-
-      // Track detailed access info in localStorage
-      const accessInfo = anonymousUser.planAccess || {};
-      const now = Date.now();
-
-      if (accessInfo[planId]) {
-        accessInfo[planId].lastAccess = now;
-        accessInfo[planId].accessCount = (accessInfo[planId].accessCount || 0) + 1;
-      } else {
-        accessInfo[planId] = {
-          firstAccess: now,
-          lastAccess: now,
-          accessCount: 1
-        };
-      }
-
-      anonymousUser.planAccess = accessInfo;
-      anonymousUser.save();
-
-      console.log('[PlanAccessService] Tracked anonymous access to plan:', planId);
-      return;
-    }
-
-    // Handle authenticated user access tracking in Firebase
     const now = Date.now();
-    const accessPath = `plans/${planId}/accessedBy/${userId}`;
-    const userAccessPath = `userProfiles/${userId}/accessedPlans/${planId}`;
+    const accessPath = `${PLANS_PATH}/${planId}/accessedBy/${userId}`;
+    const userAccessPath = `${USER_PROFILES_PATH}/${userId}/accessedPlans/${planId}`;
 
     // Update user's personal access list (Reverse Index)
     try {
@@ -56,7 +120,9 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
         planId: planId
       });
     } catch (error) {
-       console.error('[PlanAccessService] Error updating user profile accessed plans:', error);
+       if (!isPermissionDeniedError(error)) {
+         console.error('[PlanAccessService] Error updating user profile accessed plans:', error);
+       }
        // Non-blocking error
     }
 
@@ -82,7 +148,9 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
         });
         console.log('[PlanAccessService] Existing access updated successfully');
       } catch (error) {
-        console.error('[PlanAccessService] Error updating existing access:', error);
+        if (!isPermissionDeniedError(error)) {
+          console.error('[PlanAccessService] Error updating existing access:', error);
+        }
         throw error;
       }
     } else {
@@ -104,7 +172,9 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
         console.log('[PlanAccessService] Verification read - exists:', verifyAccess.exists());
         console.log('[PlanAccessService] Verification read - value:', verifyAccess.val());
       } catch (error) {
-        console.error('[PlanAccessService] Error creating new access record:', error);
+        if (!isPermissionDeniedError(error)) {
+          console.error('[PlanAccessService] Error creating new access record:', error);
+        }
         throw error;
       }
     }
@@ -112,18 +182,22 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
     // Update plan's lastAccessedAt
     console.log('[PlanAccessService] Updating plan lastAccessedAt');
     try {
-      await update(ref(database, `plans/${planId}`), {
+      await update(ref(database, `${PLANS_PATH}/${planId}`), {
         lastAccessedAt: now
       });
       console.log('[PlanAccessService] Plan lastAccessedAt updated successfully');
     } catch (error) {
-      console.error('[PlanAccessService] Error updating plan lastAccessedAt:', error);
+      if (!isPermissionDeniedError(error)) {
+        console.error('[PlanAccessService] Error updating plan lastAccessedAt:', error);
+      }
       throw error;
     }
 
     console.log('[PlanAccessService] Successfully tracked access to plan:', planId, 'by user:', userId);
   } catch (error) {
-    console.error('[PlanAccessService] Error tracking plan access:', error);
+    if (!isPermissionDeniedError(error)) {
+      console.error('[PlanAccessService] Error tracking plan access:', error);
+    }
     // Don't throw error - access tracking shouldn't break plan loading
   }
 };
@@ -133,92 +207,61 @@ export const trackPlanAccess = async (planId, userId, isAnonymous = false) => {
  * @param {string} planId - The plan ID
  * @param {string} userId - The user ID
  * @param {object} planData - The plan data (optional, for performance)
- * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<boolean>} Whether the user has access
- *
- * NOTE: Universal access enabled - all users can access all plans
  */
-export const hasAccessToPlan = async (planId, userId, planData = null, isAnonymous = false) => {
-  // Universal access: all users can access all plans
-  // Still track access for analytics purposes
+export const hasAccessToPlan = async (planId, userId, planData = null) => {
   try {
-    if (planId) {
-      // Track access but don't restrict based on ownership
-      await trackPlanAccess(planId, userId, isAnonymous);
+    if (!planId || !userId) {
+      return false;
     }
-  } catch (error) {
-    console.log('[PlanAccessService] Access tracking failed, but allowing access:', error);
-  }
 
-  return true; // Universal access enabled
+    let effectivePlanData = planData;
+
+    if (!effectivePlanData) {
+      try {
+        const planSnapshot = await get(ref(database, `${PLANS_PATH}/${planId}`));
+        if (!planSnapshot.exists()) {
+          return false;
+        }
+        effectivePlanData = planSnapshot.val();
+      } catch (error) {
+        if (isPermissionDeniedError(error)) {
+          return false;
+        }
+        throw error;
+      }
+    }
+
+    const isOwner =
+      effectivePlanData.ownerId === userId ||
+      effectivePlanData.userId === userId;
+    if (isOwner || effectivePlanData.isPublic === true || effectivePlanData.accessedBy?.[userId]) {
+      return true;
+    }
+
+    const accessedPlanRef = ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans/${planId}`);
+    const accessedPlanSnapshot = await get(accessedPlanRef);
+    return accessedPlanSnapshot.exists();
+  } catch (error) {
+    if (!isPermissionDeniedError(error)) {
+      console.error('[PlanAccessService] Error checking plan access:', error);
+    }
+    return false;
+  }
 };
 
 /**
  * Get all plans accessible to a user (owned + accessed)
  * @param {string} userId - The user ID
- * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<Array>} Array of accessible plans
- *
- * NOTE: Universal access enabled - returns all plans for all users
  */
-export const getUserAccessiblePlans = async (userId, isAnonymous = false) => {
+export const getUserAccessiblePlans = async (userId) => {
   try {
-    if (isAnonymous) {
-      // For anonymous users, delegate to localStorage service
-      const localStoragePlanService = (await import('./localStoragePlanService')).default;
-      return await localStoragePlanService.getUserPlans();
-    }
-
-    // For authenticated users, return ALL plans (universal access)
-    const plansRef = ref(database, 'plans');
-    const snapshot = await get(plansRef);
-
-    const accessiblePlans = [];
-
-    if (snapshot.exists()) {
-      snapshot.forEach((childSnapshot) => {
-        const planData = childSnapshot.val();
-        const planId = childSnapshot.key;
-
-        // Track ownership for analytics but don't restrict access
-        const isOwner = planData.ownerId === userId || planData.userId === userId;
-        const hasAccessed = planData.accessedBy && planData.accessedBy[userId];
-
-        console.log('[PlanAccessService] Processing plan:', planId, {
-          isOwner,
-          hasAccessed: !!hasAccessed,
-          accessedByExists: !!planData.accessedBy,
-          userInAccessedBy: planData.accessedBy ? Object.keys(planData.accessedBy).includes(userId) : false,
-          ownerId: planData.ownerId,
-          accessedByData: planData.accessedBy,
-          currentUserId: userId,
-          userId: planData.userId
-        });
-
-        // Universal access: include ALL plans
-        accessiblePlans.push({
-          id: planId,
-          ...planData,
-          // Normalize field names for consistency with dashboard components
-          name: planData.title || planData.name || 'Untitled Plan',
-          isOwner,
-          hasAccessed: !!hasAccessed,
-          accessInfo: hasAccessed || null
-        });
-      });
-    }
-    
-    // Sort by most recently updated/accessed
-    accessiblePlans.sort((a, b) => {
-      const aTime = a.updatedAt || a.lastAccessedAt || a.createdAt || 0;
-      const bTime = b.updatedAt || b.lastAccessedAt || b.createdAt || 0;
-      return bTime - aTime;
-    });
-    
-    return accessiblePlans;
+    const { ownedPlans, sharedPlans } = await getCategorizedUserPlans(userId);
+    return sortPlansByRecent(mergePlansById(ownedPlans, sharedPlans));
   } catch (error) {
     console.error('[PlanAccessService] Error getting accessible plans:', error);
-    return [];
+    throw wrapPlanLoadError(error, 'Failed to load accessible plans');
   }
 };
 
@@ -268,53 +311,19 @@ export const migratePlanOwnership = (planId, planData) => {
 /**
  * Get plans owned by a user (separated from accessed plans)
  * @param {string} userId - The user ID
- * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<Array>} Array of owned plans
  */
-
-export const getUserOwnedPlans = async (userId, isAnonymous = false) => {
+export const getUserOwnedPlans = async (userId) => {
   try {
-    if (isAnonymous) {
-      const localStoragePlanService = (await import('./localStoragePlanService')).default;
-      const allPlans = await localStoragePlanService.getUserPlans();
-      return allPlans.filter(plan => plan.isOwner);
-    }
+    const [ownerPlans, legacyPlans] = await Promise.all([
+      getOwnedPlansByField(userId, 'ownerId'),
+      getOwnedPlansByField(userId, 'userId')
+    ]);
 
-    const plansRef = ref(database, 'plans');
-    const ownedPlansQuery = query(plansRef, orderByChild('ownerId'), equalTo(userId));
-    const snapshot = await get(ownedPlansQuery);
-
-    const ownedPlans = [];
-
-    if (snapshot.exists()) {
-      snapshot.forEach((childSnapshot) => {
-        const planData = childSnapshot.val();
-        const planId = childSnapshot.key;
-        
-        ownedPlans.push({
-          id: planId,
-          ...planData,
-          name: planData.title || planData.name || 'Untitled Plan',
-          isOwner: true,
-          hasAccessed: true,
-          accessInfo: { 
-            lastAccess: planData.lastAccessedAt || Date.now(),
-            accessCount: 1 
-          }
-        });
-      });
-    }
-
-    ownedPlans.sort((a, b) => {
-      const aTime = a.updatedAt || a.lastAccessedAt || a.createdAt || 0;
-      const bTime = b.updatedAt || b.lastAccessedAt || b.createdAt || 0;
-      return bTime - aTime;
-    });
-
-    return ownedPlans;
+    return sortPlansByRecent(mergePlansById(ownerPlans, legacyPlans));
   } catch (error) {
     console.error('[PlanAccessService] Error getting owned plans:', error);
-    return [];
+    throw wrapPlanLoadError(error, 'Failed to load owned plans');
   }
 };
 
@@ -322,18 +331,11 @@ export const getUserOwnedPlans = async (userId, isAnonymous = false) => {
 /**
  * Get plans shared with a user (accessed but not owned)
  * @param {string} userId - The user ID
- * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<Array>} Array of shared plans
  */
-
-export const getUserSharedPlans = async (userId, isAnonymous = false) => {
+export const getUserSharedPlans = async (userId) => {
   try {
-    if (isAnonymous) {
-      console.log('[PlanAccessService] Anonymous user - no shared plans');
-      return [];
-    }
-
-    const userAccessRef = ref(database, `userProfiles/${userId}/accessedPlans`);
+    const userAccessRef = ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans`);
     const snapshot = await get(userAccessRef);
 
     if (!snapshot.exists()) {
@@ -341,51 +343,39 @@ export const getUserSharedPlans = async (userId, isAnonymous = false) => {
     }
 
     const accessedPlansMap = snapshot.val();
+    if (!accessedPlansMap || typeof accessedPlansMap !== 'object') {
+      return [];
+    }
     const planIds = Object.keys(accessedPlansMap);
     
     const planPromises = planIds.map(async (planId) => {
-      try {
-        const planRef = ref(database, `plans/${planId}`);
-        const planSnapshot = await get(planRef);
-        
-        if (!planSnapshot.exists()) return null;
-        
-        const planData = planSnapshot.val();
-        
-        if (planData.ownerId === userId || planData.userId === userId) {
-          return null;
-        }
+      const planRef = ref(database, `${PLANS_PATH}/${planId}`);
+      const planSnapshot = await get(planRef);
 
-        return {
-          id: planId,
-          ...planData,
-          name: planData.title || planData.name || 'Untitled Plan',
-          isOwner: false,
-          hasAccessed: true,
-          accessInfo: {
-            lastAccess: accessedPlansMap[planId].lastAccess || 0,
-            accessCount: 1
-          }
-        };
-      } catch (e) {
-        console.error(`[PlanAccessService] Failed to fetch shared plan ${planId}`, e);
+      if (!planSnapshot.exists()) {
         return null;
       }
+
+      const planData = planSnapshot.val();
+      if (planData.ownerId === userId || planData.userId === userId) {
+        return null;
+      }
+
+      return normalizeDashboardPlan(planId, planData, userId, {
+        isOwner: false,
+        hasAccessed: true,
+        accessInfo: {
+          lastAccess: accessedPlansMap[planId]?.lastAccess || 0,
+          accessCount: accessedPlansMap[planId]?.accessCount || 1
+        }
+      });
     });
 
     const results = await Promise.all(planPromises);
-    const sharedPlans = results.filter(p => p !== null);
-
-    sharedPlans.sort((a, b) => {
-      const aTime = a.accessInfo?.lastAccess || 0;
-      const bTime = b.accessInfo?.lastAccess || 0;
-      return bTime - aTime;
-    });
-
-    return sharedPlans;
+    return sortPlansByRecent(results.filter((plan) => plan !== null));
   } catch (error) {
     console.error('[PlanAccessService] Error getting shared plans:', error);
-    return [];
+    throw new Error(`Failed to load shared plans: ${getErrorMessage(error)}`);
   }
 };
 
@@ -393,16 +383,15 @@ export const getUserSharedPlans = async (userId, isAnonymous = false) => {
 /**
  * Get categorized plans for dashboard display
  * @param {string} userId - The user ID
- * @param {boolean} isAnonymous - Whether this is an anonymous user
  * @returns {Promise<object>} Object with ownedPlans and sharedPlans arrays
  */
-export const getCategorizedUserPlans = async (userId, isAnonymous = false) => {
+export const getCategorizedUserPlans = async (userId) => {
   try {
-    console.log('[PlanAccessService] Getting categorized plans for user:', userId, 'isAnonymous:', isAnonymous);
+    console.log('[PlanAccessService] Getting categorized plans for user:', userId);
 
     const [ownedPlans, sharedPlans] = await Promise.all([
-      getUserOwnedPlans(userId, isAnonymous),
-      getUserSharedPlans(userId, isAnonymous)
+      getUserOwnedPlans(userId),
+      getUserSharedPlans(userId)
     ]);
 
     console.log('[PlanAccessService] Categorized plans result:', {
@@ -418,11 +407,7 @@ export const getCategorizedUserPlans = async (userId, isAnonymous = false) => {
     };
   } catch (error) {
     console.error('[PlanAccessService] Error getting categorized plans:', error);
-    return {
-      ownedPlans: [],
-      sharedPlans: [],
-      totalPlans: 0
-    };
+    throw wrapPlanLoadError(error, 'Failed to load categorized plans');
   }
 };
 

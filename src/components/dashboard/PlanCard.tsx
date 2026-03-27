@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+  const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [creatorDisplayName, setCreatorDisplayName] = useState('');
@@ -36,12 +36,8 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const isOwner = () => {
-    if (isAnonymousMode) {
-      return anonymousUser?.ownsPlan?.(plan.id) || false;
-    } else {
-      const currentUserId = user?.uid;
-      return currentUserId && (plan.ownerId === currentUserId || plan.userId === currentUserId);
-    }
+    const currentUserId = user?.uid;
+    return !!currentUserId && (plan.ownerId === currentUserId || plan.userId === currentUserId);
   };
 
   useEffect(() => {
@@ -97,8 +93,12 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
     plan.name = trimmedName;
 
     try {
-      const currentUserId = user?.uid || 'anonymous';
-      await updatePlanFieldsWithOrigin(plan.id, { title: trimmedName }, currentUserId, null);
+      const currentUserId = user?.uid;
+      if (!currentUserId) {
+        throw new Error('User not authenticated');
+      }
+
+      await updatePlanFieldsWithOrigin(plan.id, { name: trimmedName }, currentUserId, null);
 
       setIsEditingName(false);
       toast.success('Plan name updated', { description: 'The plan name has been successfully updated.' });
@@ -204,13 +204,13 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
       await makePlanPublic(plan.id, true);
 
       const baseUrl = window.location.origin;
-      const editLink = `${baseUrl}/plan/edit/${plan.id}`;
+      const shareLink = `${baseUrl}/plan/shared/${plan.id}`;
 
-      await navigator.clipboard.writeText(editLink);
+      await navigator.clipboard.writeText(shareLink);
 
-      toast.success('Plan link copied!', { description: 'The plan link has been copied to your clipboard and is ready to share.' });
-
-      onEdit(plan.id);
+      toast.success('Public view link copied!', {
+        description: 'Anyone with the link can view this plan. Signed-in users who open it can collaborate and will see it in Shared Plans.'
+      });
     } catch (error) {
       console.error('Failed to share plan:', error);
 

@@ -13,20 +13,26 @@ const HealingHealthBar = ({
   tankPosition = null,
   isDualTankBuster = false,
 }) => {
-  const healthAfterHealing = Math.min(maxHealth, remainingHealth + healingAmount);
+  const healthAfterDamage = Math.max(0, Math.min(maxHealth, remainingHealth ?? 0));
+  const healthAfterHealing = Math.min(maxHealth, healthAfterDamage + healingAmount);
+  const effectiveHealingAmount = Math.max(0, healthAfterHealing - healthAfterDamage);
+  const overhealAmount = Math.max(0, healingAmount - effectiveHealingAmount);
 
-  const remainingHealthPercentage = Math.max(0, Math.min(100, (remainingHealth / maxHealth) * 100));
-  const healingPercentage = Math.max(0, Math.min(100, (healingAmount / maxHealth) * 100));
+  const remainingHealthPercentage = Math.max(0, Math.min(100, (healthAfterDamage / maxHealth) * 100));
+  const healingPercentage = Math.max(0, Math.min(100, (effectiveHealingAmount / maxHealth) * 100));
   const healthAfterHealingPercentage = Math.max(0, Math.min(100, (healthAfterHealing / maxHealth) * 100));
   const barrierPercentage = Math.max(0, Math.min(100, (barrierAmount / maxHealth) * 100));
 
-  const tooltipContent = `
-    Max Health: ${formatHealth(maxHealth)}
-    Health After Damage: ${formatHealth(remainingHealth)} (${formatPercentage(remainingHealth / maxHealth)})
-    Healing Amount: ${formatHealth(healingAmount)} (${formatPercentage(healingAmount / maxHealth)})
-    Health After Healing: ${formatHealth(healthAfterHealing)} (${formatPercentage(healthAfterHealing / maxHealth)})
-    Barrier: ${formatHealth(barrierAmount)} (${formatPercentage(barrierAmount / maxHealth)})
-  `;
+  const tooltipContent = [
+    `Max Health: ${formatHealth(maxHealth)}`,
+    `Health After Damage: ${formatHealth(healthAfterDamage)} (${formatPercentage(healthAfterDamage / maxHealth)})`,
+    `Healing Applied: ${formatHealth(effectiveHealingAmount)} (${formatPercentage(effectiveHealingAmount / maxHealth)})`,
+    ...(overhealAmount > 0
+      ? [`Overheal: ${formatHealth(overhealAmount)} (${formatPercentage(overhealAmount / maxHealth)})`]
+      : []),
+    `Health After Healing: ${formatHealth(healthAfterHealing)} (${formatPercentage(healthAfterHealing / maxHealth)})`,
+    `Barrier: ${formatHealth(barrierAmount)} (${formatPercentage(barrierAmount / maxHealth)})`,
+  ].join('\n');
 
   const enhancedTooltipContent = isDualTankBuster && tankPosition
     ? `${tooltipContent}\n\nThis shows healing recovery for a dual-tank buster.`

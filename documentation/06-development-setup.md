@@ -228,6 +228,13 @@ vercel
 # Follow prompts to link project
 ```
 
+### 4. Deploy Firebase Realtime Database Rules
+```bash
+# Vercel does not deploy Firebase RTDB rules
+# After a production frontend deploy, publish the current rules separately
+npm run deploy:database-rules
+```
+
 ## Development Workflow
 
 ### 1. Daily Development

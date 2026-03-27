@@ -13,12 +13,14 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:realtime": "vitest run src/tests/integration/realtime-sync-enhanced.test.js",
-    "test:collaboration": "vitest run src/tests/integration/multi-user-collaboration.test.js",
+    "test:realtime": "vitest run src/App.routes.test.tsx src/services/legacyLocalPlanImportService.test.ts",
+    "test:collaboration": "vitest run src/contexts/CollaborationContext.test.tsx src/contexts/PresenceContext.test.tsx src/services/presenceService.test.ts src/services/presenceService.subscription.test.ts src/services/sessionManager.test.ts src/components/planner/MitigationPlanner.collaboration.test.tsx",
     "test:persistence": "vitest run src/tests/integration/data-persistence-recovery.test.js",
     "test:performance": "vitest run src/tests/performance/realtime-performance.test.jsx",
     "timeline": "bun run --cwd scripts/timeline-scraper src/cli.ts",
     "security:check": "node scripts/security-check.js",
+    "verify:database": "node scripts/verifyDatabase.js",
+    "deploy:database-rules": "firebase deploy --only database --project xivmit && npm run verify:database",
     "predeploy": "npm run security:check && npm run build"
   },
   "dependencies": {

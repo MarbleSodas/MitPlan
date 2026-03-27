@@ -1,5 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { type ReactNode } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
@@ -8,12 +8,12 @@ import { Toaster } from '@/components/ui/sonner';
 import LandingPage from './components/landing/LandingPage';
 import Dashboard from './components/dashboard/Dashboard';
 import MitigationPlanner from './components/planner/MitigationPlanner';
-import UnauthenticatedPlanGuard from './components/guards/UnauthenticatedPlanGuard';
 import DataPolicy from './pages/DataPolicy';
-import AnonymousDashboard from './components/anonymous/AnonymousDashboard';
 import TimelineEditor from './components/timeline/TimelineEditor';
+import PlanTimelineEditor from './components/timeline/PlanTimelineEditor';
 import TimelineViewer from './components/timeline/TimelineViewer';
 import TimelineBrowser from './components/timeline/TimelineBrowser';
+import TimelineCreateHub from './components/timeline/TimelineCreateHub';
 import CreatePlanFromTimeline from './components/timeline/CreatePlanFromTimeline';
 import MakeTimelinesPublic from './components/admin/MakeTimelinesPublic';
 import ConsolidatedView from './components/consolidated';
@@ -28,31 +28,27 @@ interface RouteGuardProps {
   children: ReactNode;
 }
 
+const getSafeNextPath = (search: string) => {
+  const next = new URLSearchParams(search).get('next');
+
+  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+    return '/dashboard';
+  }
+
+  return next;
+};
+
 const ProtectedRoute = ({ children }: RouteGuardProps) => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <LoadingComponent />;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-const AnonymousAllowedRoute = ({ children }: RouteGuardProps) => {
-  const { hasUser, loading, enableAnonymousMode } = useAuth();
-
-  useEffect(() => {
-    if (!loading && !hasUser) {
-      enableAnonymousMode();
-    }
-  }, [hasUser, loading, enableAnonymousMode]);
-
-  if (loading) {
-    return <LoadingComponent />;
+    const next = encodeURIComponent(`${location.pathname}${location.search}`);
+    return <Navigate to={`/?next=${next}`} replace />;
   }
 
   return <>{children}</>;
@@ -60,10 +56,13 @@ const AnonymousAllowedRoute = ({ children }: RouteGuardProps) => {
 
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <LoadingComponent />;
   }
+
+  const nextPath = getSafeNextPath(location.search);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
@@ -72,7 +71,7 @@ const AppContent = () => {
         path="/"
         element={
           isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to={nextPath} replace />
           ) : (
             <LandingPage />
           )
@@ -93,9 +92,9 @@ const AppContent = () => {
       <Route
         path="/plan/edit/:planId"
         element={
-          <UnauthenticatedPlanGuard>
+          <ProtectedRoute>
             <MitigationPlanner />
-          </UnauthenticatedPlanGuard>
+          </ProtectedRoute>
         }
       />
 
@@ -111,63 +110,43 @@ const AppContent = () => {
       <Route
         path="/planner/:planId"
         element={
-          <UnauthenticatedPlanGuard>
+          <ProtectedRoute>
             <MitigationPlanner />
-          </UnauthenticatedPlanGuard>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/plan/:planId"
         element={
-          <UnauthenticatedPlanGuard>
+          <ProtectedRoute>
             <MitigationPlanner />
-          </UnauthenticatedPlanGuard>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/plan/shared/:planId"
         element={
-          <AnonymousAllowedRoute>
-            <MitigationPlanner isSharedPlan={true} />
-          </AnonymousAllowedRoute>
+          <MitigationPlanner isSharedPlan={true} />
         }
       />
 
       <Route
         path="/plan/:planId/print"
         element={
-          <UnauthenticatedPlanGuard>
+          <ProtectedRoute>
             <ConsolidatedView />
-          </UnauthenticatedPlanGuard>
+          </ProtectedRoute>
         }
       />
 
       <Route
-        path="/anonymous"
+        path="/plan/:planId/timeline"
         element={
-          <AnonymousAllowedRoute>
-            <AnonymousDashboard />
-          </AnonymousAllowedRoute>
-        }
-      />
-
-      <Route
-        path="/anonymous/planner"
-        element={
-          <AnonymousAllowedRoute>
-            <MitigationPlanner isAnonymous={true} />
-          </AnonymousAllowedRoute>
-        }
-      />
-
-      <Route
-        path="/anonymous/plan/:planId"
-        element={
-          <AnonymousAllowedRoute>
-            <MitigationPlanner isAnonymous={true} />
-          </AnonymousAllowedRoute>
+          <ProtectedRoute>
+            <PlanTimelineEditor />
+          </ProtectedRoute>
         }
       />
 
@@ -182,6 +161,15 @@ const AppContent = () => {
 
       <Route
         path="/timeline/create"
+        element={
+          <ProtectedRoute>
+            <TimelineCreateHub />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/timeline/create/editor"
         element={
           <ProtectedRoute>
             <TimelineEditor />
@@ -210,9 +198,7 @@ const AppContent = () => {
       <Route
         path="/timeline/shared/:timelineId"
         element={
-          <AnonymousAllowedRoute>
-            <TimelineViewer isShared={true} />
-          </AnonymousAllowedRoute>
+          <TimelineViewer isShared={true} />
         }
       />
 
@@ -239,6 +225,11 @@ const AppContent = () => {
       <Route
         path="/privacy-policy"
         element={<DataPolicy />}
+      />
+
+      <Route
+        path="/anonymous/*"
+        element={<Navigate to="/" replace />}
       />
 
       <Route

@@ -3,6 +3,9 @@ import { useRealtimePlan } from './RealtimePlanContext';
 import { bossActionsMap, bosses, baseHealthValues } from '../data';
 import { processMultiHitTankBusters } from '../utils';
 import { getTimeline } from '../services/timelineService';
+import { normalizeTimelineRecord } from '../utils/timeline/adaptiveTimelineUtils';
+import { getPlanTimelineLayout } from '../utils/timeline/planTimelineLayoutUtils';
+import { resolvePhaseAwareTimeline } from '../utils/timeline/phaseOverrideResolver';
 
 // import { autoAssignTankBusterMitigations, shouldTriggerAutoAssignment } from '../utils/mitigation/autoAssignmentUtils';
 
@@ -21,6 +24,11 @@ export const RealtimeBossProvider = ({ children }) => {
   const [selectedBossAction, setSelectedBossAction] = useState(null);
   const [currentBossActions, setCurrentBossActions] = useState([]);
   const [bossMetadata, setBossMetadata] = useState(null);
+  const [sourceTimeline, setSourceTimeline] = useState(null);
+  const [timelinePhases, setTimelinePhases] = useState([]);
+  const [timelinePhaseSummaries, setTimelinePhaseSummaries] = useState([]);
+  const [skippedBossActions, setSkippedBossActions] = useState([]);
+  const [hasPhaseOverrideSupport, setHasPhaseOverrideSupport] = useState(false);
 
   // Use real-time boss ID or fallback to default
   const currentBossId = realtimeBossId || 'ketuduke';
@@ -29,16 +37,37 @@ export const RealtimeBossProvider = ({ children }) => {
 
   // Update boss actions when plan timeline or boss changes
   useEffect(() => {
+    const planTimelineLayout = getPlanTimelineLayout(realtimePlan);
     const timelineId = realtimePlan?.sourceTimelineId;
     let isCancelled = false;
 
     const loadActions = async () => {
+      if (planTimelineLayout) {
+        const timeline = normalizeTimelineRecord(planTimelineLayout);
+
+        if (!isCancelled) {
+          setSourceTimeline(timeline);
+          setBossMetadata(timeline.bossMetadata || null);
+        }
+
+        if (!isCancelled && !(timeline.actions || []).length) {
+          setCurrentBossActions([]);
+          setSelectedBossAction(null);
+        }
+
+        return;
+      }
+
       // Prefer actions from the plan's source timeline when available
       if (timelineId) {
         try {
           console.log('[RealtimeBossContext] Loading actions from timeline:', timelineId);
-          const timeline = await getTimeline(timelineId);
+          const timeline = normalizeTimelineRecord(await getTimeline(timelineId));
           const rawActions = Array.isArray(timeline?.actions) ? timeline.actions : [];
+
+          if (!isCancelled) {
+            setSourceTimeline(timeline);
+          }
 
           // Load boss metadata from timeline if available
           if (!isCancelled && timeline?.bossMetadata) {
@@ -49,25 +78,31 @@ export const RealtimeBossProvider = ({ children }) => {
             setBossMetadata(null);
           }
 
-          if (!isCancelled && rawActions.length) {
-            const processedActions = processMultiHitTankBusters(rawActions);
-            setCurrentBossActions(processedActions);
+          if (!isCancelled && !rawActions.length) {
+            setCurrentBossActions([]);
             setSelectedBossAction(null);
-            return; // Done
           }
+
+          return; // Done
         } catch (e) {
           console.warn('[RealtimeBossContext] Failed to load timeline actions, falling back to boss library:', e);
           setBossMetadata(null);
+          setSourceTimeline(null);
         }
       } else {
         // No timeline, clear metadata
         setBossMetadata(null);
+        setSourceTimeline(null);
       }
 
       // Fallback to boss library using bossId
       if (!currentBossId) {
         console.log('[RealtimeBossContext] No boss selected, using empty actions');
         setCurrentBossActions([]);
+        setTimelinePhases([]);
+        setTimelinePhaseSummaries([]);
+        setSkippedBossActions([]);
+        setHasPhaseOverrideSupport(false);
         setSelectedBossAction(null);
         return;
       }
@@ -77,16 +112,50 @@ export const RealtimeBossProvider = ({ children }) => {
       if (rawBossActions) {
         const processedActions = processMultiHitTankBusters(rawBossActions);
         setCurrentBossActions(processedActions);
+        setTimelinePhases([]);
+        setTimelinePhaseSummaries([]);
+        setSkippedBossActions([]);
+        setHasPhaseOverrideSupport(false);
         setSelectedBossAction(null);
       } else {
         console.warn('[RealtimeBossContext] No actions found for boss:', currentBossId);
         setCurrentBossActions([]);
+        setTimelinePhases([]);
+        setTimelinePhaseSummaries([]);
+        setSkippedBossActions([]);
+        setHasPhaseOverrideSupport(false);
       }
     };
 
     loadActions();
     return () => { isCancelled = true; };
-  }, [realtimePlan?.sourceTimelineId, currentBossId]);
+  }, [realtimePlan?.timelineLayout, realtimePlan?.sourceTimelineId, currentBossId]);
+
+  useEffect(() => {
+    if (!sourceTimeline) {
+      return;
+    }
+
+    const resolvedTimeline = resolvePhaseAwareTimeline(
+      sourceTimeline,
+      realtimePlan?.phaseOverrides || {}
+    );
+    const processedActions = processMultiHitTankBusters(resolvedTimeline.actions);
+
+    setCurrentBossActions(processedActions);
+    setTimelinePhases(resolvedTimeline.phases);
+    setTimelinePhaseSummaries(resolvedTimeline.phaseSummaries);
+    setSkippedBossActions(resolvedTimeline.skippedActions);
+    setHasPhaseOverrideSupport(resolvedTimeline.hasOverrideSupport);
+    setSelectedBossAction((previousSelection) => {
+      if (!previousSelection) {
+        return null;
+      }
+
+      const nextSelection = processedActions.find((action) => action.id === previousSelection.id);
+      return nextSelection || null;
+    });
+  }, [sourceTimeline, realtimePlan?.phaseOverrides]);
 
   // Get current boss level - prefer timeline metadata, fallback to hardcoded boss data
   const currentBossLevel = useMemo(() => {
@@ -105,6 +174,14 @@ export const RealtimeBossProvider = ({ children }) => {
 
   // Get base health values - prefer timeline metadata, fallback to level-based lookup
   const currentBaseHealth = useMemo(() => {
+    const planTimelineLayout = getPlanTimelineLayout(realtimePlan);
+    if (planTimelineLayout?.healthConfig) {
+      return {
+        party: planTimelineLayout.healthConfig.party,
+        tank: planTimelineLayout.healthConfig.defaultTank,
+      };
+    }
+
     // First, check if we have base health from timeline metadata
     if (bossMetadata?.baseHealth) {
       console.log('[RealtimeBossContext] Using base health from timeline metadata:', bossMetadata.baseHealth);
@@ -124,7 +201,7 @@ export const RealtimeBossProvider = ({ children }) => {
 
     console.log('[RealtimeBossContext] No exact health match for level', currentBossLevel, ', using closest level', closestLevel);
     return baseHealthValues[closestLevel] || { party: 143000, tank: 225000 }; // Default to level 100 values
-  }, [currentBossLevel, bossMetadata]);
+  }, [currentBossLevel, bossMetadata, realtimePlan]);
 
   // Sort boss actions by time
   const sortedBossActions = useMemo(() => {
@@ -164,7 +241,11 @@ export const RealtimeBossProvider = ({ children }) => {
     clearSelectedBossAction,
     currentBossLevel,
     currentBaseHealth, // Expose base health values
-    bossMetadata // Expose boss metadata from timeline
+    bossMetadata, // Expose boss metadata from timeline
+    timelinePhases,
+    timelinePhaseSummaries,
+    skippedBossActions,
+    hasPhaseOverrideSupport,
   };
 
   return (

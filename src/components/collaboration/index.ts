@@ -1,4 +1,13 @@
-export { default as ActiveUsersDisplay } from './ActiveUsersDisplay.jsx';
-export { default as CollaboratorsList } from './CollaboratorsList.jsx';
-export { default as DisplayNameModal } from './DisplayNameModal.jsx';
-export { default as SharePlanModal } from './SharePlanModal.jsx';
+export { default as ActiveUsersDisplay } from './ActiveUsersDisplay';
+export { default as CollaborationAutoJoin } from './CollaborationAutoJoin';
+export { default as CollaborationPresenceShell } from './CollaborationPresenceShell';
+export { default as CollaboratorsList } from './CollaboratorsList';
+export { default as PresenceBadgeGroup } from './PresenceBadgeGroup';
+export { default as PresenceOutline } from './PresenceOutline';
+export { default as PresenceSurface } from './PresenceSurface';
+export { default as PresenceTarget } from './PresenceTarget';
+export { default as RemoteCursorLayer } from './RemoteCursorLayer';
+export { default as SectionPresencePill } from './SectionPresencePill';
+export { default as SelectionBorder } from './SelectionBorder';
+export { default as SelectionIndicator } from './SelectionIndicator';
+export { default as SharePlanModal } from './SharePlanModal';

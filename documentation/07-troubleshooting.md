@@ -132,19 +132,12 @@ bun run dev
 
 **Solution:**
 ```bash
-# Check database rules in Firebase Console
-# Go to Realtime Database > Rules
-# Ensure rules allow read/write access:
-{
-  "rules": {
-    "plans": {
-      "$planId": {
-        ".read": true,
-        ".write": "auth != null || auth.uid == 'anonymous'"
-      }
-    }
-  }
-}
+# Vercel deployments do not publish Firebase RTDB rules
+# Deploy the current repository rules to the live database
+npm run deploy:database-rules
+
+# Confirm the deployed rules now include the query-scoped /plans read rule
+firebase database:get /.settings/rules --project xivmit --instance xivmit-default-rtdb --pretty
 ```
 
 #### Issue: Database URL incorrect

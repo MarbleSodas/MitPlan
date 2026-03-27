@@ -2,8 +2,6 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
 import * as planService from '../services/realtimePlanService';
-import unifiedPlanService from '../services/unifiedPlanService';
-import localStoragePlanService from '../services/localStoragePlanService';
 
 export const RealtimePlanDataContext = createContext(null);
 export const RealtimePlanActionsContext = createContext(null);
@@ -27,202 +25,122 @@ export const useRealtimePlanActions = () => {
 export const useRealtimePlan = () => {
   const data = useContext(RealtimePlanDataContext);
   const actions = useContext(RealtimePlanActionsContext);
-  
-  // Legacy support: check if we are in a provider that supplies both
-  // If we are in a legacy provider (if I hadn't changed it), this would fail.
-  // But I am changing the provider.
-  
+
   if (!data || !actions) {
-     throw new Error('useRealtimePlan must be used within a RealtimePlanProvider');
+    throw new Error('useRealtimePlan must be used within a RealtimePlanProvider');
   }
 
-  // Combine them for backward compatibility
   return useMemo(() => ({
     ...data,
     ...actions
   }), [data, actions]);
 };
 
-
-export const RealtimePlanProvider = ({ children, planId }) => {
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+export const RealtimePlanProvider = ({ children, planId, readOnly = false }) => {
+  const { user } = useAuth();
   const { sessionId, debouncedUpdate, setChangeOrigin, isOwnChange } = useCollaboration();
 
-  // Detect if this is a local plan (starts with 'local_')
-  const isLocalPlan = planId && planId.startsWith('local_');
-
-  // Set up unified plan service context
-  useEffect(() => {
-    unifiedPlanService.setUserContext(user || anonymousUser, isAnonymousMode || isLocalPlan);
-  }, [user, anonymousUser, isAnonymousMode, isLocalPlan]);
-
-  // Complete plan state loaded from Firebase Realtime Database
   const [realtimePlan, setRealtimePlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Refs to prevent infinite loops and track changes
+
   const isUpdatingRef = useRef(false);
   const changeOriginRef = useRef(null);
   const pendingChangesRef = useRef(new Set());
   const planListenerRef = useRef(null);
   const realtimePlanRef = useRef(realtimePlan);
 
-  // Keep ref in sync
   useEffect(() => {
     realtimePlanRef.current = realtimePlan;
   }, [realtimePlan]);
 
-  // Load plan data directly from Firebase Realtime Database
-
   useEffect(() => {
     if (!planId) {
-      console.log('[RealtimePlanContext] No planId provided');
-      return;
+      setRealtimePlan(null);
+      setLoading(false);
+      setError('No plan selected');
+      return undefined;
     }
 
-    console.log('[RealtimePlanContext] Setting up listener for planId:', planId);
     setLoading(true);
     setError(null);
 
-    // Initialize plan based on type (local or Firebase)
     const initializePlan = async () => {
       try {
-        if (isLocalPlan) {
-          // For local plans, load directly from localStorage
-          console.log('[RealtimePlanContext] Loading local plan from localStorage');
-          const localPlan = await localStoragePlanService.getPlan(planId);
-
-          if (localPlan) {
-            console.log('[RealtimePlanContext] Local plan loaded:', localPlan.name);
-            setRealtimePlan(localPlan);
-            setLoading(false);
-            setError(null);
-            return; // Don't set up Firebase listener for local plans
-          } else {
-            throw new Error('Local plan not found');
-          }
-        } else {
-          // For Firebase plans, try to ensure plan structure exists
-          // But handle permission errors gracefully
+        if (!readOnly && user?.uid) {
           try {
             await planService.ensurePlanStructure(planId);
+            await planService.hydratePlanTimelineLayoutIfMissing(planId, user.uid, sessionId);
           } catch (structureError) {
-            // If it's a permission error, we'll let the real-time listener handle it
-            if (structureError.message?.includes('Permission denied')) {
-              console.log('[RealtimePlanContext] Plan access restricted, will attempt real-time connection');
-            } else {
-              // For other errors, re-throw
+            if (!structureError.message?.includes('Permission denied')) {
               throw structureError;
             }
           }
         }
-      } catch (error) {
-        console.warn('[RealtimePlanContext] Could not initialize plan:', error);
-        setError(error.message);
-        setLoading(false);
+
+        if (user?.uid) {
+          try {
+            const { trackPlanAccess } = await import('../services/planAccessService');
+            await trackPlanAccess(planId, user.uid);
+          } catch (accessError) {
+            console.error('[RealtimePlanContext] Error tracking plan access:', accessError);
+          }
+        }
+      } catch (initializeError) {
+        console.warn('[RealtimePlanContext] Could not initialize plan:', initializeError);
+        setError(initializeError.message);
       }
     };
 
     initializePlan();
 
-    // Set up real-time listener only for Firebase plans
-    let unsubscribe = () => {};
-
-    if (!isLocalPlan) {
-      // Track access when first loading the plan
-      const trackInitialAccess = async () => {
-        try {
-          const currentUser = user || anonymousUser;
-          if (currentUser) {
-            const { trackPlanAccess } = await import('../services/planAccessService');
-            if (currentUser.uid) {
-              await trackPlanAccess(planId, currentUser.uid, false);
-              console.log('[RealtimePlanContext] Initial access tracked for authenticated user:', currentUser.uid);
-            } else if (currentUser.id) {
-              await trackPlanAccess(planId, currentUser.id, true);
-              console.log('[RealtimePlanContext] Initial access tracked for anonymous user:', currentUser.id);
-            }
+    const unsubscribe = planService.subscribeToPlanWithOrigin(
+      planId,
+      (planData, changeOrigin, subscriptionError) => {
+        if (subscriptionError) {
+          if (
+            subscriptionError.message?.includes('Permission denied') ||
+            subscriptionError.message?.includes('permission_denied')
+          ) {
+            setError('You do not have permission to access this plan');
+          } else {
+            setError(subscriptionError.message);
           }
-        } catch (error) {
-          console.error('[RealtimePlanContext] Error tracking initial access:', error);
+          setLoading(false);
+          return;
         }
-      };
-
-      // Track access on first load
-      trackInitialAccess();
-
-      unsubscribe = planService.subscribeToPlanWithOrigin(
-        planId,
-        (planData, changeOrigin, error) => {
-          console.log('[RealtimePlanContext] Received data:', { planData: !!planData, changeOrigin, error });
-
-          if (error) {
-            console.error('[RealtimePlanContext] Error loading plan:', error);
-
-            // Handle permission errors more gracefully
-            if (error.message?.includes('Permission denied') || error.message?.includes('permission_denied')) {
-              setError('You do not have permission to access this plan');
-            } else {
-              setError(error.message);
-            }
-            setLoading(false);
-            return;
-          }
 
         if (planData) {
-          // Always update on initial load (when realtimePlan is null)
-          // Only skip updates if this change originated from this session AND we already have data
-          if (!realtimePlan || !changeOrigin || !isOwnChange(changeOrigin)) {
-            console.log('[RealtimePlanContext] Setting plan data:', {
-              name: planData.name,
-              bossId: planData.bossId,
-              selectedJobsKeys: Object.keys(planData.selectedJobs || {}),
-              selectedJobsData: planData.selectedJobs,
-              assignmentCount: Object.keys(planData.assignments || {}).length,
-              assignmentsData: planData.assignments,
-              tankPositionsData: planData.tankPositions,
-              hasUserId: !!planData.userId,
-              isPublic: planData.isPublic,
-              sourceTimelineId: planData.sourceTimelineId,
-              sourceTimelineName: planData.sourceTimelineName
-            });
+          if (!realtimePlanRef.current || !changeOrigin || !isOwnChange(changeOrigin)) {
             setRealtimePlan(planData);
-          } else {
-            console.log('[RealtimePlanContext] Skipping update - own change');
           }
           setError(null);
         } else {
-          console.log('[RealtimePlanContext] No plan data received');
           setRealtimePlan(null);
         }
 
         setLoading(false);
         setIsInitialized(true);
       },
-      sessionId
+      readOnly ? null : sessionId
     );
-    }
 
     planListenerRef.current = unsubscribe;
 
-    // Cleanup listener on unmount or planId change
     return () => {
       if (planListenerRef.current) {
         planListenerRef.current();
         planListenerRef.current = null;
       }
     };
-  }, [planId, sessionId, isOwnChange, isLocalPlan]);
+  }, [planId, readOnly, sessionId, isOwnChange, user?.uid]);
 
-  // Enhanced change origin tracking
   const trackChange = useCallback((changeType, changeId) => {
     const trackingId = `${changeType}-${changeId}-${sessionId}`;
     changeOriginRef.current = trackingId;
     pendingChangesRef.current.add(trackingId);
 
-    // Clear tracking after a delay
     setTimeout(() => {
       pendingChangesRef.current.delete(trackingId);
       if (changeOriginRef.current === trackingId) {
@@ -233,30 +151,30 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     return trackingId;
   }, [sessionId]);
 
-  const updateBossRealtime = useCallback((bossId) => {
-    if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
+  const canMutatePlan = !!planId && !!user?.uid && !readOnly && !isUpdatingRef.current;
 
+  const updateBossRealtime = useCallback((bossId) => {
+    if (!canMutatePlan) return;
     if (realtimePlanRef.current?.bossId === bossId) return;
 
     trackChange('boss', bossId);
     setChangeOrigin(sessionId);
 
-    setRealtimePlan(prev => prev ? { ...prev, bossId } : null);
-    
     const previousBossId = realtimePlanRef.current?.bossId;
+    setRealtimePlan(prev => prev ? { ...prev, bossId } : null);
 
     debouncedUpdate(`boss-${planId}`, async () => {
       try {
         await planService.updatePlanBossRealtime(planId, bossId, user.uid, sessionId);
-      } catch (error) {
-        console.error('Error updating boss realtime:', error);
+      } catch (updateError) {
+        console.error('Error updating boss realtime:', updateError);
         setRealtimePlan(prev => prev ? { ...prev, bossId: previousBossId } : null);
       }
     }, 300);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange]);
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
 
   const updateJobsRealtime = useCallback((selectedJobs) => {
-    if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
+    if (!canMutatePlan) return;
 
     const optimizedSelectedJobs = {};
     Object.entries(selectedJobs).forEach(([roleKey, jobs]) => {
@@ -277,69 +195,55 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     setChangeOrigin(sessionId);
 
     const previousJobs = realtimePlanRef.current?.selectedJobs;
-
     setRealtimePlan(prev => prev ? { ...prev, selectedJobs: optimizedSelectedJobs } : null);
 
     debouncedUpdate(`jobs-${planId}`, async () => {
       try {
-        if (isLocalPlan) {
-          await localStoragePlanService.updatePlan(planId, { selectedJobs: optimizedSelectedJobs });
-        } else {
-          await planService.updatePlanJobsRealtime(planId, optimizedSelectedJobs, user?.uid, sessionId);
-        }
-        console.log('[RealtimePlanContext] Jobs updated successfully');
-      } catch (error) {
-        console.error('Error updating jobs realtime:', error);
+        await planService.updatePlanJobsRealtime(planId, optimizedSelectedJobs, user.uid, sessionId);
+      } catch (updateError) {
+        console.error('Error updating jobs realtime:', updateError);
         setRealtimePlan(prev => prev ? { ...prev, selectedJobs: previousJobs } : null);
         setError('Failed to update job selection. Please try again.');
-
         setTimeout(() => setError(null), 5000);
       }
     }, 150);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, isLocalPlan]);
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
 
   const updateAssignmentsRealtime = useCallback((assignments) => {
-    if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return Promise.resolve();
+    if (!canMutatePlan) {
+      return Promise.resolve();
+    }
 
     const currentAssignmentsString = JSON.stringify(realtimePlanRef.current?.assignments || {});
     const newAssignmentsString = JSON.stringify(assignments);
-    if (currentAssignmentsString === newAssignmentsString) return Promise.resolve();
+    if (currentAssignmentsString === newAssignmentsString) {
+      return Promise.resolve();
+    }
 
     trackChange('assignments', newAssignmentsString);
     setChangeOrigin(sessionId);
 
     const previousAssignments = realtimePlanRef.current?.assignments;
-
     setRealtimePlan(prev => prev ? { ...prev, assignments } : null);
 
-    const updatePromise = new Promise((resolve, reject) => {
-      const updateKey = `assignments-${planId}`;
-
-      debouncedUpdate(updateKey, async () => {
+    return new Promise((resolve, reject) => {
+      debouncedUpdate(`assignments-${planId}`, async () => {
         try {
-          if (isLocalPlan) {
-            await localStoragePlanService.updatePlan(planId, { assignments });
-          } else {
-            await planService.updatePlanAssignmentsRealtime(planId, assignments, user?.uid, sessionId);
-          }
-          console.log('[RealtimePlanContext] Assignments updated successfully');
+          await planService.updatePlanAssignmentsRealtime(planId, assignments, user.uid, sessionId);
           resolve(true);
-        } catch (error) {
-          console.error('Error updating assignments realtime:', error);
+        } catch (updateError) {
+          console.error('Error updating assignments realtime:', updateError);
           setRealtimePlan(prev => prev ? { ...prev, assignments: previousAssignments } : null);
           setError('Failed to update mitigation assignments. Please try again.');
-
           setTimeout(() => setError(null), 5000);
-          reject(error);
+          reject(updateError);
         }
       }, 300);
     });
-
-    return updatePromise;
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, isLocalPlan]);
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
 
   const updateTankPositionsRealtime = useCallback((tankPositions) => {
-    if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
+    if (!canMutatePlan) return;
 
     const currentTankPositionsString = JSON.stringify(realtimePlanRef.current?.tankPositions || {});
     const newTankPositionsString = JSON.stringify(tankPositions);
@@ -349,69 +253,129 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     setChangeOrigin(sessionId);
 
     const previousTankPositions = realtimePlanRef.current?.tankPositions;
-
     setRealtimePlan(prev => prev ? { ...prev, tankPositions } : null);
 
     debouncedUpdate(`tankPositions-${planId}`, async () => {
       try {
-        if (isLocalPlan) {
-          await localStoragePlanService.updatePlan(planId, { tankPositions });
-        } else {
-          await planService.updatePlanTankPositionsRealtime(planId, tankPositions, user?.uid, sessionId);
-        }
-        console.log('[RealtimePlanContext] Tank positions updated successfully');
-      } catch (error) {
-        console.error('Error updating tank positions realtime:', error);
+        await planService.updatePlanTankPositionsRealtime(planId, tankPositions, user.uid, sessionId);
+      } catch (updateError) {
+        console.error('Error updating tank positions realtime:', updateError);
         setRealtimePlan(prev => prev ? { ...prev, tankPositions: previousTankPositions } : null);
         setError('Failed to update tank positions. Please try again.');
-
         setTimeout(() => setError(null), 5000);
       }
     }, 300);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, trackChange, isLocalPlan]);
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
 
-  // Batch update function for multiple fields
+  const updatePhaseOverridesRealtime = useCallback((phaseOverrides) => {
+    if (!canMutatePlan) return;
+
+    const currentPhaseOverridesString = JSON.stringify(realtimePlanRef.current?.phaseOverrides || {});
+    const nextPhaseOverridesString = JSON.stringify(phaseOverrides || {});
+    if (currentPhaseOverridesString === nextPhaseOverridesString) return;
+
+    trackChange('phaseOverrides', nextPhaseOverridesString);
+    setChangeOrigin(sessionId);
+
+    const previousPhaseOverrides = realtimePlanRef.current?.phaseOverrides || {};
+    setRealtimePlan((prev) => prev ? { ...prev, phaseOverrides } : null);
+
+    debouncedUpdate(`phaseOverrides-${planId}`, async () => {
+      try {
+        await planService.batchUpdatePlanRealtime(planId, { phaseOverrides }, user.uid, sessionId);
+      } catch (updateError) {
+        console.error('Error updating phase overrides realtime:', updateError);
+        setRealtimePlan((prev) => prev ? { ...prev, phaseOverrides: previousPhaseOverrides } : null);
+        setError('Failed to update phase timings. Please try again.');
+        setTimeout(() => setError(null), 5000);
+      }
+    }, 250);
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
+
+  const updateTimelineLayoutRealtime = useCallback((timelineLayout) => {
+    if (!canMutatePlan) {
+      return Promise.resolve();
+    }
+
+    const currentTimelineLayoutString = JSON.stringify(realtimePlanRef.current?.timelineLayout || null);
+    const nextTimelineLayoutString = JSON.stringify(timelineLayout || null);
+    const currentPhaseOverridesString = JSON.stringify(realtimePlanRef.current?.phaseOverrides || {});
+    if (currentTimelineLayoutString === nextTimelineLayoutString && currentPhaseOverridesString === '{}') {
+      return Promise.resolve();
+    }
+
+    trackChange('timelineLayout', nextTimelineLayoutString);
+    setChangeOrigin(sessionId);
+
+    const previousTimelineLayout = realtimePlanRef.current?.timelineLayout || null;
+    const previousBossId = realtimePlanRef.current?.bossId || null;
+    const previousBossTags = realtimePlanRef.current?.bossTags || [];
+    const previousBossMetadata = realtimePlanRef.current?.bossMetadata || null;
+    const previousPhaseOverrides = realtimePlanRef.current?.phaseOverrides || {};
+
+    setRealtimePlan((prev) => prev
+      ? {
+          ...prev,
+          timelineLayout,
+          bossId: timelineLayout?.bossId || null,
+          bossTags: timelineLayout?.bossTags || (timelineLayout?.bossId ? [timelineLayout.bossId] : []),
+          bossMetadata: timelineLayout?.bossMetadata || null,
+          phaseOverrides: {},
+        }
+      : null);
+
+    return new Promise((resolve, reject) => {
+      debouncedUpdate(`timelineLayout-${planId}`, async () => {
+        try {
+          await planService.updatePlanTimelineLayoutRealtime(planId, timelineLayout, user.uid, sessionId);
+          resolve(true);
+        } catch (updateError) {
+          console.error('Error updating plan timeline layout realtime:', updateError);
+          setRealtimePlan((prev) => prev
+            ? {
+                ...prev,
+                timelineLayout: previousTimelineLayout,
+                bossId: previousBossId,
+                bossTags: previousBossTags,
+                bossMetadata: previousBossMetadata,
+                phaseOverrides: previousPhaseOverrides,
+              }
+            : null);
+          setError('Failed to update the plan timeline. Please try again.');
+          setTimeout(() => setError(null), 5000);
+          reject(updateError);
+        }
+      }, 250);
+    });
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
+
   const batchUpdateRealtime = useCallback((updates) => {
-    if (!planId || (!user && !isAnonymousMode && !isLocalPlan) || isUpdatingRef.current) return;
+    if (!canMutatePlan) return;
 
     setChangeOrigin(sessionId);
 
     const previousState = {};
     const currentPlan = realtimePlanRef.current;
-    Object.keys(updates).forEach(key => {
+    Object.keys(updates).forEach((key) => {
       if (currentPlan && currentPlan[key] !== undefined) {
         previousState[key] = currentPlan[key];
       }
     });
 
-    setRealtimePlan(prev => {
-      if (!prev) return null;
-      return { ...prev, ...updates };
-    });
+    setRealtimePlan(prev => prev ? { ...prev, ...updates } : null);
 
     debouncedUpdate(`batch-${planId}`, async () => {
       try {
-        if (isLocalPlan) {
-          await localStoragePlanService.updatePlan(planId, updates);
-        } else {
-          await planService.batchUpdatePlanRealtime(planId, updates, user?.uid, sessionId);
-        }
-        console.log('[RealtimePlanContext] Batch update successful');
-      } catch (error) {
-        console.error('Error batch updating plan realtime:', error);
-        setRealtimePlan(prev => {
-          if (!prev) return null;
-          return { ...prev, ...previousState };
-        });
+        await planService.batchUpdatePlanRealtime(planId, updates, user.uid, sessionId);
+      } catch (updateError) {
+        console.error('Error batch updating plan realtime:', updateError);
+        setRealtimePlan(prev => prev ? { ...prev, ...previousState } : null);
         setError('Failed to update settings. Please try again.');
-
         setTimeout(() => setError(null), 5000);
       }
     }, 500);
-  }, [planId, user, sessionId, debouncedUpdate, setChangeOrigin, isLocalPlan, isAnonymousMode]);
+  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, user?.uid]);
 
-
-  // Recovery function to reload plan data from Firebase
   const recoverPlanData = useCallback(async () => {
     if (!planId) return;
 
@@ -419,18 +383,18 @@ export const RealtimePlanProvider = ({ children, planId }) => {
       setLoading(true);
       setError(null);
 
-      // Use access tracking when recovering plan data
-      const planData = await planService.getPlanWithAccessTracking(planId);
-      setRealtimePlan(planData);
+      const planData = user?.uid
+        ? await planService.getPlanWithAccessTracking(planId, user.uid)
+        : await planService.getPublicPlan(planId);
 
-      console.log('[RealtimePlanContext] Plan data recovered successfully');
-    } catch (error) {
-      console.error('[RealtimePlanContext] Failed to recover plan data:', error);
+      setRealtimePlan(planData);
+    } catch (recoverError) {
+      console.error('[RealtimePlanContext] Failed to recover plan data:', recoverError);
       setError('Failed to recover plan data. Please refresh the page.');
     } finally {
       setLoading(false);
     }
-  }, [planId]);
+  }, [planId, user?.uid]);
 
   const dataValue = useMemo(() => ({
     planId,
@@ -438,18 +402,22 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     loading,
     error,
     isInitialized,
+    isReadOnly: readOnly,
     bossId: realtimePlan?.bossId,
     selectedJobs: realtimePlan?.selectedJobs || {},
     assignments: realtimePlan?.assignments || {},
     tankPositions: realtimePlan?.tankPositions || {},
+    phaseOverrides: realtimePlan?.phaseOverrides || {},
     planName: realtimePlan?.name
-  }), [planId, realtimePlan, loading, error, isInitialized]);
+  }), [planId, realtimePlan, loading, error, isInitialized, readOnly]);
 
   const actionsValue = useMemo(() => ({
     updateBossRealtime,
     updateJobsRealtime,
     updateAssignmentsRealtime,
     updateTankPositionsRealtime,
+    updatePhaseOverridesRealtime,
+    updateTimelineLayoutRealtime,
     batchUpdateRealtime,
     recoverPlanData
   }), [
@@ -457,6 +425,8 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     updateJobsRealtime,
     updateAssignmentsRealtime,
     updateTankPositionsRealtime,
+    updatePhaseOverridesRealtime,
+    updateTimelineLayoutRealtime,
     batchUpdateRealtime,
     recoverPlanData
   ]);
@@ -469,4 +439,3 @@ export const RealtimePlanProvider = ({ children, planId }) => {
     </RealtimePlanDataContext.Provider>
   );
 };
-

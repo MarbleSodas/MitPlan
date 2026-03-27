@@ -1,5 +1,5 @@
 
-import AuthForm from '../auth';
+import { AuthForm } from '../auth';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';

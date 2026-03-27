@@ -1,10 +1,9 @@
 import { auth, database } from '../config/firebase';
 import { ref, get, set } from 'firebase/database';
-import anonymousUserService from './anonymousUserService';
 
 /**
  * Enhanced User Service for fetching user information
- * Handles both authenticated Firebase users and anonymous users
+ * Handles authenticated Firebase users
  * Implements caching and multiple lookup strategies
  */
 
@@ -31,41 +30,11 @@ const setCache = (userId, displayName) => {
 };
 
 /**
- * Try to get display name from collaboration data in Firebase
- * This looks for recent collaboration sessions where the user might have been active
+ * Collaboration display names should come from the current active session,
+ * not from scanning every plan in the database.
  */
 const getDisplayNameFromCollaboration = async (userId) => {
-  try {
-    // Look through recent plans to find collaboration data for this user
-    const plansRef = ref(database, 'plans');
-    const plansSnapshot = await get(plansRef);
-
-    if (plansSnapshot.exists()) {
-      const plans = plansSnapshot.val();
-
-      // Search through plans for collaboration data
-      for (const planId in plans) {
-        const plan = plans[planId];
-        if (plan.collaboration && plan.collaboration.activeUsers) {
-          const activeUsers = plan.collaboration.activeUsers;
-
-          // Look for sessions by this user
-          for (const sessionId in activeUsers) {
-            const session = activeUsers[sessionId];
-            if (session.userId === userId && session.displayName) {
-              console.log('[UserService] Found display name from collaboration data:', session.displayName);
-              return session.displayName;
-            }
-          }
-        }
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('[UserService] Error fetching from collaboration data:', error);
-    return null;
-  }
+  return null;
 };
 
 /**
@@ -128,7 +97,7 @@ export const updateUserLastSeen = async (userId) => {
 
 /**
  * Get display name for a user by their ID
- * @param {string} userId - The user ID (Firebase UID or anonymous user ID)
+ * @param {string} userId - The user ID (Firebase UID)
  * @returns {Promise<string>} The user's display name
  */
 export const getUserDisplayName = async (userId) => {
@@ -143,51 +112,28 @@ export const getUserDisplayName = async (userId) => {
 
     let displayName = null;
 
-    // Handle anonymous users (IDs start with 'anon_')
-    if (userId && userId.startsWith('anon_')) {
-      const anonymousUser = anonymousUserService.getCurrentUser();
-      if (anonymousUser && anonymousUser.id === userId) {
-        displayName = anonymousUser.displayName || 'Anonymous User';
-        console.log('[UserService] Found current anonymous user display name:', displayName);
-      } else {
-        // For other anonymous users, try to find them in collaboration data
-        displayName = await getDisplayNameFromCollaboration(userId);
-        if (!displayName) {
-          displayName = 'Anonymous User';
-        }
-      }
+    const currentUser = auth.currentUser;
+
+    if (currentUser && currentUser.uid === userId) {
+      displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+      console.log('[UserService] Found current authenticated user display name:', displayName);
     } else {
-      // Handle authenticated Firebase users
-      const currentUser = auth.currentUser;
+      displayName = await getDisplayNameFromUserProfile(userId);
 
-      if (currentUser && currentUser.uid === userId) {
-        // This is the current authenticated user
-        displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
-        console.log('[UserService] Found current authenticated user display name:', displayName);
-      } else {
-        // For other authenticated users, try multiple sources in order of preference
-        // 1. Try user profile data first (most reliable)
-        displayName = await getDisplayNameFromUserProfile(userId);
+      if (!displayName) {
+        displayName = await getDisplayNameFromCollaboration(userId);
+      }
 
-        // 2. Try collaboration data (most recent activity)
-        if (!displayName) {
-          displayName = await getDisplayNameFromCollaboration(userId);
-        }
-
-        // 3. Fallback strategies
-        if (!displayName) {
-          if (userId && userId.includes('@')) {
-            // If the userId looks like an email, use the part before @
-            displayName = userId.split('@')[0];
-            console.log('[UserService] Using email-based display name for user:', displayName);
-          } else if (userId && userId.length > 0) {
-            // Use a more descriptive fallback that indicates it's another user
-            displayName = `User (${userId.substring(0, 8)}...)`;
-            console.log('[UserService] Using ID-based display name for user:', displayName);
-          } else {
-            displayName = 'Unknown User';
-            console.log('[UserService] Using unknown user fallback');
-          }
+      if (!displayName) {
+        if (userId && userId.includes('@')) {
+          displayName = userId.split('@')[0];
+          console.log('[UserService] Using email-based display name for user:', displayName);
+        } else if (userId && userId.length > 0) {
+          displayName = `User (${userId.substring(0, 8)}...)`;
+          console.log('[UserService] Using ID-based display name for user:', displayName);
+        } else {
+          displayName = 'Unknown User';
+          console.log('[UserService] Using unknown user fallback');
         }
         console.log('[UserService] Final display name for other user:', displayName);
       }
@@ -269,22 +215,16 @@ export const getCurrentUserDisplayName = () => {
     return currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
   }
 
-  // Check for anonymous user
-  const anonymousUser = anonymousUserService.getCurrentUser();
-  if (anonymousUser) {
-    return anonymousUser.displayName || 'Anonymous User';
-  }
-
   return 'Unknown User';
 };
 
 /**
- * Check if a user ID belongs to an anonymous user
+ * Legacy helper retained for compatibility after anonymous mode removal.
  * @param {string} userId - The user ID to check
- * @returns {boolean} True if the user is anonymous
+ * @returns {boolean} Always false
  */
 export const isAnonymousUserId = (userId) => {
-  return userId && userId.startsWith('anon_');
+  return false;
 };
 
 /**

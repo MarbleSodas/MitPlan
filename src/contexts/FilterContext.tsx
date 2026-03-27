@@ -4,6 +4,7 @@ import { useRealtimePlan } from './RealtimePlanContext';
 import { useRealtimeBossContext } from './RealtimeBossContext';
 import { bosses } from '../data';
 import { baseHealthValues } from '../data/bosses/bossData';
+import { getPlanTimelineLayout } from '../utils/timeline/planTimelineLayoutUtils';
 
 const FilterContext = createContext();
 
@@ -78,11 +79,14 @@ export const FilterProvider = ({ children }) => {
     }
 
     if (!isTankBuster) {
-      const partyMin = realtimePlan?.healthSettings?.partyMinHealth;
+      const planTimelineLayout = getPlanTimelineLayout(realtimePlan);
+      const partyMin = planTimelineLayout?.healthConfig?.party
+        ?? realtimePlan?.healthSettings?.partyMinHealth;
       if (partyMin && bossAction?.unmitigatedDamage) {
         const dmg = parseInt(String(bossAction.unmitigatedDamage).replace(/[^0-9]/g, ''), 10) || 0;
         const currentBoss = bosses.find(b => b.id === currentBossId) || null;
-        const basePartyHp = (currentBoss?.baseHealth?.party)
+        const basePartyHp = planTimelineLayout?.healthConfig?.party
+          ?? (currentBoss?.baseHealth?.party)
           ?? (baseHealthValues[currentBossLevel] && baseHealthValues[currentBossLevel].party)
           ?? baseHealthValues[100].party;
         if ((basePartyHp - dmg) >= partyMin) {
@@ -98,7 +102,7 @@ export const FilterProvider = ({ children }) => {
         return mitigation.forRaidWide === true;
       }
     });
-  }, [showAllMitigations, showOnlyMyAbilities, realtimePlan, currentBossLevel]);
+  }, [showAllMitigations, showOnlyMyAbilities, realtimePlan, currentBossId, currentBossLevel]);
 
   const contextValue = useMemo(() => ({
     showAllMitigations,

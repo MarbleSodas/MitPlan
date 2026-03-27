@@ -21,7 +21,7 @@ This guide provides step-by-step instructions to manually test the share plan fe
 
 #### Step 2: Share the Plan
 1. On the dashboard, click the "Share" button for the created plan
-2. Copy the share link (should be in format: `/plan/edit/{planId}`)
+2. Copy the share link (should be in format: `/plan/shared/{planId}`)
 3. Verify the share modal shows the correct URL
 
 #### Step 3: Access Plan as Different User (User B)

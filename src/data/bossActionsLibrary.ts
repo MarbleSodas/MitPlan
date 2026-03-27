@@ -1,77 +1,154 @@
-/**
- * Boss Actions Library
- * A centralized collection of all unique boss actions that can be reused across timelines
- * This library allows users to pick and customize actions for their custom timelines
- */
+import type {
+  BossAction,
+  BossActionClassification,
+  BossActionTemplate,
+  DamageType,
+} from '../types';
+import { bossActionsMap } from './bosses/bossActions';
+import {
+  deriveBossActionClassification,
+  isRaidwideClassification,
+  isTankBusterClassification,
+  syncBossActionMetadataWithClassification,
+} from '../utils/boss/bossActionUtils';
 
-import sugarRiotActions from './bosses/sugar-riot_actions.json';
-import dancingGreenActions from './bosses/dancing-green_actions.json';
-import lalaActions from './bosses/lala_actions.json';
-import staticeActions from './bosses/statice_actions.json';
-import bruteAbominatorActions from './bosses/brute-abominator_actions.json';
-import howlingBladeActions from './bosses/howling-blade_actions.json';
-import necronActions from './bosses/necron_actions.json';
-import ketudukeActions from './bosses/ketudukeActions.json';
+type BossActionTemplateCategory = 'tankBusters' | 'raidwide' | 'mechanics' | 'all';
+type TemplateAccumulator = BossActionTemplate & { sourceAbilitySet: Set<string> };
 
-/**
- * All boss actions organized by boss ID
- * This maintains the original boss-specific organization for reference
- */
-export const bossActionsMap = {
-  'sugar-riot': sugarRiotActions,
-  'dancing-green-m5s': dancingGreenActions,
-  'lala': lalaActions,
-  'statice': staticeActions,
-  'brute-abominator-m7s': bruteAbominatorActions,
-  'howling-blade-m8s': howlingBladeActions,
-  'necron': necronActions,
-  'ketuduke': ketudukeActions
-};
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80);
+}
 
-/**
- * Extract all unique boss actions from all bosses
- * Creates a flat library of all available actions
- * Only includes one instance of each action name (first occurrence)
- */
-const extractAllActions = () => {
-  const allActions = [];
-  const seenActionNames = new Set();
+function buildTemplateKey(bossId: string, action: BossAction): string {
+  const normalized = syncBossActionMetadataWithClassification(action);
+  const classification = normalized.classification || deriveBossActionClassification(normalized);
+  const damageKey = String(normalized.unmitigatedDamage ?? '').trim().toLowerCase() || 'none';
+
+  return [
+    bossId,
+    normalized.name.trim().toLowerCase(),
+    classification,
+    normalized.damageType || 'none',
+    normalized.importance || 'none',
+    normalized.icon || 'none',
+    normalized.targetTank || 'none',
+    normalized.isMultiHit ? `multihit:${normalized.hitCount || 'yes'}` : 'multihit:none',
+    normalized.hasDot ? 'dot:yes' : 'dot:no',
+    damageKey,
+  ].join('::');
+}
+
+function buildLibraryId(bossId: string, action: BossAction): string {
+  const normalized = syncBossActionMetadataWithClassification(action);
+  const classification = normalized.classification || deriveBossActionClassification(normalized);
+
+  return [
+    bossId,
+    slugify(normalized.name),
+    slugify(classification),
+    slugify(normalized.damageType || 'none'),
+    slugify(normalized.importance || 'none'),
+    slugify(String(normalized.targetTank || 'none')),
+    slugify(normalized.isMultiHit ? `multihit_${normalized.hitCount || 'yes'}` : 'multihit_none'),
+    slugify(normalized.hasDot ? 'dot_yes' : 'dot_no'),
+    slugify(String(normalized.unmitigatedDamage || 'none')),
+  ]
+    .filter(Boolean)
+    .join('_');
+}
+
+function createTemplateAccumulator(bossId: string, action: BossAction): TemplateAccumulator {
+  const normalized = syncBossActionMetadataWithClassification(action);
+  const {
+    time: _time,
+    branchId: _branchId,
+    phaseId: _phaseId,
+    timeRange: _timeRange,
+    ...rest
+  } = normalized;
+
+  const sourceAbilities = Array.from(
+    new Set((normalized.sourceAbilities || [normalized.name]).filter(Boolean))
+  );
+
+  return {
+    ...rest,
+    id: buildLibraryId(bossId, normalized),
+    libraryId: buildLibraryId(bossId, normalized),
+    classification: normalized.classification || deriveBossActionClassification(normalized),
+    sourceBoss: bossId,
+    source: normalized.source || 'boss',
+    sourceKind: normalized.sourceKind || 'legacy_action',
+    isCustom: false,
+    occurrenceCount: 1,
+    sourceAbilities,
+    sourceAbilitySet: new Set(sourceAbilities),
+  };
+}
+
+function extractAllActions(): BossActionTemplate[] {
+  const templatesByKey = new Map<string, TemplateAccumulator>();
 
   Object.entries(bossActionsMap).forEach(([bossId, actions]) => {
-    actions.forEach(action => {
-      // Only add actions with unique names (first occurrence wins)
-      if (!seenActionNames.has(action.name)) {
-        // Add boss source information to each action
-        const actionWithSource = {
-          ...action,
-          sourceBoss: bossId,
-          libraryId: `${bossId}_${action.id}` // Unique ID for library
-        };
+    actions.forEach((action) => {
+      const key = buildTemplateKey(bossId, action);
+      const existing = templatesByKey.get(key);
 
-        allActions.push(actionWithSource);
-        seenActionNames.add(action.name);
+      if (!existing) {
+        templatesByKey.set(key, createTemplateAccumulator(bossId, action));
+        return;
+      }
+
+      const nextSourceAbilities = [
+        ...existing.sourceAbilitySet,
+        ...(action.sourceAbilities || [action.name]).filter(Boolean),
+      ];
+
+      nextSourceAbilities.forEach((ability) => existing.sourceAbilitySet.add(ability));
+      existing.sourceAbilities = Array.from(existing.sourceAbilitySet);
+      existing.occurrenceCount += 1;
+
+      if (!existing.description && action.description) {
+        existing.description = action.description;
+      }
+
+      if (!existing.notes && action.notes) {
+        existing.notes = action.notes;
+      }
+
+      if (!existing.icon && action.icon) {
+        existing.icon = action.icon;
       }
     });
   });
 
-  return allActions;
-};
+  return Array.from(templatesByKey.values())
+    .map(({ sourceAbilitySet: _sourceAbilitySet, ...template }) => template)
+    .sort((left, right) => {
+      if (left.sourceBoss !== right.sourceBoss) {
+        return left.sourceBoss.localeCompare(right.sourceBoss);
+      }
 
-/**
- * Categorize actions by type for easier browsing
- */
-const categorizeActions = (actions) => {
-  const categories = {
+      return left.name.localeCompare(right.name);
+    });
+}
+
+function categorizeActions(actions: BossActionTemplate[]): Record<BossActionTemplateCategory, BossActionTemplate[]> {
+  const categories: Record<BossActionTemplateCategory, BossActionTemplate[]> = {
     tankBusters: [],
     raidwide: [],
     mechanics: [],
-    all: actions
+    all: actions,
   };
 
-  actions.forEach(action => {
-    if (action.isTankBuster || action.isDualTankBuster) {
+  actions.forEach((action) => {
+    if (isTankBusterClassification(action.classification)) {
       categories.tankBusters.push(action);
-    } else if (action.importance === 'high' || action.importance === 'critical') {
+    } else if (isRaidwideClassification(action.classification)) {
       categories.raidwide.push(action);
     } else {
       categories.mechanics.push(action);
@@ -79,70 +156,65 @@ const categorizeActions = (actions) => {
   });
 
   return categories;
-};
+}
 
-/**
- * Get actions by damage type
- */
-const getActionsByDamageType = (actions, damageType) => {
-  return actions.filter(action => action.damageType === damageType);
-};
+function getActionsByDamageType(actions: BossActionTemplate[], damageType: DamageType) {
+  return actions.filter((action) => action.damageType === damageType);
+}
 
-/**
- * Get actions by importance level
- */
-const getActionsByImportance = (actions, importance) => {
-  return actions.filter(action => action.importance === importance);
-};
+function getActionsByImportance(actions: BossActionTemplate[], importance: BossAction['importance']) {
+  return actions.filter((action) => action.importance === importance);
+}
 
-/**
- * Search actions by name or description
- */
-const searchActions = (actions, searchTerm) => {
+function getActionsByClassification(
+  actions: BossActionTemplate[],
+  classification: BossActionClassification
+) {
+  return actions.filter((action) => action.classification === classification);
+}
+
+function searchActions(actions: BossActionTemplate[], searchTerm: string) {
   const term = searchTerm.toLowerCase();
-  return actions.filter(action => 
+
+  return actions.filter((action) =>
     action.name.toLowerCase().includes(term) ||
-    (action.description && action.description.toLowerCase().includes(term))
+    (action.description && action.description.toLowerCase().includes(term)) ||
+    action.sourceBoss.toLowerCase().includes(term) ||
+    action.classification.toLowerCase().includes(term) ||
+    (action.sourceAbilities || []).some((ability) => ability.toLowerCase().includes(term))
   );
-};
+}
 
-/**
- * Get unique action names (for template selection)
- */
-const getUniqueActionNames = (actions) => {
-  const uniqueNames = new Set();
-  const uniqueActions = [];
+function getUniqueActionNames(actions: BossActionTemplate[]) {
+  const uniqueNames = new Set<string>();
+  const uniqueActions: BossActionTemplate[] = [];
 
-  actions.forEach(action => {
-    if (!uniqueNames.has(action.name)) {
-      uniqueNames.add(action.name);
+  actions.forEach((action) => {
+    const key = `${action.sourceBoss}::${action.name}::${action.classification}`;
+    if (!uniqueNames.has(key)) {
+      uniqueNames.add(key);
       uniqueActions.push(action);
     }
   });
 
   return uniqueActions;
-};
+}
 
-// Generate the library
 export const bossActionsLibrary = extractAllActions();
 export const categorizedActions = categorizeActions(bossActionsLibrary);
 export const uniqueActionTemplates = getUniqueActionNames(bossActionsLibrary);
 
-// Export utility functions
 export const libraryUtils = {
   getActionsByDamageType,
   getActionsByImportance,
+  getActionsByClassification,
   searchActions,
   categorizeActions,
-  getUniqueActionNames
+  getUniqueActionNames,
 };
 
-/**
- * Create a custom action template
- * This provides a base structure for users to create their own actions
- */
-export const createCustomActionTemplate = (overrides = {}) => {
-  return {
+export const createCustomActionTemplate = (overrides: Partial<BossAction> = {}): BossAction => {
+  const normalized = syncBossActionMetadataWithClassification({
     id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     name: overrides.name || 'Custom Action',
     time: overrides.time || 0,
@@ -153,23 +225,29 @@ export const createCustomActionTemplate = (overrides = {}) => {
     unmitigatedDamage: overrides.unmitigatedDamage || '',
     isTankBuster: overrides.isTankBuster || false,
     isDualTankBuster: overrides.isDualTankBuster || false,
+    isRaidwide: overrides.isRaidwide || false,
+    targetTank: overrides.targetTank,
+    classification: overrides.classification,
     isCustom: true,
     source: 'custom',
-    ...overrides
-  };
+    ...overrides,
+  });
+
+  return normalized;
 };
 
-/**
- * Clone an action from the library with custom modifications
- */
-export const cloneActionFromLibrary = (libraryAction, modifications = {}) => {
-  return {
-    ...libraryAction,
+export const cloneActionFromLibrary = (
+  libraryAction: BossActionTemplate,
+  modifications: Partial<BossAction> = {}
+): BossAction => {
+  const { occurrenceCount: _occurrenceCount, libraryId: _libraryId, ...rest } = libraryAction;
+
+  return syncBossActionMetadataWithClassification({
+    ...rest,
     id: `cloned_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-    isCloned: true,
-    originalLibraryId: libraryAction.libraryId,
-    ...modifications
-  };
+    time: modifications.time ?? 0,
+    ...modifications,
+  });
 };
 
 export default {
@@ -179,6 +257,6 @@ export default {
   bossActionsMap,
   libraryUtils,
   createCustomActionTemplate,
-  cloneActionFromLibrary
+  cloneActionFromLibrary,
 };
 

@@ -1,172 +1,239 @@
 #!/usr/bin/env node
 
 /**
- * Verify Firebase Realtime Database structure and rules
- * This script tests the new database schema and security rules
+ * Verify Firebase Realtime Database rules and collaboration structure.
+ * Uses the Firebase CLI so the checks match the deployed database/rules state.
  */
 
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, get, set, serverTimestamp } from 'firebase/database';
+import { execFileSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { firebaseConfig } from './firebase-config.js';
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, '..');
+const localRules = JSON.parse(readFileSync(join(projectRoot, 'database.rules.json'), 'utf8'));
+
+const projectId = firebaseConfig.projectId;
+const databaseInstance = firebaseConfig.databaseURL
+  ? new URL(firebaseConfig.databaseURL).host.split('.')[0]
+  : undefined;
+
+function runFirebaseDatabaseCommand(command, path, extraArgs = []) {
+  const args = ['database:' + command, path, '--project', projectId];
+
+  if (databaseInstance) {
+    args.push('--instance', databaseInstance);
+  }
+
+  args.push(...extraArgs);
+
+  return execFileSync('firebase', args, {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+}
+
+function databaseGet(path, extraArgs = []) {
+  const rawOutput = runFirebaseDatabaseCommand('get', path, extraArgs).trim();
+  return rawOutput ? JSON.parse(rawOutput) : null;
+}
+
+function databaseSet(path, data) {
+  runFirebaseDatabaseCommand('set', path, ['--data', JSON.stringify(data), '--force']);
+}
+
+function formatCount(value) {
+  if (!value || typeof value !== 'object') {
+    return 0;
+  }
+
+  return Object.keys(value).length;
+}
+
+function getValueAtPath(source, path) {
+  return path.reduce((currentValue, key) => currentValue?.[key], source);
+}
+
+function normalizeRuleValue(value) {
+  if (Array.isArray(value)) {
+    return [...value].sort();
+  }
+
+  return value;
+}
+
+function collectRuleMismatches(localSource, liveSource, checks) {
+  return checks.flatMap(({ label, path }) => {
+    const localValue = normalizeRuleValue(getValueAtPath(localSource, path));
+    const liveValue = normalizeRuleValue(getValueAtPath(liveSource, path));
+
+    if (JSON.stringify(localValue) === JSON.stringify(liveValue)) {
+      return [];
+    }
+
+    return [
+      {
+        label,
+        localValue,
+        liveValue,
+      },
+    ];
+  });
+}
 
 async function verifyDatabase() {
   try {
-    console.log('🔍 Verifying Firebase Realtime Database structure...\n');
-    
-    // Test 1: Check if sample plan exists
-    console.log('📋 Test 1: Checking sample plan...');
-    const samplePlanRef = ref(database, 'plans/sample-plan-001');
-    const samplePlanSnapshot = await get(samplePlanRef);
-    
-    if (samplePlanSnapshot.exists()) {
-      const planData = samplePlanSnapshot.val();
-      console.log('✅ Sample plan exists');
-      console.log(`   Title: ${planData.title}`);
-      console.log(`   Boss: ${planData.selectedBoss?.name}`);
-      console.log(`   Public: ${planData.isPublic}`);
-      console.log(`   Version: ${planData.version}`);
-    } else {
-      console.log('❌ Sample plan not found');
+    console.log('🔍 Verifying Firebase Realtime Database rules and collaboration structure...\n');
+
+    console.log('📋 Test 1: Checking local rules source...');
+    if (!localRules.rules?.plans || !localRules.rules?.planCollaboration) {
+      console.log('❌ Local database.rules.json is missing the plans or planCollaboration branch');
       return false;
     }
-    
-    // Test 2: Check plan-based collaboration structure
-    console.log('\n🤝 Test 2: Checking plan-based collaboration structure...');
-    const collaborationRef = ref(database, 'plans/sample-plan-001/collaboration');
-    const collaborationSnapshot = await get(collaborationRef);
+    console.log('✅ Local rules include plans and planCollaboration');
 
-    if (collaborationSnapshot.exists()) {
-      const collaborationData = collaborationSnapshot.val();
-      console.log('✅ Plan-based collaboration structure exists');
-      console.log(`   Active users: ${Object.keys(collaborationData.activeUsers || {}).length}`);
-      console.log(`   Changes: ${Object.keys(collaborationData.changes || {}).length}`);
-    } else {
-      console.log('ℹ️  Plan-based collaboration structure will be created when first user joins');
+    console.log('\n📋 Test 2: Checking live RTDB rules...');
+    const liveRules = databaseGet('/.settings/rules');
+    if (!liveRules?.rules?.plans || !liveRules?.rules?.planCollaboration) {
+      console.log('❌ Live rules are missing the plans or planCollaboration branch');
+      return false;
     }
-    
-    // Test 3: Verify data structure completeness
-    console.log('\n📊 Test 3: Verifying data structure completeness...');
-    const planData = samplePlanSnapshot.val();
 
-    const requiredFields = [
-      'title', 'selectedBoss', 'selectedJobs', 'tankPositions',
-      'assignedMitigations', 'ownerId', 'isPublic',
-      'createdAt', 'updatedAt', 'lastModifiedBy', 'lastChangeOrigin', 'version'
+    const ruleChecks = [
+      { label: '/plans/.read', path: ['rules', 'plans', '.read'] },
+      { label: '/plans/.write', path: ['rules', 'plans', '.write'] },
+      { label: '/plans/.indexOn', path: ['rules', 'plans', '.indexOn'] },
+      { label: '/plans/$planId/.read', path: ['rules', 'plans', '$planId', '.read'] },
+      { label: '/plans/$planId/.write', path: ['rules', 'plans', '$planId', '.write'] },
+      { label: '/planCollaboration/.read', path: ['rules', 'planCollaboration', '.read'] },
+      { label: '/planCollaboration/.write', path: ['rules', 'planCollaboration', '.write'] },
+      { label: '/planCollaboration/$planId/.read', path: ['rules', 'planCollaboration', '$planId', '.read'] },
+      { label: '/planCollaboration/$planId/.write', path: ['rules', 'planCollaboration', '$planId', '.write'] },
     ];
+    const ruleMismatches = collectRuleMismatches(localRules, liveRules, ruleChecks);
 
-    let missingFields = [];
-    for (const field of requiredFields) {
-      if (!(field in planData)) {
-        missingFields.push(field);
-      }
-    }
-
-    if (missingFields.length === 0) {
-      console.log('✅ All core required fields present');
-      console.log('ℹ️  Note: connectedUsers field will be created dynamically during real-time sessions');
-    } else {
-      console.log(`❌ Missing fields: ${missingFields.join(', ')}`);
+    if (ruleMismatches.length > 0) {
+      console.log('❌ Live RTDB rules do not match database.rules.json');
+      ruleMismatches.forEach(({ label, localValue, liveValue }) => {
+        console.log(`   ${label}`);
+        console.log(`     local: ${JSON.stringify(localValue)}`);
+        console.log(`     live:  ${JSON.stringify(liveValue)}`);
+      });
       return false;
     }
-    
-    // Test 4: Check boss actions structure
-    console.log('\n⚔️  Test 4: Checking boss actions structure...');
-    const bossActions = planData.selectedBoss?.actions;
-    if (bossActions && Object.keys(bossActions).length > 0) {
-      console.log('✅ Boss actions structure valid');
-      console.log(`   Actions count: ${Object.keys(bossActions).length}`);
-      
-      // Check first action structure
-      const firstAction = Object.values(bossActions)[0];
-      const actionFields = ['id', 'name', 'time', 'damageType', 'unmitigatedDamage'];
-      const missingActionFields = actionFields.filter(field => !(field in firstAction));
-      
-      if (missingActionFields.length === 0) {
-        console.log('✅ Boss action fields complete');
-      } else {
-        console.log(`❌ Missing action fields: ${missingActionFields.join(', ')}`);
-      }
-    } else {
-      console.log('❌ Boss actions structure invalid');
-    }
-    
-    // Test 5: Check job structure
-    console.log('\n👥 Test 5: Checking job structure...');
-    const jobs = planData.selectedJobs;
-    const expectedRoles = ['tank', 'healer', 'melee', 'ranged', 'caster'];
-    
-    let validRoles = 0;
-    for (const role of expectedRoles) {
-      if (jobs[role] && Array.isArray(jobs[role]) && jobs[role].length > 0) {
-        validRoles++;
-        
-        // Check first job in role
-        const firstJob = jobs[role][0];
-        const jobFields = ['id', 'name', 'icon', 'selected'];
-        const missingJobFields = jobFields.filter(field => !(field in firstJob));
-        
-        if (missingJobFields.length === 0) {
-          console.log(`✅ ${role} jobs structure valid (${jobs[role].length} jobs)`);
-        } else {
-          console.log(`❌ ${role} jobs missing fields: ${missingJobFields.join(', ')}`);
-        }
-      } else {
-        console.log(`❌ ${role} jobs structure invalid`);
-      }
-    }
-    
-    // Test 6: Test write operation (simulate user joining)
-    console.log('\n✍️  Test 6: Testing write operations...');
-    try {
-      const testSessionId = `test-session-${Date.now()}`;
-      const testUserData = {
-        userId: 'anonymous',
-        displayName: 'Test User',
-        sessionId: testSessionId,
-        email: '',
-        joinedAt: serverTimestamp(),
-        lastActivity: serverTimestamp(),
-        isActive: true
-      };
-      
-      // Try to add a test user session
-      await set(ref(database, `plans/sample-plan-001/collaboration/activeUsers/${testSessionId}`), testUserData);
-      console.log('✅ Write operation successful');
+    console.log('✅ Live rules include the expected /plans and /planCollaboration subtrees');
 
-      // Clean up test data
-      await set(ref(database, `plans/sample-plan-001/collaboration/activeUsers/${testSessionId}`), null);
-      console.log('✅ Cleanup successful');
-      
-    } catch (error) {
-      console.log(`❌ Write operation failed: ${error.message}`);
+    console.log('\n📋 Test 3: Checking available plan data...');
+    const planKeys = databaseGet('/plans', ['--shallow', '--limit-to-first', '1']);
+    const samplePlanId = planKeys && typeof planKeys === 'object' ? Object.keys(planKeys)[0] : null;
+
+    if (!samplePlanId) {
+      console.log('❌ No plans found in /plans');
+      return false;
     }
-    
+
+    const samplePlan = databaseGet(`/plans/${samplePlanId}`);
+
+    const samplePlanName = samplePlan.name || samplePlan.title || 'Unknown';
+    const sampleBoss = samplePlan.sourceTimelineName || samplePlan.selectedBoss?.name || samplePlan.bossId || 'Unknown';
+    console.log('✅ Sample plan exists');
+    console.log(`   Plan ID: ${samplePlanId}`);
+    console.log(`   Plan: ${samplePlanName}`);
+    console.log(`   Boss/Timeline: ${sampleBoss}`);
+    console.log(`   Public: ${samplePlan.isPublic === true}`);
+
+    console.log('\n📋 Test 4: Checking collaboration tree...');
+    const roomId = `plan:${samplePlanId}`;
+    const collaborationRootPath = `/planCollaboration/${roomId}`;
+    const collaborationRoot = databaseGet(collaborationRootPath);
+
+    if (collaborationRoot) {
+      console.log('✅ Collaboration root exists');
+      console.log(`   Active users: ${formatCount(collaborationRoot.activeUsers)}`);
+      console.log(`   Presence entries: ${formatCount(collaborationRoot.presence)}`);
+      console.log(`   Job assignments: ${formatCount(collaborationRoot.jobAssignments)}`);
+    } else {
+      console.log('ℹ️  Collaboration root will be created on first collaborative session');
+    }
+
+    console.log('\n📋 Test 5: Testing collaboration subtree writes...');
+    const testSessionId = `verify-session-${Date.now()}`;
+    const testJobId = `verify-job-${Date.now()}`;
+    const activeUserPath = `${collaborationRootPath}/activeUsers/${testSessionId}`;
+    const presencePath = `${collaborationRootPath}/presence/${testSessionId}`;
+    const jobAssignmentPath = `${collaborationRootPath}/jobAssignments/${testJobId}`;
+
+    databaseSet(activeUserPath, {
+      sessionId: testSessionId,
+      userId: 'verify-user',
+      displayName: 'Verify User',
+      email: 'verify@example.com',
+      color: '#3b82f6',
+      joinedAt: Date.now(),
+      lastActivity: Date.now(),
+      isActive: true,
+    });
+
+    databaseSet(presencePath, {
+      activeTarget: null,
+      interaction: 'selected',
+      cursor: null,
+      viewport: {
+        surface: 'planner',
+        panel: 'timeline',
+        section: 'timeline',
+        scrollTop: 0,
+      },
+      lastUpdated: Date.now(),
+    });
+
+    databaseSet(jobAssignmentPath, {
+      userId: 'verify-user',
+      displayName: 'Verify User',
+      color: '#3b82f6',
+      claimedAt: Date.now(),
+    });
+
+    const activeUserRecord = databaseGet(activeUserPath);
+    const presenceRecord = databaseGet(presencePath);
+    const jobAssignmentRecord = databaseGet(jobAssignmentPath);
+
+    if (!activeUserRecord || !presenceRecord || !jobAssignmentRecord) {
+      console.log('❌ Collaboration subtree write verification failed');
+      return false;
+    }
+
+    console.log('✅ Collaboration subtree writes succeeded');
+
+    databaseSet(activeUserPath, null);
+    databaseSet(presencePath, null);
+    databaseSet(jobAssignmentPath, null);
+    console.log('✅ Collaboration subtree cleanup succeeded');
+
     console.log('\n🎉 Database verification complete!');
     console.log('\n📋 Summary:');
-    console.log('   ✅ Database structure is properly initialized');
-    console.log('   ✅ Security rules are deployed');
-    console.log('   ✅ Sample data is available');
-    console.log('   ✅ Real-time collaboration structure is ready');
-    console.log('\n🔗 Access the sample plan at: /plan/edit/sample-plan-001');
-    
+    console.log('   ✅ Local rules file includes plans and planCollaboration');
+    console.log('   ✅ Live /plans and /planCollaboration rules match database.rules.json');
+    console.log('   ✅ Sample plan data is available');
+    console.log('   ✅ planCollaboration/activeUsers, presence, and jobAssignments are writable');
+    console.log(`\n🔗 Verified instance: ${databaseInstance || 'default'}`);
+
     return true;
-    
   } catch (error) {
-    console.error('❌ Verification failed:', error);
+    console.error('❌ Verification failed:', error.message || error);
     return false;
   }
 }
 
-// Run verification
 verifyDatabase()
-  .then(success => {
+  .then((success) => {
     process.exit(success ? 0 : 1);
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('❌ Verification error:', error);
     process.exit(1);
   });

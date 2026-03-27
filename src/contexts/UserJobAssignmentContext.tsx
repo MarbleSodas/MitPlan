@@ -53,25 +53,22 @@ export const useUserJobAssignmentOptional = (): UserJobAssignmentContextValue | 
 
 export const UserJobAssignmentProvider = ({ children }: UserJobAssignmentProviderProps) => {
   const { planId } = useRealtimePlan();
-  const { user, anonymousUser, isAnonymousMode } = useAuth();
+  const { user } = useAuth();
   const { displayName: collaborationDisplayName } = useCollaboration();
   const { selectedJobs } = useRealtimeJobContext();
   
   const [jobAssignments, setJobAssignments] = useState<JobAssignments>({});
   
   const userId = useMemo(() => {
-    if (user?.uid) return user.uid;
-    if (isAnonymousMode && anonymousUser?.id) return anonymousUser.id;
-    return null;
-  }, [user?.uid, isAnonymousMode, anonymousUser?.id]);
+    return user?.uid || null;
+  }, [user?.uid]);
   
   const displayName = useMemo(() => {
     if (collaborationDisplayName) return collaborationDisplayName;
     if (user?.displayName) return user.displayName;
     if (user?.email) return user.email.split('@')[0];
-    if (anonymousUser?.displayName) return anonymousUser.displayName;
-    return 'Anonymous User';
-  }, [collaborationDisplayName, user?.displayName, user?.email, anonymousUser?.displayName]);
+    return 'User';
+  }, [collaborationDisplayName, user?.displayName, user?.email]);
   
   const myColor = useMemo(() => {
     return userId ? getColorFromUserId(userId) : '#3b82f6';

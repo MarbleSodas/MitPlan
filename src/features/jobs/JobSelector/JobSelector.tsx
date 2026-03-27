@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, memo, useState, useEffect } from 'react';
+import React, { useRef, useCallback, memo, useState, useEffect, useMemo } from 'react';
 import { RefreshCw, XCircle } from 'lucide-react';
 import { useRealtimeJobContext } from '../../../contexts/RealtimeJobContext';
 import { useTankPositionContext } from '../../../contexts/TankPositionContext';
@@ -8,10 +8,18 @@ import { usePresenceOptional } from '../../../contexts/PresenceContext';
 import { useUserJobAssignmentOptional } from '../../../contexts/UserJobAssignmentContext';
 import { baseHealthValues } from '../../../data/bosses/bossData';
 import { bosses } from '../../../data';
+import {
+  getPlanTimelineLayout,
+  getPlanTimelineMirrorFields,
+  normalizePlanTimelineLayout,
+} from '../../../utils/timeline/planTimelineLayoutUtils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import PresenceSurface from '../../../components/collaboration/PresenceSurface';
+import PresenceTarget from '../../../components/collaboration/PresenceTarget';
+import SectionPresencePill from '../../../components/collaboration/SectionPresencePill';
 import SelectionBorder from '../../../components/collaboration/SelectionBorder';
 import type { Job, JobId, UserJobAssignment } from '../../../types';
 
@@ -90,6 +98,7 @@ const JobCard = ({
       showIndicator={true}
       indicatorPosition="top-right"
       className="rounded-md"
+      publishHover={true}
     >
       <div
         onClick={handleClick}
@@ -202,7 +211,6 @@ interface HealthSettingsSectionProps {
   persistTankHp: (key: string, value: number) => void;
   resetTankHpToDefault: (key: string) => void;
   defaultTankHp: number;
-  hasTwoTanks: boolean;
   partyMinHp: number;
   setPartyMinHp: (value: number) => void;
   persistPartyMinHp: (value: number) => void;
@@ -225,7 +233,6 @@ const HealthSettingsSection = ({
   persistTankHp,
   resetTankHpToDefault,
   defaultTankHp,
-  hasTwoTanks,
   partyMinHp,
   setPartyMinHp,
   persistPartyMinHp,
@@ -239,6 +246,8 @@ const HealthSettingsSection = ({
   resetHealingPotency,
   currentBossLevel
 }: HealthSettingsSectionProps) => {
+  const presence = usePresenceOptional();
+
   const renderTankIcon = (job: Job | null) => {
     if (!job) return null;
     return (
@@ -253,80 +262,114 @@ const HealthSettingsSection = ({
   };
 
   const renderSettingRow = (
+    presenceId: string,
     label: string,
     value: number,
     onChange: (val: number) => void,
+    onCommit: (val: number) => void,
     onReset: () => void,
     tankIcon?: React.ReactNode,
     suffix?: string
   ) => (
-    <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2 border border-border/50">
-      {tankIcon && <div className="mr-1">{tankIcon}</div>}
-      <span className="text-sm font-medium text-foreground whitespace-nowrap">
-        {label}
-      </span>
-      <Input
-        type="number"
-        variant="compact"
-        min={1}
-        step={100}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        onBlur={() => {
-          if (label.includes('Heal')) {
-            localStorage.setItem(`mitplan-healing-potency-${currentBossLevel}`, value.toString());
-          }
-        }}
-        className="h-10 text-sm font-semibold w-24"
-        aria-label={label}
-      />
-      {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onReset}
-        title="Reset to default"
-        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 shrink-0"
-      >
-        <RefreshCw size={14} />
-      </Button>
-    </div>
+    <PresenceTarget
+      target={{
+        surface: 'planner',
+        entityType: 'healthSetting',
+        entityId: presenceId,
+      }}
+      className="rounded-lg"
+      publishHover={true}
+      publishFocus={true}
+      focusInteraction="editing"
+    >
+      <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2 border border-border/50">
+        {tankIcon && <div className="mr-1">{tankIcon}</div>}
+        <span className="text-sm font-medium text-foreground whitespace-nowrap">
+          {label}
+        </span>
+        <Input
+          type="number"
+          variant="compact"
+          min={1}
+          step={100}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          onBlur={() => {
+            const safeValue = Math.max(1, Number(value) || 0);
+            onChange(safeValue);
+            onCommit(safeValue);
+
+            if (label.includes('Heal')) {
+              localStorage.setItem(`mitplan-healing-potency-${currentBossLevel}`, safeValue.toString());
+            }
+
+            if (
+              presence?.getMyPresence()?.activeTarget?.entityId === presenceId &&
+              presence.getMyPresence()?.interaction === 'editing'
+            ) {
+              presence.setInteraction('hovering');
+              presence.setActiveTarget({
+                surface: 'planner',
+                entityType: 'healthSetting',
+                entityId: presenceId,
+              });
+            }
+          }}
+          className="h-10 text-sm font-semibold w-24"
+          aria-label={label}
+        />
+        {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onReset}
+          title="Reset to default"
+          className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 shrink-0"
+        >
+          <RefreshCw size={14} />
+        </Button>
+      </div>
+    </PresenceTarget>
   );
 
   return (
     <div className="border-t border-border pt-4">
       <h4 className="text-base font-semibold text-foreground mb-3">Health Settings</h4>
       <div className="flex flex-wrap gap-3">
-        {hasTwoTanks && (
-          <>
-            {renderSettingRow(
-              'MT HP:',
-              mtMaxHp,
-              setMtMaxHp,
-              () => resetTankHpToDefault('mainTank'),
-              renderTankIcon(mtTankJob)
-            )}
-            {renderSettingRow(
-              'OT HP:',
-              otMaxHp,
-              setOtMaxHp,
-              () => resetTankHpToDefault('offTank'),
-              renderTankIcon(otTankJob)
-            )}
-          </>
+        {renderSettingRow(
+          'mainTankHp',
+          'MT HP:',
+          mtMaxHp,
+          setMtMaxHp,
+          (value) => persistTankHp('mainTank', value),
+          () => resetTankHpToDefault('mainTank'),
+          renderTankIcon(mtTankJob)
         )}
         {renderSettingRow(
+          'offTankHp',
+          'OT HP:',
+          otMaxHp,
+          setOtMaxHp,
+          (value) => persistTankHp('offTank', value),
+          () => resetTankHpToDefault('offTank'),
+          renderTankIcon(otTankJob)
+        )}
+        {renderSettingRow(
+          'partyMinHealth',
           'Party Min:',
           partyMinHp,
           setPartyMinHp,
+          persistPartyMinHp,
           resetPartyMinHp,
           undefined,
           'HP'
         )}
         {renderSettingRow(
+          'healingPotency',
           'Heal Potency:',
           healingPotency,
           setHealingPotency,
+          () => undefined,
           resetHealingPotency,
           undefined,
           'ppt'
@@ -346,16 +389,27 @@ function JobSelector({ disabled = false }) {
   const lastClickTimeRef = useRef(new Map());
   const isFirstRender = useRef(true);
 
-  const defaultTankHp = baseHealthValues[currentBossLevel]?.tank || baseHealthValues[100].tank;
-  const existingMainHp = realtimePlan?.healthSettings?.tankMaxHealth?.mainTank;
-  const existingOffHp = realtimePlan?.healthSettings?.tankMaxHealth?.offTank;
-
+  const planTimelineLayout = useMemo(
+    () => getPlanTimelineLayout(realtimePlan),
+    [realtimePlan?.timelineLayout]
+  );
   const currentBoss = bosses.find(b => b.id === currentBossId) || null;
-  const defaultPartyHp = (currentBoss?.baseHealth?.party)
+  const timelineDefaultTankHp = planTimelineLayout?.healthConfig?.defaultTank
+    ?? planTimelineLayout?.bossMetadata?.baseHealth?.tank;
+  const timelineDefaultPartyHp = planTimelineLayout?.bossMetadata?.baseHealth?.party;
+  const defaultTankHp = timelineDefaultTankHp
+    ?? (baseHealthValues[currentBossLevel]?.tank)
+    ?? baseHealthValues[100].tank;
+  const defaultPartyHp = timelineDefaultPartyHp
+    ?? (currentBoss?.baseHealth?.party)
     ?? (baseHealthValues[currentBossLevel]?.party)
     ?? baseHealthValues[100].party;
-
-  const existingPartyMinHp = realtimePlan?.healthSettings?.partyMinHealth;
+  const existingMainHp = planTimelineLayout?.healthConfig?.mainTank
+    ?? realtimePlan?.healthSettings?.tankMaxHealth?.mainTank;
+  const existingOffHp = planTimelineLayout?.healthConfig?.offTank
+    ?? realtimePlan?.healthSettings?.tankMaxHealth?.offTank;
+  const existingPartyMinHp = planTimelineLayout?.healthConfig?.party
+    ?? realtimePlan?.healthSettings?.partyMinHealth;
 
   const HEALING_POTENCY_VALUES: Record<number, number> = {
     90: 5000,
@@ -378,16 +432,55 @@ function JobSelector({ disabled = false }) {
   const [healingPotency, setHealingPotency] = useState(() => getStoredHealingPotency());
 
   useEffect(() => {
+    const nextMainHp = existingMainHp ?? defaultTankHp;
+    const nextOffHp = existingOffHp ?? defaultTankHp;
+    const nextPartyHp = existingPartyMinHp ?? defaultPartyHp;
+
     if (isFirstRender.current) {
       isFirstRender.current = false;
+      setMtMaxHp(nextMainHp);
+      setOtMaxHp(nextOffHp);
+      setPartyMinHp(nextPartyHp);
       return;
     }
-    if (!existingMainHp) setMtMaxHp(defaultTankHp);
-    if (!existingOffHp) setOtMaxHp(defaultTankHp);
-  }, [currentBossLevel, existingMainHp, existingOffHp, defaultTankHp]);
+
+    if (mtMaxHp !== nextMainHp) {
+      setMtMaxHp(nextMainHp);
+    }
+    if (otMaxHp !== nextOffHp) {
+      setOtMaxHp(nextOffHp);
+    }
+    if (partyMinHp !== nextPartyHp) {
+      setPartyMinHp(nextPartyHp);
+    }
+  }, [
+    currentBossLevel,
+    defaultPartyHp,
+    defaultTankHp,
+    existingMainHp,
+    existingOffHp,
+    existingPartyMinHp,
+    mtMaxHp,
+    otMaxHp,
+    partyMinHp,
+  ]);
 
   const persistTankHp = useCallback((key: string, value: number) => {
     const safe = Math.max(1, Number(value) || 0);
+
+    if (planTimelineLayout) {
+      const nextLayout = normalizePlanTimelineLayout({
+        ...planTimelineLayout,
+        healthConfig: {
+          ...planTimelineLayout.healthConfig,
+          [key]: safe,
+        },
+      });
+
+      batchUpdateRealtime(getPlanTimelineMirrorFields(nextLayout));
+      return;
+    }
+
     const current = realtimePlan?.healthSettings?.tankMaxHealth || {};
     const updated = {
       healthSettings: {
@@ -399,7 +492,7 @@ function JobSelector({ disabled = false }) {
       },
     };
     batchUpdateRealtime(updated);
-  }, [realtimePlan, batchUpdateRealtime]);
+  }, [planTimelineLayout, realtimePlan, batchUpdateRealtime]);
 
   const resetTankHpToDefault = useCallback((key: string) => {
     const value = defaultTankHp;
@@ -413,6 +506,20 @@ function JobSelector({ disabled = false }) {
 
   const persistPartyMinHp = useCallback((value: number) => {
     const safe = Math.max(1, Number(value) || 0);
+
+    if (planTimelineLayout) {
+      const nextLayout = normalizePlanTimelineLayout({
+        ...planTimelineLayout,
+        healthConfig: {
+          ...planTimelineLayout.healthConfig,
+          party: safe,
+        },
+      });
+
+      batchUpdateRealtime(getPlanTimelineMirrorFields(nextLayout));
+      return;
+    }
+
     const updated = {
       healthSettings: {
         ...(realtimePlan?.healthSettings || {}),
@@ -420,7 +527,7 @@ function JobSelector({ disabled = false }) {
       },
     };
     batchUpdateRealtime(updated);
-  }, [realtimePlan, batchUpdateRealtime]);
+  }, [planTimelineLayout, realtimePlan, batchUpdateRealtime]);
 
   const resetPartyMinHp = useCallback(() => {
     setPartyMinHp(defaultPartyHp);
@@ -462,18 +569,6 @@ function JobSelector({ disabled = false }) {
     }
   }, [tankPositions, assignTankPosition]);
 
-  const handleJobHover = useCallback((jobId: string) => {
-    if (presence) {
-      presence.updateMySelection('job', jobId);
-    }
-  }, [presence]);
-
-  const handleJobLeave = useCallback(() => {
-    if (presence) {
-      presence.updateMySelection('job', null);
-    }
-  }, [presence]);
-
   const handleClaimJob = async (jobId: JobId) => {
     if (jobAssignment) {
       await jobAssignment.claimJob(jobId);
@@ -486,16 +581,22 @@ function JobSelector({ disabled = false }) {
     }
   };
 
-  const hasTwoTanks = selectedTankJobs.length === 2;
-  
   const mtTankJob = tankPositions.mainTank ? selectedTankJobs.find(t => t.id === tankPositions.mainTank) || null : null;
   const otTankJob = tankPositions.offTank ? selectedTankJobs.find(t => t.id === tankPositions.offTank) || null : null;
 
   return (
-    <Card className="mb-5 bg-card">
+    <PresenceSurface
+      surface="planner"
+      panel="jobs"
+      section="jobs"
+      hideRemoteCursorsOnMobile={true}
+      className="mb-5"
+    >
+    <Card className="bg-card">
       <CardHeader className="pb-3 border-b border-border">
-        <CardTitle className="text-lg font-semibold text-foreground">
-          Select FFXIV Jobs
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-foreground">
+          <span>Select FFXIV Jobs</span>
+          <SectionPresencePill surface="planner" section="jobs" />
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4 grid gap-4 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
@@ -559,7 +660,6 @@ function JobSelector({ disabled = false }) {
           persistTankHp={persistTankHp}
           resetTankHpToDefault={resetTankHpToDefault}
           defaultTankHp={defaultTankHp}
-          hasTwoTanks={hasTwoTanks}
           partyMinHp={partyMinHp}
           setPartyMinHp={setPartyMinHp}
           persistPartyMinHp={persistPartyMinHp}
@@ -575,6 +675,7 @@ function JobSelector({ disabled = false }) {
         />
       </div>
     </Card>
+    </PresenceSurface>
   );
 }
 

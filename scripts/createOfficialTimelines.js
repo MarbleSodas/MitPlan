@@ -12,53 +12,10 @@ import { getDatabase, ref, set, push, query, orderByChild, equalTo, get } from '
 import { bosses } from '../src/data/bosses/bossData.js';
 
 import { firebaseConfig } from './firebase-config.js';
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
-const bossesDir = join(projectRoot, 'src', 'data', 'bosses');
-
-// Map boss IDs to their corresponding actions JSON filenames
-const BOSS_JSON_MAP = {
-  'sugar-riot': 'sugar-riot_actions.json',
-  'dancing-green-m5s': 'dancing-green_actions.json',
-  'lala': 'lala_actions.json',
-  'statice': 'statice_actions.json',
-  'brute-abominator-m7s': 'brute-abominator_actions.json',
-  'howling-blade-m8s': 'howling-blade_actions.json',
-  'necron': 'necron_actions.json',
-  'ketuduke': 'ketudukeActions.json',
-  'vamp-fatale-m9s': 'vamp-fatale_actions.json',
-  'red-hot-deep-blue-m10s': 'red-hot-deep-blue_actions.json'
-};
-
-function loadActionsForBoss(bossId) {
-  const filename = BOSS_JSON_MAP[bossId];
-  if (!filename) {
-    console.warn(`  - No JSON mapping found for bossId: ${bossId}, skipping`);
-    return [];
-  }
-  const filePath = join(bossesDir, filename);
-  if (!existsSync(filePath)) {
-    console.warn(`  - JSON file not found: ${filePath}, skipping`);
-    return [];
-  }
-  try {
-    const content = readFileSync(filePath, 'utf8');
-    const actions = JSON.parse(content);
-    if (!Array.isArray(actions)) {
-      console.warn(`  - JSON did not contain an array for ${bossId}, got ${typeof actions}`);
-      return [];
-    }
-    return actions;
-  } catch (e) {
-    console.warn(`  - Failed to load/parse actions for ${bossId}: ${e.message}`);
-    return [];
-  }
-}
+import {
+  buildOfficialTimelineData,
+  loadCanonicalTimelineForBoss,
+} from './officialTimelineUtils.js';
 
 
 
@@ -82,9 +39,9 @@ async function createOfficialTimelines() {
     try {
       console.log(`\nProcessing boss: ${boss.name} (${boss.id})`);
 
-      // Load boss actions from JSON files
-      const actions = loadActionsForBoss(boss.id);
-      console.log(`  - Loaded ${actions.length} actions from JSON`);
+      const timelineDefinition = loadCanonicalTimelineForBoss(boss);
+      const resolvedActions = Array.isArray(timelineDefinition.actions) ? timelineDefinition.actions : [];
+      console.log(`  - Loaded ${resolvedActions.length} resolved actions`);
 
       // Skip if an official timeline for this boss already exists
       try {
@@ -108,27 +65,7 @@ async function createOfficialTimelines() {
       }
 
       // Create timeline data
-      const timelineData = {
-        name: `${boss.name} - Official Timeline`,
-        description: `Official timeline for ${boss.name} encounter`,
-        bossId: boss.id,
-        bossTags: [boss.id],
-        bossMetadata: {
-          level: boss.level,
-          name: boss.name,
-          icon: boss.icon,
-          description: boss.description,
-          baseHealth: boss.baseHealth
-        },
-        actions: actions,
-        official: true,
-        isPublic: true,
-        userId: 'system',
-        ownerId: 'system',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        version: 2.1
-      };
+      const timelineData = buildOfficialTimelineData(boss, timelineDefinition);
 
       // Create a new timeline with auto-generated ID
       const newTimelineRef = push(timelinesRef);

@@ -21,35 +21,37 @@ const HealthBar = ({
   applyBarrierFirst = false,
   mitigationPercentage = 0,
 }) => {
-  const healthPercentage = Math.max(0, Math.min(100, (currentHealth / maxHealth) * 100));
+  const healthBeforeHit = Math.max(0, Math.min(maxHealth, currentHealth ?? maxHealth));
+  const healthBeforeHitPercentage = Math.max(0, Math.min(100, (healthBeforeHit / maxHealth) * 100));
   const barrierPercentage = Math.max(0, Math.min(100, (barrierAmount / maxHealth) * 100));
 
   const rawDamage = damageAmount || 0;
-  const healthLost = applyBarrierFirst
+  const damageToHealth = applyBarrierFirst
     ? Math.max(0, (rawDamage - barrierAmount) * (1 - (mitigationPercentage || 0)))
     : rawDamage;
+  const healthLost = Math.min(healthBeforeHit, damageToHealth);
+  const remainingHealth = Math.max(0, healthBeforeHit - healthLost);
 
+  const remainingHealthPercentage = Math.max(0, Math.min(100, (remainingHealth / maxHealth) * 100));
   const damagePercentage = Math.max(0, Math.min(100, (healthLost / maxHealth) * 100));
-  const damageStartPercentage = Math.max(0, healthPercentage - damagePercentage);
+  const damageStartPercentage = Math.max(0, healthBeforeHitPercentage - damagePercentage);
 
-  const damageToHealth = Math.max(0, damageAmount - barrierAmount);
-  const remainingHealth = Math.max(0, currentHealth - damageToHealth);
-
-  const tooltipContent = `
-    Max Health: ${formatHealth(maxHealth)}
-    Current Health: ${formatHealth(currentHealth)} (${formatPercentage(currentHealth / maxHealth)})
-    Damage: ${formatHealth(damageAmount)} (${formatPercentage(damageAmount / maxHealth)})
-    Barrier: ${formatHealth(barrierAmount)} (${formatPercentage(barrierAmount / maxHealth)})
-    Remaining Health: ${formatHealth(remainingHealth)} (${formatPercentage(remainingHealth / maxHealth)})
-  `;
+  const tooltipContent = [
+    `Max Health: ${formatHealth(maxHealth)}`,
+    `Health Before Hit: ${formatHealth(healthBeforeHit)} (${formatPercentage(healthBeforeHit / maxHealth)})`,
+    `Damage Before Mitigation: ${formatHealth(rawDamage)} (${formatPercentage(rawDamage / maxHealth)})`,
+    `Damage To Health: ${formatHealth(healthLost)} (${formatPercentage(healthLost / maxHealth)})`,
+    `Barrier: ${formatHealth(barrierAmount)} (${formatPercentage(barrierAmount / maxHealth)})`,
+    `Remaining Health: ${formatHealth(remainingHealth)} (${formatPercentage(remainingHealth / maxHealth)})`,
+  ].join('\n');
 
   const enhancedTooltipContent = isDualTankBuster && tankPosition
     ? `${tooltipContent}\n\nThis is a dual-tank buster that hits both tanks simultaneously.`
     : tooltipContent;
 
-  const barColor = healthPercentage > 70
+  const barColor = healthBeforeHitPercentage > 70
     ? HEALTH_COLORS.success
-    : healthPercentage > 40
+    : healthBeforeHitPercentage > 40
       ? HEALTH_COLORS.warning
       : HEALTH_COLORS.error;
 
@@ -69,10 +71,10 @@ const HealthBar = ({
           </div>
 
           <div className="w-full h-5 rounded overflow-hidden relative bg-[var(--color-muted)]">
-            <div className="h-full transition-[width] duration-300" style={{ width: `${healthPercentage}%`, backgroundColor: barColor }} />
+            <div className="h-full transition-[width] duration-300" style={{ width: `${healthBeforeHitPercentage}%`, backgroundColor: barColor }} />
 
             {barrierAmount > 0 && (
-              <div className="absolute top-0 h-full opacity-70 transition-all" style={{ left: `${healthPercentage}%`, width: `${barrierPercentage}%`, backgroundColor: HEALTH_COLORS.barrier }} />
+              <div className="absolute top-0 h-full opacity-70 transition-all" style={{ left: `${healthBeforeHitPercentage}%`, width: `${barrierPercentage}%`, backgroundColor: HEALTH_COLORS.barrier }} />
             )}
 
             {damageAmount > 0 && (

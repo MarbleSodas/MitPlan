@@ -25,7 +25,7 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
   useEffect(() => {
     if (plan && isOpen) {
       const baseUrl = window.location.origin;
-      const url = `${baseUrl}/plan/edit/${plan.id}`;
+      const url = `${baseUrl}/plan/shared/${plan.id}`;
       setShareUrl(url);
       setIsPublic(plan.isPublic || false);
     }
@@ -85,45 +85,57 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
             Share Plan
           </DialogTitle>
           <DialogDescription>
-            Share "{plan.name}" with others for collaborative editing. Anyone with the link will be able to view and edit this plan.
+            Make "{plan.name}" public to share a link. Signed-in users who open it can collaborate, and it will appear in their Shared Plans after first access.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <h3 className="text-base font-semibold mb-2">Share Link</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Universal access enabled - all plans are shareable and editable by anyone.
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={shareUrl}
-                readOnly
-                onClick={(e) => e.target.select()}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleCopyUrl}
-                variant={copied ? "default" : "default"}
-                className={cn(
-                  "min-w-[100px]",
-                  copied && "bg-green-500 hover:bg-green-600"
-                )}
-              >
-                {copied ? (
-                  <>
-                    <Check size={16} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-                    Copy
-                  </>
-                )}
+          {!isPublic ? (
+            <div className="rounded-lg border border-border bg-muted/40 p-4">
+              <h3 className="text-base font-semibold mb-2">Share Setup</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                This plan is currently private. Make it public first, then share the public link with other users.
+              </p>
+              <Button onClick={handleMakePublic} disabled={loading}>
+                {loading ? 'Making Public...' : 'Make Plan Public'}
               </Button>
             </div>
-          </div>
+          ) : (
+            <div>
+              <h3 className="text-base font-semibold mb-2">Share Link</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Anyone with this link can view the plan. Signed-in users can collaborate and will see it in Shared Plans after opening it once.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={shareUrl}
+                  readOnly
+                  onClick={(e) => e.target.select()}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleCopyUrl}
+                  variant={copied ? "default" : "default"}
+                  className={cn(
+                    "min-w-[100px]",
+                    copied && "bg-green-500 hover:bg-green-600"
+                  )}
+                >
+                  {copied ? (
+                    <>
+                      <Check size={16} />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={16} />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-lg text-sm px-3 py-2 bg-destructive/10 text-destructive border border-destructive/20">

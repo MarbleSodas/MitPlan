@@ -1,10 +1,26 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Grid, List, Plus, X } from 'lucide-react';
-import { bossActionsLibrary, categorizedActions, libraryUtils } from '../../data/bossActionsLibrary';
+import { useMemo, useState } from 'react';
+import { Grid, List, Plus, Search } from 'lucide-react';
+import {
+  bossActionsLibrary,
+  categorizedActions,
+  libraryUtils,
+} from '../../data/bossActionsLibrary';
+import { bosses } from '../../data/bosses/bossData';
+import type { BossActionClassification, BossActionTemplate, DamageType } from '../../types';
+import {
+  BOSS_ACTION_CLASSIFICATION_LABELS,
+  BOSS_ACTION_CLASSIFICATIONS,
+  isTankBusterClassification,
+} from '../../utils/boss/bossActionUtils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_TABS = [
@@ -12,27 +28,62 @@ const CATEGORY_TABS = [
   { id: 'tankBusters', label: 'Tank Busters' },
   { id: 'raidwide', label: 'Raidwides' },
   { id: 'mechanics', label: 'Mechanics' },
-];
+] as const;
 
-const BossActionsLibrary = ({ onSelectAction }) => {
+function getClassificationBadgeClasses(classification: BossActionClassification): string {
+  switch (classification) {
+    case 'dual_tankbuster':
+    case 'tankbuster':
+      return 'bg-red-500/15 text-red-300 border-red-500/30';
+    case 'raidwide':
+      return 'bg-orange-500/15 text-orange-300 border-orange-500/30';
+    case 'small_parties':
+      return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+    default:
+      return 'bg-secondary text-secondary-foreground border-border';
+  }
+}
+
+function getDamageTypeLabel(damageType?: DamageType): string {
+  if (damageType === 'magical') {
+    return 'Magical';
+  }
+  if (damageType === 'physical') {
+    return 'Physical';
+  }
+  if (damageType === 'both') {
+    return 'Both';
+  }
+  return 'Unknown';
+}
+
+interface BossActionsLibraryProps {
+  onSelectAction: (action: BossActionTemplate) => void;
+}
+
+const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedDamageType, setSelectedDamageType] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORY_TABS)[number]['id']>('all');
+  const [selectedDamageType, setSelectedDamageType] = useState<'all' | DamageType>('all');
   const [selectedBossSource, setSelectedBossSource] = useState('all');
-  const [viewMode, setViewMode] = useState('list');
-  const [quickAddAction, setQuickAddAction] = useState(null);
-  const [quickAddTime, setQuickAddTime] = useState(0);
-  const quickAddInputRef = useRef(null);
+  const [selectedClassification, setSelectedClassification] = useState<'all' | BossActionClassification>('all');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
+  const bossNameById = useMemo(
+    () => new Map(bosses.map((boss) => [boss.id, boss.name])),
+    []
+  );
 
   const uniqueBossSources = useMemo(() => {
-    const sources = new Set();
-    bossActionsLibrary.forEach(action => {
-      if (action.sourceBoss) {
-        sources.add(action.sourceBoss);
-      }
-    });
-    return Array.from(sources).sort();
-  }, []);
+    const sources = Array.from(new Set(bossActionsLibrary.map((action) => action.sourceBoss)));
+
+    return sources
+      .map((sourceBoss) => ({
+        id: sourceBoss,
+        name: bossNameById.get(sourceBoss) || sourceBoss,
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [bossNameById]);
 
   const filteredActions = useMemo(() => {
     let actions = bossActionsLibrary;
@@ -50,58 +101,18 @@ const BossActionsLibrary = ({ onSelectAction }) => {
     }
 
     if (selectedBossSource !== 'all') {
-      actions = actions.filter(a => a.sourceBoss === selectedBossSource);
+      actions = actions.filter((action) => action.sourceBoss === selectedBossSource);
+    }
+
+    if (selectedClassification !== 'all') {
+      actions = libraryUtils.getActionsByClassification(actions, selectedClassification);
     }
 
     return actions;
-  }, [searchTerm, selectedCategory, selectedDamageType, selectedBossSource]);
+  }, [searchTerm, selectedCategory, selectedDamageType, selectedBossSource, selectedClassification]);
 
-  useEffect(() => {
-    if (quickAddAction && quickAddInputRef.current) {
-      quickAddInputRef.current.focus();
-      quickAddInputRef.current.select();
-    }
-  }, [quickAddAction]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleQuickAdd = (action, e) => {
-    e.stopPropagation();
-    setQuickAddAction(action);
-    setQuickAddTime(action.time || 0);
-  };
-
-  const handleQuickAddConfirm = () => {
-    if (quickAddAction) {
-      onSelectAction({ ...quickAddAction, time: quickAddTime });
-      setQuickAddAction(null);
-    }
-  };
-
-  const handleQuickAddKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleQuickAddConfirm();
-    } else if (e.key === 'Escape') {
-      setQuickAddAction(null);
-    }
-  };
-
-  const handleDirectAdd = (action) => {
+  const handleDirectAdd = (action: BossActionTemplate) => {
     onSelectAction(action);
-  };
-
-  const getImportanceColor = (importance) => {
-    switch (importance) {
-      case 'critical': return 'text-red-400';
-      case 'high': return 'text-orange-400';
-      case 'medium': return 'text-amber-400';
-      case 'low': return 'text-green-400';
-      default: return 'text-muted-foreground';
-    }
   };
 
   return (
@@ -111,8 +122,8 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         <Input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search actions..."
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Search actions, bosses, abilities..."
           className="pl-9 h-8 text-sm"
         />
       </div>
@@ -125,7 +136,7 @@ const BossActionsLibrary = ({ onSelectAction }) => {
             size="sm"
             onClick={() => setSelectedCategory(tab.id)}
             className={cn(
-              "px-3 py-2 text-xs font-medium rounded-none relative",
+              'px-3 py-2 text-xs font-medium rounded-none relative',
               selectedCategory === tab.id
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
@@ -139,29 +150,60 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Select value={selectedDamageType} onValueChange={setSelectedDamageType}>
-          <SelectTrigger className="h-8 text-xs flex-1">
-            <SelectValue placeholder="All Types" />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Select
+          value={selectedDamageType}
+          onValueChange={(value) => setSelectedDamageType(value as 'all' | DamageType)}
+        >
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="All Damage Types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">All Damage Types</SelectItem>
             <SelectItem value="magical">Magical</SelectItem>
             <SelectItem value="physical">Physical</SelectItem>
+            <SelectItem value="both">Both</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={selectedBossSource} onValueChange={setSelectedBossSource}>
-          <SelectTrigger className="h-8 text-xs flex-1">
+          <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="All Bosses" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Bosses</SelectItem>
-            {uniqueBossSources.map(source => (
-              <SelectItem key={source} value={source}>{source}</SelectItem>
+            {uniqueBossSources.map((source) => (
+              <SelectItem key={source.id} value={source.id}>
+                {source.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
+        <Select
+          value={selectedClassification}
+          onValueChange={(value) =>
+            setSelectedClassification(value as 'all' | BossActionClassification)
+          }
+        >
+          <SelectTrigger className="h-8 text-xs sm:col-span-2">
+            <SelectValue placeholder="All Classifications" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classifications</SelectItem>
+            {BOSS_ACTION_CLASSIFICATIONS.map((classification) => (
+              <SelectItem key={classification} value={classification}>
+                {BOSS_ACTION_CLASSIFICATION_LABELS[classification]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs text-muted-foreground">
+          {filteredActions.length} template{filteredActions.length !== 1 ? 's' : ''}
+        </div>
 
         <div className="flex border border-border rounded-lg overflow-hidden">
           <Button
@@ -185,130 +227,136 @@ const BossActionsLibrary = ({ onSelectAction }) => {
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground">
-        {filteredActions.length} action{filteredActions.length !== 1 ? 's' : ''}
-      </div>
-
-      {quickAddAction && (
-        <div className="bg-primary/10 border border-primary rounded-lg p-3">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg flex-shrink-0">{quickAddAction.icon}</span>
-              <span className="font-medium text-sm truncate">{quickAddAction.name}</span>
-            </div>
-            <Button 
-              variant="ghost"
-              size="icon"
-              onClick={() => setQuickAddAction(null)}
-              className="h-6 w-6"
-            >
-              <X size={14} />
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground">Time (s):</Label>
-            <Input
-              ref={quickAddInputRef}
-              type="number"
-              value={quickAddTime}
-              onChange={(e) => setQuickAddTime(parseInt(e.target.value) || 0)}
-              onKeyDown={handleQuickAddKeyDown}
-              min={0}
-              variant="compact"
-              className="flex-1"
-            />
-            <Button size="sm" onClick={handleQuickAddConfirm}>
-              Add
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'space-y-1.5'}>
+      <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-2' : 'space-y-1.5'}>
         {filteredActions.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground text-sm col-span-2">
-            No actions found
+          <div className="text-center py-6 text-muted-foreground text-sm">
+            No boss action templates found
           </div>
         ) : (
-          filteredActions.map((action) => (
-            viewMode === 'grid' ? (
-              <div
-                key={action.libraryId || action.id}
+          filteredActions.map((action) => {
+            const bossName = bossNameById.get(action.sourceBoss) || action.sourceBoss;
+            const classificationLabel =
+              BOSS_ACTION_CLASSIFICATION_LABELS[action.classification] || action.classification;
+
+            return viewMode === 'grid' ? (
+              <button
+                key={action.libraryId}
+                type="button"
                 onClick={() => handleDirectAdd(action)}
-                className="cursor-pointer text-left p-2 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
+                className="cursor-pointer text-left p-3 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{action.icon}</span>
-                  <span className="text-xs font-medium truncate flex-1">{action.name}</span>
+                <div className="flex items-start gap-3">
+                  <span className="text-xl">{action.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium truncate">{action.name}</span>
+                      {isTankBusterClassification(action.classification) && (
+                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-500/20 text-red-300">
+                          TB
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <span
+                        className={cn(
+                          'border px-2 py-0.5 text-[10px] rounded-full',
+                          getClassificationBadgeClasses(action.classification)
+                        )}
+                      >
+                        {classificationLabel}
+                      </span>
+                      {action.isMultiHit && (
+                        <span className="border border-border px-2 py-0.5 text-[10px] rounded-full text-muted-foreground">
+                          {action.hitCount && action.hitCount > 1 ? `${action.hitCount}-Hit` : 'Multi-hit'}
+                        </span>
+                      )}
+                      {action.hasDot && (
+                        <span className="border border-border px-2 py-0.5 text-[10px] rounded-full text-muted-foreground">
+                          DoT
+                        </span>
+                      )}
+                      <span className="border border-border px-2 py-0.5 text-[10px] rounded-full text-muted-foreground">
+                        {getDamageTypeLabel(action.damageType)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      {bossName} • {action.occurrenceCount} occurrence
+                      {action.occurrenceCount !== 1 ? 's' : ''}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{formatTime(action.time)}</span>
-                  {action.isTankBuster && (
-                    <span className="px-1 py-0.5 bg-red-500/20 text-red-400 rounded">TB</span>
-                  )}
-                  {action.isDualTankBuster && (
-                    <span className="px-1 py-0.5 bg-orange-500/20 text-orange-400 rounded">Dual</span>
-                  )}
+                <div className="mt-3 flex items-center justify-end">
+                  <span className="text-[11px] text-primary font-medium">Set Time</span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => handleQuickAdd(action, e)}
-                  className="mt-1 w-full h-6 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  + Set Time
-                </Button>
-              </div>
+              </button>
             ) : (
               <div
-                key={action.libraryId || action.id}
-                className="flex items-center gap-2 px-2 py-1.5 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
+                key={action.libraryId}
+                className="flex items-start gap-3 px-3 py-2 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
               >
-                <span className="text-lg flex-shrink-0">{action.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium truncate">{action.name}</span>
-                    {action.isTankBuster && (
-                      <span className="px-1 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded flex-shrink-0">TB</span>
-                    )}
-                    {action.isDualTankBuster && (
-                      <span className="px-1 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded flex-shrink-0">Dual</span>
+                <button
+                  type="button"
+                  onClick={() => handleDirectAdd(action)}
+                  className="flex items-start gap-3 text-left min-w-0 flex-1"
+                >
+                  <span className="text-xl flex-shrink-0">{action.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium truncate">{action.name}</span>
+                      {isTankBusterClassification(action.classification) && (
+                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-500/20 text-red-300">
+                          TB
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={cn(
+                          'border px-2 py-0.5 text-[10px] rounded-full',
+                          getClassificationBadgeClasses(action.classification)
+                        )}
+                      >
+                        {classificationLabel}
+                      </span>
+                      {action.isMultiHit && (
+                        <span className="border border-border px-2 py-0.5 text-[10px] rounded-full text-muted-foreground">
+                          {action.hitCount && action.hitCount > 1 ? `${action.hitCount}-Hit` : 'Multi-hit'}
+                        </span>
+                      )}
+                      {action.hasDot && (
+                        <span className="border border-border px-2 py-0.5 text-[10px] rounded-full text-muted-foreground">
+                          DoT
+                        </span>
+                      )}
+                      <span className="border border-border px-2 py-0.5 text-[10px] rounded-full text-muted-foreground">
+                        {getDamageTypeLabel(action.damageType)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {bossName}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {action.occurrenceCount}x
+                      </span>
+                    </div>
+                    {action.description && (
+                      <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                        {action.description}
+                      </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span>{formatTime(action.time)}</span>
-                    {action.damageType && (
-                      <span>{action.damageType === 'magical' ? '🔮' : '⚔️'}</span>
-                    )}
-                    {action.importance && (
-                      <span className={getImportanceColor(action.importance)}>●</span>
-                    )}
-                    {action.sourceBoss && (
-                      <span className="truncate">{action.sourceBoss}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => handleQuickAdd(action, e)}
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all"
-                    title="Add with custom time"
-                  >
-                    <Plus size={14} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleDirectAdd(action)}
-                    className="h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100"
-                  >
-                    Add
-                  </Button>
-                </div>
+                </button>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleDirectAdd(action)}
+                  className="h-8 px-2 text-[11px] flex-shrink-0"
+                >
+                  <Plus size={13} />
+                  Set Time
+                </Button>
               </div>
-            )
-          ))
+            );
+          })
         )}
       </div>
     </div>

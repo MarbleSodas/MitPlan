@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { cn } from '@/lib/utils';
 
 const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,12 +19,8 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
   const [togglingPublic, setTogglingPublic] = useState(false);
 
   const isOwner = () => {
-    if (isAnonymousMode) {
-      return anonymousUser?.id === timeline.userId;
-    } else {
-      const currentUserId = user?.uid;
-      return currentUserId && (timeline.ownerId === currentUserId || timeline.userId === currentUserId);
-    }
+    const currentUserId = user?.uid;
+    return !!currentUserId && (timeline.ownerId === currentUserId || timeline.userId === currentUserId);
   };
 
   const getBossName = () => {
@@ -72,7 +68,7 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
 
     setLoading(true);
     try {
-      const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+      const userId = user?.uid;
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -101,7 +97,7 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     }
 
     try {
-      const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+      const userId = user?.uid;
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -135,7 +131,7 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     }
 
     try {
-      const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+      const userId = user?.uid;
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -162,7 +158,9 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
     try {
       const shareLink = getShareableLink(timeline.id);
       await navigator.clipboard.writeText(shareLink);
-      toast.success('Share link copied!', { description: 'The share link has been copied to your clipboard.' });
+      toast.success('Public view link copied!', {
+        description: 'Anyone with the link can view this timeline. Editing still requires sign-in.'
+      });
     } catch (error) {
       console.error('Error copying share link:', error);
       toast.error('Failed to copy share link', { description: 'Please try again.' });

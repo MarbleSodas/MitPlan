@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/card';
 const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
   'red-hot-deep-blue-m10s',
+  'the-tyrant-m11s',
   'dancing-green-m5s',
   'sugar-riot',
   'brute-abominator-m7s',

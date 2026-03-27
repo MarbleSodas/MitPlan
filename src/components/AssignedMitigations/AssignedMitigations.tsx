@@ -12,6 +12,7 @@ import {
 import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
 import { useFilterContext } from '../../contexts';
 import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentContext';
+import PresenceTarget from '../collaboration/PresenceTarget';
 import { Input } from '@/components/ui/input';
 
 
@@ -139,101 +140,122 @@ const AssignedMitigations = ({
           displayMitigation.casterUserId === myUserId && 
           displayMitigation.casterJobId === myAssignedJob;
         const highlightColor = isMyMitigation ? (myColor || '#3b82f6') : null;
+        const assignmentTarget = {
+          surface: 'planner' as const,
+          entityType: 'assignment' as const,
+          entityId: action.id,
+          field: displayMitigation.id,
+          slotId: `${displayMitigation.tankPosition || 'shared'}:${displayMitigation.casterJobId || index}`,
+        };
 
         return (
           <Tooltip key={uniqueKey}>
             <TooltipTrigger asChild>
-              <div 
-                className={`rounded-sm px-[3px] py-[1px] text-[12px] flex items-center text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 ${isMyMitigation ? 'border-l-[3px]' : 'border-l-2 border-blue-500'} ${isMyMitigation ? 'hover:opacity-90' : 'hover:bg-blue-500/10'}`}
-                style={isMyMitigation ? { 
-                  borderLeftColor: highlightColor, 
-                  backgroundColor: `${highlightColor}10`
-                } : undefined}
+              <PresenceTarget
+                target={assignmentTarget}
+                className="rounded-sm"
+                publishHover={true}
               >
-              <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
-                {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
-                  <img
-                    src={displayMitigation.icon}
-                    alt={displayMitigation.name}
-                    className="max-h-full max-w-full block"
-                  /> :
-                  displayMitigation.icon
-                }
-              </span>
-              <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal min-w-0 flex items-center">
-                {displayMitigation.name}
-                {displayMitigation.casterJobId && (
-                  <CasterBadge color={casterColor} jobId={displayMitigation.casterJobId}>
-                    {displayMitigation.casterJobId}
-                  </CasterBadge>
-                )}
-
-                {displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' && (
-                  <TankPositionBadge $position={displayMitigation.tankPosition}>
-                    {displayMitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
-                  </TankPositionBadge>
-                )}
-              </span>
-              <div className="flex flex-[0_0_auto] items-center justify-end gap-1.5">
-                {showPrecastOptions && getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
-                  <Input
-                    type="number"
-                    variant="inline"
-                    step="0.1"
-                    min={0}
-                    max={getAbilityDurationForLevel(displayMitigation, currentBossLevel) || undefined}
-                    value={(() => {
-                      const v = displayMitigation.precastSeconds;
-                      if (v === 0 || v == null || !Number.isFinite(Number(v))) return '';
-                      return String(v);
-                    })()}
-                    onChange={(e) => {
-                      const valStr = e.target.value;
-                      if (valStr === '') {
-                        onUpdatePrecast && onUpdatePrecast(
-                          action.id,
-                          displayMitigation.id,
-                          displayMitigation.tankPosition,
-                          0
-                        );
-                        return;
-                      }
-                      const raw = Number(valStr);
-                      if (!Number.isFinite(raw)) {
-                        return;
-                      }
-                      const dur = getAbilityDurationForLevel(displayMitigation, currentBossLevel) || 0;
-                      const clamped = Math.max(0, Math.min(raw, dur));
-                      onUpdatePrecast && onUpdatePrecast(
-                        action.id,
-                        displayMitigation.id,
-                        displayMitigation.tankPosition,
-                        clamped
-                      );
-                    }}
-                    inputMode="decimal"
-                    placeholder=""
-                    title="Seconds to precast before boss action (max = ability duration)"
-                  />
-                )}
-                <RemoveButton
-                  onClick={(e) => {
-                    // Prevent event bubbling
-                    e.stopPropagation();
-                    e.preventDefault();
-
-                    // Add a small delay to ensure the click is processed
-                    setTimeout(() => {
-                      // Remove the mitigation with its tank position
-                      onRemoveMitigation(action.id, displayMitigation.id, displayMitigation.tankPosition);
-                    }, 10);
-                  }}
-                  aria-label={`Remove ${displayMitigation.name}`}
+                <div 
+                  className={`rounded-sm px-[3px] py-[1px] text-[12px] flex items-center text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 ${isMyMitigation ? 'border-l-[3px]' : 'border-l-2 border-blue-500'} ${isMyMitigation ? 'hover:opacity-90' : 'hover:bg-blue-500/10'}`}
+                  style={isMyMitigation ? { 
+                    borderLeftColor: highlightColor, 
+                    backgroundColor: `${highlightColor}10`
+                  } : undefined}
                 >
-                  ×
-                </RemoveButton>
-              </div>
-              </div>
+                <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
+                  {typeof displayMitigation.icon === 'string' && displayMitigation.icon.startsWith('/') ?
+                    <img
+                      src={displayMitigation.icon}
+                      alt={displayMitigation.name}
+                      className="max-h-full max-w-full block"
+                    /> :
+                    displayMitigation.icon
+                  }
+                </span>
+                <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal min-w-0 flex items-center">
+                  {displayMitigation.name}
+                  {displayMitigation.casterJobId && (
+                    <CasterBadge color={casterColor} jobId={displayMitigation.casterJobId}>
+                      {displayMitigation.casterJobId}
+                    </CasterBadge>
+                  )}
+
+                  {displayMitigation.tankPosition && displayMitigation.tankPosition !== 'shared' && (
+                    <TankPositionBadge $position={displayMitigation.tankPosition}>
+                      {displayMitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
+                    </TankPositionBadge>
+                  )}
+                </span>
+                <div className="flex flex-[0_0_auto] items-center justify-end gap-1.5">
+                  {showPrecastOptions && getAbilityDurationForLevel(displayMitigation, currentBossLevel) > 0 && (
+                    <PresenceTarget
+                      target={{ ...assignmentTarget, field: `${displayMitigation.id}:precast` }}
+                      className="rounded-sm"
+                      showIndicator={false}
+                      publishFocus={true}
+                      focusInteraction="editing"
+                    >
+                      <Input
+                        type="number"
+                        variant="inline"
+                        step="0.1"
+                        min={0}
+                        max={getAbilityDurationForLevel(displayMitigation, currentBossLevel) || undefined}
+                        value={(() => {
+                          const v = displayMitigation.precastSeconds;
+                          if (v === 0 || v == null || !Number.isFinite(Number(v))) return '';
+                          return String(v);
+                        })()}
+                        onChange={(e) => {
+                          const valStr = e.target.value;
+                          if (valStr === '') {
+                            onUpdatePrecast && onUpdatePrecast(
+                              action.id,
+                              displayMitigation.id,
+                              displayMitigation.tankPosition,
+                              0
+                            );
+                            return;
+                          }
+                          const raw = Number(valStr);
+                          if (!Number.isFinite(raw)) {
+                            return;
+                          }
+                          const dur = getAbilityDurationForLevel(displayMitigation, currentBossLevel) || 0;
+                          const clamped = Math.max(0, Math.min(raw, dur));
+                          onUpdatePrecast && onUpdatePrecast(
+                            action.id,
+                            displayMitigation.id,
+                            displayMitigation.tankPosition,
+                            clamped
+                          );
+                        }}
+                        inputMode="decimal"
+                        placeholder=""
+                        title="Seconds to precast before boss action (max = ability duration)"
+                      />
+                    </PresenceTarget>
+                  )}
+                  <RemoveButton
+                    onClick={(e) => {
+                      // Prevent event bubbling
+                      e.stopPropagation();
+                      e.preventDefault();
+
+                      // Add a small delay to ensure the click is processed
+                      setTimeout(() => {
+                        // Remove the mitigation with its tank position
+                        onRemoveMitigation(action.id, displayMitigation.id, displayMitigation.tankPosition);
+                      }, 10);
+                    }}
+                    aria-label={`Remove ${displayMitigation.name}`}
+                  >
+                    ×
+                  </RemoveButton>
+                </div>
+                </div>
+              </PresenceTarget>
             </TooltipTrigger>
             <TooltipContent className="whitespace-pre-line max-w-xs">{tooltipContent}</TooltipContent>
           </Tooltip>
@@ -256,47 +278,60 @@ const AssignedMitigations = ({
               mitigation.casterUserId === myUserId &&
               mitigation.casterJobId === myAssignedJob;
             const inheritedHighlightColor = isMyInheritedMitigation ? (myColor || '#3b82f6') : null;
+            const inheritedTarget = {
+              surface: 'planner' as const,
+              entityType: 'assignment' as const,
+              entityId: action.id,
+              field: mitigation.id,
+              slotId: `${mitigation.tankPosition || 'shared'}:${mitigation.casterJobId || 'inherited'}`,
+            };
 
             const inheritedTooltipContent = `${fullMitigation.name}${mitigation.tankPosition && mitigation.tankPosition !== 'shared' ? ` (${mitigation.tankPosition === 'mainTank' ? 'Main Tank' : 'Off Tank'})` : ''}: Applied at ${mitigation.sourceActionTime}s (${mitigation.sourceActionName})\nRemaining duration: ${mitigation.remainingDuration.toFixed(1)}s${fullMitigation.barrierPotency ? `\nBarrier: ${Math.round(fullMitigation.barrierPotency * 100)}% max HP` : ''}${fullMitigation.barrierFlatPotency ? `\nBarrier: ${fullMitigation.barrierFlatPotency} potency` : ''}${fullMitigation.mitigationValue ? `\nMitigation: ${typeof getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) === 'object' ? `${(getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) as { physical: number; magical: number }).physical * 100}% physical, ${(getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) as { physical: number; magical: number }).magical * 100}% magical` : `${(getAbilityMitigationValueForLevel(fullMitigation, currentBossLevel) as number) * 100}%`}` : ''}`;
 
             return (
               <Tooltip key={`inherited-${mitigation.id}-${mitigation.sourceActionId}`}>
                 <TooltipTrigger asChild>
-                  <div 
-                    className={`rounded-sm px-[3px] py-[1px] text-[11px] flex items-center text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic ${isMyInheritedMitigation ? 'border-l-[3px]' : 'border-l-2 border-gray-500'} hover:bg-blue-500/5`}
-                    style={isMyInheritedMitigation ? { 
-                      borderLeftColor: inheritedHighlightColor, 
-                      backgroundColor: `${inheritedHighlightColor}08`
-                    } : undefined}
+                  <PresenceTarget
+                    target={inheritedTarget}
+                    className="rounded-sm"
+                    publishHover={true}
                   >
-                    <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
-                      {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
-                        <img
-                          src={fullMitigation.icon}
-                          alt={fullMitigation.name}
-                          className="max-h-[18px] max-w-[18px] opacity-70 block"
-                        /> :
-                        fullMitigation.icon
-                      }
-                    </span>
-                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal flex items-center">
-                      {fullMitigation.name}
-                      {mitigation.casterJobId && (
-                        <CasterBadge color={inheritedCasterColor} jobId={mitigation.casterJobId}>
-                          {mitigation.casterJobId}
-                        </CasterBadge>
-                      )}
+                    <div 
+                      className={`rounded-sm px-[3px] py-[1px] text-[11px] flex items-center text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic ${isMyInheritedMitigation ? 'border-l-[3px]' : 'border-l-2 border-gray-500'} hover:bg-blue-500/5`}
+                      style={isMyInheritedMitigation ? { 
+                        borderLeftColor: inheritedHighlightColor, 
+                        backgroundColor: `${inheritedHighlightColor}08`
+                      } : undefined}
+                    >
+                      <span className="mr-1 inline-flex items-center justify-center w-4 h-4 shrink-0">
+                        {typeof fullMitigation.icon === 'string' && fullMitigation.icon.startsWith('/') ?
+                          <img
+                            src={fullMitigation.icon}
+                            alt={fullMitigation.name}
+                            className="max-h-[18px] max-w-[18px] opacity-70 block"
+                          /> :
+                          fullMitigation.icon
+                        }
+                      </span>
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-normal flex items-center">
+                        {fullMitigation.name}
+                        {mitigation.casterJobId && (
+                          <CasterBadge color={inheritedCasterColor} jobId={mitigation.casterJobId}>
+                            {mitigation.casterJobId}
+                          </CasterBadge>
+                        )}
 
-                      {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
-                        <TankPositionBadge $position={mitigation.tankPosition}>
-                          {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
-                        </TankPositionBadge>
-                      )}
-                    </span>
-                    <small className="text-[9px] opacity-80 shrink-0">
-                      {mitigation.remainingDuration.toFixed(1)}s
-                    </small>
-                  </div>
+                        {mitigation.tankPosition && mitigation.tankPosition !== 'shared' && (
+                          <TankPositionBadge $position={mitigation.tankPosition}>
+                            {mitigation.tankPosition === 'mainTank' ? 'MT' : 'OT'}
+                          </TankPositionBadge>
+                        )}
+                      </span>
+                      <small className="text-[9px] opacity-80 shrink-0">
+                        {mitigation.remainingDuration.toFixed(1)}s
+                      </small>
+                    </div>
+                  </PresenceTarget>
                 </TooltipTrigger>
                 <TooltipContent className="whitespace-pre-line max-w-xs">{inheritedTooltipContent}</TooltipContent>
               </Tooltip>

@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 const CustomTimelineSelectionModal = ({ onClose, onSelectTimeline }) => {
   const navigate = useNavigate();
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+  const { user } = useAuth();
   const [timelines, setTimelines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimeline, setSelectedTimeline] = useState(null);
@@ -27,7 +27,7 @@ const CustomTimelineSelectionModal = ({ onClose, onSelectTimeline }) => {
   const loadUserTimelines = async () => {
     setLoading(true);
     try {
-      const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+      const userId = user?.uid;
       if (!userId) {
         console.error('No user ID available');
         setTimelines([]);
@@ -76,10 +76,10 @@ const CustomTimelineSelectionModal = ({ onClose, onSelectTimeline }) => {
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">
-            Select Custom Timeline
+            Select Community Timeline
           </DialogTitle>
           <DialogDescription>
-            Choose a timeline to create a new plan, or create a new timeline
+            Choose a community timeline to create a new plan, or open the timeline hub to create one
           </DialogDescription>
         </DialogHeader>
 
@@ -98,10 +98,10 @@ const CustomTimelineSelectionModal = ({ onClose, onSelectTimeline }) => {
                 <Plus size={32} className="text-primary" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Create New Timeline
+                Open Timeline Hub
               </h3>
               <p className="text-sm text-muted-foreground text-center">
-                Build a custom timeline from scratch
+                Start from a plan, an official route, another community timeline, or a blank editor
               </p>
             </div>
 
@@ -191,8 +191,8 @@ const CustomTimelineSelectionModal = ({ onClose, onSelectTimeline }) => {
 
             {timelines.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground">
-                <p className="mb-4">You don't have any custom timelines yet.</p>
-                <p className="text-sm">Click the "+" card to create your first timeline!</p>
+                <p className="mb-4">You don't have any community timelines yet.</p>
+                <p className="text-sm">Open the timeline hub to create your first one.</p>
               </div>
             )}
           </div>

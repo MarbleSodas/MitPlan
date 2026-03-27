@@ -1,19 +1,29 @@
 import { memo, useCallback, useMemo } from 'react';
 import { mitigationAbilities } from '../../data';
-import { isMitigationAvailable, calculateTotalMitigation, calculateBarrierAmount, getHealingPotency, calculateHealingAmount } from '../../utils';
+import { isMitigationAvailable, calculateTotalMitigation, calculateBarrierAmount, getHealingPotency, calculateHealingAmount, parseUnmitigatedDamage } from '../../utils';
 import { cn } from '@/lib/utils';
 import HealthBar from '../common/HealthBar';
 import HealingHealthBar from '../common/HealingHealthBar';
+import { getBossActionTypeLabel } from '../../utils/boss/bossActionUtils';
+import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
+import { getPlanTimelineLayout } from '../../utils/timeline/planTimelineLayoutUtils';
+import type { BossAction, PhaseOverride, ResolvedTimelinePhaseSummary } from '../../types';
+import PhaseOverrideTimeStrip from './PhaseOverridesPanel';
 
 interface MobileBossTimelineProps {
-  sortedBossActions: any[];
+  sortedBossActions: BossAction[];
   selectedBossAction: any;
   assignments: any;
   getActiveMitigations: any;
   selectedJobs: any;
   currentBossLevel: number;
   baseHealth: any;
+  phaseSummaryByAnchorActionId: Map<string, ResolvedTimelinePhaseSummary>;
+  skippedActionsByPhaseId: Record<string, BossAction[]>;
+  phaseOverrides: Record<string, PhaseOverride>;
+  disabled?: boolean;
   onSelectAction: (action: any) => void;
+  onPhaseOverrideChange?: (nextPhaseOverrides: Record<string, PhaseOverride>) => void;
 }
 
 const MobileBossTimeline = memo(({
@@ -24,13 +34,36 @@ const MobileBossTimeline = memo(({
   selectedJobs,
   currentBossLevel,
   baseHealth,
+  phaseSummaryByAnchorActionId,
+  skippedActionsByPhaseId,
+  phaseOverrides,
+  disabled = false,
   onSelectAction,
+  onPhaseOverrideChange,
 }: MobileBossTimelineProps) => {
+  const { realtimePlan } = useRealtimePlan();
   const handleSelect = useCallback((action: any) => {
     onSelectAction(action);
   }, [onSelectAction]);
 
   const effectiveBaseHealth = baseHealth || { party: 143000, tank: 225000 };
+  const planTimelineLayout = useMemo(
+    () => getPlanTimelineLayout(realtimePlan),
+    [realtimePlan?.timelineLayout]
+  );
+  const healthConfig = planTimelineLayout?.healthConfig;
+  const legacyHealthSettings = realtimePlan?.healthSettings || {};
+  const partyBaseMaxHealth = healthConfig?.party
+    || legacyHealthSettings.partyMinHealth
+    || effectiveBaseHealth.party;
+  const mainTankBaseMaxHealth = healthConfig?.mainTank
+    || healthConfig?.defaultTank
+    || legacyHealthSettings.tankMaxHealth?.mainTank
+    || effectiveBaseHealth.tank;
+  const offTankBaseMaxHealth = healthConfig?.offTank
+    || healthConfig?.defaultTank
+    || legacyHealthSettings.tankMaxHealth?.offTank
+    || effectiveBaseHealth.tank;
 
   const calculateMitigationInfo = useCallback((action: any) => {
     const directAssignments = assignments[action.id] || [];
@@ -70,26 +103,35 @@ const MobileBossTimeline = memo(({
   }, [assignments, getActiveMitigations]);
 
   const getDamageTypeLabel = (action: any) => {
-    if (action.isTankBuster) return 'Tank Buster';
-    if (action.isDualTankBuster) return 'Dual Tank Buster';
-    if (action.isMultiHit) return `${action.hitCount}-Hit AoE`;
-    return 'Raidwide';
+    const baseLabel = getBossActionTypeLabel(action);
+    if (action.isMultiHit) {
+      const hitLabel = action.hitCount && action.hitCount > 1 ? `${action.hitCount}-Hit` : 'Multi-hit';
+      return `${baseLabel} • ${hitLabel}`;
+    }
+    if (action.hasDot) {
+      return `${baseLabel} • DoT`;
+    }
+    return baseLabel;
   };
 
   const getDamageTypeIcon = (action: any) => {
     if (action.isTankBuster || action.isDualTankBuster) return '🎯';
+    if (action.classification === 'small_parties') return '👥';
     if (action.isMultiHit) return '💥';
     return '🌊';
   };
 
   const unmitigatedDamage = (action: any) => {
-    if (!action.unmitigatedDamage) return 0;
-    return parseInt(action.unmitigatedDamage.replace(/[^0-9]/g, ''), 10) || 0;
+    return parseUnmitigatedDamage(action.unmitigatedDamage);
   };
 
   return (
     <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
       {sortedBossActions.map((action, index) => {
+        const phaseSummary = phaseSummaryByAnchorActionId.get(action.id) || null;
+        const phaseSkippedActions = phaseSummary
+          ? skippedActionsByPhaseId[phaseSummary.phaseId] || []
+          : [];
         const isSelected = selectedBossAction?.id === action.id;
         const mitigationCount = getMitigationSummary(action);
         const mitigationInfo = calculateMitigationInfo(action);
@@ -107,13 +149,15 @@ const MobileBossTimeline = memo(({
           return sum;
         }, 0);
 
-        const partyBarrierAmount = calcBarrier('party', effectiveBaseHealth.party);
-        const mtBarrierAmount = calcBarrier('mainTank', effectiveBaseHealth.tank);
+        const partyBarrierAmount = calcBarrier('party', partyBaseMaxHealth);
+        const mtBarrierAmount = calcBarrier('mainTank', mainTankBaseMaxHealth);
+        const otBarrierAmount = calcBarrier('offTank', offTankBaseMaxHealth);
         
         const calcRemaining = (maxHp: number, barrier: number, mit: number) => Math.max(0, maxHp - Math.max(0, damage - barrier) * (1 - mit));
         
-        const partyRem = calcRemaining(effectiveBaseHealth.party, partyBarrierAmount, mitigationPercentage);
-        const mtRem = calcRemaining(effectiveBaseHealth.tank, mtBarrierAmount, mitigationPercentage);
+        const partyRem = calcRemaining(partyBaseMaxHealth, partyBarrierAmount, mitigationPercentage);
+        const mtRem = calcRemaining(mainTankBaseMaxHealth, mtBarrierAmount, mitigationPercentage);
+        const otRem = calcRemaining(offTankBaseMaxHealth, otBarrierAmount, mitigationPercentage);
         
         const calcHealing = (targetMaxHp: number) => {
           const healingMits = mitigationInfo.allMitigations.filter((m: any) => 
@@ -122,20 +166,32 @@ const MobileBossTimeline = memo(({
           return calculateHealingAmount(healingMits, healingPotency, currentBossLevel, targetMaxHp);
         };
         
-        const partyHealAmt = calcHealing(effectiveBaseHealth.party);
-        const mtHealAmt = calcHealing(effectiveBaseHealth.tank);
+        const partyHealAmt = calcHealing(partyBaseMaxHealth);
+        const mtHealAmt = calcHealing(mainTankBaseMaxHealth);
+        const otHealAmt = calcHealing(offTankBaseMaxHealth);
         
         return (
           <div
             key={`${action.id}-${index}`}
+            data-testid={`mobile-action-${action.id}-${index}`}
             onClick={() => handleSelect(action)}
             className={cn(
-              "relative w-full rounded-lg border-2 transition-all cursor-pointer bg-card p-3",
+              "relative w-full rounded-lg border-2 transition-all cursor-pointer bg-card overflow-hidden",
               isSelected 
                 ? "border-primary shadow-md" 
                 : "border-border hover:border-primary/50"
             )}
           >
+            <PhaseOverrideTimeStrip
+              time={action.time}
+              summary={phaseSummary}
+              phaseOverrides={phaseOverrides}
+              skippedActions={phaseSkippedActions}
+              disabled={disabled}
+              onChange={onPhaseOverrideChange}
+            />
+
+            <div className="p-3">
             <div className="flex items-start gap-3">
               <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
                 {action.icon && typeof action.icon === 'string' && action.icon.startsWith('/') ? (
@@ -146,13 +202,10 @@ const MobileBossTimeline = memo(({
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-sm truncate text-foreground">
                     {action.name}
                   </h3>
-                  <span className="shrink-0 text-xs font-bold bg-muted px-2 py-0.5 rounded">
-                    {action.time}s
-                  </span>
                 </div>
                 
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -187,8 +240,8 @@ const MobileBossTimeline = memo(({
                     <div className="flex items-center gap-2 flex-wrap">
                       <HealthBar 
                         label="MT" 
-                        maxHealth={effectiveBaseHealth.tank} 
-                        currentHealth={effectiveBaseHealth.tank} 
+                        maxHealth={mainTankBaseMaxHealth} 
+                        currentHealth={mainTankBaseMaxHealth} 
                         damageAmount={damage} 
                         barrierAmount={mtBarrierAmount} 
                         isTankBuster 
@@ -199,7 +252,7 @@ const MobileBossTimeline = memo(({
                       />
                       <HealingHealthBar 
                         label="MT" 
-                        maxHealth={effectiveBaseHealth.tank} 
+                        maxHealth={mainTankBaseMaxHealth} 
                         remainingHealth={mtRem} 
                         healingAmount={mtHealAmt} 
                         isTankBuster 
@@ -207,13 +260,38 @@ const MobileBossTimeline = memo(({
                         isDualTankBuster={action.isDualTankBuster} 
                       />
                     </div>
+                    {action.isDualTankBuster && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <HealthBar 
+                          label="OT" 
+                          maxHealth={offTankBaseMaxHealth} 
+                          currentHealth={offTankBaseMaxHealth} 
+                          damageAmount={damage} 
+                          barrierAmount={otBarrierAmount} 
+                          isTankBuster 
+                          tankPosition="offTank" 
+                          isDualTankBuster 
+                          applyBarrierFirst 
+                          mitigationPercentage={mitigationPercentage} 
+                        />
+                        <HealingHealthBar 
+                          label="OT" 
+                          maxHealth={offTankBaseMaxHealth} 
+                          remainingHealth={otRem} 
+                          healingAmount={otHealAmt} 
+                          isTankBuster 
+                          tankPosition="offTank" 
+                          isDualTankBuster 
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap">
                     <HealthBar 
                       label="Dmg" 
-                      maxHealth={effectiveBaseHealth.party} 
-                      currentHealth={effectiveBaseHealth.party} 
+                      maxHealth={partyBaseMaxHealth} 
+                      currentHealth={partyBaseMaxHealth} 
                       damageAmount={damage} 
                       barrierAmount={partyBarrierAmount} 
                       applyBarrierFirst 
@@ -221,7 +299,7 @@ const MobileBossTimeline = memo(({
                     />
                     <HealingHealthBar 
                       label="Heal" 
-                      maxHealth={effectiveBaseHealth.party} 
+                      maxHealth={partyBaseMaxHealth} 
                       remainingHealth={partyRem} 
                       healingAmount={partyHealAmt} 
                     />
@@ -235,6 +313,7 @@ const MobileBossTimeline = memo(({
                 {action.description}
               </p>
             </div>
+            </div>
           </div>
         );
       })}
@@ -242,7 +321,7 @@ const MobileBossTimeline = memo(({
       {sortedBossActions.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">No boss actions yet</p>
-          <p className="text-xs mt-1">Add actions from the timeline editor</p>
+          <p className="text-xs mt-1">Use Edit Timeline to add or rearrange actions</p>
         </div>
       )}
     </div>

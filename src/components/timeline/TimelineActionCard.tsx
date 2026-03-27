@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { Edit2, Trash2, GripVertical, ChevronDown, ChevronUp, Copy } from 'lucide-react';
+import {
+  BOSS_ACTION_CLASSIFICATION_LABELS,
+  getBossActionTypeLabel,
+  isSmallPartyClassification,
+  isTankBusterClassification,
+} from '../../utils/boss/bossActionUtils';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PresenceTarget from '../collaboration/PresenceTarget';
 
 const TimelineActionCard = ({
   action,
@@ -17,6 +24,11 @@ const TimelineActionCard = ({
 }) => {
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [tempTime, setTempTime] = useState(action.time);
+  const eventTarget = {
+    surface: 'timeline' as const,
+    entityType: 'timelineEvent' as const,
+    entityId: action.id,
+  };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -25,7 +37,7 @@ const TimelineActionCard = ({
   };
 
   const getImportanceBorderColor = () => {
-    if (action.isTankBuster || action.isDualTankBuster) return 'border-l-destructive';
+    if (isTankBusterClassification(action.classification) || action.isTankBuster || action.isDualTankBuster) return 'border-l-destructive';
     switch (action.importance) {
       case 'critical': return 'border-l-destructive';
       case 'high': return 'border-l-[oklch(0.795_0.184_86.047)]';
@@ -36,7 +48,7 @@ const TimelineActionCard = ({
   };
 
   const getImportanceBackground = () => {
-    if (action.isTankBuster || action.isDualTankBuster) return 'bg-destructive/5';
+    if (isTankBusterClassification(action.classification) || action.isTankBuster || action.isDualTankBuster) return 'bg-destructive/5';
     switch (action.importance) {
       case 'critical': return 'bg-destructive/5';
       case 'high': return 'bg-[oklch(0.795_0.184_86.047)]/5';
@@ -60,14 +72,19 @@ const TimelineActionCard = ({
   };
 
   return (
-    <div
-      className={cn(
-        "bg-card border border-border rounded-lg border-l-4 transition-all hover:border-primary",
-        getImportanceBorderColor(),
-        getImportanceBackground(),
-        isDragging && "shadow-lg opacity-90"
-      )}
+    <PresenceTarget
+      target={eventTarget}
+      className="rounded-lg"
+      publishHover={true}
     >
+      <div
+        className={cn(
+          "bg-card border border-border rounded-lg border-l-4 transition-all hover:border-primary",
+          getImportanceBorderColor(),
+          getImportanceBackground(),
+          isDragging && "shadow-lg opacity-90"
+        )}
+      >
       <div className="flex items-center gap-2 p-3">
         <div
           {...dragHandleProps}
@@ -76,30 +93,38 @@ const TimelineActionCard = ({
           <GripVertical size={16} />
         </div>
 
-        {isEditingTime ? (
-          <Input
-            type="number"
-            value={tempTime}
-            onChange={(e) => setTempTime(parseInt(e.target.value) || 0)}
-            onKeyDown={handleTimeKeyDown}
-            onBlur={handleTimeBlur}
-            autoFocus
-            variant="compact"
-            className="w-16"
-            min={0}
-          />
-        ) : (
-          <button
-            onClick={() => {
-              setTempTime(action.time);
-              setIsEditingTime(true);
-            }}
-            className="w-14 text-sm font-mono font-medium text-foreground hover:text-primary transition-colors text-left"
-            title="Click to edit time"
-          >
-            {formatTime(action.time)}
-          </button>
-        )}
+        <PresenceTarget
+          target={{ ...eventTarget, field: 'time' }}
+          className="rounded-md"
+          showIndicator={false}
+          publishFocus={true}
+          focusInteraction="editing"
+        >
+          {isEditingTime ? (
+            <Input
+              type="number"
+              value={tempTime}
+              onChange={(e) => setTempTime(parseInt(e.target.value) || 0)}
+              onKeyDown={handleTimeKeyDown}
+              onBlur={handleTimeBlur}
+              autoFocus
+              variant="compact"
+              className="w-16"
+              min={0}
+            />
+          ) : (
+            <button
+              onClick={() => {
+                setTempTime(action.time);
+                setIsEditingTime(true);
+              }}
+              className="w-14 text-sm font-mono font-medium text-foreground hover:text-primary transition-colors text-left"
+              title="Click to edit time"
+            >
+              {formatTime(action.time)}
+            </button>
+          )}
+        </PresenceTarget>
 
         <span className="text-xl flex-shrink-0">{action.icon}</span>
 
@@ -108,7 +133,7 @@ const TimelineActionCard = ({
         </span>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {action.isTankBuster && (
+          {(action.isTankBuster || isTankBusterClassification(action.classification)) && (
             <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] font-medium rounded">
               TB
             </span>
@@ -116,6 +141,21 @@ const TimelineActionCard = ({
           {action.isDualTankBuster && (
             <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-medium rounded">
               Dual
+            </span>
+          )}
+          {isSmallPartyClassification(action.classification) && (
+            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-medium rounded">
+              4P
+            </span>
+          )}
+          {action.isMultiHit && (
+            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-medium rounded">
+              {action.hitCount && action.hitCount > 1 ? `${action.hitCount}x` : 'Multi'}
+            </span>
+          )}
+          {action.hasDot && (
+            <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 text-[10px] font-medium rounded">
+              DoT
             </span>
           )}
           {action.damageType && (
@@ -189,6 +229,29 @@ const TimelineActionCard = ({
               </span>
             </div>
 
+            {action.classification && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Classification:</span>
+                <span className="font-medium">
+                  {BOSS_ACTION_CLASSIFICATION_LABELS[action.classification] || getBossActionTypeLabel(action)}
+                </span>
+              </div>
+            )}
+
+            {(action.isMultiHit || action.hasDot) && (
+              <div className="flex items-center gap-2 text-sm flex-wrap">
+                <span className="text-muted-foreground">Modifiers:</span>
+                {action.isMultiHit && (
+                  <span className="font-medium">
+                    {action.hitCount && action.hitCount > 1 ? `${action.hitCount}-Hit` : 'Multi-hit'}
+                  </span>
+                )}
+                {action.hasDot && (
+                  <span className="font-medium">DoT</span>
+                )}
+              </div>
+            )}
+
             {action.description && (
               <div className="text-sm">
                 <span className="text-muted-foreground">Description:</span>
@@ -226,7 +289,8 @@ const TimelineActionCard = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PresenceTarget>
   );
 };
 

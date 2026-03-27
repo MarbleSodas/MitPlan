@@ -10,10 +10,14 @@ import { getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 import { useNavigate } from 'react-router-dom';
 
-import { Maximize2, Minimize2, Search, X, Menu, ArrowLeft } from 'lucide-react';
+import { Maximize2, Minimize2, Search, X, Menu, ArrowLeft, Printer, Edit2 } from 'lucide-react';
 
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
+import CollaborationAutoJoin from '../collaboration/CollaborationAutoJoin';
+import CollaborationStatusNotice from '../collaboration/CollaborationStatusNotice';
+import PresenceSurface from '../collaboration/PresenceSurface';
+import SectionPresencePill from '../collaboration/SectionPresencePill';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import ThemeToggle from '../common/ThemeToggle';
@@ -56,6 +60,7 @@ import { useEnhancedMitigation } from '../../contexts/EnhancedMitigationContext'
 import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 import { usePresenceOptional } from '../../contexts/PresenceContext';
 import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentContext';
+import type { BossAction } from '../../types';
 
 // Import utilities
 // import { mitigationAbilities } from '../../data';
@@ -73,13 +78,29 @@ import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentCo
 
 
 // Planning interface component that gets data from real-time contexts
-const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
+const PlanningInterface = ({
+  onSave,
+  saving,
+  handleBack,
+  handlePrint,
+  isReadOnlyView,
+}) => {
+  const canEditPlan = !isReadOnlyView;
+  const navigate = useNavigate();
 
   // Get real-time plan data
   const { loading, error, realtimePlan } = useRealtimePlan();
 
   // Get real-time contexts - ALWAYS call all hooks before any early returns
-  const { sortedBossActions, selectedBossAction, toggleBossActionSelection, currentBossLevel, currentBaseHealth } = useRealtimeBossContext();
+  const {
+    sortedBossActions,
+    selectedBossAction,
+    toggleBossActionSelection,
+    currentBossLevel,
+    currentBaseHealth,
+    timelinePhaseSummaries,
+    skippedBossActions,
+  } = useRealtimeBossContext();
   const { selectedJobs } = useRealtimeJobContext();
   const {
     assignments,
@@ -92,6 +113,10 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
   } = useEnhancedMitigation();
 
   const presence = usePresenceOptional();
+  const collaboration = useCollaboration() as {
+    collaborators: Array<{ sessionId: string; userId: string; displayName: string; color?: string; isActive?: boolean }>;
+    sessionId: string | null;
+  };
 
   // Split pane ratio state (timeline/mitigation)
   const { planId } = useParams();
@@ -173,6 +198,10 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
   }, [myAssignedJob, myUserId, myDisplayName, myColor]);
 
   const { openTankSelectionModal } = useTankSelectionModalContext();
+  const addMitigationHandler = canEditPlan ? addMitigation : () => {};
+  const removeMitigationHandler = canEditPlan ? removeMitigation : () => {};
+  const updateMitigationPrecastHandler = canEditPlan ? updateMitigationPrecast : () => {};
+  const phaseOverrides = realtimePlan?.phaseOverrides || {};
 
   // Local state for drag and drop
   const [activeMitigation, setActiveMitigation] = useState(null);
@@ -226,7 +255,17 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
     toggleBossActionSelection(action);
 
     if (presence) {
-      presence.updateMySelection('bossAction', isBeingSelected ? action.id : null);
+      if (isBeingSelected) {
+        presence.setActiveTarget({
+          surface: 'planner',
+          entityType: 'bossAction',
+          entityId: action.id,
+        });
+        presence.setInteraction('selected');
+      } else {
+        presence.setInteraction(null);
+        presence.setActiveTarget(null);
+      }
     }
 
     // On mobile, open bottom sheet when selecting a boss action
@@ -241,6 +280,14 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
       autoAssignmentDisabled: true
     });
   }, [toggleBossActionSelection, selectedBossAction, presence]);
+
+  const handleEditTimeline = useCallback(() => {
+    if (!canEditPlan || !planId) {
+      return;
+    }
+
+    navigate(`/plan/${planId}/timeline`);
+  }, [canEditPlan, navigate, planId]);
 
   // Get available mitigations based on selected jobs and boss level - MUST be called before early returns
   const availableMitigations = useMemo(() => {
@@ -308,8 +355,86 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
     return result;
   }, [filteredMitigations, selectedJobFilter, mitigationSearchQuery]);
 
+  const phaseSummaryByAnchorActionId = useMemo(() => {
+    return new Map(
+      (timelinePhaseSummaries || []).map((summary) => [summary.anchorActionId, summary])
+    );
+  }, [timelinePhaseSummaries]);
+
+  const skippedActionsByPhaseId = useMemo(() => {
+    return (skippedBossActions || []).reduce<Record<string, BossAction[]>>((accumulator, action) => {
+      const phaseId = action.phaseId || 'unassigned';
+      accumulator[phaseId] = accumulator[phaseId] || [];
+      accumulator[phaseId].push(action);
+      return accumulator;
+    }, {});
+  }, [skippedBossActions]);
+
+  const renderTimelineRows = useCallback((idSuffix = '') => {
+    return (sortedBossActions || []).map((action, actionIndex) => {
+      const phaseSummary = phaseSummaryByAnchorActionId.get(action.id) || null;
+      const phaseSkippedActions = phaseSummary
+        ? skippedActionsByPhaseId[phaseSummary.phaseId] || []
+        : [];
+      const isSelected = selectedBossAction?.id === action.id;
+      const droppableId = `${action.id}__${actionIndex}${idSuffix}`;
+
+      return (
+        <Droppable
+          key={droppableId}
+          id={droppableId}
+          data={{ type: 'bossAction', action }}
+          disableDrop={!isSelected}
+          isSelected={isSelected}
+        >
+          <BossActionItem
+            action={action}
+            isSelected={isSelected}
+            assignments={assignments}
+            getActiveMitigations={getActiveMitigations}
+            selectedJobs={selectedJobs}
+            currentBossLevel={currentBossLevel}
+            baseHealth={currentBaseHealth}
+            phaseSummary={phaseSummary}
+            phaseOverrides={phaseOverrides}
+            skippedActions={phaseSkippedActions}
+            phaseOverridesDisabled={isReadOnlyView}
+            onClick={() => handleBossActionSelection(action)}
+          >
+            <AssignedMitigations
+              action={action}
+              assignments={assignments}
+              getActiveMitigations={getActiveMitigations}
+              selectedJobs={selectedJobs}
+              currentBossLevel={currentBossLevel}
+              onUpdatePrecast={updateMitigationPrecastHandler}
+              onRemoveMitigation={removeMitigationHandler}
+            />
+          </BossActionItem>
+        </Droppable>
+      );
+    });
+  }, [
+    assignments,
+    currentBaseHealth,
+    currentBossLevel,
+    getActiveMitigations,
+    handleBossActionSelection,
+    isReadOnlyView,
+    phaseOverrides,
+    phaseSummaryByAnchorActionId,
+    skippedActionsByPhaseId,
+    sortedBossActions,
+    removeMitigationHandler,
+    selectedBossAction,
+    selectedJobs,
+    updateMitigationPrecastHandler,
+  ]);
+
   // Drag and drop handlers - MUST be called before early returns
   const handleDragStart = useCallback((event) => {
+    if (!canEditPlan) return;
+
     const { active } = event;
     // Extract the actual mitigation ID by removing the __fs suffix if present
     const activeId = typeof active.id === 'string' && active.id.endsWith('__fs')
@@ -319,9 +444,14 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
     if (mitigation) {
       setActiveMitigation(mitigation);
     }
-  }, [availableMitigations, setActiveMitigation]);
+  }, [availableMitigations, canEditPlan, setActiveMitigation]);
 
   const handleDragEnd = useCallback((event) => {
+    if (!canEditPlan) {
+      setActiveMitigation(null);
+      return;
+    }
+
     console.log('[MitigationPlanner] handleDragEnd called:', event);
     const { active, over } = event;
 
@@ -392,7 +522,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
           bossActionId: targetBossAction.id
         });
         // Assign the mitigation with the selected tank position
-        addMitigation(targetBossAction.id, mitigation, selectedTankPosition, getCasterOptions());
+        addMitigationHandler(targetBossAction.id, mitigation, selectedTankPosition, getCasterOptions());
       }, mitigation, targetBossAction);
       setActiveMitigation(null);
       return;
@@ -402,7 +532,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
     if (Array.isArray(mitigation.jobs) && mitigation.jobs.length > 1) {
       openClassSelectionModal(mitigation, targetBossAction, (jobId) => {
         // If exactly one eligible caster was present, jobId will be that caster. If none or multi, jobId is null or chosen.
-        addMitigation(targetBossAction.id, mitigation, 'shared', getCasterOptions(jobId));
+        addMitigationHandler(targetBossAction.id, mitigation, 'shared', getCasterOptions(jobId));
       });
       setActiveMitigation(null);
       return;
@@ -411,7 +541,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
     if (assignmentDecision.assignment) {
       console.log('[MitigationPlanner] Auto-assigning based on decision:', assignmentDecision.assignment);
       // Auto-assign based on the decision
-      addMitigation(targetBossAction.id, mitigation, assignmentDecision.assignment.targetPosition, getCasterOptions());
+      addMitigationHandler(targetBossAction.id, mitigation, assignmentDecision.assignment.targetPosition, getCasterOptions());
       setActiveMitigation(null);
       return;
     }
@@ -437,11 +567,11 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
       // If ability is multi-class, prompt for caster selection
       if (Array.isArray(mitigation.jobs) && mitigation.jobs.length > 1) {
         openClassSelectionModal(mitigation, targetBossAction, (jobId) => {
-          addMitigation(targetBossAction.id, mitigation, 'shared', getCasterOptions(jobId));
+          addMitigationHandler(targetBossAction.id, mitigation, 'shared', getCasterOptions(jobId));
         });
       } else {
         // Use the enhanced addMitigation with real-time sync
-        addMitigation(targetBossAction.id, mitigation, null, getCasterOptions());
+        addMitigationHandler(targetBossAction.id, mitigation, null, getCasterOptions());
       }
     } else {
       console.log('[MitigationPlanner] Cannot assign mitigation - availability check failed:', {
@@ -454,7 +584,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
     }
 
     setActiveMitigation(null);
-  }, [sortedBossActions, availableMitigations, setActiveMitigation, addMitigation, checkAbilityAvailability, openTankSelectionModal, getCasterOptions, openClassSelectionModal, tankPositions, selectedJobs]);
+  }, [sortedBossActions, availableMitigations, canEditPlan, setActiveMitigation, addMitigationHandler, checkAbilityAvailability, openTankSelectionModal, getCasterOptions, openClassSelectionModal, tankPositions, selectedJobs]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -508,10 +638,10 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
                 variant="outline" 
                 size="sm" 
                 onClick={onSave} 
-                disabled={saving}
+                disabled={saving || isReadOnlyView}
                 className="h-9 text-sm"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {isReadOnlyView ? 'View Only' : saving ? 'Saving...' : 'Save'}
               </Button>
               <ThemeToggle />
               <Sheet>
@@ -530,7 +660,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
                       }}
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to {isSharedPlan ? 'Home' : 'Dashboard'}
+                      Back to {isReadOnlyView ? 'Home' : 'Dashboard'}
                     </Button>
                     <KofiButton />
                     <DiscordButton />
@@ -543,8 +673,8 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
           {/* Active users display */}
           <div className="px-2">
             <ActiveUsersDisplay 
-              collaborators={presence?.presenceMap ? Array.from(presence.presenceMap.values()).map(p => ({ sessionId: p.sessionId, userId: p.userId, displayName: p.displayName, isActive: true })) : []}
-              currentSessionId={presence?.currentSessionId}
+              collaborators={collaboration.collaborators}
+              currentSessionId={collaboration.sessionId}
             />
           </div>
         </div>
@@ -557,26 +687,31 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
               <KofiButton />
               <DiscordButton />
               <ThemeToggle />
-              <Button onClick={onSave} disabled={saving} className="px-4 py-2">
-                {saving ? 'Saving...' : 'Save'}
+              <Button onClick={handlePrint} variant="outline" size="icon" title="Print plan">
+                <Printer className="h-4 w-4" />
+              </Button>
+              <Button onClick={onSave} disabled={saving || isReadOnlyView} className="px-4 py-2">
+                {isReadOnlyView ? 'View Only' : saving ? 'Saving...' : 'Save'}
               </Button>
               <Button onClick={handleBack} variant="outline">
-                {isSharedPlan ? 'Back to Home' : 'Back to Dashboard'}
+                {isReadOnlyView ? 'Back to Home' : 'Back to Dashboard'}
               </Button>
             </div>
           </div>
-          <ActiveUsersDisplay 
-            collaborators={presence?.presenceMap ? Array.from(presence.presenceMap.values()).map(p => ({ sessionId: p.sessionId, userId: p.userId, displayName: p.displayName, isActive: true })) : []}
-            currentSessionId={presence?.currentSessionId}
+          <ActiveUsersDisplay
+            collaborators={collaboration.collaborators}
+            currentSessionId={collaboration.sessionId}
           />
         </div>
       </header>
+
+      <CollaborationStatusNotice className="mb-4" />
 
       {/* Desktop only: JobSelector and Filter toggles */}
       <div className="hidden lg:block">
         <div className="flex flex-col gap-4 mb-4">
           <JobSelector
-            disabled={false}
+            disabled={isReadOnlyView}
           />
         </div>
       
@@ -590,24 +725,41 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
       <div className="hidden lg:flex items-center justify-between mb-2">
         <div className="flex items-center gap-8">
           <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
+          <SectionPresencePill surface="planner" section="timeline" />
         </div>
-        <button
-          type="button"
-          onClick={openFullscreen}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border text-foreground bg-card hover:bg-muted transition"
-          aria-label="Enter fullscreen for timeline and mitigations"
-          title="Enter fullscreen"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {canEditPlan && (
+            <Button variant="outline" onClick={handleEditTimeline}>
+              <Edit2 className="h-4 w-4" />
+              Edit Timeline
+            </Button>
+          )}
+          <button
+            type="button"
+            onClick={openFullscreen}
+            className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border text-foreground bg-card hover:bg-muted transition"
+            aria-label="Enter fullscreen for timeline and mitigations"
+            title="Enter fullscreen"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
 
       {/* Mobile: Boss Timeline with bottom sheet trigger */}
       <div className="lg:hidden mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
-          <span className="text-xs text-muted-foreground">Tap to select</span>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Boss Timeline</h2>
+            <span className="text-xs text-muted-foreground">Tap to select</span>
+          </div>
+          {canEditPlan && (
+            <Button variant="outline" size="sm" onClick={handleEditTimeline}>
+              <Edit2 className="h-4 w-4" />
+              Edit Timeline
+            </Button>
+          )}
         </div>
         <MobileBossTimeline
           sortedBossActions={sortedBossActions}
@@ -617,57 +769,46 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
           selectedJobs={selectedJobs}
           currentBossLevel={currentBossLevel}
           baseHealth={currentBaseHealth}
+          phaseSummaryByAnchorActionId={phaseSummaryByAnchorActionId}
+          skippedActionsByPhaseId={skippedActionsByPhaseId}
+          phaseOverrides={phaseOverrides}
+          disabled={isReadOnlyView}
           onSelectAction={handleBossActionSelection}
         />
       </div>
 
       {/* Desktop: Split pane layout */}
       <div ref={splitContainerRef} className="hidden lg:flex w-full gap-4">
-        <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }} className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0">
+        <PresenceSurface
+          surface="planner"
+          panel="timeline"
+          section="timeline"
+          hideRemoteCursorsOnMobile={true}
+          style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
+          className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0"
+        >
 
           <div className="relative flex flex-col p-4 w-full grow">
-            {sortedBossActions.map((action, idx) => {
-              const isSelected = selectedBossAction?.id === action.id;
-              const droppableId = `${action.id}__${idx}`; // ensure uniqueness even if IDs repeat in data
-              return (
-                <Droppable
-                  key={droppableId}
-                  id={droppableId}
-                  data={{ type: 'bossAction', action }}
-                  disableDrop={!isSelected}
-                  isSelected={isSelected}
-                >
-                <BossActionItem
-                  action={action}
-                  isSelected={selectedBossAction?.id === action.id}
-                  assignments={assignments}
-                  getActiveMitigations={getActiveMitigations}
-                  selectedJobs={selectedJobs}
-                  currentBossLevel={currentBossLevel}
-                  baseHealth={currentBaseHealth}
-                  onClick={() => handleBossActionSelection(action)}
-                >
-                  <AssignedMitigations
-                    action={action}
-                    assignments={assignments}
-                    getActiveMitigations={getActiveMitigations}
-                    selectedJobs={selectedJobs}
-                    currentBossLevel={currentBossLevel}
-                    onUpdatePrecast={updateMitigationPrecast}
-                    onRemoveMitigation={removeMitigation}
-                  />
-                </BossActionItem>
-              </Droppable>
-              );
-            })}
+            {renderTimelineRows()}
           </div>
-        </div>
+        </PresenceSurface>
 
         <>
             <div onMouseDown={onResizerMouseDown} role="separator" aria-orientation="vertical" aria-label="Resize panels" className="mx-1 w-2 cursor-col-resize flex items-stretch justify-center">
               <div className="my-2 w-px bg-[var(--color-border)]" />
             </div>
-            <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }} className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] min-w-0">
+            <PresenceSurface
+              surface="planner"
+              panel="mitigations"
+              section="mitigations"
+              hideRemoteCursorsOnMobile={true}
+              style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
+              className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] min-w-0"
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Mitigations</h2>
+                <SectionPresencePill surface="planner" section="mitigations" />
+              </div>
               {/* Search and filter bar */}
               <div className="flex flex-col gap-2 mb-4">
                 <div className="relative">
@@ -744,12 +885,12 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
                     key={mitigation.id}
                     id={mitigation.id}
                     data={{ type: 'mitigation', mitigation }}
-                    isDisabled={isDisabled}
+                    isDisabled={isDisabled || isReadOnlyView}
                     cooldownReason={cooldownReason}
                   >
                     <MitigationItem
                       mitigation={mitigation}
-                      isDisabled={isDisabled}
+                      isDisabled={isDisabled || isReadOnlyView}
                       cooldownReason={cooldownReason}
                       currentBossLevel={currentBossLevel}
                       selectedBossAction={selectedBossAction}
@@ -761,7 +902,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
                 );
               })}
             </div>
-          </div>
+          </PresenceSurface>
           </>
       </div>
 
@@ -789,53 +930,36 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
 	            {/* Two independently scrollable columns */}
 	            <div className="flex w-full gap-4 h-[calc(100vh-64px)]">
 	              {/* Timeline column */}
-	              <div style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
-	                   className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] flex flex-col min-w-0 bg-background">
+	              <PresenceSurface
+	                surface="planner"
+	                panel="timeline"
+	                section="timeline"
+	                hideRemoteCursorsOnMobile={true}
+	                style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
+	                className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] flex flex-col min-w-0 bg-background"
+	              >
 
 	                <div className="relative flex flex-col p-4 w-full grow">
-	                  {sortedBossActions.map((action, idx) => {
-	                    const isSelected = selectedBossAction?.id === action.id;
-	                    const droppableId = `${action.id}__${idx}__fs`; // ensure uniqueness in fullscreen
-	                    return (
-	                      <Droppable
-	                        key={droppableId}
-	                        id={droppableId}
-	                        data={{ type: 'bossAction', action }}
-	                        disableDrop={!isSelected}
-	                        isSelected={isSelected}
-	                      >
-	                        <BossActionItem
-	                          action={action}
-	                          isSelected={selectedBossAction?.id === action.id}
-	                          assignments={assignments}
-	                          getActiveMitigations={getActiveMitigations}
-	                          selectedJobs={selectedJobs}
-	                          currentBossLevel={currentBossLevel}
-	                          baseHealth={currentBaseHealth}
-	                          onClick={() => handleBossActionSelection(action)}
-	                        >
-	                          <AssignedMitigations
-	                            action={action}
-	                            assignments={assignments}
-	                            getActiveMitigations={getActiveMitigations}
-	                            selectedJobs={selectedJobs}
-	                            currentBossLevel={currentBossLevel}
-	                            onUpdatePrecast={updateMitigationPrecast}
-	                            onRemoveMitigation={removeMitigation}
-	                          />
-	                        </BossActionItem>
-	                      </Droppable>
-	                    );
-	                  })}
+	                  {renderTimelineRows('__fs')}
 	                </div>
-	              </div>
+	              </PresenceSurface>
 	              {/* Vertical resizer visual only (no drag in fullscreen) */}
 	              <div className="mx-1 w-2 flex items-stretch justify-center select-none">
 	                <div className="my-2 w-px bg-border" />
 	              </div>
               {/* Mitigations column */}
-              <div style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
-                   className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] min-w-0 bg-background">
+              <PresenceSurface
+                surface="planner"
+                panel="mitigations"
+                section="mitigations"
+                hideRemoteCursorsOnMobile={true}
+                style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
+                className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] min-w-0 bg-background"
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-foreground">Mitigations</h2>
+                  <SectionPresencePill surface="planner" section="mitigations" />
+                </div>
                 <div className="flex flex-col gap-2 mb-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -908,12 +1032,12 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
 	                        key={`${mitigation.id}__fs`}
 	                        id={`${mitigation.id}__fs`}
 	                        data={{ type: 'mitigation', mitigation }}
-	                        isDisabled={isDisabled}
+	                        isDisabled={isDisabled || isReadOnlyView}
 	                        cooldownReason={cooldownReason}
 	                      >
 	                        <MitigationItem
 	                          mitigation={mitigation}
-	                          isDisabled={isDisabled}
+	                          isDisabled={isDisabled || isReadOnlyView}
 	                          cooldownReason={cooldownReason}
 	                          currentBossLevel={currentBossLevel}
 	                          selectedBossAction={selectedBossAction}
@@ -925,7 +1049,7 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
 	                    );
 	                  })}
 	                </div>
-	              </div>
+	              </PresenceSurface>
 	            </div>
 	          </div>
 	        </div>
@@ -957,8 +1081,8 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
         selectedJobs={selectedJobs}
         currentBossLevel={currentBossLevel}
         assignments={assignments}
-        addMitigation={addMitigation}
-        removeMitigation={removeMitigation}
+        addMitigation={addMitigationHandler}
+        removeMitigation={removeMitigationHandler}
         checkAbilityAvailability={checkAbilityAvailability}
         pendingAssignments={pendingAssignments}
         getActiveMitigations={getActiveMitigations}
@@ -968,48 +1092,25 @@ const PlanningInterface = ({ onSave, saving, handleBack, isSharedPlan }) => {
   );
 };
 
-const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = false, isAnonymous = false }) => {
+const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = false }) => {
   const { planId: routePlanId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isAnonymousMode, enableAnonymousMode } = useAuth();
-  // Remove collaboration context usage from here - it will be moved to MitigationPlannerContent
+  const { isAuthenticated } = useAuth();
 
   const [saving, setSaving] = useState(false);
-  const [planIsPublic, setPlanIsPublic] = useState(false);
 
   // Use route param if available, otherwise fall back to prop (for backward compatibility)
   const planId = routePlanId || propPlanId;
 
-  // Determine if this is a shared plan (either from prop or if plan is public)
-  const isActuallySharedPlan = isSharedPlan || planIsPublic;
-
-  // Determine if this is an anonymous session
-  const isAnonymousSession = isAnonymous || (!isAuthenticated && isAnonymousMode);
+  const isActuallySharedPlan = isSharedPlan;
+  const isReadOnlyView = isActuallySharedPlan && !isAuthenticated;
 
   console.log('[MitigationPlanner] Rendering with planId:', planId);
-
-  // Initialize anonymous mode if needed
-  useEffect(() => {
-    if (isAnonymous && !isAuthenticated && !isAnonymousMode) {
-      enableAnonymousMode();
-    }
-  }, [isAnonymous, isAuthenticated, isAnonymousMode, enableAnonymousMode]);
-
-  // Set plan public status based on isSharedPlan prop
-  useEffect(() => {
-    // If this is explicitly marked as a shared plan, treat it as public
-    // Otherwise, assume it's private (no need to check permissions)
-    setPlanIsPublic(isSharedPlan);
-  }, [isSharedPlan]);
-
-  // Access tracking is now handled in RealtimePlanContext
-
-  // Collaboration logic moved to MitigationPlannerContent
 
   const handleBack = () => {
     if (onNavigateBack) {
       onNavigateBack();
-    } else if (isActuallySharedPlan) {
+    } else if (isReadOnlyView) {
       // For shared plans, go to landing page
       navigate('/');
     } else {
@@ -1017,7 +1118,15 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
     }
   };
 
+  const handlePrint = () => {
+    window.open(`/plan/${planId}/print`, '_blank');
+  };
+
   const handleSave = async () => {
+    if (isReadOnlyView) {
+      return;
+    }
+
     // Real-time plans are automatically saved, so this is just for user feedback
     setSaving(true);
     try {
@@ -1037,13 +1146,16 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
   // Loading and error handling is now done inside the RealtimeAppProvider
 
   return (
-    <RealtimeAppProvider planId={planId}>
+    <RealtimeAppProvider
+      planId={planId}
+      readOnly={isReadOnlyView}
+      enableCollaboration={!isReadOnlyView}
+    >
       <MitigationPlannerContent
         planId={planId}
-        isSharedPlan={isActuallySharedPlan}
-        isAnonymousSession={isAnonymousSession}
-        isAuthenticated={isAuthenticated}
+        isReadOnlyView={isReadOnlyView}
         handleBack={handleBack}
+        handlePrint={handlePrint}
         handleSave={handleSave}
         saving={saving}
       />
@@ -1054,66 +1166,24 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
 // Content component that has access to real-time contexts
 const MitigationPlannerContent = ({
   planId,
-  isSharedPlan,
-  isAuthenticated,
+  isReadOnlyView,
   handleBack,
+  handlePrint,
   handleSave,
   saving
 }) => {
-  const { realtimePlan, error } = useRealtimePlan();
-
-  // Use collaboration hook
-  const {
-    joinCollaborativeSession,
-    leaveCollaborativeSession,
-    collaborators,
-    isCollaborating,
-    sessionId,
-    displayName,
-    isInitialized: collaborationInitialized
-  } = useCollaboration();
-
-  // No longer need display name modal for anonymous users
-
-  // Handle collaboration setup for all plans (not just shared plans)
-  useEffect(() => {
-    if (planId && collaborationInitialized) {
-      // Check if collaboration functions are available
-      if (typeof joinCollaborativeSession !== 'function') {
-        console.error('[MitigationPlannerContent] joinCollaborativeSession is not a function');
-        return;
-      }
-
-      // Setting up collaboration for plan editing
-
-      // Join collaborative session - anonymous users now have auto-generated display names
-      console.log('[MitigationPlannerContent] Joining collaboration session with display name:', displayName);
-      joinCollaborativeSession(planId, displayName);
-
-      // Universal access enabled - no read-only restrictions
-    }
-
-    // Cleanup on unmount or plan change
-    return () => {
-      if (isCollaborating && typeof leaveCollaborativeSession === 'function') {
-        leaveCollaborativeSession();
-      }
-    };
-  }, [
-    planId,
-    isAuthenticated,
-    displayName,
-    collaborationInitialized,
-    joinCollaborativeSession,
-    leaveCollaborativeSession,
-    isCollaborating
-  ]);
-
-  // No longer need display name handlers for anonymous users
+  const { error } = useRealtimePlan();
 
   return (
     <>
+      <CollaborationAutoJoin roomId={planId} enabled={!isReadOnlyView} />
       <div className="min-h-screen p-8 bg-background text-foreground">
+
+      {isReadOnlyView && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
+          Public shared view. Sign in to edit or collaborate on this plan.
+        </div>
+      )}
 
       {error && (
         <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-600">
@@ -1125,10 +1195,9 @@ const MitigationPlannerContent = ({
         onSave={handleSave}
         saving={saving}
         handleBack={handleBack}
-        isSharedPlan={isSharedPlan}
+        handlePrint={handlePrint}
+        isReadOnlyView={isReadOnlyView}
       />
-
-      {/* No longer showing display name modal for anonymous users */}
     </div>
     <Footer />
   </>

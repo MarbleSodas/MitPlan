@@ -1,50 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useRealtimePlan } from '../../../contexts/RealtimePlanContext';
 import { useRealtimeBossContext } from '../../../contexts/RealtimeBossContext';
 import { bosses } from '../../../data';
 import { baseHealthValues } from '../../../data/bosses/bossData';
+import {
+  getPlanTimelineLayout,
+  getPlanTimelineMirrorFields,
+  normalizePlanTimelineLayout,
+} from '../../../utils/timeline/planTimelineLayoutUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const PartyMinHealthInput = () => {
   const { realtimePlan, batchUpdateRealtime } = useRealtimePlan();
   const { currentBossId, currentBossLevel } = useRealtimeBossContext();
+  const planTimelineLayout = useMemo(
+    () => getPlanTimelineLayout(realtimePlan),
+    [realtimePlan?.timelineLayout]
+  );
 
   const currentBoss = bosses.find(b => b.id === currentBossId) || null;
-  const defaultPartyHp = (currentBoss?.baseHealth?.party)
+  const defaultPartyHp = (planTimelineLayout?.bossMetadata?.baseHealth?.party)
+    ?? (currentBoss?.baseHealth?.party)
     ?? (baseHealthValues[currentBossLevel]?.party)
     ?? baseHealthValues[100].party;
 
-  const existing = realtimePlan?.healthSettings?.partyMinHealth;
+  const existing = planTimelineLayout?.healthConfig?.party
+    ?? realtimePlan?.healthSettings?.partyMinHealth;
   const [partyMinHealth, setPartyMinHealth] = useState(existing ?? defaultPartyHp);
 
   useEffect(() => {
     const saved = realtimePlan?.healthSettings?.partyMinHealth;
-    if (saved == null) {
+    const desiredSavedValue = planTimelineLayout?.healthConfig?.party ?? saved;
+    if (desiredSavedValue == null) {
       const desired = defaultPartyHp;
       if (partyMinHealth !== desired) setPartyMinHealth(desired);
-      batchUpdateRealtime({
-        healthSettings: {
-          ...(realtimePlan?.healthSettings || {}),
-          partyMinHealth: desired,
-        },
-      });
-    } else if (partyMinHealth !== saved) {
-      setPartyMinHealth(saved);
+      if (planTimelineLayout) {
+        const nextLayout = normalizePlanTimelineLayout({
+          ...planTimelineLayout,
+          healthConfig: {
+            ...planTimelineLayout.healthConfig,
+            party: desired,
+          },
+        });
+        batchUpdateRealtime(getPlanTimelineMirrorFields(nextLayout));
+      } else {
+        batchUpdateRealtime({
+          healthSettings: {
+            ...(realtimePlan?.healthSettings || {}),
+            partyMinHealth: desired,
+          },
+        });
+      }
+    } else if (partyMinHealth !== desiredSavedValue) {
+      setPartyMinHealth(desiredSavedValue);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentBossId, realtimePlan?.healthSettings?.partyMinHealth]);
+  }, [currentBossId, realtimePlan?.timelineLayout, realtimePlan?.healthSettings?.partyMinHealth]);
 
   const onBlur = () => {
     const value = Math.max(1, Number(partyMinHealth) || 0);
-    const updated = {
+    setPartyMinHealth(value);
+
+    if (planTimelineLayout) {
+      const nextLayout = normalizePlanTimelineLayout({
+        ...planTimelineLayout,
+        healthConfig: {
+          ...planTimelineLayout.healthConfig,
+          party: value,
+        },
+      });
+      batchUpdateRealtime(getPlanTimelineMirrorFields(nextLayout));
+      return;
+    }
+
+    batchUpdateRealtime({
       healthSettings: {
         ...(realtimePlan?.healthSettings || {}),
         partyMinHealth: value,
       },
-    };
-    batchUpdateRealtime(updated);
+    });
   };
 
   return (
@@ -67,6 +103,18 @@ const PartyMinHealthInput = () => {
         size="icon"
         onClick={() => {
           setPartyMinHealth(defaultPartyHp);
+          if (planTimelineLayout) {
+            const nextLayout = normalizePlanTimelineLayout({
+              ...planTimelineLayout,
+              healthConfig: {
+                ...planTimelineLayout.healthConfig,
+                party: defaultPartyHp,
+              },
+            });
+            batchUpdateRealtime(getPlanTimelineMirrorFields(nextLayout));
+            return;
+          }
+
           batchUpdateRealtime({
             healthSettings: {
               ...(realtimePlan?.healthSettings || {}),

@@ -338,7 +338,9 @@ bun run build
 
 ### Deployment Pipeline
 ```
-Git Push → GitHub Actions → Vercel Build → Deployment → CDN Update
+Git Push → Vercel Build → Frontend Deployment
+                        ↓
+              Firebase RTDB Rules Deploy
 ```
 
 ### Code Quality

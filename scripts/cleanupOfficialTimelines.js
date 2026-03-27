@@ -11,58 +11,15 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, push, remove, get, update } from 'firebase/database';
+import { getDatabase, ref, set, push, remove, get } from 'firebase/database';
 import { bosses } from '../src/data/bosses/bossData.js';
 
 import { firebaseConfig } from './firebase-config.js';
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
-const bossesDir = join(projectRoot, 'src', 'data', 'bosses');
-
-// Map boss IDs to their corresponding actions JSON filenames
-// Copied from createOfficialTimelines.js
-const BOSS_JSON_MAP = {
-  'sugar-riot': 'sugar-riot_actions.json',
-  'dancing-green-m5s': 'dancing-green_actions.json',
-  'lala': 'lala_actions.json',
-  'statice': 'statice_actions.json',
-  'brute-abominator-m7s': 'brute-abominator_actions.json',
-  'howling-blade-m8s': 'howling-blade_actions.json',
-  'necron': 'necron_actions.json',
-  'ketuduke': 'ketudukeActions.json',
-  'vamp-fatale-m9s': 'vamp-fatale_actions.json',
-  'red-hot-deep-blue-m10s': 'red-hot-deep-blue_actions.json'
-};
-
-function loadActionsForBoss(bossId) {
-  const filename = BOSS_JSON_MAP[bossId];
-  if (!filename) {
-    console.warn(`  [Warn] No JSON mapping found for bossId: ${bossId}, skipping content update`);
-    return null;
-  }
-  const filePath = join(bossesDir, filename);
-  if (!existsSync(filePath)) {
-    console.warn(`  [Warn] JSON file not found: ${filePath}, skipping content update`);
-    return null;
-  }
-  try {
-    const content = readFileSync(filePath, 'utf8');
-    const actions = JSON.parse(content);
-    if (!Array.isArray(actions)) {
-      console.warn(`  [Warn] JSON did not contain an array for ${bossId}, got ${typeof actions}`);
-      return null;
-    }
-    return actions;
-  } catch (e) {
-    console.warn(`  [Warn] Failed to load/parse actions for ${bossId}: ${e.message}`);
-    return null;
-  }
-}
+import {
+  buildOfficialTimelineData,
+  loadCanonicalTimelineForBoss,
+  selectTimelineToKeep,
+} from './officialTimelineUtils.js';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -117,8 +74,8 @@ async function cleanupOfficialTimelines() {
   for (const boss of bosses) {
     console.log(`\nProcessing boss: ${boss.name} (${boss.id})`);
     
-    // Load local actions
-    const actions = loadActionsForBoss(boss.id);
+    const timelineDefinition = loadCanonicalTimelineForBoss(boss);
+    const actions = timelineDefinition.actions;
     if (!actions) {
       console.log(`  - Skipping update for ${boss.id} due to missing/invalid local actions.`);
     }
@@ -127,26 +84,9 @@ async function cleanupOfficialTimelines() {
     console.log(`  - Found ${existing.length} existing official timelines for this boss.`);
 
     // Prepare the correct data object
-    const timelineData = {
-      name: `${boss.name} - Official Timeline`,
-      description: `Official timeline for ${boss.name} encounter`,
-      bossId: boss.id,
-      bossTags: [boss.id],
-      bossMetadata: {
-        level: boss.level,
-        name: boss.name,
-        icon: boss.icon,
-        description: boss.description,
-        baseHealth: boss.baseHealth
-      },
-      actions: actions || [], // Use empty array if load failed but we still want to keep the timeline exist
-      official: true,
-      isPublic: true,
-      userId: 'system',
-      ownerId: 'system',
-      updatedAt: Date.now(),
-      version: 2.1
-    };
+    const timelineData = buildOfficialTimelineData(boss, timelineDefinition, {
+      now: Date.now(),
+    });
     
     // If we loaded actions successfully, use them. If not, and we have existing data, we might want to preserve existing actions? 
     // The requirement is "accurate with the local official timelines". If local is missing, maybe we shouldn't wipe the DB actions?
@@ -176,21 +116,17 @@ async function cleanupOfficialTimelines() {
       }
     } else {
       // HANDLE EXISTING (Single or Multiple)
-      
-      // Sort to keep the "oldest" or "first" one?
-      // Let's keep the one with the earliest createdAt to preserve history if possible
-      existing.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-      
-      const toKeep = existing[0];
-      const toDelete = existing.slice(1);
+      const { toKeep, duplicates: toDelete } = selectTimelineToKeep(existing);
 
       // Update the one to keep
       try {
-        // We merge with existing createdAt if not present in new data (it isn't)
-        const updatePayload = { ...timelineData };
-        if (!updatePayload.createdAt) {
-            // preserve original createdAt
-            updatePayload.createdAt = toKeep.createdAt || Date.now();
+        const updatePayload = buildOfficialTimelineData(boss, timelineDefinition, {
+          now: Date.now(),
+          createdAt: toKeep.createdAt || Date.now(),
+        });
+
+        if (actions === null) {
+          delete updatePayload.actions;
         }
 
         await set(ref(database, `timelines/${toKeep.key}`), updatePayload);

@@ -17,30 +17,50 @@ import { UserJobAssignmentProvider } from './UserJobAssignmentContext';
  * Now uses the Enhanced Mitigation System for improved cooldown management
  * Includes PresenceProvider for real-time element selection tracking
  */
-export const RealtimeAppProvider = ({ children, planId }) => {
+export const RealtimeAppProvider = ({ children, planId, readOnly = false, enableCollaboration = !readOnly }) => {
+  const appTree = (
+    <RealtimePlanProvider planId={planId} readOnly={readOnly}>
+      <RealtimeBossProvider>
+        <RealtimeJobProvider>
+          <TankPositionProvider>
+            {enableCollaboration ? (
+              <UserJobAssignmentProvider>
+                <EnhancedMitigationProvider>
+                  <FilterProvider>
+                    <ClassSelectionModalProvider>
+                      <TankSelectionModalProvider>
+                        {children}
+                      </TankSelectionModalProvider>
+                    </ClassSelectionModalProvider>
+                  </FilterProvider>
+                </EnhancedMitigationProvider>
+              </UserJobAssignmentProvider>
+            ) : (
+              <EnhancedMitigationProvider>
+                <FilterProvider>
+                  <ClassSelectionModalProvider>
+                    <TankSelectionModalProvider>
+                      {children}
+                    </TankSelectionModalProvider>
+                  </ClassSelectionModalProvider>
+                </FilterProvider>
+              </EnhancedMitigationProvider>
+            )}
+          </TankPositionProvider>
+        </RealtimeJobProvider>
+      </RealtimeBossProvider>
+    </RealtimePlanProvider>
+  );
+
   return (
-    <CollaborationProvider>
-      <PresenceProvider planId={planId}>
-        <RealtimePlanProvider planId={planId}>
-          <RealtimeBossProvider>
-            <RealtimeJobProvider>
-              <TankPositionProvider>
-                <UserJobAssignmentProvider>
-                  <EnhancedMitigationProvider>
-                    <FilterProvider>
-                      <ClassSelectionModalProvider>
-                        <TankSelectionModalProvider>
-                          {children}
-                        </TankSelectionModalProvider>
-                      </ClassSelectionModalProvider>
-                    </FilterProvider>
-                  </EnhancedMitigationProvider>
-                </UserJobAssignmentProvider>
-              </TankPositionProvider>
-            </RealtimeJobProvider>
-          </RealtimeBossProvider>
-        </RealtimePlanProvider>
-      </PresenceProvider>
+      <CollaborationProvider enabled={enableCollaboration}>
+      {enableCollaboration ? (
+        <PresenceProvider roomId={planId}>
+          {appTree}
+        </PresenceProvider>
+      ) : (
+        appTree
+      )}
     </CollaborationProvider>
   );
 };

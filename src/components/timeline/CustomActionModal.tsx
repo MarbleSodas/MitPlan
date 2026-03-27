@@ -1,4 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { BossAction, BossActionClassification, DamageType } from '../../types';
+import {
+  BOSS_ACTION_CLASSIFICATION_LABELS,
+  BOSS_ACTION_CLASSIFICATIONS,
+  deriveBossActionClassification,
+  syncBossActionMetadataWithClassification,
+} from '../../utils/boss/bossActionUtils';
 import {
   Dialog,
   DialogContent,
@@ -19,46 +26,117 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    time: 0,
-    description: '',
-    icon: '⚔️',
-    damageType: 'magical',
-    importance: 'high',
-    unmitigatedDamage: '',
-    isTankBuster: false,
-    isDualTankBuster: false
-  });
+type EditableActionFormData = {
+  name: string;
+  time: number;
+  description: string;
+  icon: string;
+  damageType: DamageType;
+  importance: NonNullable<BossAction['importance']>;
+  unmitigatedDamage: BossAction['unmitigatedDamage'];
+  classification: BossActionClassification;
+  isMultiHit: boolean;
+  hitCount: number;
+  hasDot: boolean;
+  targetTank?: BossAction['targetTank'];
+};
 
-  const [errors, setErrors] = useState({});
+function buildFormData(editingAction: BossAction | null): EditableActionFormData {
+  const baseAction: BossAction = editingAction
+    ? syncBossActionMetadataWithClassification(editingAction)
+    : syncBossActionMetadataWithClassification({
+        id: 'draft',
+        name: '',
+        time: 0,
+        description: '',
+        icon: '⚔️',
+        damageType: 'magical',
+        importance: 'high',
+        unmitigatedDamage: '',
+        classification: deriveBossActionClassification({
+          importance: 'high',
+        }),
+      });
+
+  return {
+    name: baseAction.name || '',
+    time: baseAction.time || 0,
+    description: baseAction.description || '',
+    icon: baseAction.icon || '⚔️',
+    damageType: baseAction.damageType || 'magical',
+    importance: baseAction.importance || 'high',
+    unmitigatedDamage: baseAction.unmitigatedDamage || '',
+    classification:
+      baseAction.classification || deriveBossActionClassification(baseAction),
+    isMultiHit: Boolean(baseAction.isMultiHit || (baseAction.hitCount || 0) > 1),
+    hitCount:
+      typeof baseAction.hitCount === 'number' && baseAction.hitCount > 1
+        ? baseAction.hitCount
+        : 2,
+    hasDot: baseAction.hasDot === true,
+    targetTank:
+      baseAction.targetTank === 'mainTank' || baseAction.targetTank === 'offTank'
+        ? baseAction.targetTank
+        : undefined,
+  };
+}
+
+interface CustomActionModalProps {
+  onClose: () => void;
+  onSave: (action: BossAction) => void;
+  editingAction?: BossAction | null;
+}
+
+const CustomActionModal = ({
+  onClose,
+  onSave,
+  editingAction = null,
+}: CustomActionModalProps) => {
+  const [formData, setFormData] = useState<EditableActionFormData>(() =>
+    buildFormData(editingAction)
+  );
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
-    if (editingAction) {
-      setFormData({
-        name: editingAction.name || '',
-        time: editingAction.time || 0,
-        description: editingAction.description || '',
-        icon: editingAction.icon || '⚔️',
-        damageType: editingAction.damageType || 'magical',
-        importance: editingAction.importance || 'high',
-        unmitigatedDamage: editingAction.unmitigatedDamage || '',
-        isTankBuster: editingAction.isTankBuster || false,
-        isDualTankBuster: editingAction.isDualTankBuster || false
-      });
-    }
+    setFormData(buildFormData(editingAction));
+    setErrors({});
   }, [editingAction]);
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = <K extends keyof EditableActionFormData>(
+    field: K,
+    value: EditableActionFormData[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: null }));
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handleClassificationChange = (classification: BossActionClassification) => {
+    const next = syncBossActionMetadataWithClassification({
+      ...formData,
+      id: editingAction?.id || 'draft',
+      classification,
+      targetTank:
+        classification === 'tankbuster' ? formData.targetTank : undefined,
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      classification: next.classification || classification,
+      targetTank:
+        next.targetTank === 'mainTank' || next.targetTank === 'offTank'
+          ? next.targetTank
+          : undefined,
+    }));
+
+    if (errors.classification) {
+      setErrors((prev) => ({ ...prev, classification: null }));
     }
   };
 
   const validate = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Action name is required';
@@ -66,6 +144,10 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
 
     if (formData.time < 0) {
       newErrors.time = 'Time must be 0 or greater';
+    }
+
+    if (formData.isMultiHit && formData.hitCount < 2) {
+      newErrors.hitCount = 'Hit count must be at least 2 when multi-hit is enabled';
     }
 
     setErrors(newErrors);
@@ -77,20 +159,36 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
       return;
     }
 
-    onSave(formData);
+    const normalized = syncBossActionMetadataWithClassification({
+      ...editingAction,
+      ...formData,
+      classification: formData.classification,
+      isMultiHit: formData.isMultiHit,
+      hitCount: formData.isMultiHit ? formData.hitCount : undefined,
+      hasDot: formData.hasDot,
+      targetTank: formData.classification === 'tankbuster' ? formData.targetTank : undefined,
+    });
+
+    onSave(normalized);
   };
 
   const iconOptions = [
     '⚔️', '🛡️', '💥', '🔥', '❄️', '⚡', '💀', '🌊', '🌪️', '💫',
-    '⭕', '🎯', '💢', '✨', '🔮', '⚠️', '💣', '🗡️', '🏹', '🔱'
+    '⭕', '🎯', '💢', '✨', '🔮', '⚠️', '💣', '🗡️', '🏹', '🔱',
   ];
+
+  const isEditingCustomAction = editingAction?.isCustom === true;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {editingAction ? 'Edit Custom Action' : 'Create Custom Action'}
+            {editingAction
+              ? isEditingCustomAction
+                ? 'Edit Custom Action'
+                : 'Edit Timeline Action'
+              : 'Create Custom Action'}
           </DialogTitle>
         </DialogHeader>
 
@@ -103,13 +201,11 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
               id="action-name"
               type="text"
               value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
+              onChange={(event) => handleChange('name', event.target.value)}
               placeholder="e.g., Raidwide Attack"
               className={cn(errors.name && 'border-destructive')}
             />
-            {errors.name && (
-              <p className="text-destructive text-sm">{errors.name}</p>
-            )}
+            {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -120,14 +216,14 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
               id="action-time"
               type="number"
               value={formData.time}
-              onChange={(e) => handleChange('time', parseInt(e.target.value) || 0)}
+              onChange={(event) =>
+                handleChange('time', Number.parseInt(event.target.value, 10) || 0)
+              }
               min="0"
               step="1"
               className={cn(errors.time && 'border-destructive')}
             />
-            {errors.time && (
-              <p className="text-destructive text-sm">{errors.time}</p>
-            )}
+            {errors.time && <p className="text-destructive text-sm">{errors.time}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -136,7 +232,7 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
               id="action-icon"
               type="text"
               value={formData.icon}
-              onChange={(e) => handleChange('icon', e.target.value)}
+              onChange={(event) => handleChange('icon', event.target.value)}
               placeholder="Enter any emoji or text icon"
               className="text-2xl text-center"
               maxLength={10}
@@ -144,11 +240,11 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
             <p className="text-xs text-muted-foreground">
               Type any emoji, symbol, or text (up to 10 characters)
             </p>
-            
+
             <div className="mt-2">
               <p className="text-xs text-muted-foreground mb-2">Quick select presets:</p>
               <div className="grid grid-cols-10 gap-2">
-                {iconOptions.map(icon => (
+                {iconOptions.map((icon) => (
                   <Button
                     key={icon}
                     type="button"
@@ -170,45 +266,141 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
             <Textarea
               id="action-description"
               value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
+              onChange={(event) => handleChange('description', event.target.value)}
               placeholder="Describe the boss action and its mechanics"
               rows={3}
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Damage Type</Label>
-            <Select
-              value={formData.damageType}
-              onValueChange={(value) => handleChange('damageType', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select damage type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="magical">Magical</SelectItem>
-                <SelectItem value="physical">Physical</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label>Damage Type</Label>
+              <Select
+                value={formData.damageType}
+                onValueChange={(value) => handleChange('damageType', value as DamageType)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select damage type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="magical">Magical</SelectItem>
+                  <SelectItem value="physical">Physical</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Importance</Label>
+              <Select
+                value={formData.importance}
+                onValueChange={(value) =>
+                  handleChange('importance', value as EditableActionFormData['importance'])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select importance" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>Importance</Label>
-            <Select
-              value={formData.importance}
-              onValueChange={(value) => handleChange('importance', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select importance" />
+            <Label>Classification</Label>
+            <Select value={formData.classification} onValueChange={handleClassificationChange}>
+              <SelectTrigger className={cn(errors.classification && 'border-destructive')}>
+                <SelectValue placeholder="Select classification" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
+                {BOSS_ACTION_CLASSIFICATIONS.map((classification) => (
+                  <SelectItem key={classification} value={classification}>
+                    {BOSS_ACTION_CLASSIFICATION_LABELS[classification]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {errors.classification && (
+              <p className="text-destructive text-sm">{errors.classification}</p>
+            )}
           </div>
+
+          {formData.classification === 'dual_tankbuster' && (
+            <p className="text-xs text-muted-foreground">
+              Dual tankbusters automatically target both tanks.
+            </p>
+          )}
+
+          {formData.classification === 'small_parties' && (
+            <p className="text-xs text-muted-foreground">
+              Small parties means 4 players are targeted at the same time.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isMultiHit}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  handleChange('isMultiHit', checked);
+                  if (checked && formData.hitCount < 2) {
+                    handleChange('hitCount', 2);
+                  }
+                }}
+                className="mt-1"
+              />
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-foreground">Multi-hit</div>
+                <p className="text-xs text-muted-foreground m-0">
+                  Track repeated hits separately from classification.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.hasDot}
+                onChange={(event) => handleChange('hasDot', event.target.checked)}
+                className="mt-1"
+              />
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-foreground">Applies DoT</div>
+                <p className="text-xs text-muted-foreground m-0">
+                  Mark actions that also leave damage over time behind.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {formData.isMultiHit && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="hit-count">
+                Hit Count <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="hit-count"
+                type="number"
+                value={formData.hitCount}
+                onChange={(event) =>
+                  handleChange('hitCount', Number.parseInt(event.target.value, 10) || 0)
+                }
+                min="2"
+                step="1"
+                className={cn(errors.hitCount && 'border-destructive')}
+              />
+              {errors.hitCount && (
+                <p className="text-destructive text-sm">{errors.hitCount}</p>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="unmitigated-damage">
@@ -217,34 +409,10 @@ const CustomActionModal = ({ onClose, onSave, editingAction = null }) => {
             <Input
               id="unmitigated-damage"
               type="text"
-              value={formData.unmitigatedDamage}
-              onChange={(e) => handleChange('unmitigatedDamage', e.target.value)}
+              value={formData.unmitigatedDamage || ''}
+              onChange={(event) => handleChange('unmitigatedDamage', event.target.value)}
               placeholder="e.g., 100,000 or ~85,000"
             />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isTankBuster}
-                onChange={(e) => handleChange('isTankBuster', e.target.checked)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
-              />
-              <span className="text-sm font-medium">Tank Buster</span>
-            </label>
-
-            {formData.isTankBuster && (
-              <label className="flex items-center gap-2 cursor-pointer ml-6">
-                <input
-                  type="checkbox"
-                  checked={formData.isDualTankBuster}
-                  onChange={(e) => handleChange('isDualTankBuster', e.target.checked)}
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
-                />
-                <span className="text-sm font-medium">Dual Tank Buster</span>
-              </label>
-            )}
           </div>
         </div>
 

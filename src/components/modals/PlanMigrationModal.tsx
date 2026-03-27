@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { planMigrationService } from '../../services/planMigrationService';
+import { legacyLocalPlanImportService } from '../../services/legacyLocalPlanImportService';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ const PlanMigrationModal = ({ isOpen, onMigrate, onSkip, onClose, userId }) => {
 
   const loadMigrationSummary = async () => {
     try {
-      const summary = await planMigrationService.getMigrationSummary();
+      const summary = await legacyLocalPlanImportService.getMigrationSummary();
       setMigrationSummary(summary);
     } catch (error) {
       console.error('[PlanMigrationModal] Error loading migration summary:', error);
@@ -42,9 +42,9 @@ const PlanMigrationModal = ({ isOpen, onMigrate, onSkip, onClose, userId }) => {
     setError('');
 
     try {
-      const results = await planMigrationService.migrateAllPlans(userId);
+      const results = await legacyLocalPlanImportService.importAll(userId);
       setMigrationResults(results);
-      await planMigrationService.cleanupMigratedPlans(results);
+      legacyLocalPlanImportService.clearImportedPlans(results);
       onMigrate(results);
     } catch (error) {
       console.error('[PlanMigrationModal] Migration failed:', error);
@@ -131,8 +131,8 @@ const PlanMigrationModal = ({ isOpen, onMigrate, onSkip, onClose, userId }) => {
           </div>
           <DialogTitle>Migrate Your Plans</DialogTitle>
           <DialogDescription>
-            We found {migrationSummary?.planCount || 0} mitigation plan{migrationSummary?.planCount !== 1 ? 's' : ''} from your anonymous session. 
-            Would you like to save them to your new account?
+            We found {migrationSummary?.planCount || 0} locally stored mitigation plan{migrationSummary?.planCount !== 1 ? 's' : ''}.
+            Would you like to import them into your account?
           </DialogDescription>
         </DialogHeader>
 

@@ -1,0 +1,2240 @@
+{
+  "name": "Red Hot & Deep Blue (M10S) - Official Adaptive Timeline",
+  "description": "Phase-aware migrated adaptive timeline for Red Hot & Deep Blue (M10S). Phase names follow the cactbot r10s sections and support planner-side skips by pulling later phase anchors earlier.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "red-hot-deep-blue-m10s",
+  "bossTags": [
+    "red-hot-deep-blue-m10s",
+    "M10S",
+    "red-hot-deep-blue"
+  ],
+  "bossMetadata": {
+    "level": 100,
+    "name": "Red Hot & Deep Blue (M10S)",
+    "icon": "🔥",
+    "description": "The fiery and frigid duo, second boss of AAC Heavyweight Tier (Savage).",
+    "baseHealth": {
+      "party": 186000,
+      "tank": 295000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r10s.txt",
+      "title": "cactbot M10S timeline",
+      "lastVerifiedAt": "2026-03-25"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r10s.txt",
+      "title": "cactbot M10S timeline",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Section labels seed the planner-visible phase names and ordering."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Planner phase overrides follow the same fight-phase timing model used for FF Logs report analysis."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan pilot migration",
+      "lastVerifiedAt": "2026-03-25",
+      "notes": "Actions are migrated from the existing local boss library and annotated with phase anchors plus skip-eligible windows."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "red-hot-deep-blue-m10s-branch-0"
+  },
+  "phases": [
+    {
+      "id": "phase_red_hot",
+      "name": "Red Hot",
+      "anchorActionId": "hot_impact_1",
+      "order": 0,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_deep_blue",
+      "name": "Deep Blue",
+      "anchorActionId": "sick_swell_1",
+      "order": 1,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_insane_air_1",
+      "name": "Insane Air 1",
+      "anchorActionId": "plunging_blasting_snap_1",
+      "order": 2,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_snaking",
+      "name": "Snaking",
+      "anchorActionId": "firesnaking_watersnaking_1",
+      "order": 3,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_bubble_deep_aerial",
+      "name": "Bubble / Deep Aerial",
+      "anchorActionId": "deep_aerial_1",
+      "order": 4,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_arena_split",
+      "name": "Arena Split",
+      "anchorActionId": "divers_dare_5",
+      "order": 5,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_insane_air_2",
+      "name": "Insane Air 2",
+      "anchorActionId": "plunging_blasting_snap_3",
+      "order": 6,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_double_alley_oop",
+      "name": "Double Alley-oop",
+      "anchorActionId": "alley_oop_double_dip_2",
+      "order": 7,
+      "branchIds": [
+        "red-hot-deep-blue-m10s-branch-0"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    }
+  ],
+  "actions": [
+    {
+      "id": "hot_impact_1",
+      "name": "Hot Impact",
+      "time": 14,
+      "description": "Red Hot's dual tank buster that hits both tanks simultaneously. Requires heavy mitigation and coordinated tank cooldowns.",
+      "unmitigatedDamage": "~395,658",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_red_hot",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Hot Impact"
+      ]
+    },
+    {
+      "id": "flame_floater_1",
+      "name": "Flame Floater",
+      "time": 30,
+      "description": "Red Hot launches fireballs at four players in sequence. Each hit deals moderate physical damage.",
+      "unmitigatedDamage": "~133,000",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "🔥",
+      "phaseId": "phase_red_hot",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Flame Floater"
+      ]
+    },
+    {
+      "id": "alley_oop_inferno_1",
+      "name": "Alley-oop Inferno",
+      "time": 53,
+      "description": "Red Hot splits into multiple copies and each performs a diving attack on a player. All eight party members are targeted simultaneously with moderate raidwide damage.",
+      "unmitigatedDamage": "~89,900",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_red_hot",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Alley-oop Inferno"
+      ]
+    },
+    {
+      "id": "cutback_blaze_1",
+      "name": "Cutback Blaze",
+      "time": 62,
+      "description": "Red Hot performs a wide AoE attack that hits all party members. Deals moderate physical damage to the entire raid.",
+      "unmitigatedDamage": "~144,300",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_red_hot",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Cutback Blaze"
+      ]
+    },
+    {
+      "id": "pyrotation_1",
+      "name": "Pyrotation (3 hits)",
+      "time": 69,
+      "description": "Multi-hit raidwide. Red Hot spins while launching fire attacks, hitting all players 3 times with light physical damage.",
+      "unmitigatedDamage": "~18,600 per hit",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_red_hot",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Pyrotation (3 hits)"
+      ]
+    },
+    {
+      "id": "divers_dare_1",
+      "name": "Divers' Dare",
+      "time": 82,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~104,150",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_red_hot",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "sick_swell_1",
+      "name": "Sick Swell",
+      "time": 115,
+      "description": "Deep Blue creates a wave that deals light physical damage to all players. Often precedes a larger water-based attack.",
+      "unmitigatedDamage": "~17,600",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "🌊",
+      "phaseId": "phase_deep_blue",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sick Swell"
+      ]
+    },
+    {
+      "id": "awesome_slab_1",
+      "name": "Awesome Slab",
+      "time": 117,
+      "description": "Deep Blue crashes down on the party, dealing moderate physical damage to all players. The party is split between both bosses' attacks.",
+      "unmitigatedDamage": "~138,500",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_deep_blue",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Awesome Slab"
+      ]
+    },
+    {
+      "id": "reverse_alley_oop_1",
+      "name": "Reverse Alley-oop",
+      "time": 126,
+      "description": "Similar to Alley-oop, but with reversed timing. Both bosses dive at players dealing moderate physical damage to all party members.",
+      "unmitigatedDamage": "~116,200",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_deep_blue",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Reverse Alley-oop"
+      ]
+    },
+    {
+      "id": "deep_impact_1",
+      "name": "Deep Impact",
+      "time": 137,
+      "description": "Deep Blue's single-target tank buster on the main tank. Deals heavy physical damage and requires strong tank mitigation.",
+      "unmitigatedDamage": "~393,042",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "phaseId": "phase_deep_blue",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Deep Impact"
+      ]
+    },
+    {
+      "id": "divers_dare_2",
+      "name": "Divers' Dare",
+      "time": 144,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~103,930",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_deep_blue",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "xtreme_spectacular_1",
+      "name": "Xtreme Spectacular (8 hits)",
+      "time": 169,
+      "description": "Multi-hit raidwide. The Xtremes perform 8 rapid waves of damage on all party members. Light damage per hit but significant total damage.",
+      "unmitigatedDamage": "~19,604 per hit",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_deep_blue",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Xtreme Spectacular (8 hits)"
+      ]
+    },
+    {
+      "id": "plunging_blasting_snap_1",
+      "name": "Plunging/Blasting Snap",
+      "time": 198,
+      "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+      "unmitigatedDamage": "~92,190",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plunging/Blasting Snap"
+      ]
+    },
+    {
+      "id": "re_entry_blast_1",
+      "name": "Re-entry Blast",
+      "time": 205,
+      "description": "Red Hot re-enters the arena with a fiery explosion, dealing moderate physical damage to multiple players.",
+      "unmitigatedDamage": "~97,712",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Re-entry Blast"
+      ]
+    },
+    {
+      "id": "vertical_plunge_1",
+      "name": "Vertical Plunge",
+      "time": 205,
+      "description": "Deep Blue or Red Hot performs a vertical diving tank buster on the off-tank. Deals heavy physical damage and requires tank mitigation.",
+      "unmitigatedDamage": "~308,605",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Vertical Plunge"
+      ]
+    },
+    {
+      "id": "plunging_blasting_snap_2",
+      "name": "Plunging/Blasting Snap",
+      "time": 212,
+      "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+      "unmitigatedDamage": "~92,201",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plunging/Blasting Snap"
+      ]
+    },
+    {
+      "id": "vertical_blast_1",
+      "name": "Vertical Blast",
+      "time": 220,
+      "description": "Red Hot performs a vertical diving tank buster on the main tank. Deals heavy physical damage and requires tank mitigation.",
+      "unmitigatedDamage": "~322,360",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Vertical Blast"
+      ]
+    },
+    {
+      "id": "re_entry_plunge_1",
+      "name": "Re-entry Plunge",
+      "time": 220,
+      "description": "Deep Blue re-enters the arena with a water-based attack, dealing moderate physical damage to multiple players.",
+      "unmitigatedDamage": "~90,600",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Re-entry Plunge"
+      ]
+    },
+    {
+      "id": "divers_dare_3",
+      "name": "Divers' Dare",
+      "time": 230,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~100,100",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_1",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "firesnaking_watersnaking_1",
+      "name": "Firesnaking / Watersnaking",
+      "time": 245,
+      "description": "Both bosses launch their respective elemental snakes across the arena. Red Hot's fire and Deep Blue's water each hit half the party with heavy physical damage.",
+      "unmitigatedDamage": "~213,199",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Firesnaking / Watersnaking"
+      ]
+    },
+    {
+      "id": "alley_oop_inferno_reverse_1",
+      "name": "Alley-oop / Reverse Alley-oop",
+      "time": 258,
+      "description": "Combined attack where both bosses perform their diving mechanics. All party members receive moderate physical damage from the simultaneous assaults.",
+      "unmitigatedDamage": "~116,086",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Alley-oop / Reverse Alley-oop"
+      ]
+    },
+    {
+      "id": "hot_impact_2",
+      "name": "Hot Impact",
+      "time": 269,
+      "description": "Red Hot's dual tank buster that hits both tanks simultaneously. Requires heavy mitigation and coordinated tank cooldowns.",
+      "unmitigatedDamage": "~362,186",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Hot Impact"
+      ]
+    },
+    {
+      "id": "awesome_splash_inferno_1",
+      "name": "Awesome Splash / Inferno",
+      "time": 280,
+      "description": "Both bosses combine their ultimate attacks - Deep Blue's splash and Red Hot's inferno. Deals moderate physical damage to all players.",
+      "unmitigatedDamage": "~119,198",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "🌊",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Awesome Splash / Inferno"
+      ]
+    },
+    {
+      "id": "hot_aerial_1",
+      "name": "Hot Aerial",
+      "time": 290,
+      "description": "Red Hot launches aerial fire attacks on targeted players. Deals high physical damage to those hit and requires spread positioning.",
+      "unmitigatedDamage": "~188,671",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Hot Aerial"
+      ]
+    },
+    {
+      "id": "sick_swell_2",
+      "name": "Sick Swell",
+      "time": 301,
+      "description": "Deep Blue creates a wave that deals light physical damage to all players. Often precedes a larger water-based attack.",
+      "unmitigatedDamage": "~17,075",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "🌊",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sick Swell"
+      ]
+    },
+    {
+      "id": "awesome_splash_2",
+      "name": "Awesome Splash",
+      "time": 304,
+      "description": "Deep Blue crashes down with a water-based attack on half the party. Deals high physical damage to those targeted.",
+      "unmitigatedDamage": "~144,641",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "🌊",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Awesome Splash"
+      ]
+    },
+    {
+      "id": "cutback_blaze_2",
+      "name": "Cutback Blaze",
+      "time": 308,
+      "description": "Red Hot performs a wide AoE attack that hits all party members. Deals moderate physical damage to the entire raid.",
+      "unmitigatedDamage": "~158,549",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Cutback Blaze"
+      ]
+    },
+    {
+      "id": "deep_impact_2",
+      "name": "Deep Impact",
+      "time": 314,
+      "description": "Deep Blue's single-target tank buster on the main tank. Deals heavy physical damage and requires strong tank mitigation.",
+      "unmitigatedDamage": "~402,905",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Deep Impact"
+      ]
+    },
+    {
+      "id": "divers_dare_4",
+      "name": "Divers' Dare",
+      "time": 322,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~104,149",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_snaking",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "deep_aerial_1",
+      "name": "Deep Aerial",
+      "time": 336,
+      "description": "Deep Blue launches aerial water attacks on two targeted players. Applies a water DoT that ticks for significant damage over time.",
+      "unmitigatedDamage": "~86,626",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_bubble_deep_aerial",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Deep Aerial"
+      ]
+    },
+    {
+      "id": "xtreme_wave_sequence_1",
+      "name": "Xtreme Wave (Multiple)",
+      "time": 348,
+      "description": "A series of wave attacks during the Watery Grave phase. Multiple hits of light damage as waves crash across the arena.",
+      "unmitigatedDamage": "~57,110",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "🌊",
+      "phaseId": "phase_bubble_deep_aerial",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Xtreme Wave (Multiple)"
+      ]
+    },
+    {
+      "id": "scathing_steam_1",
+      "name": "Scathing Steam",
+      "time": 349,
+      "description": "The Watery Grave erupts with scalding steam, dealing moderate physical damage to all players caught in the blast zone.",
+      "unmitigatedDamage": "~115,852",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "🔥",
+      "phaseId": "phase_bubble_deep_aerial",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Scathing Steam"
+      ]
+    },
+    {
+      "id": "steam_burst_1",
+      "name": "Steam Burst",
+      "time": 352,
+      "description": "The Xtreme Aether releases a burst of steam. This is primarily a phase transition marker with no significant damage.",
+      "unmitigatedDamage": "0",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_bubble_deep_aerial",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Steam Burst"
+      ]
+    },
+    {
+      "id": "divers_dare_5",
+      "name": "Divers' Dare",
+      "time": 401,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~116,754",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "alley_oop_inferno_2",
+      "name": "Alley-oop Inferno",
+      "time": 426,
+      "description": "Red Hot splits into multiple copies and each performs a diving attack on a player. All eight party members are targeted simultaneously with moderate raidwide damage.",
+      "unmitigatedDamage": "~83,715",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Alley-oop Inferno"
+      ]
+    },
+    {
+      "id": "alley_oop_double_dip_1",
+      "name": "Alley-oop Double-dip",
+      "time": 431,
+      "description": "An enhanced version of Alley-oop where both bosses dive at players twice in succession. Deals higher damage than the standard version.",
+      "unmitigatedDamage": "~116,391",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Alley-oop Double-dip"
+      ]
+    },
+    {
+      "id": "freaky_pyrotation_1",
+      "name": "Freaky Pyrotation (2 hits)",
+      "time": 439,
+      "description": "Multi-hit raidwide. Deep Blue's version of Pyrotation. A spinning water attack that hits all players 2 times with moderate damage.",
+      "unmitigatedDamage": "~66,067 per hit",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Freaky Pyrotation (2 hits)"
+      ]
+    },
+    {
+      "id": "sick_swell_3",
+      "name": "Sick Swell",
+      "time": 446,
+      "description": "Deep Blue creates a wave that deals light physical damage to all players. Often precedes a larger water-based attack.",
+      "unmitigatedDamage": "~19,560",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "🌊",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Sick Swell"
+      ]
+    },
+    {
+      "id": "awesome_slab_2",
+      "name": "Awesome Slab",
+      "time": 449,
+      "description": "Deep Blue crashes down on the party, dealing moderate physical damage to all players. The party is split between both bosses' attacks.",
+      "unmitigatedDamage": "~143,136",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Awesome Slab"
+      ]
+    },
+    {
+      "id": "divers_dare_6",
+      "name": "Divers' Dare",
+      "time": 454,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~126,558",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "xtreme_firesnaking_watersnaking_1",
+      "name": "Xtreme Firesnaking / Watersnaking",
+      "time": 470,
+      "description": "The enhanced version of the snake attacks. Both bosses launch larger, more damaging elemental snakes that deal heavy physical damage.",
+      "unmitigatedDamage": "~210,087",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "🔥",
+      "phaseId": "phase_arena_split",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Xtreme Firesnaking / Watersnaking"
+      ]
+    },
+    {
+      "id": "plunging_blasting_snap_3",
+      "name": "Plunging/Blasting Snap",
+      "time": 488,
+      "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+      "unmitigatedDamage": "~95,950",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plunging/Blasting Snap"
+      ]
+    },
+    {
+      "id": "bailout_1",
+      "name": "Bailout",
+      "time": 489,
+      "description": "Minor damage dealt as the bosses transition or jump away. Deals light physical damage to all players.",
+      "unmitigatedDamage": "~18,638",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bailout"
+      ]
+    },
+    {
+      "id": "re_entry_plunge_blast_1",
+      "name": "Re-entry Plunge / Blast",
+      "time": 498,
+      "description": "Both bosses re-enter simultaneously with their respective elements. Deals moderate physical damage to all players.",
+      "unmitigatedDamage": "~97,678",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Re-entry Plunge / Blast"
+      ]
+    },
+    {
+      "id": "bailout_2",
+      "name": "Bailout",
+      "time": 500,
+      "description": "Minor damage dealt as the bosses transition or jump away. Deals light physical damage to all players.",
+      "unmitigatedDamage": "~56,465",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bailout"
+      ]
+    },
+    {
+      "id": "plunging_blasting_snap_4",
+      "name": "Plunging/Blasting Snap",
+      "time": 508,
+      "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+      "unmitigatedDamage": "~93,907",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Plunging/Blasting Snap"
+      ]
+    },
+    {
+      "id": "bailout_3",
+      "name": "Bailout",
+      "time": 510,
+      "description": "Minor damage dealt as the bosses transition or jump away. Deals light physical damage to all players.",
+      "unmitigatedDamage": "~19,050",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bailout"
+      ]
+    },
+    {
+      "id": "vertical_plunge_blast_1",
+      "name": "Vertical Plunge / Blast",
+      "time": 519,
+      "description": "Combined tank buster from both bosses. One tank receives Vertical Plunge, the other receives Vertical Blast. Heavy physical damage requiring coordinated tank mitigation.",
+      "unmitigatedDamage": "~322,946",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Vertical Plunge / Blast"
+      ]
+    },
+    {
+      "id": "bailout_4",
+      "name": "Bailout",
+      "time": 520,
+      "description": "A heavy Bailout dealing massive damage to tanks during the Vertical Plunge/Blast sequence. This is part of the tank buster resolution.",
+      "unmitigatedDamage": "~339,605",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Bailout"
+      ]
+    },
+    {
+      "id": "divers_dare_7",
+      "name": "Divers' Dare",
+      "time": 529,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~125,844",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_insane_air_2",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "alley_oop_double_dip_2",
+      "name": "Alley-oop/ Double-dip",
+      "time": 545,
+      "description": "An enhanced version of Alley-oop where both bosses dive at players twice in succession. Deals higher damage than the standard version.",
+      "unmitigatedDamage": "~119,629",
+      "damageType": "physical",
+      "importance": "high",
+      "icon": "⚔️",
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": true,
+      "skipEligible": false,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Alley-oop/ Double-dip"
+      ]
+    },
+    {
+      "id": "alley_oop_inferno_3",
+      "name": "Alley-oop Inferno",
+      "time": 547,
+      "description": "Red Hot splits into multiple copies and each performs a diving attack on a player. All eight party members are targeted simultaneously with moderate raidwide damage.",
+      "unmitigatedDamage": "~97,012",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Alley-oop Inferno"
+      ]
+    },
+    {
+      "id": "pyrotation_deep_impact_1",
+      "name": "Pyrotation (3 hits) + Deep Impact",
+      "time": 556,
+      "description": "Combined attack: Red Hot performs 3-hit Pyrotation while Deep Blue executes Deep Impact on both tanks. This is a dual tank buster with multi-hit raidwide damage happening simultaneously.",
+      "unmitigatedDamage": "~419,670",
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Pyrotation (3 hits) + Deep Impact"
+      ]
+    },
+    {
+      "id": "pyrotation_3",
+      "name": "Pyrotation (3 hits)",
+      "time": 558,
+      "description": "Multi-hit raidwide. Red Hot spins while launching fire attacks, hitting all players 3 times with light physical damage.",
+      "unmitigatedDamage": "~20,364 per hit",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Pyrotation (3 hits)"
+      ]
+    },
+    {
+      "id": "pyrotation_4",
+      "name": "Pyrotation (3 hits)",
+      "time": 560,
+      "description": "Multi-hit raidwide. Red Hot spins while launching fire attacks, hitting all players 3 times with light physical damage.",
+      "unmitigatedDamage": "~22,768 per hit",
+      "damageType": "physical",
+      "importance": "low",
+      "icon": "⚔️",
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Pyrotation (3 hits)"
+      ]
+    },
+    {
+      "id": "divers_dare_8",
+      "name": "Divers' Dare",
+      "time": 570,
+      "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+      "unmitigatedDamage": "~109,969",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    },
+    {
+      "id": "divers_dare_9",
+      "name": "Divers' Dare",
+      "time": 579,
+      "description": "The final Divers' Dare before enrage. Both bosses dive with increased intensity dealing high physical damage. Requires full raidwide mitigation.",
+      "unmitigatedDamage": "~179,695",
+      "damageType": "physical",
+      "importance": "medium",
+      "icon": "⚔️",
+      "phaseId": "phase_double_alley_oop",
+      "isPhaseAnchor": false,
+      "skipEligible": true,
+      "branchId": "red-hot-deep-blue-m10s-branch-0",
+      "sourceKind": "legacy_phase_migrated",
+      "sourceAbilities": [
+        "Divers' Dare"
+      ]
+    }
+  ],
+  "adaptiveModel": {
+    "branches": [
+      {
+        "id": "red-hot-deep-blue-m10s-branch-0",
+        "label": "Default Route",
+        "description": "Phase-aware migrated route built from the existing MitPlan action library.",
+        "sampleCount": 1,
+        "sampleRatio": 1,
+        "isPrimaryBranch": true,
+        "firstDivergenceTimestampMs": null,
+        "firstDivergenceTimestamp": null,
+        "eventCount": 57,
+        "events": [
+          {
+            "id": "hot_impact_1",
+            "name": "Hot Impact",
+            "time": 14,
+            "description": "Red Hot's dual tank buster that hits both tanks simultaneously. Requires heavy mitigation and coordinated tank cooldowns.",
+            "unmitigatedDamage": "~395,658",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_red_hot",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Hot Impact"
+            ]
+          },
+          {
+            "id": "flame_floater_1",
+            "name": "Flame Floater",
+            "time": 30,
+            "description": "Red Hot launches fireballs at four players in sequence. Each hit deals moderate physical damage.",
+            "unmitigatedDamage": "~133,000",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "🔥",
+            "phaseId": "phase_red_hot",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Flame Floater"
+            ]
+          },
+          {
+            "id": "alley_oop_inferno_1",
+            "name": "Alley-oop Inferno",
+            "time": 53,
+            "description": "Red Hot splits into multiple copies and each performs a diving attack on a player. All eight party members are targeted simultaneously with moderate raidwide damage.",
+            "unmitigatedDamage": "~89,900",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_red_hot",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Alley-oop Inferno"
+            ]
+          },
+          {
+            "id": "cutback_blaze_1",
+            "name": "Cutback Blaze",
+            "time": 62,
+            "description": "Red Hot performs a wide AoE attack that hits all party members. Deals moderate physical damage to the entire raid.",
+            "unmitigatedDamage": "~144,300",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_red_hot",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Cutback Blaze"
+            ]
+          },
+          {
+            "id": "pyrotation_1",
+            "name": "Pyrotation (3 hits)",
+            "time": 69,
+            "description": "Multi-hit raidwide. Red Hot spins while launching fire attacks, hitting all players 3 times with light physical damage.",
+            "unmitigatedDamage": "~18,600 per hit",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_red_hot",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Pyrotation (3 hits)"
+            ]
+          },
+          {
+            "id": "divers_dare_1",
+            "name": "Divers' Dare",
+            "time": 82,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~104,150",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_red_hot",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "sick_swell_1",
+            "name": "Sick Swell",
+            "time": 115,
+            "description": "Deep Blue creates a wave that deals light physical damage to all players. Often precedes a larger water-based attack.",
+            "unmitigatedDamage": "~17,600",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "🌊",
+            "phaseId": "phase_deep_blue",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sick Swell"
+            ]
+          },
+          {
+            "id": "awesome_slab_1",
+            "name": "Awesome Slab",
+            "time": 117,
+            "description": "Deep Blue crashes down on the party, dealing moderate physical damage to all players. The party is split between both bosses' attacks.",
+            "unmitigatedDamage": "~138,500",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_deep_blue",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Awesome Slab"
+            ]
+          },
+          {
+            "id": "reverse_alley_oop_1",
+            "name": "Reverse Alley-oop",
+            "time": 126,
+            "description": "Similar to Alley-oop, but with reversed timing. Both bosses dive at players dealing moderate physical damage to all party members.",
+            "unmitigatedDamage": "~116,200",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_deep_blue",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Reverse Alley-oop"
+            ]
+          },
+          {
+            "id": "deep_impact_1",
+            "name": "Deep Impact",
+            "time": 137,
+            "description": "Deep Blue's single-target tank buster on the main tank. Deals heavy physical damage and requires strong tank mitigation.",
+            "unmitigatedDamage": "~393,042",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "phaseId": "phase_deep_blue",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Deep Impact"
+            ]
+          },
+          {
+            "id": "divers_dare_2",
+            "name": "Divers' Dare",
+            "time": 144,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~103,930",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_deep_blue",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "xtreme_spectacular_1",
+            "name": "Xtreme Spectacular (8 hits)",
+            "time": 169,
+            "description": "Multi-hit raidwide. The Xtremes perform 8 rapid waves of damage on all party members. Light damage per hit but significant total damage.",
+            "unmitigatedDamage": "~19,604 per hit",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_deep_blue",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Xtreme Spectacular (8 hits)"
+            ]
+          },
+          {
+            "id": "plunging_blasting_snap_1",
+            "name": "Plunging/Blasting Snap",
+            "time": 198,
+            "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+            "unmitigatedDamage": "~92,190",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plunging/Blasting Snap"
+            ]
+          },
+          {
+            "id": "re_entry_blast_1",
+            "name": "Re-entry Blast",
+            "time": 205,
+            "description": "Red Hot re-enters the arena with a fiery explosion, dealing moderate physical damage to multiple players.",
+            "unmitigatedDamage": "~97,712",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Re-entry Blast"
+            ]
+          },
+          {
+            "id": "vertical_plunge_1",
+            "name": "Vertical Plunge",
+            "time": 205,
+            "description": "Deep Blue or Red Hot performs a vertical diving tank buster on the off-tank. Deals heavy physical damage and requires tank mitigation.",
+            "unmitigatedDamage": "~308,605",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Vertical Plunge"
+            ]
+          },
+          {
+            "id": "plunging_blasting_snap_2",
+            "name": "Plunging/Blasting Snap",
+            "time": 212,
+            "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+            "unmitigatedDamage": "~92,201",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plunging/Blasting Snap"
+            ]
+          },
+          {
+            "id": "vertical_blast_1",
+            "name": "Vertical Blast",
+            "time": 220,
+            "description": "Red Hot performs a vertical diving tank buster on the main tank. Deals heavy physical damage and requires tank mitigation.",
+            "unmitigatedDamage": "~322,360",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Vertical Blast"
+            ]
+          },
+          {
+            "id": "re_entry_plunge_1",
+            "name": "Re-entry Plunge",
+            "time": 220,
+            "description": "Deep Blue re-enters the arena with a water-based attack, dealing moderate physical damage to multiple players.",
+            "unmitigatedDamage": "~90,600",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Re-entry Plunge"
+            ]
+          },
+          {
+            "id": "divers_dare_3",
+            "name": "Divers' Dare",
+            "time": 230,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~100,100",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_1",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "firesnaking_watersnaking_1",
+            "name": "Firesnaking / Watersnaking",
+            "time": 245,
+            "description": "Both bosses launch their respective elemental snakes across the arena. Red Hot's fire and Deep Blue's water each hit half the party with heavy physical damage.",
+            "unmitigatedDamage": "~213,199",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Firesnaking / Watersnaking"
+            ]
+          },
+          {
+            "id": "alley_oop_inferno_reverse_1",
+            "name": "Alley-oop / Reverse Alley-oop",
+            "time": 258,
+            "description": "Combined attack where both bosses perform their diving mechanics. All party members receive moderate physical damage from the simultaneous assaults.",
+            "unmitigatedDamage": "~116,086",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Alley-oop / Reverse Alley-oop"
+            ]
+          },
+          {
+            "id": "hot_impact_2",
+            "name": "Hot Impact",
+            "time": 269,
+            "description": "Red Hot's dual tank buster that hits both tanks simultaneously. Requires heavy mitigation and coordinated tank cooldowns.",
+            "unmitigatedDamage": "~362,186",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Hot Impact"
+            ]
+          },
+          {
+            "id": "awesome_splash_inferno_1",
+            "name": "Awesome Splash / Inferno",
+            "time": 280,
+            "description": "Both bosses combine their ultimate attacks - Deep Blue's splash and Red Hot's inferno. Deals moderate physical damage to all players.",
+            "unmitigatedDamage": "~119,198",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "🌊",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Awesome Splash / Inferno"
+            ]
+          },
+          {
+            "id": "hot_aerial_1",
+            "name": "Hot Aerial",
+            "time": 290,
+            "description": "Red Hot launches aerial fire attacks on targeted players. Deals high physical damage to those hit and requires spread positioning.",
+            "unmitigatedDamage": "~188,671",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Hot Aerial"
+            ]
+          },
+          {
+            "id": "sick_swell_2",
+            "name": "Sick Swell",
+            "time": 301,
+            "description": "Deep Blue creates a wave that deals light physical damage to all players. Often precedes a larger water-based attack.",
+            "unmitigatedDamage": "~17,075",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "🌊",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sick Swell"
+            ]
+          },
+          {
+            "id": "awesome_splash_2",
+            "name": "Awesome Splash",
+            "time": 304,
+            "description": "Deep Blue crashes down with a water-based attack on half the party. Deals high physical damage to those targeted.",
+            "unmitigatedDamage": "~144,641",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "🌊",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Awesome Splash"
+            ]
+          },
+          {
+            "id": "cutback_blaze_2",
+            "name": "Cutback Blaze",
+            "time": 308,
+            "description": "Red Hot performs a wide AoE attack that hits all party members. Deals moderate physical damage to the entire raid.",
+            "unmitigatedDamage": "~158,549",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Cutback Blaze"
+            ]
+          },
+          {
+            "id": "deep_impact_2",
+            "name": "Deep Impact",
+            "time": 314,
+            "description": "Deep Blue's single-target tank buster on the main tank. Deals heavy physical damage and requires strong tank mitigation.",
+            "unmitigatedDamage": "~402,905",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Deep Impact"
+            ]
+          },
+          {
+            "id": "divers_dare_4",
+            "name": "Divers' Dare",
+            "time": 322,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~104,149",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_snaking",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "deep_aerial_1",
+            "name": "Deep Aerial",
+            "time": 336,
+            "description": "Deep Blue launches aerial water attacks on two targeted players. Applies a water DoT that ticks for significant damage over time.",
+            "unmitigatedDamage": "~86,626",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_bubble_deep_aerial",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Deep Aerial"
+            ]
+          },
+          {
+            "id": "xtreme_wave_sequence_1",
+            "name": "Xtreme Wave (Multiple)",
+            "time": 348,
+            "description": "A series of wave attacks during the Watery Grave phase. Multiple hits of light damage as waves crash across the arena.",
+            "unmitigatedDamage": "~57,110",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "🌊",
+            "phaseId": "phase_bubble_deep_aerial",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Xtreme Wave (Multiple)"
+            ]
+          },
+          {
+            "id": "scathing_steam_1",
+            "name": "Scathing Steam",
+            "time": 349,
+            "description": "The Watery Grave erupts with scalding steam, dealing moderate physical damage to all players caught in the blast zone.",
+            "unmitigatedDamage": "~115,852",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "🔥",
+            "phaseId": "phase_bubble_deep_aerial",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Scathing Steam"
+            ]
+          },
+          {
+            "id": "steam_burst_1",
+            "name": "Steam Burst",
+            "time": 352,
+            "description": "The Xtreme Aether releases a burst of steam. This is primarily a phase transition marker with no significant damage.",
+            "unmitigatedDamage": "0",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_bubble_deep_aerial",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Steam Burst"
+            ]
+          },
+          {
+            "id": "divers_dare_5",
+            "name": "Divers' Dare",
+            "time": 401,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~116,754",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "alley_oop_inferno_2",
+            "name": "Alley-oop Inferno",
+            "time": 426,
+            "description": "Red Hot splits into multiple copies and each performs a diving attack on a player. All eight party members are targeted simultaneously with moderate raidwide damage.",
+            "unmitigatedDamage": "~83,715",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Alley-oop Inferno"
+            ]
+          },
+          {
+            "id": "alley_oop_double_dip_1",
+            "name": "Alley-oop Double-dip",
+            "time": 431,
+            "description": "An enhanced version of Alley-oop where both bosses dive at players twice in succession. Deals higher damage than the standard version.",
+            "unmitigatedDamage": "~116,391",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Alley-oop Double-dip"
+            ]
+          },
+          {
+            "id": "freaky_pyrotation_1",
+            "name": "Freaky Pyrotation (2 hits)",
+            "time": 439,
+            "description": "Multi-hit raidwide. Deep Blue's version of Pyrotation. A spinning water attack that hits all players 2 times with moderate damage.",
+            "unmitigatedDamage": "~66,067 per hit",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Freaky Pyrotation (2 hits)"
+            ]
+          },
+          {
+            "id": "sick_swell_3",
+            "name": "Sick Swell",
+            "time": 446,
+            "description": "Deep Blue creates a wave that deals light physical damage to all players. Often precedes a larger water-based attack.",
+            "unmitigatedDamage": "~19,560",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "🌊",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Sick Swell"
+            ]
+          },
+          {
+            "id": "awesome_slab_2",
+            "name": "Awesome Slab",
+            "time": 449,
+            "description": "Deep Blue crashes down on the party, dealing moderate physical damage to all players. The party is split between both bosses' attacks.",
+            "unmitigatedDamage": "~143,136",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Awesome Slab"
+            ]
+          },
+          {
+            "id": "divers_dare_6",
+            "name": "Divers' Dare",
+            "time": 454,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~126,558",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "xtreme_firesnaking_watersnaking_1",
+            "name": "Xtreme Firesnaking / Watersnaking",
+            "time": 470,
+            "description": "The enhanced version of the snake attacks. Both bosses launch larger, more damaging elemental snakes that deal heavy physical damage.",
+            "unmitigatedDamage": "~210,087",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "🔥",
+            "phaseId": "phase_arena_split",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Xtreme Firesnaking / Watersnaking"
+            ]
+          },
+          {
+            "id": "plunging_blasting_snap_3",
+            "name": "Plunging/Blasting Snap",
+            "time": 488,
+            "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+            "unmitigatedDamage": "~95,950",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plunging/Blasting Snap"
+            ]
+          },
+          {
+            "id": "bailout_1",
+            "name": "Bailout",
+            "time": 489,
+            "description": "Minor damage dealt as the bosses transition or jump away. Deals light physical damage to all players.",
+            "unmitigatedDamage": "~18,638",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bailout"
+            ]
+          },
+          {
+            "id": "re_entry_plunge_blast_1",
+            "name": "Re-entry Plunge / Blast",
+            "time": 498,
+            "description": "Both bosses re-enter simultaneously with their respective elements. Deals moderate physical damage to all players.",
+            "unmitigatedDamage": "~97,678",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Re-entry Plunge / Blast"
+            ]
+          },
+          {
+            "id": "bailout_2",
+            "name": "Bailout",
+            "time": 500,
+            "description": "Minor damage dealt as the bosses transition or jump away. Deals light physical damage to all players.",
+            "unmitigatedDamage": "~56,465",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bailout"
+            ]
+          },
+          {
+            "id": "plunging_blasting_snap_4",
+            "name": "Plunging/Blasting Snap",
+            "time": 508,
+            "description": "Both bosses attack with their respective elements - Deep Blue plunges while Red Hot blasts. Each player receives a spread AoE dealing moderate damage.",
+            "unmitigatedDamage": "~93,907",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Plunging/Blasting Snap"
+            ]
+          },
+          {
+            "id": "bailout_3",
+            "name": "Bailout",
+            "time": 510,
+            "description": "Minor damage dealt as the bosses transition or jump away. Deals light physical damage to all players.",
+            "unmitigatedDamage": "~19,050",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bailout"
+            ]
+          },
+          {
+            "id": "vertical_plunge_blast_1",
+            "name": "Vertical Plunge / Blast",
+            "time": 519,
+            "description": "Combined tank buster from both bosses. One tank receives Vertical Plunge, the other receives Vertical Blast. Heavy physical damage requiring coordinated tank mitigation.",
+            "unmitigatedDamage": "~322,946",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Vertical Plunge / Blast"
+            ]
+          },
+          {
+            "id": "bailout_4",
+            "name": "Bailout",
+            "time": 520,
+            "description": "A heavy Bailout dealing massive damage to tanks during the Vertical Plunge/Blast sequence. This is part of the tank buster resolution.",
+            "unmitigatedDamage": "~339,605",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Bailout"
+            ]
+          },
+          {
+            "id": "divers_dare_7",
+            "name": "Divers' Dare",
+            "time": 529,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~125,844",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_insane_air_2",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "alley_oop_double_dip_2",
+            "name": "Alley-oop/ Double-dip",
+            "time": 545,
+            "description": "An enhanced version of Alley-oop where both bosses dive at players twice in succession. Deals higher damage than the standard version.",
+            "unmitigatedDamage": "~119,629",
+            "damageType": "physical",
+            "importance": "high",
+            "icon": "⚔️",
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": true,
+            "skipEligible": false,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Alley-oop/ Double-dip"
+            ]
+          },
+          {
+            "id": "alley_oop_inferno_3",
+            "name": "Alley-oop Inferno",
+            "time": 547,
+            "description": "Red Hot splits into multiple copies and each performs a diving attack on a player. All eight party members are targeted simultaneously with moderate raidwide damage.",
+            "unmitigatedDamage": "~97,012",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Alley-oop Inferno"
+            ]
+          },
+          {
+            "id": "pyrotation_deep_impact_1",
+            "name": "Pyrotation (3 hits) + Deep Impact",
+            "time": 556,
+            "description": "Combined attack: Red Hot performs 3-hit Pyrotation while Deep Blue executes Deep Impact on both tanks. This is a dual tank buster with multi-hit raidwide damage happening simultaneously.",
+            "unmitigatedDamage": "~419,670",
+            "damageType": "physical",
+            "importance": "critical",
+            "icon": "🛡️",
+            "isTankBuster": true,
+            "isDualTankBuster": true,
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Pyrotation (3 hits) + Deep Impact"
+            ]
+          },
+          {
+            "id": "pyrotation_3",
+            "name": "Pyrotation (3 hits)",
+            "time": 558,
+            "description": "Multi-hit raidwide. Red Hot spins while launching fire attacks, hitting all players 3 times with light physical damage.",
+            "unmitigatedDamage": "~20,364 per hit",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Pyrotation (3 hits)"
+            ]
+          },
+          {
+            "id": "pyrotation_4",
+            "name": "Pyrotation (3 hits)",
+            "time": 560,
+            "description": "Multi-hit raidwide. Red Hot spins while launching fire attacks, hitting all players 3 times with light physical damage.",
+            "unmitigatedDamage": "~22,768 per hit",
+            "damageType": "physical",
+            "importance": "low",
+            "icon": "⚔️",
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Pyrotation (3 hits)"
+            ]
+          },
+          {
+            "id": "divers_dare_8",
+            "name": "Divers' Dare",
+            "time": 570,
+            "description": "Both bosses dive simultaneously, dealing moderate physical damage to all party members. Requires raidwide mitigation.",
+            "unmitigatedDamage": "~109,969",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          },
+          {
+            "id": "divers_dare_9",
+            "name": "Divers' Dare",
+            "time": 579,
+            "description": "The final Divers' Dare before enrage. Both bosses dive with increased intensity dealing high physical damage. Requires full raidwide mitigation.",
+            "unmitigatedDamage": "~179,695",
+            "damageType": "physical",
+            "importance": "medium",
+            "icon": "⚔️",
+            "phaseId": "phase_double_alley_oop",
+            "isPhaseAnchor": false,
+            "skipEligible": true,
+            "branchId": "red-hot-deep-blue-m10s-branch-0",
+            "sourceKind": "legacy_phase_migrated",
+            "sourceAbilities": [
+              "Divers' Dare"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

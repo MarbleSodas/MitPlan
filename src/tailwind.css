@@ -293,6 +293,130 @@
 .stagger-5 { animation-delay: 0.8s; }
 .stagger-6 { animation-delay: 0.9s; }
 
+/* ============================================
+   PRINT STYLES - Consolidated Print View
+   ============================================ */
+
+/* Page counter setup */
+@page {
+  size: letter;
+  margin: 0.75in;
+  counter-increment: page;
+  marks: none;
+  padding: 0;
+}
+
+/* First page doesn't need top margin for header */
+@page :first {
+  counter-reset: page 1;
+}
+
+html {
+  print-color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
+}
+
+/* Print-specific styles */
+@media print {
+  /* Hide elements that shouldn't print */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Show elements that should only print */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Reset backgrounds for printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Page break rules */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print\:break-before-always {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Ensure text is readable when printed */
+  body {
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  h1 {
+    font-size: 18pt;
+  }
+
+  h2 {
+    font-size: 14pt;
+  }
+
+  h3 {
+    font-size: 12pt;
+  }
+
+  /* Reduce shadow waste */
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* Border adjustments for print */
+  .print\:border {
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: #333 !important;
+  }
+
+  /* Mitigation cards need clear borders */
+  .print\:border-gray-400 {
+    border-color: #666 !important;
+  }
+
+  /* Ensure contrast on print */
+  .print\:text-gray-600 {
+    color: #333 !important;
+  }
+
+  .print\:bg-gray-100 {
+    background-color: #f5f5f5 !important;
+  }
+
+  /* Dark mode print overrides - dark class is on html element */
+  html.dark .print\:text-gray-300 {
+    color: #333 !important;
+  }
+
+  html.dark .print\:bg-gray-800 {
+    background-color: #fff !important;
+  }
+
+  /* Print footer positioning */
+  .print-footer {
+    position: fixed;
+    bottom: 0.75in;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  .print-footer::before {
+    content: "Page ";
+  }
+
+  .page-number::after {
+    content: counter(page);
+  }
+}
+
 /* Selection appear animation for collaborative presence */
 @keyframes selection-appear {
   from {

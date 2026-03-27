@@ -12,7 +12,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@
 
 const TimelineBrowser = () => {
   const navigate = useNavigate();
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
 
   const [timelines, setTimelines] = useState([]);
@@ -35,9 +35,7 @@ const TimelineBrowser = () => {
   // Load liked status for all timelines when user changes or timelines load
   useEffect(() => {
     const loadLikedStatus = async () => {
-      if (!user && !anonymousUser) return;
-
-      const userId = user?.uid || anonymousUser?.uid;
+      const userId = user?.uid;
       if (!userId) return;
 
       const liked = new Set();
@@ -51,14 +49,12 @@ const TimelineBrowser = () => {
     };
 
     loadLikedStatus();
-  }, [timelines, user, anonymousUser]);
+  }, [timelines, user]);
 
   // Load collection timeline IDs when user changes
   useEffect(() => {
     const loadCollectionIds = async () => {
-      if (!user && !anonymousUser) return;
-
-      const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+      const userId = user?.uid;
       if (!userId) return;
 
       try {
@@ -70,7 +66,7 @@ const TimelineBrowser = () => {
     };
 
     loadCollectionIds();
-  }, [user, anonymousUser, isAnonymousMode]);
+  }, [user]);
 
   const loadTimelines = async () => {
     setLoading(true);
@@ -138,7 +134,7 @@ const TimelineBrowser = () => {
   };
 
   const handleAddToCollection = async (timeline) => {
-    const userId = isAnonymousMode ? anonymousUser?.id : user?.uid;
+    const userId = user?.uid;
     if (!userId) {
       addToast({
         type: 'error',
@@ -193,7 +189,7 @@ const TimelineBrowser = () => {
   const handleToggleLike = async (timelineId, e) => {
     e.stopPropagation(); // Prevent triggering parent click handlers
 
-    if (!user && !anonymousUser) {
+    if (!user) {
       addToast({
         type: 'info',
         title: 'Login Required',
@@ -203,7 +199,7 @@ const TimelineBrowser = () => {
       return;
     }
 
-    const userId = user?.uid || anonymousUser?.uid;
+    const userId = user?.uid;
     if (!userId) return;
 
     // Prevent multiple simultaneous likes on the same timeline
@@ -264,20 +260,29 @@ const TimelineBrowser = () => {
                 <ArrowLeft size={20} />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold m-0">Browse Timelines</h1>
+                <h1 className="text-2xl font-bold m-0">Browse Community Timelines</h1>
                 <p className="text-sm text-[var(--color-textSecondary)] m-0 mt-1">
-                  Discover and add timelines to your collection
+                  Discover community-created timelines, collect favorites, and start your own community copy
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden"
-            >
-              <Filter size={20} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/timeline/create')}
+                className="hidden md:inline-flex"
+              >
+                Open Timeline Hub
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowFilters(!showFilters)}
+                className="md:hidden"
+              >
+                <Filter size={20} />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -370,7 +375,7 @@ const TimelineBrowser = () => {
                 <p className="text-[var(--color-textSecondary)]">
                   {searchTerm || selectedBossTags.length > 0
                     ? 'No timelines match your search criteria.'
-                    : 'No public timelines available.'}
+                    : 'No community timelines available yet.'}
                 </p>
               </div>
             ) : (
@@ -454,6 +459,14 @@ const TimelineBrowser = () => {
                           View
                         </Button>
                         <Button
+                          variant="secondary"
+                          onClick={() => navigate(`/timeline/create/editor?sourceTimelineId=${encodeURIComponent(timeline.id)}`)}
+                          className="flex-1"
+                        >
+                          <Copy size={16} />
+                          Start From This
+                        </Button>
+                        <Button
                           variant={timeline.official || collectionTimelineIds.has(timeline.id) ? 'outline' : 'default'}
                           onClick={() => handleAddToCollection(timeline)}
                           disabled={timeline.official || collectionTimelineIds.has(timeline.id) || addingToCollection.has(timeline.id)}
@@ -471,7 +484,7 @@ const TimelineBrowser = () => {
                           }
                         >
                           <Plus size={16} />
-                          {collectionTimelineIds.has(timeline.id) ? 'In Collection' : 'Add to Collection'}
+                          {collectionTimelineIds.has(timeline.id) ? 'In Collection' : 'Save to Collection'}
                         </Button>
                       </div>
                     </div>

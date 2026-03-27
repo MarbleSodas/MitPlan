@@ -5,11 +5,12 @@ import { useToast } from '../common/Toast';
 import { getTimeline, getShareableLink } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { ArrowLeft, Edit2, Share2, FileText } from 'lucide-react';
+import { getBossActionTypeLabel } from '../../utils/boss/bossActionUtils';
 
 const TimelineViewer = ({ isShared = false }) => {
   const { timelineId } = useParams();
   const navigate = useNavigate();
-  const { user, isAnonymousMode, anonymousUser } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ const TimelineViewer = ({ isShared = false }) => {
         message: 'Please try again.',
         duration: 4000
       });
-      navigate('/dashboard');
+      navigate(isShared ? '/' : '/dashboard');
     } finally {
       setLoading(false);
     }
@@ -40,12 +41,8 @@ const TimelineViewer = ({ isShared = false }) => {
 
   const isOwner = () => {
     if (!timeline) return false;
-    if (isAnonymousMode) {
-      return anonymousUser?.id === timeline.userId;
-    } else {
-      const currentUserId = user?.uid;
-      return currentUserId && (timeline.ownerId === currentUserId || timeline.userId === currentUserId);
-    }
+    const currentUserId = user?.uid;
+    return !!currentUserId && (timeline.ownerId === currentUserId || timeline.userId === currentUserId);
   };
 
   const getBossInfo = () => {
@@ -54,12 +51,16 @@ const TimelineViewer = ({ isShared = false }) => {
   };
 
   const handleEdit = () => {
-    navigate(`/timeline/edit/${timelineId}`);
+    if (!user?.uid) {
+      navigate(`/?next=${encodeURIComponent(`/timeline/edit/${timeline.id}`)}`);
+      return;
+    }
+    navigate(`/timeline/edit/${timeline.id}`);
   };
 
   const handleCopyShareLink = async () => {
     try {
-      const shareLink = getShareableLink(timelineId);
+      const shareLink = getShareableLink(timeline.id);
       await navigator.clipboard.writeText(shareLink);
       addToast({
         type: 'success',
@@ -79,7 +80,11 @@ const TimelineViewer = ({ isShared = false }) => {
   };
 
   const handleCreateMitplan = () => {
-    navigate(`/plan/create-from-timeline/${timelineId}`);
+    if (!user?.uid) {
+      navigate(`/?next=${encodeURIComponent(`/plan/create-from-timeline/${timeline.id}`)}`);
+      return;
+    }
+    navigate(`/plan/create-from-timeline/${timeline.id}`);
   };
 
   const formatTime = (seconds) => {
@@ -119,7 +124,7 @@ const TimelineViewer = ({ isShared = false }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(isShared ? '/' : '/dashboard')}
                 className="p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors"
               >
                 <ArrowLeft size={20} />
@@ -155,7 +160,7 @@ const TimelineViewer = ({ isShared = false }) => {
                 className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2"
               >
                 <FileText size={18} />
-                Create Mitplan
+                {user ? 'Create Mitplan' : 'Sign In to Create Mitplan'}
               </button>
             </div>
           </div>
@@ -204,14 +209,17 @@ const TimelineViewer = ({ isShared = false }) => {
                             Custom
                           </span>
                         )}
-                        {action.isTankBuster && (
-                          <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">
-                            Tank Buster
+                        <span className="px-2 py-0.5 bg-muted text-foreground text-xs rounded">
+                          {getBossActionTypeLabel(action)}
+                        </span>
+                        {action.isMultiHit && (
+                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded">
+                            {action.hitCount && action.hitCount > 1 ? `${action.hitCount}-Hit` : 'Multi-hit'}
                           </span>
                         )}
-                        {action.isDualTankBuster && (
-                          <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded">
-                            Dual TB
+                        {action.hasDot && (
+                          <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs rounded">
+                            DoT
                           </span>
                         )}
                       </div>

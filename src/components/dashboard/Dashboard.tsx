@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
 import { toast } from 'sonner';
+import { createPlanTimelineLayoutFromTimeline } from '../../utils/timeline/planTimelineLayoutUtils';
 import unifiedPlanService from '../../services/unifiedPlanService';
 import { getUserTimelines } from '../../services/timelineService';
+import { getDashboardPlanLoadErrorMessage } from '../../services/firebaseErrorUtils';
 import PlanCard from './PlanCard';
 import TimelineCard from './TimelineCard';
 import CreatePlanModal from './CreatePlanModal';
@@ -13,6 +15,7 @@ import BossSelectionModal from './BossSelectionModal';
 import CustomTimelineSelectionModal from './CustomTimelineSelectionModal';
 import ImportPlanModal from './ImportPlanModal';
 import UserProfile from './UserProfile';
+import PlanMigrationModal from '../modals/PlanMigrationModal';
 import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
@@ -27,12 +30,13 @@ import { Menu } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, hasPendingMigration, setHasPendingMigration } = useAuth();
   const { loadUserPlans } = usePlan();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
   const [showCustomTimelineModal, setShowCustomTimelineModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [selectedBossForPlan, setSelectedBossForPlan] = useState(null);
   const [categorizedPlans, setCategorizedPlans] = useState({
     ownedPlans: [],
@@ -47,12 +51,17 @@ const Dashboard = () => {
   // Set up unified plan service context and load categorized plans
   useEffect(() => {
     if (user) {
-      // Set the user context for the unified plan service
-      unifiedPlanService.setUserContext(user, false);
+      unifiedPlanService.setUserContext(user);
       loadCategorizedPlans();
       loadUserTimelines();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && hasPendingMigration) {
+      setShowMigrationModal(true);
+    }
+  }, [user, hasPendingMigration]);
 
   const loadCategorizedPlans = async () => {
     if (!user) {
@@ -74,7 +83,7 @@ const Dashboard = () => {
       setCategorizedPlans(plans);
     } catch (err) {
       console.error('Error loading categorized plans:', err);
-      setError(err.message);
+      setError(getDashboardPlanLoadErrorMessage(err));
       setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
     } finally {
       setLoading(false);
@@ -158,6 +167,7 @@ const Dashboard = () => {
           mainTank: null,
           offTank: null
         },
+        timelineLayout: createPlanTimelineLayoutFromTimeline(timeline),
         sourceTimelineId: timeline.id,
         sourceTimelineName: timeline.name,
         bossMetadata: timeline.bossMetadata || null
@@ -192,6 +202,18 @@ const Dashboard = () => {
     setShowImportModal(false);
     loadUserPlans(); // Keep for real-time updates
     loadCategorizedPlans(); // Refresh categorized view
+  };
+
+  const handleMigrationComplete = () => {
+    setHasPendingMigration(false);
+    setShowMigrationModal(false);
+    loadUserPlans();
+    loadCategorizedPlans();
+  };
+
+  const handleMigrationSkipped = () => {
+    setHasPendingMigration(false);
+    setShowMigrationModal(false);
   };
 
   const handleTimelineChanged = () => {
@@ -276,7 +298,7 @@ const Dashboard = () => {
 
       {error && (
         <div className="mb-8 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-4 text-[#ef4444]">
-          Error: {error}
+          Plan loading issue: {error}
         </div>
       )}
 
@@ -289,7 +311,14 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {categorizedPlans.totalPlans === 0 ? (
+      {error ? (
+        <div className="rounded-lg border border-dashed border-[#fecaca] bg-[#fff7f7] px-8 py-16 text-center text-[#b91c1c]">
+          <h3 className="mb-4 text-2xl text-[#991b1b]">Plans Unavailable</h3>
+          <p className="mb-0 text-base">
+            {error}
+          </p>
+        </div>
+      ) : categorizedPlans.totalPlans === 0 ? (
         <div className="text-center px-8 py-16 text-[var(--color-textSecondary)]">
           <h3 className="mb-4 text-2xl text-[var(--color-text)]">No Plans Yet</h3>
           <p className="mb-8 text-base">
@@ -333,7 +362,7 @@ const Dashboard = () => {
           </section>
 
           {/* Shared Plans Section - Only show for authenticated users */}
-          {user && !user.isAnonymous && (
+          {user && (
             <section className="mb-12 last:mb-0">
               <div className="mb-6 flex items-center gap-3">
                 <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Shared Plans</h2>
@@ -363,19 +392,19 @@ const Dashboard = () => {
             </section>
           )}
 
-          {/* Boss Action Timelines Section */}
+          {/* Community Timelines Section */}
           <section className="mb-12 last:mb-0">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Boss Action Timelines</h2>
+                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Community Timelines</h2>
                 <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
               </div>
               <div className="flex gap-4">
                 <Button onClick={handleCreateTimeline}>
-                  Create Timeline
+                  Open Timeline Hub
                 </Button>
                 <Button variant="secondary" onClick={() => navigate('/timeline/browse')}>
-                  Browse Timelines
+                  Browse Community Timelines
                 </Button>
               </div>
             </div>
@@ -387,7 +416,7 @@ const Dashboard = () => {
             ) : timelines.length === 0 ? (
               <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
                 <p className="m-0 text-sm italic">
-                  You haven't created any boss action timelines yet. Create a timeline to organize boss mechanics and use them as templates for mitigation plans!
+                  You haven't created any community timelines yet. Open the timeline hub to start blank, branch from a plan, or build from official and public routes.
                 </p>
               </div>
             ) : (
@@ -435,6 +464,14 @@ const Dashboard = () => {
           onSuccess={handlePlanImported}
         />
       )}
+
+      <PlanMigrationModal
+        isOpen={showMigrationModal}
+        userId={user?.uid}
+        onMigrate={handleMigrationComplete}
+        onSkip={handleMigrationSkipped}
+        onClose={handleMigrationSkipped}
+      />
     </div>
     <Footer />
   </>

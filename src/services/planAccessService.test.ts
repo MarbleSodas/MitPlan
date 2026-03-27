@@ -1,0 +1,248 @@
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const equalToMock = vi.fn();
+const getMock = vi.fn();
+const orderByChildMock = vi.fn();
+const queryMock = vi.fn();
+const refMock = vi.fn();
+
+vi.mock('../config/firebase', () => ({
+  database: {},
+}));
+
+vi.mock('firebase/database', () => ({
+  ref: (...args: unknown[]) => refMock(...args),
+  get: (...args: unknown[]) => getMock(...args),
+  set: vi.fn(),
+  update: vi.fn(),
+  query: (...args: unknown[]) => queryMock(...args),
+  orderByChild: (...args: unknown[]) => orderByChildMock(...args),
+  equalTo: (...args: unknown[]) => equalToMock(...args),
+}));
+
+import {
+  getUserAccessiblePlans,
+  getUserOwnedPlans,
+  getUserSharedPlans,
+} from './planAccessService';
+import { STALE_DATABASE_RULES_MESSAGE } from './firebaseErrorUtils';
+
+function buildSnapshot(value: unknown) {
+  return {
+    exists: () => value !== null && value !== undefined,
+    val: () => value,
+    forEach: (callback: (child: { key: string; val: () => unknown }) => void) => {
+      if (!value || typeof value !== 'object') {
+        return;
+      }
+
+      Object.entries(value as Record<string, unknown>).forEach(([key, entryValue]) => {
+        callback({
+          key,
+          val: () => entryValue,
+        });
+      });
+    },
+  };
+}
+
+describe('planAccessService', () => {
+  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  beforeEach(() => {
+    equalToMock.mockReset();
+    getMock.mockReset();
+    orderByChildMock.mockReset();
+    queryMock.mockReset();
+    refMock.mockReset();
+
+    refMock.mockImplementation((_database: unknown, path: string) => ({ path }));
+    orderByChildMock.mockImplementation((field: string) => ({ field }));
+    equalToMock.mockImplementation((value: string) => ({ value }));
+    queryMock.mockImplementation(
+      (baseRef: { path: string }, order: { field: string }, equal: { value: string }) => ({
+        path: baseRef.path,
+        orderField: order.field,
+        equalToValue: equal.value,
+      })
+    );
+    consoleErrorSpy.mockClear();
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockClear();
+  });
+
+  afterAll(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('loads owned plans from both ownerId and legacy userId queries without duplicates', async () => {
+    getMock.mockImplementation((target: { path: string; orderField?: string; equalToValue?: string }) => {
+      if (target.path === 'plans' && target.orderField === 'ownerId') {
+        return Promise.resolve(
+          buildSnapshot({
+            'plan-owner': {
+              ownerId: 'user-1',
+              userId: 'user-1',
+              name: 'Owner Plan',
+              updatedAt: 200,
+            },
+            'plan-modern': {
+              ownerId: 'user-1',
+              name: 'Modern Plan',
+              updatedAt: 100,
+            },
+          })
+        );
+      }
+
+      if (target.path === 'plans' && target.orderField === 'userId') {
+        return Promise.resolve(
+          buildSnapshot({
+            'plan-owner': {
+              ownerId: 'user-1',
+              userId: 'user-1',
+              name: 'Owner Plan',
+              updatedAt: 200,
+            },
+            'plan-legacy': {
+              userId: 'user-1',
+              name: 'Legacy Plan',
+              updatedAt: 150,
+            },
+          })
+        );
+      }
+
+      throw new Error(`Unexpected get target: ${JSON.stringify(target)}`);
+    });
+
+    const plans = await getUserOwnedPlans('user-1');
+
+    expect(plans.map((plan) => plan.id)).toEqual(['plan-owner', 'plan-legacy', 'plan-modern']);
+    expect(plans.every((plan) => plan.isOwner)).toBe(true);
+    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(queryMock.mock.calls.map(([, order]) => order.field)).toEqual(['ownerId', 'userId']);
+  });
+
+  it('loads shared plans from accessed history, excluding owned plans and missing records', async () => {
+    getMock.mockImplementation((target: { path: string; orderField?: string }) => {
+      if (target.path === 'userProfiles/user-1/accessedPlans') {
+        return Promise.resolve(
+          buildSnapshot({
+            'shared-plan': {
+              lastAccess: 500,
+              accessCount: 3,
+            },
+            'owned-plan': {
+              lastAccess: 450,
+              accessCount: 1,
+            },
+            'missing-plan': {
+              lastAccess: 400,
+              accessCount: 1,
+            },
+          })
+        );
+      }
+
+      if (target.path === 'plans/shared-plan') {
+        return Promise.resolve(
+          buildSnapshot({
+            ownerId: 'user-2',
+            name: 'Shared Plan',
+            updatedAt: 100,
+          })
+        );
+      }
+
+      if (target.path === 'plans/owned-plan') {
+        return Promise.resolve(
+          buildSnapshot({
+            ownerId: 'user-1',
+            name: 'Owned Plan',
+            updatedAt: 200,
+          })
+        );
+      }
+
+      if (target.path === 'plans/missing-plan') {
+        return Promise.resolve(buildSnapshot(null));
+      }
+
+      throw new Error(`Unexpected get target: ${JSON.stringify(target)}`);
+    });
+
+    const plans = await getUserSharedPlans('user-1');
+
+    expect(plans).toHaveLength(1);
+    expect(plans[0]).toEqual(
+      expect.objectContaining({
+        id: 'shared-plan',
+        name: 'Shared Plan',
+        isOwner: false,
+        hasAccessed: true,
+        accessInfo: expect.objectContaining({
+          lastAccess: 500,
+          accessCount: 3,
+        }),
+      })
+    );
+  });
+
+  it('merges owned and shared plans for accessible-plan loading', async () => {
+    getMock.mockImplementation((target: { path: string; orderField?: string }) => {
+      if (target.path === 'plans' && target.orderField === 'ownerId') {
+        return Promise.resolve(
+          buildSnapshot({
+            'owned-plan': {
+              ownerId: 'user-1',
+              userId: 'user-1',
+              name: 'Owned Plan',
+              updatedAt: 150,
+            },
+          })
+        );
+      }
+
+      if (target.path === 'plans' && target.orderField === 'userId') {
+        return Promise.resolve(buildSnapshot({}));
+      }
+
+      if (target.path === 'userProfiles/user-1/accessedPlans') {
+        return Promise.resolve(
+          buildSnapshot({
+            'shared-plan': {
+              lastAccess: 300,
+              accessCount: 2,
+            },
+          })
+        );
+      }
+
+      if (target.path === 'plans/shared-plan') {
+        return Promise.resolve(
+          buildSnapshot({
+            ownerId: 'user-2',
+            name: 'Shared Plan',
+            updatedAt: 100,
+          })
+        );
+      }
+
+      throw new Error(`Unexpected get target: ${JSON.stringify(target)}`);
+    });
+
+    const plans = await getUserAccessiblePlans('user-1');
+
+    expect(plans.map((plan) => plan.id)).toEqual(['shared-plan', 'owned-plan']);
+  });
+
+  it('surfaces owned-plan query failures instead of returning a fake empty state', async () => {
+    getMock.mockRejectedValue(new Error('permission_denied at /plans'));
+
+    await expect(getUserOwnedPlans('user-1')).rejects.toThrow(STALE_DATABASE_RULES_MESSAGE);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+  });
+});

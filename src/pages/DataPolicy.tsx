@@ -112,15 +112,7 @@ const DataPolicy = () => {
           <li>Plan sharing and collaboration settings</li>
         </List>
 
-        <SubsectionTitle>2.3 Anonymous User Data</SubsectionTitle>
-        <Paragraph>For anonymous users, we collect:</Paragraph>
-        <List>
-          <li>Display name (for collaboration)</li>
-          <li>Temporary session identifiers</li>
-          <li>Plan access history (stored locally)</li>
-        </List>
-
-        <SubsectionTitle>2.4 Usage Analytics</SubsectionTitle>
+        <SubsectionTitle>2.3 Usage Analytics</SubsectionTitle>
         <Paragraph>We use Firebase Analytics to collect:</Paragraph>
         <List>
           <li>Page views and user interactions</li>
@@ -129,7 +121,7 @@ const DataPolicy = () => {
           <li>Error reports and crash data</li>
         </List>
 
-        <SubsectionTitle>2.5 Technical Information</SubsectionTitle>
+        <SubsectionTitle>2.4 Technical Information</SubsectionTitle>
         <List>
           <li>IP address and browser information</li>
           <li>Device type and operating system</li>
@@ -168,12 +160,12 @@ const DataPolicy = () => {
 
         <SubsectionTitle>4.2 Local Storage</SubsectionTitle>
         <Paragraph>
-          Some data is stored locally in your browser for offline functionality and performance:
+          Some data is stored locally in your browser for performance and recovery flows:
         </Paragraph>
         <List>
-          <li>Plan data (as backup and for offline access)</li>
+          <li>Temporary UI preferences and settings</li>
           <li>User preferences and settings</li>
-          <li>Anonymous user session information</li>
+          <li>Legacy local mitigation plans that can be imported after sign-in</li>
         </List>
       </Section>
 
@@ -181,7 +173,7 @@ const DataPolicy = () => {
         <SectionTitle>5. Data Sharing and Disclosure</SectionTitle>
         <Paragraph>We do not sell, trade, or rent your personal information. We may share data in these limited circumstances:</Paragraph>
         <List>
-          <li><strong>Plan Collaboration:</strong> When you share plans, other users can view and edit the shared content</li>
+          <li><strong>Plan Collaboration:</strong> Public links can be viewed by anyone, but editing and real-time collaboration require authentication</li>
           <li><strong>Service Providers:</strong> With Firebase/Google for hosting and analytics</li>
           <li><strong>Legal Requirements:</strong> If required by law or to protect our rights</li>
           <li><strong>Business Transfer:</strong> In case of merger, acquisition, or sale of assets</li>
@@ -199,10 +191,10 @@ const DataPolicy = () => {
           <li>Control plan sharing and collaboration settings</li>
         </List>
 
-        <SubsectionTitle>6.2 Anonymous Users</SubsectionTitle>
+        <SubsectionTitle>6.2 Local Browser Data</SubsectionTitle>
         <List>
-          <li>Clear local storage to remove anonymous session data</li>
-          <li>Create an account to migrate anonymous plans</li>
+          <li>Clear local storage to remove locally stored legacy plan data</li>
+          <li>Sign in to import older locally stored plans into your account</li>
         </List>
 
         <SubsectionTitle>6.3 Analytics Opt-out</SubsectionTitle>
