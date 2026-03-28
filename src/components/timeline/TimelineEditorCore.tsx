@@ -127,7 +127,7 @@ const SortableActionCard = ({
   );
 };
 
-function buildEditedTimelineRecord({
+export function buildEditedTimelineRecord({
   baseRecord,
   timelineActions,
   normalizeTimelineAction,
@@ -779,112 +779,123 @@ const TimelineEditorCore = ({
         <CollaborationStatusNotice />
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <PresenceSurface
-          surface="timeline"
-          panel="library"
-          section="library"
-          hideRemoteCursorsOnMobile={true}
-          className="w-80 lg:w-96 flex-shrink-0 border-r border-border bg-card flex flex-col overflow-hidden"
-        >
-          <div className="p-4 border-b border-border">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Add Actions</h2>
-              <SectionPresencePill surface="timeline" section="library" />
-            </div>
-            <Button
-              onClick={() => {
-                setEditingAction(null);
-                setShowCustomActionModal(true);
-              }}
-              className="w-full"
-              disabled={readOnly}
-            >
-              <Plus size={18} />
-              Create Custom Action
-            </Button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            <h3 className="text-sm font-semibold mb-2 text-muted-foreground">
-              Boss Action Templates
-            </h3>
-            <p className="text-xs text-muted-foreground mb-3">
-              Choose a reusable boss action template, then enter its timeline time before adding it.
-            </p>
-            <BossActionsLibrary onSelectAction={handleAddBossAction} />
-          </div>
-        </PresenceSurface>
-
-        <PresenceSurface
-          surface="timeline"
-          panel="timeline"
-          section="timeline"
-          hideRemoteCursorsOnMobile={true}
-          className="flex-1 flex flex-col overflow-hidden"
-        >
-          <div className="p-4 border-b border-border bg-card">
-            <CompactTimelineVisualization
-              actions={sortedActions}
-              onActionClick={handleActionClick}
-              selectedActionId={selectedActionId}
-            />
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold">Timeline Actions</h2>
-                <SectionPresencePill surface="timeline" section="timeline" />
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {sortedActions.length} action{sortedActions.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-
-            {sortedActions.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <div className="text-4xl mb-4">📋</div>
-                <p className="text-lg font-medium mb-2">No actions yet</p>
-                <p className="text-sm">
-                  Add boss actions from the library or create custom actions to build your timeline.
-                </p>
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={sortedActions.map((action) => action.id)}
-                  strategy={verticalListSortingStrategy}
+      <div className="flex-1 min-h-0 px-4 pb-6 md:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-0 max-w-[1800px] flex-col gap-4 lg:h-full lg:flex-row">
+          <div
+            data-testid="timeline-add-actions-rail"
+            className="w-full flex-shrink-0 lg:w-96 lg:sticky lg:top-[calc(3rem+1px)] lg:self-start"
+          >
+            <div className="flex min-h-[32rem] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-12rem)]">
+              <div className="border-b border-border p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold">Add Actions</h2>
+                  <SectionPresencePill surface="timeline" section="library" />
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingAction(null);
+                    setShowCustomActionModal(true);
+                  }}
+                  className="w-full"
+                  disabled={readOnly}
                 >
-                  <div className="space-y-2">
-                    {sortedActions.map((action) => (
-                      <div
-                        key={action.id}
-                        ref={(element) => {
-                          actionRefs.current[action.id] = element;
-                        }}
-                      >
-                        <SortableActionCard
-                          action={action}
-                          isExpanded={expandedActionId === action.id}
-                          onToggleExpand={handleToggleExpand}
-                          onEdit={handleEditAction}
-                          onDelete={handleRemoveAction}
-                          onDuplicate={handleDuplicateAction}
-                          onQuickTimeEdit={handleQuickTimeEdit}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
+                  <Plus size={18} />
+                  Create Custom Action
+                </Button>
+              </div>
+
+              <div className="flex flex-1 min-h-0 flex-col p-4">
+                <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                  Boss Action Templates
+                </h3>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Choose a reusable boss action template, then enter its timeline time before adding it.
+                </p>
+                <PresenceSurface
+                  surface="timeline"
+                  panel="library"
+                  section="library"
+                  hideRemoteCursorsOnMobile={true}
+                  className="flex-1 min-h-0 overflow-hidden"
+                >
+                  <BossActionsLibrary onSelectAction={handleAddBossAction} />
+                </PresenceSurface>
+              </div>
+            </div>
           </div>
-        </PresenceSurface>
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border bg-card p-4">
+              <CompactTimelineVisualization
+                actions={sortedActions}
+                onActionClick={handleActionClick}
+                selectedActionId={selectedActionId}
+              />
+            </div>
+
+            <PresenceSurface
+              surface="timeline"
+              panel="timeline"
+              section="timeline"
+              hideRemoteCursorsOnMobile={true}
+              className="flex flex-1 min-h-0 flex-col overflow-hidden"
+            >
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-semibold">Timeline Actions</h2>
+                    <SectionPresencePill surface="timeline" section="timeline" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {sortedActions.length} action{sortedActions.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {sortedActions.length === 0 ? (
+                  <div className="py-16 text-center text-muted-foreground">
+                    <div className="mb-4 text-4xl">📋</div>
+                    <p className="mb-2 text-lg font-medium">No actions yet</p>
+                    <p className="text-sm">
+                      Add boss actions from the library or create custom actions to build your timeline.
+                    </p>
+                  </div>
+                ) : (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={sortedActions.map((action) => action.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2">
+                        {sortedActions.map((action) => (
+                          <div
+                            key={action.id}
+                            ref={(element) => {
+                              actionRefs.current[action.id] = element;
+                            }}
+                          >
+                            <SortableActionCard
+                              action={action}
+                              isExpanded={expandedActionId === action.id}
+                              onToggleExpand={handleToggleExpand}
+                              onEdit={handleEditAction}
+                              onDelete={handleRemoveAction}
+                              onDuplicate={handleDuplicateAction}
+                              onQuickTimeEdit={handleQuickTimeEdit}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </div>
+            </PresenceSurface>
+          </div>
+        </div>
       </div>
 
       <TimelineSettingsDrawer

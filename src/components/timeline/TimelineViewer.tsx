@@ -87,6 +87,20 @@ const TimelineViewer = ({ isShared = false }) => {
     navigate(`/plan/create-from-timeline/${timeline.id}`);
   };
 
+  const handleStartFromTimeline = () => {
+    if (!timeline?.id) {
+      return;
+    }
+
+    const nextPath = `/timeline/create/editor?sourceTimelineId=${encodeURIComponent(timeline.id)}`;
+    if (!user?.uid) {
+      navigate(`/?next=${encodeURIComponent(nextPath)}`);
+      return;
+    }
+
+    navigate(nextPath);
+  };
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -148,6 +162,13 @@ const TimelineViewer = ({ isShared = false }) => {
                   Edit
                 </button>
               )}
+              <button
+                onClick={handleStartFromTimeline}
+                className="px-4 py-2 bg-[var(--select-bg)] text-[var(--color-primary)] rounded-lg font-semibold hover:bg-[var(--color-primary)] hover:text-white transition-colors flex items-center gap-2"
+              >
+                <Edit2 size={18} />
+                {isOwner() && !isShared ? 'Duplicate Into Editor' : 'Start From This'}
+              </button>
               <button
                 onClick={handleCopyShareLink}
                 className="px-4 py-2 bg-[var(--select-bg)] text-[var(--color-primary)] rounded-lg font-semibold hover:bg-[var(--color-primary)] hover:text-white transition-colors flex items-center gap-2"

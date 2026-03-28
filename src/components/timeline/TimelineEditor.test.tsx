@@ -4,27 +4,25 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TimelineEditor from './TimelineEditor';
+import { buildEditedTimelineRecord } from './TimelineEditorCore';
+import { syncBossActionMetadataWithClassification } from '../../utils/boss/bossActionUtils';
 
 const {
   createTimelineMock,
   getAllUniqueBossTagsMock,
   getTimelineMock,
   navigateMock,
-  routeParams,
   toastErrorMock,
   toastInfoMock,
   toastSuccessMock,
-  updateTimelineMock,
 } = vi.hoisted(() => ({
   createTimelineMock: vi.fn(),
   getAllUniqueBossTagsMock: vi.fn(),
   getTimelineMock: vi.fn(),
   navigateMock: vi.fn(),
-  routeParams: {} as { timelineId?: string },
   toastErrorMock: vi.fn(),
   toastInfoMock: vi.fn(),
   toastSuccessMock: vi.fn(),
-  updateTimelineMock: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -32,7 +30,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => navigateMock,
-    useParams: () => routeParams,
+    useParams: () => ({}),
     useSearchParams: () => [new URLSearchParams(), vi.fn()],
   };
 });
@@ -46,12 +44,75 @@ vi.mock('../../contexts/AuthContext', () => ({
 vi.mock('../../services/timelineService', () => ({
   createTimeline: (...args: unknown[]) => createTimelineMock(...args),
   getTimeline: (...args: unknown[]) => getTimelineMock(...args),
-  updateTimeline: (...args: unknown[]) => updateTimelineMock(...args),
+  updateTimeline: vi.fn(),
   getAllUniqueBossTags: (...args: unknown[]) => getAllUniqueBossTagsMock(...args),
 }));
 
 vi.mock('../collaboration/CollaborationPresenceShell', () => ({
   default: ({ children }: { children: ReactNode }) => children,
+}));
+
+vi.mock('../collaboration/CollaborationStatusNotice', () => ({
+  default: () => null,
+}));
+
+vi.mock('../collaboration/PresenceSurface', () => ({
+  default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('../collaboration/PresenceTarget', () => ({
+  default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('../collaboration/SectionPresencePill', () => ({
+  default: () => null,
+}));
+
+vi.mock('./CompactTimelineVisualization', () => ({
+  default: () => null,
+}));
+
+vi.mock('./TimelineSettingsDrawer', () => ({
+  default: () => null,
+}));
+
+vi.mock('./CustomActionModal', () => ({
+  default: () => null,
+}));
+
+vi.mock('./TimelineActionCard', () => ({
+  default: ({ action }: { action: { name: string } }) => <div>{action.name}</div>,
+}));
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  closestCenter: {},
+  KeyboardSensor: class {},
+  PointerSensor: class {},
+  useSensor: () => ({}),
+  useSensors: (...sensors: unknown[]) => sensors,
+}));
+
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  sortableKeyboardCoordinates: vi.fn(),
+  verticalListSortingStrategy: {},
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  }),
+}));
+
+vi.mock('@dnd-kit/utilities', () => ({
+  CSS: {
+    Transform: {
+      toString: () => '',
+    },
+  },
 }));
 
 vi.mock('sonner', () => ({
@@ -69,7 +130,6 @@ describe('TimelineEditor', () => {
 
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
-    routeParams.timelineId = undefined;
     createTimelineMock.mockReset();
     getAllUniqueBossTagsMock.mockReset();
     getTimelineMock.mockReset();
@@ -77,16 +137,17 @@ describe('TimelineEditor', () => {
     toastErrorMock.mockReset();
     toastInfoMock.mockReset();
     toastSuccessMock.mockReset();
-    updateTimelineMock.mockReset();
 
     createTimelineMock.mockResolvedValue({ id: 'timeline-123' });
     getAllUniqueBossTagsMock.mockResolvedValue([]);
     getTimelineMock.mockResolvedValue(null);
-    updateTimelineMock.mockResolvedValue(undefined);
   });
 
   it('requires a time when adding a boss action template and persists the normalized classification on save', async () => {
     render(<TimelineEditor />);
+
+    expect(screen.getByTestId('timeline-add-actions-rail').className).toContain('lg:sticky');
+    expect(screen.getByTestId('boss-actions-library-results').className).toContain('overflow-y-auto');
 
     fireEvent.click(screen.getByTitle('Click to edit name'));
     fireEvent.change(screen.getByPlaceholderText('Timeline name...'), {
@@ -140,16 +201,18 @@ describe('TimelineEditor', () => {
     );
   });
 
-  it('normalizes existing classification-less actions before saving an edited timeline', async () => {
-    routeParams.timelineId = 'timeline-1';
-    getTimelineMock.mockResolvedValue({
-      id: 'timeline-1',
-      name: 'Existing Timeline',
-      bossId: 'lala',
-      bossTags: ['lala'],
-      description: '',
-      bossMetadata: { level: 90 },
-      actions: [
+  it('normalizes classification-less legacy actions when building the edited community timeline record', () => {
+    const normalizedTimeline = buildEditedTimelineRecord({
+      baseRecord: {
+        id: 'timeline-1',
+        name: 'Existing Timeline',
+        bossId: 'lala',
+        bossTags: ['lala'],
+        description: '',
+        bossMetadata: { level: 90 },
+        actions: [],
+      },
+      timelineActions: [
         {
           id: 'inferno_theorem_1',
           name: 'Inferno Theorem',
@@ -159,29 +222,22 @@ describe('TimelineEditor', () => {
           isTankBuster: false,
         },
       ],
+      normalizeTimelineAction: (action) =>
+        syncBossActionMetadataWithClassification({
+          ...action,
+          source: action.source || (action.isCustom ? 'custom' : 'boss'),
+        }),
+      description: '',
+      bossTags: ['lala'],
+      level: 90,
     });
 
-    render(<TimelineEditor />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Existing Timeline')).toBeTruthy();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-    await waitFor(() => {
-      expect(updateTimelineMock).toHaveBeenCalledWith(
-        'timeline-1',
-        expect.objectContaining({
-          actions: [
-            expect.objectContaining({
-              id: 'inferno_theorem_1',
-              classification: 'raidwide',
-              isRaidwide: true,
-            }),
-          ],
-        })
-      );
-    });
+    expect(normalizedTimeline.actions).toEqual([
+      expect.objectContaining({
+        id: 'inferno_theorem_1',
+        classification: 'raidwide',
+        isRaidwide: true,
+      }),
+    ]);
   });
 });

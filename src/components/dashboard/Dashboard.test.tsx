@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Dashboard from './Dashboard';
@@ -158,5 +158,21 @@ describe('Dashboard', () => {
     await screen.findByText('Plans Unavailable');
     expect(screen.getAllByText(STALE_DATABASE_RULES_MESSAGE).length).toBeGreaterThan(0);
     expect(screen.queryByText('No Plans Yet')).toBeNull();
+  });
+
+  it('routes dashboard community timeline actions into the timeline hub', async () => {
+    getCategorizedUserPlansMock.mockResolvedValue({
+      ownedPlans: [{ id: 'owned-1', name: 'Owned Plan' }],
+      sharedPlans: [],
+      totalPlans: 1,
+    });
+
+    render(<Dashboard />);
+
+    await screen.findByText('Community Timelines');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Timeline Hub' }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/timeline/create');
   });
 });
