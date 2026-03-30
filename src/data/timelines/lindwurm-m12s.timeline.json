@@ -1,0 +1,744 @@
+{
+  "name": "Lindwurm (M12S) Part 1 - Official Adaptive Timeline",
+  "description": "Filtered mitigation-focused route for Lindwurm (M12S) Part 1, curated from 30 aligned FF Logs clears plus guide cross-checking. The default route keeps only repeatable player-hit windows; dodgeable setup hits, one-off failure damage, and branch-inconsistent follow-ups such as Serpentine Scourge, Raptor Knuckles, Burst, and Shockwave are intentionally omitted.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "lindwurm-m12s",
+  "bossTags": [
+    "lindwurm-m12s",
+    "M12S",
+    "lindwurm"
+  ],
+  "bossMetadata": {
+    "level": 100,
+    "name": "Lindwurm (M12S) Part 1",
+    "icon": "🐉",
+    "description": "The door-boss half of AAC Heavyweight M4 (Savage), focused on Lindwurm's Grotesquerie acts and Slaughtershed finale.",
+    "baseHealth": {
+      "party": 186000,
+      "tank": 295000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "icy-veins",
+      "url": "https://www.icy-veins.com/ffxiv/aac-heavyweight-m4-door-boss-savage-raid-guide",
+      "title": "AAC Heavyweight M4 Door Boss (Savage) Raid Guide for FFXIV",
+      "lastVerifiedAt": "2026-03-28"
+    },
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r12s.txt",
+      "title": "cactbot M12S door-boss timeline",
+      "lastVerifiedAt": "2026-03-28"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r12s.txt",
+      "title": "cactbot M12S door-boss timeline",
+      "lastVerifiedAt": "2026-03-28",
+      "notes": "Used to verify cast order, act boundaries, and the late-fight Slaughtershed cadence."
+    },
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-28",
+      "notes": "Damage values are derived from 30 aligned Lindwurm Part 1 clears under /Users/eugene/Documents/Github/XIVTimelineGenerator/output/M12S/aligned, filtered down to repeatable player-hit windows."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan Lindwurm Part 1 curation",
+      "lastVerifiedAt": "2026-03-28",
+      "notes": "Small-party and raidwide values bias toward the non-tank damage floor when the mechanic consistently hits both tanks and non-tanks for different amounts, so planner-side party checks stay conservative for the squishier half of the roster."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "legacy-default-branch-lindwurm-m12s"
+  },
+  "phases": [
+    {
+      "id": "phase_act_1",
+      "name": "Act 1",
+      "anchorActionId": "the_fixer_1",
+      "order": 0,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-m12s"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_act_2",
+      "name": "Act 2",
+      "anchorActionId": "roiling_mass_1",
+      "order": 1,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-m12s"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_act_3",
+      "name": "Act 3",
+      "anchorActionId": "metamitosis_1",
+      "order": 2,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-m12s"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_curtain_call",
+      "name": "Curtain Call",
+      "anchorActionId": "the_fixer_3",
+      "order": 3,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-m12s"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_slaughtershed_enrage",
+      "name": "Slaughtershed Finale",
+      "anchorActionId": "mortal_slayer_5",
+      "order": 4,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-m12s"
+      ],
+      "source": "cactbot",
+      "skipWindowMode": "hide_pre_anchor"
+    }
+  ],
+  "actions": [
+    {
+      "id": "the_fixer_1",
+      "name": "The Fixer",
+      "time": 17.135,
+      "description": "Opening magical raidwide. Icy Veins calls for at least 50% party mitigation here, and the aligned clear medians cluster around the upper-300k range on non-tanks.",
+      "unmitigatedDamage": 384748,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🧬",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "The Fixer"
+      ],
+      "phaseId": "phase_act_1",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "mortal_slayer_1",
+      "name": "Mortal Slayer",
+      "time": 41.858,
+      "description": "First opener orb resolve. Green orbs are the baseline planner damage here; purple tank orbs land much harder and are called out in the guide as the actual tank checks.",
+      "unmitigatedDamage": 189370,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "mortal_slayer_2",
+      "name": "Mortal Slayer",
+      "time": 44.888,
+      "description": "Second opener orb resolve. Non-tank orb hits stay just under 190k in the aligned clears.",
+      "unmitigatedDamage": 189183,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "mortal_slayer_3",
+      "name": "Mortal Slayer",
+      "time": 47.879,
+      "description": "Third opener orb resolve. Treat every wave as potential tank pressure even though the displayed value tracks the repeatable non-tank hit.",
+      "unmitigatedDamage": 191176,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "mortal_slayer_4",
+      "name": "Mortal Slayer",
+      "time": 50.868,
+      "description": "Final opener orb resolve before Grotesquerie: Act 1.",
+      "unmitigatedDamage": 184490,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "fourth_wall_fusion_1",
+      "name": "Fourth-Wall Fusion",
+      "time": 89.403,
+      "description": "Act 1 healer-marked stack. Non-tank stack members consistently take just under 300k unmitigated.",
+      "unmitigatedDamage": 294020,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Fourth-Wall Fusion"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "dramatic_lysis_1",
+      "name": "Dramatic Lysis",
+      "time": 89.406,
+      "description": "Act 1 spread resolve on the marked role. This is the repeatable spread-target damage floor from the filtered clears.",
+      "unmitigatedDamage": 290136,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💥",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Dramatic Lysis"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "visceral_burst_1",
+      "name": "Visceral Burst",
+      "time": 98.171,
+      "description": "Dual magical tank buster on both tanks at the end of the first Act 1 resolution sequence.",
+      "unmitigatedDamage": 447045,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "targetTank": "both",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Visceral Burst"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "fourth_wall_fusion_2",
+      "name": "Fourth-Wall Fusion",
+      "time": 98.61,
+      "description": "Follow-up healer stack after the expanding flesh movement in Act 1.",
+      "unmitigatedDamage": 177707,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Fourth-Wall Fusion"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "the_fixer_2",
+      "name": "The Fixer",
+      "time": 109.398,
+      "description": "Act 1 exit raidwide before the fight shifts into the Act 2 tether and tower sequence.",
+      "unmitigatedDamage": 378156,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🧬",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "The Fixer"
+      ],
+      "phaseId": "phase_act_1"
+    },
+    {
+      "id": "roiling_mass_1",
+      "name": "Roiling Mass",
+      "time": 153.9,
+      "description": "First Blood Vessel tower soak in Act 2. Non-tank soaks reliably cluster around 35k unmitigated.",
+      "unmitigatedDamage": 34818,
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Roiling Mass"
+      ],
+      "phaseId": "phase_act_2",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "roiling_mass_2",
+      "name": "Roiling Mass",
+      "time": 158.858,
+      "description": "Second Blood Vessel tower soak in Act 2.",
+      "unmitigatedDamage": 34866,
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Roiling Mass"
+      ],
+      "phaseId": "phase_act_2",
+      "skipEligible": true
+    },
+    {
+      "id": "roiling_mass_3",
+      "name": "Roiling Mass",
+      "time": 163.872,
+      "description": "Third Blood Vessel tower soak in Act 2.",
+      "unmitigatedDamage": 35576,
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Roiling Mass"
+      ],
+      "phaseId": "phase_act_2",
+      "skipEligible": true
+    },
+    {
+      "id": "roiling_mass_4",
+      "name": "Roiling Mass",
+      "time": 168.843,
+      "description": "Final Blood Vessel tower soak in Act 2.",
+      "unmitigatedDamage": 35938,
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Roiling Mass"
+      ],
+      "phaseId": "phase_act_2",
+      "skipEligible": true
+    },
+    {
+      "id": "splattershed_1",
+      "name": "Splattershed",
+      "time": 189.148,
+      "description": "Act 2 raidwide after the tether and tower pattern resolves.",
+      "unmitigatedDamage": 187275,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌊",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Splattershed"
+      ],
+      "phaseId": "phase_act_2",
+      "skipEligible": true
+    },
+    {
+      "id": "metamitosis_1",
+      "name": "Metamitosis",
+      "time": 219.929,
+      "description": "Act 3 full-party hit as the arena pattern resolves and players move into the correct tower/positioning lanes.",
+      "unmitigatedDamage": 18054,
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "🧫",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Metamitosis"
+      ],
+      "phaseId": "phase_act_3",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "dramatic_lysis_2",
+      "name": "Dramatic Lysis",
+      "time": 220.019,
+      "description": "Immediate eight-player follow-up after Metamitosis in Act 3.",
+      "unmitigatedDamage": 35754,
+      "damageType": "magical",
+      "importance": "low",
+      "icon": "💥",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Dramatic Lysis"
+      ],
+      "phaseId": "phase_act_3",
+      "skipEligible": true
+    },
+    {
+      "id": "split_scourge_1",
+      "name": "Split Scourge",
+      "time": 229.664,
+      "description": "Dual magical tank buster from the east and west dragon heads at the start of the Act 3 scourge sequence.",
+      "unmitigatedDamage": 462954,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "targetTank": "both",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Split Scourge"
+      ],
+      "phaseId": "phase_act_3",
+      "skipEligible": true
+    },
+    {
+      "id": "venomous_scourge_1",
+      "name": "Venomous Scourge",
+      "time": 232.548,
+      "description": "Follow-up six-player magical hits after Split Scourge. The filtered route keeps the consistent player damage but not the dodgeable setup casts.",
+      "unmitigatedDamage": 175202,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "☣️",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Venomous Scourge"
+      ],
+      "phaseId": "phase_act_3",
+      "skipEligible": true
+    },
+    {
+      "id": "the_fixer_3",
+      "name": "The Fixer",
+      "time": 242.577,
+      "description": "Heavy raidwide that marks the transition into Curtain Call.",
+      "unmitigatedDamage": 386868,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🧬",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "The Fixer"
+      ],
+      "phaseId": "phase_curtain_call",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "ravenous_reach_1",
+      "name": "Ravenous Reach",
+      "time": 268.509,
+      "description": "Curtain Call head cleave on the role that intentionally takes the conal hit.",
+      "unmitigatedDamage": 223677,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🦴",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Ravenous Reach"
+      ],
+      "phaseId": "phase_curtain_call",
+      "skipEligible": true
+    },
+    {
+      "id": "cell_shedding_1",
+      "name": "Cell Shedding",
+      "time": 269.003,
+      "description": "Curtain Call Rotting Flesh cleanse explosions. Four consistent player hits across the aligned clears.",
+      "unmitigatedDamage": 84959,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🧫",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Cell Shedding"
+      ],
+      "phaseId": "phase_curtain_call",
+      "skipEligible": true
+    },
+    {
+      "id": "dramatic_lysis_3",
+      "name": "Dramatic Lysis",
+      "time": 269.249,
+      "description": "Curtain Call spread resolve on the role opposite the Cell Shedding detonations.",
+      "unmitigatedDamage": 298874,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💥",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Dramatic Lysis"
+      ],
+      "phaseId": "phase_curtain_call",
+      "skipEligible": true
+    },
+    {
+      "id": "splattershed_2",
+      "name": "Splattershed",
+      "time": 290.665,
+      "description": "Raidwide at the end of Curtain Call before the finale loops back into Mortal Slayer.",
+      "unmitigatedDamage": 185438,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌊",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Splattershed"
+      ],
+      "phaseId": "phase_curtain_call",
+      "skipEligible": true
+    },
+    {
+      "id": "mortal_slayer_5",
+      "name": "Mortal Slayer",
+      "time": 316.907,
+      "description": "First finale orb resolve after Curtain Call. As in the opener, the displayed value tracks the repeatable non-tank hit while purple tank orbs land much harder.",
+      "unmitigatedDamage": 190189,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "mortal_slayer_6",
+      "name": "Mortal Slayer",
+      "time": 319.934,
+      "description": "Second finale orb resolve.",
+      "unmitigatedDamage": 190570,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "mortal_slayer_7",
+      "name": "Mortal Slayer",
+      "time": 322.915,
+      "description": "Third finale orb resolve.",
+      "unmitigatedDamage": 190062,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "mortal_slayer_8",
+      "name": "Mortal Slayer",
+      "time": 325.935,
+      "description": "Final finale orb resolve before the Slaughtershed loop begins.",
+      "unmitigatedDamage": 187400,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mortal Slayer"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "slaughtershed_1",
+      "name": "Slaughtershed",
+      "time": 343.276,
+      "description": "First Slaughtershed resolve. Tanks take meaningfully less than the rest of the party here, so the stored value follows the non-tank planning floor.",
+      "unmitigatedDamage": 256162,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🩸",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Slaughtershed"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "dramatic_lysis_4",
+      "name": "Dramatic Lysis",
+      "time": 352.261,
+      "description": "First post-Slaughtershed spread resolve. Branch-only knockback and half-room follow-ups are deliberately omitted from the default route because they do not land consistently across the filtered clears.",
+      "unmitigatedDamage": 172790,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💥",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Dramatic Lysis"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "fourth_wall_fusion_3",
+      "name": "Fourth-Wall Fusion",
+      "time": 352.267,
+      "description": "First post-Slaughtershed stack resolve.",
+      "unmitigatedDamage": 177085,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Fourth-Wall Fusion"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "slaughtershed_2",
+      "name": "Slaughtershed",
+      "time": 372.196,
+      "description": "Second Slaughtershed resolve.",
+      "unmitigatedDamage": 257352,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🩸",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Slaughtershed"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "dramatic_lysis_5",
+      "name": "Dramatic Lysis",
+      "time": 381.18,
+      "description": "Second post-Slaughtershed spread resolve.",
+      "unmitigatedDamage": 175416,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💥",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Dramatic Lysis"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "fourth_wall_fusion_4",
+      "name": "Fourth-Wall Fusion",
+      "time": 381.187,
+      "description": "Second post-Slaughtershed stack resolve.",
+      "unmitigatedDamage": 174551,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Fourth-Wall Fusion"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "slaughtershed_3",
+      "name": "Slaughtershed",
+      "time": 401.164,
+      "description": "Third Slaughtershed resolve in the default filtered route.",
+      "unmitigatedDamage": 255827,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🩸",
+      "isRaidwide": true,
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Slaughtershed"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "dramatic_lysis_6",
+      "name": "Dramatic Lysis",
+      "time": 410.156,
+      "description": "Third post-Slaughtershed spread resolve. Fewer logs reach this point cleanly, but the timing and damage window are stable in the clears that do.",
+      "unmitigatedDamage": 175249,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "💥",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Dramatic Lysis"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    },
+    {
+      "id": "fourth_wall_fusion_5",
+      "name": "Fourth-Wall Fusion",
+      "time": 410.159,
+      "description": "Third post-Slaughtershed stack resolve.",
+      "unmitigatedDamage": 177004,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Fourth-Wall Fusion"
+      ],
+      "phaseId": "phase_slaughtershed_enrage",
+      "skipEligible": true
+    }
+  ]
+}

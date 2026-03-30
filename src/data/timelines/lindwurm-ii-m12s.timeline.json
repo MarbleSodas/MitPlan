@@ -1,0 +1,732 @@
+{
+  "name": "Lindwurm II (M12S) Part 2 - Official Adaptive Timeline",
+  "description": "Filtered mitigation-focused route for Lindwurm II (M12S) Part 2, curated from 30 aligned FF Logs clears plus Icy Veins phase cross-checking. The default route keeps only repeatable player-hit windows and omits setup-only, failure-only, or low-consistency damage such as Snaking Kick, Dramatic Lysis, Power Gusher, and the post-second-Hell hard enrage.",
+  "schemaVersion": 2,
+  "format": "adaptive_damage",
+  "bossId": "lindwurm-ii-m12s",
+  "bossTags": [
+    "lindwurm-ii-m12s",
+    "M12S",
+    "lindwurm-ii",
+    "lindwurm",
+    "part-2"
+  ],
+  "bossMetadata": {
+    "level": 100,
+    "name": "Lindwurm II (M12S) Part 2",
+    "icon": "🐉",
+    "description": "The final-boss half of AAC Heavyweight M4 (Savage), covering Arcadia Aflame through the Arcadian Hell finale.",
+    "baseHealth": {
+      "party": 186000,
+      "tank": 295000
+    }
+  },
+  "guideSources": [
+    {
+      "site": "icy-veins",
+      "url": "https://www.icy-veins.com/ffxiv/aac-heavyweight-m4-final-boss-savage-raid-guide",
+      "title": "AAC Heavyweight M4 Final Boss Savage Raid Guide - Final Fantasy XIV - Icy Veins",
+      "lastVerifiedAt": "2026-03-29"
+    },
+    {
+      "site": "cactbot",
+      "url": "https://raw.githubusercontent.com/OverlayPlugin/cactbot/main/ui/raidboss/data/07-dt/raid/r12s.txt",
+      "title": "cactbot M12S final-boss timeline stub",
+      "lastVerifiedAt": "2026-03-29"
+    }
+  ],
+  "analysisSources": [
+    {
+      "kind": "fflogs",
+      "url": "https://ja.fflogs.com/v2-api-docs/ff/report.doc.html",
+      "title": "FF Logs report API docs",
+      "lastVerifiedAt": "2026-03-29",
+      "notes": "Damage values are derived from 30 aligned Lindwurm Part 2 clears under /Users/eugene/Documents/Github/XIVTimelineGenerator/output/M12S-II/aligned, filtered down to repeatable player-hit windows."
+    },
+    {
+      "kind": "manual",
+      "title": "MitPlan Lindwurm II curation",
+      "lastVerifiedAt": "2026-03-29",
+      "notes": "Where the guide's mechanic labels do not map 1:1 to combat-log ability names, phase placement is inferred from the aligned timestamps relative to the Icy Veins phase order. Late Arcadian Hell totals use the guide's 260k and 320k estimates because the raw aligned clone splashes fragment into many small sub-hits."
+    }
+  ],
+  "resolution": {
+    "defaultBranchId": "legacy-default-branch-lindwurm-ii-m12s"
+  },
+  "phases": [
+    {
+      "id": "phase_replication_1",
+      "name": "Replication 1",
+      "anchorActionId": "arcadia_aflame_1",
+      "order": 0,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-ii-m12s"
+      ],
+      "source": "icy-veins",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_replication_2",
+      "name": "Replication 2",
+      "anchorActionId": "firefall_splash_1",
+      "order": 1,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-ii-m12s"
+      ],
+      "source": "icy-veins",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_mutating_cells",
+      "name": "Mutating Cells",
+      "anchorActionId": "bloody_burst_1",
+      "order": 2,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-ii-m12s"
+      ],
+      "source": "icy-veins",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_idyllic_dream",
+      "name": "Idyllic Dream",
+      "anchorActionId": "idyllic_dream_1",
+      "order": 3,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-ii-m12s"
+      ],
+      "source": "icy-veins",
+      "skipWindowMode": "hide_pre_anchor"
+    },
+    {
+      "id": "phase_arcadian_hell_finale",
+      "name": "Arcadian Hell Finale",
+      "anchorActionId": "double_sobat_3",
+      "order": 4,
+      "branchIds": [
+        "legacy-default-branch-lindwurm-ii-m12s"
+      ],
+      "source": "icy-veins",
+      "skipWindowMode": "hide_pre_anchor"
+    }
+  ],
+  "actions": [
+    {
+      "id": "arcadia_aflame_1",
+      "name": "Arcadia Aflame",
+      "time": 17.734,
+      "description": "Opening magical raidwide. Icy Veins pegs this around 350k unmitigated, which matches the aligned non-tank medians.",
+      "unmitigatedDamage": 344181,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🔥",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Arcadia Aflame"
+      ],
+      "phaseId": "phase_replication_1",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "top_tier_slam_1",
+      "name": "Top-Tier Slam",
+      "time": 40.693,
+      "description": "First shared fire stack pair during Replication 1. The aligned per-target medians land in the high-180k range.",
+      "unmitigatedDamage": 187026,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Top-Tier Slam"
+      ],
+      "phaseId": "phase_replication_1"
+    },
+    {
+      "id": "mighty_magic_1",
+      "name": "Mighty Magic",
+      "time": 41.614,
+      "description": "First dark tether resolve during Replication 1. Keep mitigation on the clipped bait group.",
+      "unmitigatedDamage": 186329,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌑",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mighty Magic"
+      ],
+      "phaseId": "phase_replication_1"
+    },
+    {
+      "id": "top_tier_slam_2",
+      "name": "Top-Tier Slam",
+      "time": 62.178,
+      "description": "Second shared fire stack pair in the Replication 1 cleanup.",
+      "unmitigatedDamage": 184772,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Top-Tier Slam"
+      ],
+      "phaseId": "phase_replication_1"
+    },
+    {
+      "id": "mighty_magic_2",
+      "name": "Mighty Magic",
+      "time": 63.066,
+      "description": "Second dark tether resolve in the Replication 1 cleanup.",
+      "unmitigatedDamage": 185987,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌑",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mighty Magic"
+      ],
+      "phaseId": "phase_replication_1"
+    },
+    {
+      "id": "double_sobat_1",
+      "name": "Double Sobat",
+      "time": 71.649,
+      "description": "First physical tank buster sequence. The value tracks the largest repeatable target hit from the opener buster package.",
+      "unmitigatedDamage": 1462790,
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "classification": "tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Double Sobat"
+      ],
+      "phaseId": "phase_replication_1"
+    },
+    {
+      "id": "esoteric_finisher_1",
+      "name": "Esoteric Finisher",
+      "time": 78.151,
+      "description": "Dual magical tank buster immediately after the opening Sobat sequence.",
+      "unmitigatedDamage": 490566,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "targetTank": "both",
+      "classification": "dual_tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Esoteric Finisher"
+      ],
+      "phaseId": "phase_replication_1"
+    },
+    {
+      "id": "firefall_splash_1",
+      "name": "Firefall Splash",
+      "time": 129.072,
+      "description": "Boss-tether jump in Replication 2. This is the stable single-target splash the north bait player takes.",
+      "unmitigatedDamage": 134609,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🎯",
+      "isTankBuster": true,
+      "classification": "tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Firefall Splash"
+      ],
+      "phaseId": "phase_replication_2",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "scalding_waves_1",
+      "name": "Scalding Waves",
+      "time": 129.561,
+      "description": "Opening cone-clone resolve during Replication 2.",
+      "unmitigatedDamage": 133466,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌊",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Scalding Waves"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "mana_burst_1",
+      "name": "Mana Burst",
+      "time": 131.03,
+      "description": "Opening defamation resolve during Replication 2.",
+      "unmitigatedDamage": 135010,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mana Burst"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "heavy_slam_1",
+      "name": "Heavy Slam",
+      "time": 136.716,
+      "description": "First unmarked stack window after the Replication 2 opener.",
+      "unmitigatedDamage": 140680,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "timeless_spite_1",
+      "name": "Timeless Spite",
+      "time": 161.812,
+      "description": "Consistent four-player magical hit in the Reenactment cleanup. Its phase placement is inferred from the aligned timestamps against the guide sequence.",
+      "unmitigatedDamage": 173388,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "💠",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Timeless Spite"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "heavy_slam_2",
+      "name": "Heavy Slam",
+      "time": 165.551,
+      "description": "First east-west clone stack window during the Replication 2 cleanup.",
+      "unmitigatedDamage": 167780,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "scalding_waves_2",
+      "name": "Scalding Waves",
+      "time": 169.792,
+      "description": "Second cone-clone resolve before the phase turns over.",
+      "unmitigatedDamage": 181165,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌊",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Scalding Waves"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "heavy_slam_3",
+      "name": "Heavy Slam",
+      "time": 173.563,
+      "description": "Final stable stack window before Mutating Cells begins.",
+      "unmitigatedDamage": 166622,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_replication_2"
+    },
+    {
+      "id": "bloody_burst_1",
+      "name": "Bloody Burst",
+      "time": 202.27,
+      "description": "Likely the repeatable Blood Mana share pulse that bridges into Blood Wakening. This naming-to-phase mapping is inferred from the aligned logs plus the guide order.",
+      "unmitigatedDamage": 201808,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🩸",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Bloody Burst"
+      ],
+      "phaseId": "phase_mutating_cells",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "wailing_wave_1",
+      "name": "Wailing Wave",
+      "time": 230.936,
+      "description": "Likely the post-Blood Wakening Near/Far soak resolve in the Mutating Cells sequence.",
+      "unmitigatedDamage": 184395,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌊",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Wailing Wave"
+      ],
+      "phaseId": "phase_mutating_cells"
+    },
+    {
+      "id": "arcadia_aflame_2",
+      "name": "Arcadia Aflame",
+      "time": 238.871,
+      "description": "Heavy raidwide at the end of Mutating Cells before the second Sobat package.",
+      "unmitigatedDamage": 342031,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🔥",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Arcadia Aflame"
+      ],
+      "phaseId": "phase_mutating_cells"
+    },
+    {
+      "id": "double_sobat_2",
+      "name": "Double Sobat",
+      "time": 246.978,
+      "description": "Second physical tank buster sequence after Mutating Cells. The value uses the generated median because many aligned reports log this window with null placeholder hits.",
+      "unmitigatedDamage": 1255953,
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "classification": "tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Double Sobat"
+      ],
+      "phaseId": "phase_mutating_cells"
+    },
+    {
+      "id": "esoteric_finisher_2",
+      "name": "Esoteric Finisher",
+      "time": 254.469,
+      "description": "Second dual magical tank buster after the Mutating Cells exit Sobat.",
+      "unmitigatedDamage": 486794,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "targetTank": "both",
+      "classification": "dual_tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Esoteric Finisher"
+      ],
+      "phaseId": "phase_mutating_cells"
+    },
+    {
+      "id": "idyllic_dream_1",
+      "name": "Idyllic Dream",
+      "time": 271.553,
+      "description": "Opening raidwide of the capstone phase. Icy Veins calls this roughly 300k unmitigated, which aligns with the filtered clear medians.",
+      "unmitigatedDamage": 288646,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "💭",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Idyllic Dream"
+      ],
+      "phaseId": "phase_idyllic_dream",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "lindwurms_meteor_1",
+      "name": "Lindwurm's Meteor",
+      "time": 346.526,
+      "description": "Major raidwide that splits the arena into two platforms.",
+      "unmitigatedDamage": 292686,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "☄️",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Lindwurm's Meteor"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "arcadian_arcanum_1",
+      "name": "Arcadian Arcanum",
+      "time": 358.45,
+      "description": "Role-based spread damage during the stored platform setup.",
+      "unmitigatedDamage": 178025,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "✴️",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Arcadian Arcanum"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "mana_burst_2",
+      "name": "Mana Burst",
+      "time": 372.852,
+      "description": "First stored clone defamation window after the platform swap back.",
+      "unmitigatedDamage": 166687,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mana Burst"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "heavy_slam_4",
+      "name": "Heavy Slam",
+      "time": 376.821,
+      "description": "First stored clone stack window after the initial defamation resolve.",
+      "unmitigatedDamage": 170085,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "mana_burst_3",
+      "name": "Mana Burst",
+      "time": 382.96,
+      "description": "Second stored clone defamation window in Idyllic Dream.",
+      "unmitigatedDamage": 153491,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🌀",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Mana Burst"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "heavy_slam_5",
+      "name": "Heavy Slam",
+      "time": 386.817,
+      "description": "Second stored clone stack window in Idyllic Dream.",
+      "unmitigatedDamage": 167888,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "lindwurms_dark_ii_1",
+      "name": "Lindwurm's Dark II",
+      "time": 400.676,
+      "description": "Dark tower follow-up hit on the assigned players during the stored platform mechanic.",
+      "unmitigatedDamage": 91830,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "🌑",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Lindwurm's Dark II"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "lindwurms_glare_1",
+      "name": "Lindwurm's Glare",
+      "time": 410.827,
+      "description": "Light-portent tower follow-up on the assigned half of the party.",
+      "unmitigatedDamage": 89808,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "✨",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Lindwurm's Glare"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "lindwurms_thunder_ii_1",
+      "name": "Lindwurm's Thunder II",
+      "time": 410.895,
+      "description": "Thunder-portent tower follow-up on the complementary half of the party.",
+      "unmitigatedDamage": 88601,
+      "damageType": "magical",
+      "importance": "medium",
+      "icon": "⚡",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Lindwurm's Thunder II"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "heavy_slam_6",
+      "name": "Heavy Slam",
+      "time": 441.222,
+      "description": "First player-clone stack cleanup after the stored platform section resumes.",
+      "unmitigatedDamage": 131695,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "heavy_slam_7",
+      "name": "Heavy Slam",
+      "time": 462.222,
+      "description": "Second player-clone stack cleanup before the phase-ending raidwide.",
+      "unmitigatedDamage": 131508,
+      "damageType": "magical",
+      "importance": "high",
+      "icon": "🤝",
+      "classification": "small_parties",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Heavy Slam"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "idyllic_dream_2",
+      "name": "Idyllic Dream",
+      "time": 474.016,
+      "description": "Phase-ending raidwide before the final Sobat into Arcadian Hell.",
+      "unmitigatedDamage": 292415,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "💭",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Idyllic Dream"
+      ],
+      "phaseId": "phase_idyllic_dream"
+    },
+    {
+      "id": "double_sobat_3",
+      "name": "Double Sobat",
+      "time": 482.429,
+      "description": "Final physical tank buster package before the Arcadian Hell finale.",
+      "unmitigatedDamage": 1418840,
+      "damageType": "physical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "classification": "tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Double Sobat"
+      ],
+      "phaseId": "phase_arcadian_hell_finale",
+      "isPhaseAnchor": true
+    },
+    {
+      "id": "esoteric_finisher_3",
+      "name": "Esoteric Finisher",
+      "time": 488.935,
+      "description": "Final dual magical tank buster before the raidwide finishers start.",
+      "unmitigatedDamage": 490504,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🛡️",
+      "isTankBuster": true,
+      "isDualTankBuster": true,
+      "targetTank": "both",
+      "classification": "dual_tankbuster",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Esoteric Finisher"
+      ],
+      "phaseId": "phase_arcadian_hell_finale"
+    },
+    {
+      "id": "arcadian_hell_1",
+      "name": "Arcadian Hell",
+      "time": 516.895,
+      "description": "First stable Arcadian Hell pulse in the finale. Icy Veins estimates roughly 260k total once the clone splashes are summed.",
+      "unmitigatedDamage": 260000,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🔥",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Arcadian Hell"
+      ],
+      "phaseId": "phase_arcadian_hell_finale"
+    },
+    {
+      "id": "arcadian_hell_2",
+      "name": "Arcadian Hell",
+      "time": 533.116,
+      "description": "Second stable Arcadian Hell pulse. Icy Veins calls this the heavier follow-up, around 320k total, before the hard enrage overwhelms the raid.",
+      "unmitigatedDamage": 320000,
+      "damageType": "magical",
+      "importance": "critical",
+      "icon": "🔥",
+      "isRaidwide": true,
+      "classification": "raidwide",
+      "sourceKind": "guide_curated",
+      "sourceAbilities": [
+        "Arcadian Hell"
+      ],
+      "phaseId": "phase_arcadian_hell_finale"
+    }
+  ]
+}

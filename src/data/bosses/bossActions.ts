@@ -23,6 +23,8 @@ export const bossActionsMap: Record<string, BossAction[]> = {
   'red-hot-deep-blue-m10s':
     officialAdaptiveActionsMap['red-hot-deep-blue-m10s'] || redHotDeepBlueActions,
   'the-tyrant-m11s': officialAdaptiveActionsMap['the-tyrant-m11s'] || [],
+  'lindwurm-m12s': officialAdaptiveActionsMap['lindwurm-m12s'] || [],
+  'lindwurm-ii-m12s': officialAdaptiveActionsMap['lindwurm-ii-m12s'] || [],
   necron: officialAdaptiveActionsMap.necron || necronActions,
 };
 

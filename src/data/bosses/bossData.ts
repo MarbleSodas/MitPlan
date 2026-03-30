@@ -138,8 +138,16 @@ export const bosses: BossDefinition[] = [
   },
   {
     id: 'lindwurm-m12s',
-    name: 'Lindwurm (M12S)',
-    description: 'The legendary serpent, final boss of AAC Heavyweight Tier (Savage).',
+    name: 'Lindwurm (M12S) Part 1',
+    description: 'The door-boss half of AAC Heavyweight M4 (Savage), focused on Grotesquerie and Slaughtershed.',
+    icon: '🐉',
+    level: 100,
+    baseHealth: baseHealthValues[100]!
+  },
+  {
+    id: 'lindwurm-ii-m12s',
+    name: 'Lindwurm II (M12S) Part 2',
+    description: 'The final-boss half of AAC Heavyweight M4 (Savage), covering Arcadia Aflame through Arcadian Hell.',
     icon: '🐉',
     level: 100,
     baseHealth: baseHealthValues[100]!

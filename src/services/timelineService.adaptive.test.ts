@@ -102,6 +102,30 @@ describe('timelineService adaptive reads', () => {
     expect(timeline.phases?.length).toBeGreaterThan(1);
   });
 
+  it('returns the new local official M12S timeline without querying Firebase', async () => {
+    const timeline = await getTimeline('official-lindwurm-m12s');
+
+    expect(getMock).not.toHaveBeenCalled();
+    expect(timeline.id).toBe('official-lindwurm-m12s');
+    expect(timeline.bossId).toBe('lindwurm-m12s');
+    expect(timeline.official).toBe(true);
+    expect(timeline.format).toBe('adaptive_damage');
+    expect(timeline.actions.some((action) => action.id === 'the_fixer_1')).toBe(true);
+    expect(timeline.phases?.length).toBeGreaterThan(3);
+  });
+
+  it('returns the new local official M12S Part 2 timeline without querying Firebase', async () => {
+    const timeline = await getTimeline('official-lindwurm-ii-m12s');
+
+    expect(getMock).not.toHaveBeenCalled();
+    expect(timeline.id).toBe('official-lindwurm-ii-m12s');
+    expect(timeline.bossId).toBe('lindwurm-ii-m12s');
+    expect(timeline.official).toBe(true);
+    expect(timeline.format).toBe('adaptive_damage');
+    expect(timeline.actions.some((action) => action.id === 'arcadian_hell_1')).toBe(true);
+    expect(timeline.phases?.length).toBeGreaterThan(4);
+  });
+
   it('replaces remote official timeline documents with the local canonical timeline', async () => {
     getMock.mockResolvedValue(buildSnapshot({
       ...adaptiveTimeline,
@@ -234,6 +258,56 @@ describe('timelineService adaptive reads', () => {
     expect(timelines[0]?.id).toBe('official-vamp-fatale-m9s');
     expect(timelines[0]?.official).toBe(true);
     expect(timelines.some((timeline) => timeline.id === 'community-vamp-timeline')).toBe(true);
+  });
+
+  it('lists the local M12S official timeline for boss-tag selection', async () => {
+    getMock.mockResolvedValue(buildSnapshot({
+      'community-lindwurm-timeline': {
+        name: 'Community Lindwurm Route',
+        bossId: 'lindwurm-m12s',
+        bossTags: ['lindwurm-m12s'],
+        official: false,
+        isPublic: true,
+        actions: [
+          {
+            id: 'community-lindwurm-action',
+            name: 'Community Lindwurm Hit',
+            time: 22,
+          },
+        ],
+      },
+    }));
+
+    const timelines = await getTimelinesByBossTag('lindwurm-m12s');
+
+    expect(timelines[0]?.id).toBe('official-lindwurm-m12s');
+    expect(timelines[0]?.official).toBe(true);
+    expect(timelines.some((timeline) => timeline.id === 'community-lindwurm-timeline')).toBe(true);
+  });
+
+  it('lists the local M12S Part 2 official timeline for boss-tag selection', async () => {
+    getMock.mockResolvedValue(buildSnapshot({
+      'community-lindwurm-ii-timeline': {
+        name: 'Community Lindwurm II Route',
+        bossId: 'lindwurm-ii-m12s',
+        bossTags: ['lindwurm-ii-m12s'],
+        official: false,
+        isPublic: true,
+        actions: [
+          {
+            id: 'community-lindwurm-ii-action',
+            name: 'Community Lindwurm II Hit',
+            time: 32,
+          },
+        ],
+      },
+    }));
+
+    const timelines = await getTimelinesByBossTag('lindwurm-ii-m12s');
+
+    expect(timelines[0]?.id).toBe('official-lindwurm-ii-m12s');
+    expect(timelines[0]?.official).toBe(true);
+    expect(timelines.some((timeline) => timeline.id === 'community-lindwurm-ii-timeline')).toBe(true);
   });
 
   it('returns an empty list when user timeline reads are permission denied', async () => {

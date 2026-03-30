@@ -2,7 +2,9 @@ import bruteAbominatorM7STimeline from './brute-abominator-m7s.timeline.json';
 import dancingGreenM5STimeline from './dancing-green-m5s.timeline.json';
 import howlingBladeM8STimeline from './howling-blade-m8s.timeline.json';
 import ketudukeTimeline from './ketuduke.timeline.json';
+import lindwurmIiM12STimeline from './lindwurm-ii-m12s.timeline.json';
 import lalaTimeline from './lala.timeline.json';
+import lindwurmM12STimeline from './lindwurm-m12s.timeline.json';
 import necronTimeline from './necron.timeline.json';
 import redHotDeepBlueM10STimeline from './red-hot-deep-blue-m10s.timeline.json';
 import staticeTimeline from './statice.timeline.json';
@@ -72,6 +74,18 @@ const officialAdaptiveTimelinesEntries = [
     'the-tyrant-m11s',
     syncTimelineBossActionsWithClassification(
       normalizeTimelineRecord(theTyrantM11STimeline as Timeline)
+    ),
+  ],
+  [
+    'lindwurm-m12s',
+    syncTimelineBossActionsWithClassification(
+      normalizeTimelineRecord(lindwurmM12STimeline as Timeline)
+    ),
+  ],
+  [
+    'lindwurm-ii-m12s',
+    syncTimelineBossActionsWithClassification(
+      normalizeTimelineRecord(lindwurmIiM12STimeline as Timeline)
     ),
   ],
   [

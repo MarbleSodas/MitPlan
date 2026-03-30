@@ -16,6 +16,8 @@ const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
   'red-hot-deep-blue-m10s',
   'the-tyrant-m11s',
+  'lindwurm-m12s',
+  'lindwurm-ii-m12s',
   'dancing-green-m5s',
   'sugar-riot',
   'brute-abominator-m7s',
@@ -29,7 +31,13 @@ const BOSS_TIERS = [
   {
     id: 'm9s-m12s',
     name: 'M9S-M12S (AAC Heavyweight)',
-    bossIds: ['vamp-fatale-m9s', 'red-hot-deep-blue-m10s', 'the-tyrant-m11s', 'lindwurm-m12s'],
+    bossIds: [
+      'vamp-fatale-m9s',
+      'red-hot-deep-blue-m10s',
+      'the-tyrant-m11s',
+      'lindwurm-m12s',
+      'lindwurm-ii-m12s'
+    ],
     defaultExpanded: true
   },
   {

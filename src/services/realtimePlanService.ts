@@ -40,6 +40,8 @@ const getBossName = (bossId) => {
     'sugar-riot': 'Sugar Riot (M6S)',
     'brute-abominator-m7s': 'Brute Abominator (M7S)',
     'howling-blade-m8s': 'Howling Blade (M8S)',
+    'lindwurm-m12s': 'Lindwurm (M12S) Part 1',
+    'lindwurm-ii-m12s': 'Lindwurm II (M12S) Part 2',
     'necron': 'Necron'
   };
   return bossNames[bossId] || 'Unknown Boss';
