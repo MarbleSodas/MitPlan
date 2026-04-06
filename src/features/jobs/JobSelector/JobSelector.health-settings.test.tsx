@@ -1,9 +1,35 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import JobSelector from './JobSelector';
+
+const { batchUpdateRealtimeMock, planState } = vi.hoisted(() => ({
+  batchUpdateRealtimeMock: vi.fn(),
+  planState: {
+    realtimePlan: {
+      timelineLayout: {
+        bossId: 'the-tyrant-m11s',
+        actions: [],
+        phases: [],
+        analysisSources: [],
+        guideSources: [],
+        adaptiveModel: null,
+        resolution: null,
+        format: 'adaptive_damage',
+        schemaVersion: 2,
+        healthConfig: {
+          party: 186000,
+          defaultTank: 295000,
+          mainTank: 310000,
+          offTank: 305000,
+        },
+      },
+      healthSettings: {},
+    },
+  },
+}));
 
 vi.mock('../../../contexts/RealtimeJobContext', () => ({
   useRealtimeJobContext: () => ({
@@ -31,27 +57,8 @@ vi.mock('../../../contexts/TankPositionContext', () => ({
 
 vi.mock('../../../contexts/RealtimePlanContext', () => ({
   useRealtimePlan: () => ({
-    realtimePlan: {
-      timelineLayout: {
-        bossId: 'the-tyrant-m11s',
-        actions: [],
-        phases: [],
-        analysisSources: [],
-        guideSources: [],
-        adaptiveModel: null,
-        resolution: null,
-        format: 'adaptive_damage',
-        schemaVersion: 2,
-        healthConfig: {
-          party: 186000,
-          defaultTank: 295000,
-          mainTank: 310000,
-          offTank: 305000,
-        },
-      },
-      healthSettings: {},
-    },
-    batchUpdateRealtime: vi.fn(),
+    realtimePlan: planState.realtimePlan,
+    batchUpdateRealtime: batchUpdateRealtimeMock,
   }),
 }));
 
@@ -88,6 +95,27 @@ vi.mock('../../../components/collaboration/SelectionBorder', () => ({
 
 describe('JobSelector health settings', () => {
   beforeEach(() => {
+    batchUpdateRealtimeMock.mockReset();
+    planState.realtimePlan = {
+      timelineLayout: {
+        bossId: 'the-tyrant-m11s',
+        actions: [],
+        phases: [],
+        analysisSources: [],
+        guideSources: [],
+        adaptiveModel: null,
+        resolution: null,
+        format: 'adaptive_damage',
+        schemaVersion: 2,
+        healthConfig: {
+          party: 186000,
+          defaultTank: 295000,
+          mainTank: 310000,
+          offTank: 305000,
+        },
+      },
+      healthSettings: {},
+    };
     vi.stubGlobal('localStorage', {
       getItem: vi.fn(() => null),
       setItem: vi.fn(),
@@ -95,10 +123,14 @@ describe('JobSelector health settings', () => {
     });
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
   it('shows MT and OT HP controls even before two tanks are selected', () => {
     render(<JobSelector />);
 
-    const mtInput = screen.getByLabelText('MT HP:') as HTMLInputElement;
+    const mtInput = screen.getAllByLabelText('MT HP:').at(-1) as HTMLInputElement;
     const otInput = screen.getByLabelText('OT HP:') as HTMLInputElement;
 
     expect(screen.getByText('Health Settings')).toBeTruthy();
@@ -106,5 +138,52 @@ describe('JobSelector health settings', () => {
     expect(otInput).toBeTruthy();
     expect(mtInput.value).toBe('310000');
     expect(otInput.value).toBe('305000');
+  });
+
+  it('persists tank HP changes through mirrored timeline layout fields when the plan has a timeline layout', () => {
+    render(<JobSelector />);
+
+    fireEvent.click(screen.getAllByTitle('Reset to default')[0] as HTMLButtonElement);
+
+    expect(batchUpdateRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bossId: 'the-tyrant-m11s',
+        timelineLayout: expect.objectContaining({
+          healthConfig: expect.objectContaining({
+            party: 186000,
+            defaultTank: 295000,
+            mainTank: 295000,
+            offTank: 305000,
+          }),
+        }),
+      })
+    );
+  });
+
+  it('falls back to healthSettings updates when the plan does not yet have a timeline layout', () => {
+    planState.realtimePlan = {
+      timelineLayout: null,
+      healthSettings: {
+        tankMaxHealth: {
+          mainTank: 300000,
+          offTank: 290000,
+        },
+        partyMinHealth: 180000,
+      },
+    };
+
+    render(<JobSelector />);
+
+    fireEvent.click(screen.getAllByTitle('Reset to default')[2] as HTMLButtonElement);
+
+    expect(batchUpdateRealtimeMock).toHaveBeenCalledWith({
+      healthSettings: {
+        tankMaxHealth: {
+          mainTank: 300000,
+          offTank: 290000,
+        },
+        partyMinHealth: 143000,
+      },
+    });
   });
 });

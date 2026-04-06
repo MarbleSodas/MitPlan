@@ -252,6 +252,8 @@ describe('PlanTimelineEditor', () => {
     planState.loading = false;
     planState.realtimePlan.ownerId = 'user-1';
     planState.realtimePlan.userId = 'user-1';
+    planState.realtimePlan.isPublic = false;
+    planState.realtimePlan.accessedBy = {};
   });
 
   afterEach(() => {
@@ -316,10 +318,29 @@ describe('PlanTimelineEditor', () => {
     expect(navigateMock).not.toHaveBeenCalledWith('/timeline/edit/timeline-2');
   });
 
-  it('marks shared plans as read-only and disables publish controls', () => {
+  it('allows signed-in shared collaborators to edit and publish from the plan timeline', () => {
     userState.uid = 'viewer-2';
     planState.realtimePlan.ownerId = 'owner-1';
     planState.realtimePlan.userId = 'owner-1';
+    planState.realtimePlan.accessedBy = {
+      'viewer-2': {
+        firstAccess: 1,
+        lastAccess: 1,
+        accessCount: 1,
+      },
+    };
+
+    render(<PlanTimelineEditor />);
+
+    expect(screen.getByText('editable')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeTruthy();
+  });
+
+  it('keeps the plan timeline read-only when the signed-in user does not have plan access', () => {
+    userState.uid = 'viewer-2';
+    planState.realtimePlan.ownerId = 'owner-1';
+    planState.realtimePlan.userId = 'owner-1';
+    planState.realtimePlan.accessedBy = {};
 
     render(<PlanTimelineEditor />);
 

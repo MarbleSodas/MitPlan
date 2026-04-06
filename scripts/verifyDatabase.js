@@ -109,6 +109,13 @@ async function verifyDatabase() {
       { label: '/plans/.indexOn', path: ['rules', 'plans', '.indexOn'] },
       { label: '/plans/$planId/.read', path: ['rules', 'plans', '$planId', '.read'] },
       { label: '/plans/$planId/.write', path: ['rules', 'plans', '$planId', '.write'] },
+      { label: '/plans/$planId/name/.write', path: ['rules', 'plans', '$planId', 'name', '.write'] },
+      { label: '/plans/$planId/healthSettings/.write', path: ['rules', 'plans', '$planId', 'healthSettings', '.write'] },
+      { label: '/plans/$planId/timelineLayout/.write', path: ['rules', 'plans', '$planId', 'timelineLayout', '.write'] },
+      { label: '/plans/$planId/phaseOverrides/.write', path: ['rules', 'plans', '$planId', 'phaseOverrides', '.write'] },
+      { label: '/plans/$planId/lastAccessedAt/.write', path: ['rules', 'plans', '$planId', 'lastAccessedAt', '.write'] },
+      { label: '/plans/$planId/accessedBy/.write', path: ['rules', 'plans', '$planId', 'accessedBy', '.write'] },
+      { label: '/plans/$planId/accessedBy/$userId/.write', path: ['rules', 'plans', '$planId', 'accessedBy', '$userId', '.write'] },
       { label: '/planCollaboration/.read', path: ['rules', 'planCollaboration', '.read'] },
       { label: '/planCollaboration/.write', path: ['rules', 'planCollaboration', '.write'] },
       { label: '/planCollaboration/$planId/.read', path: ['rules', 'planCollaboration', '$planId', '.read'] },
@@ -125,7 +132,7 @@ async function verifyDatabase() {
       });
       return false;
     }
-    console.log('✅ Live rules include the expected /plans and /planCollaboration subtrees');
+    console.log('✅ Live rules include the expected field-scoped /plans permissions and /planCollaboration subtrees');
 
     console.log('\n📋 Test 3: Checking available plan data...');
     const planKeys = databaseGet('/plans', ['--shallow', '--limit-to-first', '1']);
@@ -217,7 +224,7 @@ async function verifyDatabase() {
     console.log('\n🎉 Database verification complete!');
     console.log('\n📋 Summary:');
     console.log('   ✅ Local rules file includes plans and planCollaboration');
-    console.log('   ✅ Live /plans and /planCollaboration rules match database.rules.json');
+    console.log('   ✅ Live /plans field rules and /planCollaboration rules match database.rules.json');
     console.log('   ✅ Sample plan data is available');
     console.log('   ✅ planCollaboration/activeUsers, presence, and jobAssignments are writable');
     console.log(`\n🔗 Verified instance: ${databaseInstance || 'default'}`);

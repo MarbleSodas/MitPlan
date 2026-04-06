@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Copy, Check, Share2 } from 'lucide-react';
 import * as planService from '../../services/realtimePlanService';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const SharePlanModal = ({ isOpen, onClose, plan }) => {
+  const { user } = useAuth();
   const [isPublic, setIsPublic] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -37,7 +39,7 @@ const SharePlanModal = ({ isOpen, onClose, plan }) => {
     setError('');
     setSuccess('');
     try {
-      await planService.makePlanPublic(plan.id, true);
+      await planService.makePlanPublic(plan.id, true, user?.uid || null);
       setIsPublic(true);
       setSuccess('Plan is now public and can be shared!');
     } catch (err) {

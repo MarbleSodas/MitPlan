@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
 import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 import { bosses } from '../../data/bosses/bossData';
+import { canAdminPlan, canEditPlanContent } from '../../utils/permissions/planPermissions';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,10 +36,9 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
     return tags.map(tag => getBossDisplayName(tag)).join(', ');
   };
 
-  const isOwner = () => {
-    const currentUserId = user?.uid;
-    return !!currentUserId && (plan.ownerId === currentUserId || plan.userId === currentUserId);
-  };
+  const currentUserId = user?.uid || null;
+  const canEditContent = canEditPlanContent(plan, currentUserId);
+  const canAdmin = canAdminPlan(plan, currentUserId);
 
   useEffect(() => {
     setEditedName(plan.name || '');
@@ -73,7 +73,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   }, [isSharedPlan, plan.ownerId, plan.userId, plan.id]);
 
   const handleStartEdit = () => {
-    if (!isOwner()) return;
+    if (!canEditContent) return;
     setIsEditingName(true);
     setEditedName(plan.name || '');
   };
@@ -84,7 +84,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const handleSaveEdit = async () => {
-    if (!isOwner() || !editedName.trim()) return;
+    if (!canEditContent || !editedName.trim()) return;
 
     const trimmedName = editedName.trim();
     setNameUpdateLoading(true);
@@ -145,6 +145,10 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const handleDelete = async () => {
+    if (!canAdmin) {
+      return;
+    }
+
     setLoading(true);
     setShowDeleteConfirm(false);
 
@@ -197,11 +201,15 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const handleShare = async () => {
+    if (!canAdmin) {
+      return;
+    }
+
     setLoading(true);
     try {
       const { makePlanPublic } = await import('../../services/realtimePlanService');
 
-      await makePlanPublic(plan.id, true);
+      await makePlanPublic(plan.id, true, currentUserId);
 
       const baseUrl = window.location.origin;
       const shareLink = `${baseUrl}/plan/shared/${plan.id}`;
@@ -263,7 +271,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
                   <CardTitle className="text-xl font-semibold leading-snug truncate">
                     {plan.name}
                   </CardTitle>
-                  {isOwner() && (
+                  {canEditContent && (
                     <Button
                       size="icon"
                       variant="ghost"
@@ -306,24 +314,28 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
           <Button onClick={() => onEdit(plan.id)} disabled={loading} className="flex-1">
             Edit
           </Button>
-          <Button variant="secondary" onClick={handleShare} disabled={loading} className="flex-1">
-            <Share2 size={16} className="mr-2" />
-            Share
-          </Button>
+          {canAdmin && (
+            <Button variant="secondary" onClick={handleShare} disabled={loading} className="flex-1">
+              <Share2 size={16} className="mr-2" />
+              Share
+            </Button>
+          )}
           <Button variant="secondary" onClick={handleDuplicate} disabled={loading} className="flex-1">
             Duplicate
           </Button>
           <Button variant="secondary" onClick={handleExport} disabled={loading} className="flex-1">
             Export
           </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={loading}
-            className="flex-1"
-          >
-            Delete
-          </Button>
+          {canAdmin && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={loading}
+              className="flex-1"
+            >
+              Delete
+            </Button>
+          )}
         </CardFooter>
       </Card>
 

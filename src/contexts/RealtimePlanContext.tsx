@@ -71,10 +71,17 @@ export const RealtimePlanProvider = ({ children, planId, readOnly = false }) => 
         if (!readOnly && user?.uid) {
           try {
             await planService.ensurePlanStructure(planId);
-            await planService.hydratePlanTimelineLayoutIfMissing(planId, user.uid, sessionId);
           } catch (structureError) {
             if (!structureError.message?.includes('Permission denied')) {
               throw structureError;
+            }
+          }
+
+          try {
+            await planService.hydratePlanTimelineLayoutIfMissing(planId, user.uid, sessionId);
+          } catch (hydrateError) {
+            if (!hydrateError.message?.includes('Permission denied')) {
+              throw hydrateError;
             }
           }
         }

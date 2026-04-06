@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 import { createTimeline } from '../../services/timelineService';
+import { canEditPlanContent } from '../../utils/permissions/planPermissions';
 import TimelineEditorCore from './TimelineEditorCore';
 import { normalizePlanTimelineLayout } from '../../utils/timeline/planTimelineLayoutUtils';
 
@@ -14,11 +15,7 @@ const PlanTimelineEditorBody = () => {
   const { user } = useAuth();
   const { loading, realtimePlan, updateTimelineLayoutRealtime } = useRealtimePlan();
 
-  const canEditPlan = Boolean(
-    user?.uid
-      && realtimePlan
-      && (realtimePlan.ownerId === user.uid || realtimePlan.userId === user.uid)
-  );
+  const canEditPlan = canEditPlanContent(realtimePlan, user?.uid);
 
   const recordKey = useMemo(() => `plan:${planId || 'unknown'}`, [planId]);
 
@@ -98,7 +95,7 @@ const PlanTimelineEditorBody = () => {
       sourceRecord={realtimePlan?.timelineLayout || null}
       title={realtimePlan?.name ? `${realtimePlan.name} Timeline` : 'Plan Timeline'}
       backLabel="Back to Planner"
-      readOnlyMessage="Shared plans can be viewed here, but only the plan owner can save edits or publish a community timeline."
+      readOnlyMessage="This plan timeline is editable for signed-in collaborators who can access the plan."
       onBack={() => navigate(planId ? `/plan/${planId}` : '/dashboard')}
       onSave={handleSave}
       onPublish={canEditPlan ? handlePublish : undefined}

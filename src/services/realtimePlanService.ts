@@ -28,6 +28,7 @@ import {
   getPlanTimelineMirrorFields,
   normalizePlanTimelineLayout,
 } from '../utils/timeline/planTimelineLayoutUtils';
+import { canAdminPlan } from '../utils/permissions/planPermissions';
 
 const PLANS_PATH = 'plans';
 
@@ -292,14 +293,29 @@ export const updatePlan = async (planId, planData) => {
 /**
  * Delete a mitigation plan
  */
-export const deletePlan = async (planId) => {
+export const deletePlan = async (planId, userId = null) => {
   try {
+    if (!userId) {
+      throw new Error('User ID required for plan deletion');
+    }
+
     const planRef = ref(database, `${PLANS_PATH}/${planId}`);
+    const snapshot = await get(planRef);
+
+    if (!snapshot.exists()) {
+      throw new Error('Plan not found');
+    }
+
+    const plan = normalizePlanRecord(planId, snapshot.val());
+    if (!canAdminPlan(plan, userId)) {
+      throw new Error('Permission denied: Only the plan owner can delete this plan');
+    }
+
     await remove(planRef);
     return true;
   } catch (error) {
     console.error('Error deleting plan:', error);
-    throw new Error('Failed to delete plan');
+    throw new Error(error.message || 'Failed to delete plan');
   }
 };
 
@@ -712,8 +728,17 @@ export const updatePlanBoss = async (planId, bossId, userId = null) => {
 /**
  * Make a plan public for sharing
  */
-export const makePlanPublic = async (planId, isPublic = true) => {
+export const makePlanPublic = async (planId, isPublic = true, userId = null) => {
   try {
+    if (!userId) {
+      throw new Error('User ID required to change plan visibility');
+    }
+
+    const plan = await getPlan(planId);
+    if (!canAdminPlan(plan, userId)) {
+      throw new Error('Permission denied: Only the plan owner can change sharing settings');
+    }
+
     const planRef = ref(database, `${PLANS_PATH}/${planId}/isPublic`);
     await set(planRef, isPublic);
 

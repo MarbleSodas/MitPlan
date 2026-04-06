@@ -1418,7 +1418,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 21,
     cooldown: 60,
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/whispering_dawn.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Whispering_Dawn.png',
     type: 'healing',
     healingPotency: 0,
     regenPotency: 80,
