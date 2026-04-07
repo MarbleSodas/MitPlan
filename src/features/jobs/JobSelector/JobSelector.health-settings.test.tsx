@@ -160,6 +160,29 @@ describe('JobSelector health settings', () => {
     );
   });
 
+  it('allows editing the party min HP field before persisting the updated value', () => {
+    render(<JobSelector />);
+
+    const partyInput = screen.getByLabelText('Party Min:') as HTMLInputElement;
+
+    fireEvent.change(partyInput, { target: { value: '190500' } });
+
+    expect(partyInput.value).toBe('190500');
+
+    fireEvent.blur(partyInput);
+
+    expect(batchUpdateRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bossId: 'the-tyrant-m11s',
+        timelineLayout: expect.objectContaining({
+          healthConfig: expect.objectContaining({
+            party: 190500,
+          }),
+        }),
+      })
+    );
+  });
+
   it('falls back to healthSettings updates when the plan does not yet have a timeline layout', () => {
     planState.realtimePlan = {
       timelineLayout: null,

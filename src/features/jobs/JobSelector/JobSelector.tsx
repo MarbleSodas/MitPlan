@@ -387,7 +387,6 @@ function JobSelector({ disabled = false }) {
   const presence = usePresenceOptional();
   const jobAssignment = useUserJobAssignmentOptional();
   const lastClickTimeRef = useRef(new Map());
-  const isFirstRender = useRef(true);
 
   const planTimelineLayout = useMemo(
     () => getPlanTimelineLayout(realtimePlan),
@@ -436,33 +435,15 @@ function JobSelector({ disabled = false }) {
     const nextOffHp = existingOffHp ?? defaultTankHp;
     const nextPartyHp = existingPartyMinHp ?? defaultPartyHp;
 
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      setMtMaxHp(nextMainHp);
-      setOtMaxHp(nextOffHp);
-      setPartyMinHp(nextPartyHp);
-      return;
-    }
-
-    if (mtMaxHp !== nextMainHp) {
-      setMtMaxHp(nextMainHp);
-    }
-    if (otMaxHp !== nextOffHp) {
-      setOtMaxHp(nextOffHp);
-    }
-    if (partyMinHp !== nextPartyHp) {
-      setPartyMinHp(nextPartyHp);
-    }
+    setMtMaxHp((previous) => (previous === nextMainHp ? previous : nextMainHp));
+    setOtMaxHp((previous) => (previous === nextOffHp ? previous : nextOffHp));
+    setPartyMinHp((previous) => (previous === nextPartyHp ? previous : nextPartyHp));
   }, [
-    currentBossLevel,
     defaultPartyHp,
     defaultTankHp,
     existingMainHp,
     existingOffHp,
     existingPartyMinHp,
-    mtMaxHp,
-    otMaxHp,
-    partyMinHp,
   ]);
 
   const persistTankHp = useCallback((key: string, value: number) => {
