@@ -6,17 +6,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
 import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 import { bosses } from '../../data/bosses/bossData';
-import { canAdminPlan, canEditPlanContent } from '../../utils/permissions/planPermissions';
+import { canAdminPlan } from '../../utils/permissions/planPermissions';
+import SharePlanModal from '../collaboration/SharePlanModal';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 
-const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
+const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanChanged }) => {
   const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
   const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [creatorDisplayName, setCreatorDisplayName] = useState('');
   const [fetchingCreator, setFetchingCreator] = useState(false);
@@ -37,8 +38,16 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const currentUserId = user?.uid || null;
-  const canEditContent = canEditPlanContent(plan, currentUserId);
   const canAdmin = canAdminPlan(plan, currentUserId);
+  const canRenamePlan = canAdmin;
+  const canDuplicatePlan = plan.shareMode !== 'view';
+  const canExportPlan = plan.shareMode !== 'view';
+  const primaryActionLabel = plan.shareMode === 'view' ? 'View' : 'Edit';
+  const sharingStatusLabel = canAdmin
+    ? 'Owner'
+    : plan.shareMode === 'edit'
+      ? 'Shared Editor'
+      : 'View Only';
 
   useEffect(() => {
     setEditedName(plan.name || '');
@@ -73,7 +82,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   }, [isSharedPlan, plan.ownerId, plan.userId, plan.id]);
 
   const handleStartEdit = () => {
-    if (!canEditContent) return;
+    if (!canRenamePlan) return;
     setIsEditingName(true);
     setEditedName(plan.name || '');
   };
@@ -84,7 +93,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const handleSaveEdit = async () => {
-    if (!canEditContent || !editedName.trim()) return;
+    if (!canRenamePlan || !editedName.trim()) return;
 
     const trimmedName = editedName.trim();
     setNameUpdateLoading(true);
@@ -99,6 +108,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
       }
 
       await updatePlanFieldsWithOrigin(plan.id, { name: trimmedName }, currentUserId, null);
+      onPlanChanged?.();
 
       setIsEditingName(false);
       toast.success('Plan name updated', { description: 'The plan name has been successfully updated.' });
@@ -168,6 +178,10 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const handleDuplicate = async () => {
+    if (!canDuplicatePlan) {
+      return;
+    }
+
     setLoading(true);
     try {
       await duplicatePlanById(plan.id, `${plan.name} (Copy)`);
@@ -179,6 +193,10 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
   };
 
   const handleExport = async () => {
+    if (!canExportPlan) {
+      return;
+    }
+
     setLoading(true);
     try {
       const exportData = await exportPlanById(plan.id);
@@ -205,27 +223,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
       return;
     }
 
-    setLoading(true);
-    try {
-      const { makePlanPublic } = await import('../../services/realtimePlanService');
-
-      await makePlanPublic(plan.id, true, currentUserId);
-
-      const baseUrl = window.location.origin;
-      const shareLink = `${baseUrl}/plan/shared/${plan.id}`;
-
-      await navigator.clipboard.writeText(shareLink);
-
-      toast.success('Public view link copied!', {
-        description: 'Anyone with the link can view this plan. Signed-in users who open it can collaborate and will see it in Shared Plans.'
-      });
-    } catch (error) {
-      console.error('Failed to share plan:', error);
-
-      toast.error('Failed to share plan', { description: 'Please try again.' });
-    } finally {
-      setLoading(false);
-    }
+    setShowShareModal(true);
   };
 
   return (
@@ -271,7 +269,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
                   <CardTitle className="text-xl font-semibold leading-snug truncate">
                     {plan.name}
                   </CardTitle>
-                  {canEditContent && (
+                  {canRenamePlan && (
                     <Button
                       size="icon"
                       variant="ghost"
@@ -298,6 +296,10 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
               <span>Created: {formatDate(plan.createdAt)}</span>
               <span>Updated: {formatDate(plan.updatedAt)}</span>
             </div>
+            <div className="flex justify-between items-center">
+              <span>Status: {sharingStatusLabel}</span>
+              {plan.shareMode === 'view' && plan.viewToken ? <span>Read-only link</span> : null}
+            </div>
             {isSharedPlan && (
               <div className="text-center italic text-primary font-medium">
                 {fetchingCreator ? (
@@ -311,8 +313,8 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
         </CardContent>
 
         <CardFooter className="flex flex-wrap gap-2 pt-0">
-          <Button onClick={() => onEdit(plan.id)} disabled={loading} className="flex-1">
-            Edit
+          <Button onClick={onEdit} disabled={loading} className="flex-1">
+            {primaryActionLabel}
           </Button>
           {canAdmin && (
             <Button variant="secondary" onClick={handleShare} disabled={loading} className="flex-1">
@@ -320,12 +322,16 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
               Share
             </Button>
           )}
-          <Button variant="secondary" onClick={handleDuplicate} disabled={loading} className="flex-1">
-            Duplicate
-          </Button>
-          <Button variant="secondary" onClick={handleExport} disabled={loading} className="flex-1">
-            Export
-          </Button>
+          {canDuplicatePlan && (
+            <Button variant="secondary" onClick={handleDuplicate} disabled={loading} className="flex-1">
+              Duplicate
+            </Button>
+          )}
+          {canExportPlan && (
+            <Button variant="secondary" onClick={handleExport} disabled={loading} className="flex-1">
+              Export
+            </Button>
+          )}
           {canAdmin && (
             <Button
               variant="destructive"
@@ -357,6 +363,13 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SharePlanModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onPlanChanged={onPlanChanged}
+        plan={plan}
+      />
     </>
   );
 };

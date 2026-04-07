@@ -128,15 +128,8 @@ const AppContent = () => {
       <Route
         path="/plan/shared/:planId"
         element={
-          <MitigationPlanner isSharedPlan={true} />
-        }
-      />
-
-      <Route
-        path="/plan/:planId/print"
-        element={
           <ProtectedRoute>
-            <ConsolidatedView />
+            <MitigationPlanner isSharedPlan={true} />
           </ProtectedRoute>
         }
       />
@@ -148,6 +141,11 @@ const AppContent = () => {
             <PlanTimelineEditor />
           </ProtectedRoute>
         }
+      />
+
+      <Route
+        path="/plan/view/:viewToken"
+        element={<ConsolidatedView />}
       />
 
       <Route

@@ -111,8 +111,18 @@ const Dashboard = () => {
     }
   };
 
-  const handleNavigateToPlanner = (planId) => {
-    navigate(`/plan/edit/${planId}`);
+  const handleOpenPlan = (plan) => {
+    if (plan?.shareMode === 'view' && plan?.viewToken) {
+      navigate(`/plan/view/${plan.viewToken}`);
+      return;
+    }
+
+    if (plan?.shareMode === 'edit' && !plan?.isOwner) {
+      navigate(`/plan/shared/${plan.id}`);
+      return;
+    }
+
+    navigate(`/plan/edit/${plan.id}`);
   };
 
   const handleLogout = async () => {
@@ -181,7 +191,7 @@ const Dashboard = () => {
 
       // Refresh plans and navigate to the new plan
       loadCategorizedPlans();
-      handleNavigateToPlanner(newPlan.id);
+      handleOpenPlan(newPlan);
     } catch (error) {
       console.error('Error creating plan from timeline:', error);
       toast.error('Failed to create plan', { description: error.message || 'Please try again.' });
@@ -351,7 +361,7 @@ const Dashboard = () => {
                   <PlanCard
                     key={plan.id}
                     plan={plan}
-                    onEdit={() => handleNavigateToPlanner(plan.id)}
+                    onEdit={() => handleOpenPlan(plan)}
                     onPlanChanged={handlePlanChanged}
                     onPlanDeleted={handlePlanDeleted}
                     isSharedPlan={false}
@@ -372,7 +382,7 @@ const Dashboard = () => {
               {categorizedPlans.sharedPlans.length === 0 ? (
                 <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
                   <p className="m-0 text-sm italic">
-                    No plans have been shared with you yet. Shared plans will appear here when other users give you access.
+                    No shared plans yet. Editable plans appear here when an owner adds you as an editor, and read-only plans appear after you open a shared view link.
                   </p>
                 </div>
               ) : (
@@ -381,7 +391,7 @@ const Dashboard = () => {
                     <PlanCard
                       key={plan.id}
                       plan={plan}
-                      onEdit={() => handleNavigateToPlanner(plan.id)}
+                      onEdit={() => handleOpenPlan(plan)}
                       onPlanChanged={handlePlanChanged}
                       onPlanDeleted={handlePlanDeleted}
                       isSharedPlan={true}

@@ -128,6 +128,10 @@ describe('planAccessService', () => {
 
   it('loads shared plans from accessed history, excluding owned plans and missing records', async () => {
     getMock.mockImplementation((target: { path: string; orderField?: string }) => {
+      if (target.path === 'planCollaborationsByUser/user-1') {
+        return Promise.resolve(buildSnapshot({}));
+      }
+
       if (target.path === 'userProfiles/user-1/accessedPlans') {
         return Promise.resolve(
           buildSnapshot({
@@ -191,6 +195,62 @@ describe('planAccessService', () => {
     );
   });
 
+  it('loads viewed plans from tokenized shared view records', async () => {
+    getMock.mockImplementation((target: { path: string; orderField?: string }) => {
+      if (target.path === 'planCollaborationsByUser/user-1') {
+        return Promise.resolve(buildSnapshot({}));
+      }
+
+      if (target.path === 'userProfiles/user-1/accessedPlans') {
+        return Promise.resolve(
+          buildSnapshot({
+            'shared-plan': {
+              accessType: 'view',
+              viewToken: 'view-token-1',
+              lastAccess: 600,
+              accessCount: 2,
+            },
+          })
+        );
+      }
+
+      if (target.path === 'planShareViews/view-token-1') {
+        return Promise.resolve(
+          buildSnapshot({
+            planId: 'shared-plan',
+            ownerId: 'user-2',
+            name: 'Viewed Shared Plan',
+            bossId: 'lala',
+            selectedJobs: {},
+            assignments: {},
+            tankPositions: {
+              mainTank: null,
+              offTank: null,
+            },
+            viewEnabled: true,
+            updatedAt: 550,
+            sourcePlanUpdatedAt: 500,
+          })
+        );
+      }
+
+      throw new Error(`Unexpected get target: ${JSON.stringify(target)}`);
+    });
+
+    const plans = await getUserSharedPlans('user-1');
+
+    expect(plans).toHaveLength(1);
+    expect(plans[0]).toEqual(
+      expect.objectContaining({
+        id: 'shared-plan',
+        name: 'Viewed Shared Plan',
+        shareMode: 'view',
+        accessLevel: 'viewer',
+        viewToken: 'view-token-1',
+      })
+    );
+  });
+
   it('merges owned and shared plans for accessible-plan loading', async () => {
     getMock.mockImplementation((target: { path: string; orderField?: string }) => {
       if (target.path === 'plans' && target.orderField === 'ownerId') {
@@ -207,6 +267,10 @@ describe('planAccessService', () => {
       }
 
       if (target.path === 'plans' && target.orderField === 'userId') {
+        return Promise.resolve(buildSnapshot({}));
+      }
+
+      if (target.path === 'planCollaborationsByUser/user-1') {
         return Promise.resolve(buildSnapshot({}));
       }
 

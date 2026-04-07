@@ -31,6 +31,14 @@ vi.mock('../../services/userService', () => ({
 
 vi.mock('../../services/realtimePlanService', () => ({
   updatePlanFieldsWithOrigin: vi.fn(),
+  getShareableEditLink: vi.fn((planId: string) => `https://example.com/plan/shared/${planId}`),
+  getShareableViewLink: vi.fn((viewToken: string) => `https://example.com/plan/view/${viewToken}`),
+  enablePlanShareView: vi.fn(),
+  rotatePlanShareViewToken: vi.fn(),
+  revokePlanShareView: vi.fn(),
+  addPlanCollaborator: vi.fn(),
+  removePlanCollaborator: vi.fn(),
+  getKnownPlanUsers: vi.fn(() => Promise.resolve([])),
 }));
 
 vi.mock('sonner', () => ({
@@ -51,7 +59,7 @@ describe('PlanCard permissions', () => {
     cleanup();
   });
 
-  it('lets shared collaborators edit plan content while hiding owner-only admin actions', async () => {
+  it('lets shared editors open the plan while hiding owner-only admin actions', async () => {
     render(
       <PlanCard
         plan={{
@@ -59,6 +67,15 @@ describe('PlanCard permissions', () => {
           name: 'Shared Plan',
           ownerId: 'owner-1',
           userId: 'owner-1',
+          collaborators: {
+            'viewer-1': {
+              role: 'editor',
+              addedAt: Date.now(),
+              addedBy: 'owner-1',
+            },
+          },
+          accessLevel: 'editor',
+          shareMode: 'edit',
           hasAccessed: true,
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -69,7 +86,8 @@ describe('PlanCard permissions', () => {
     );
 
     expect(await screen.findByText('Created by: Owner One')).toBeTruthy();
-    expect(screen.getByTitle('Edit plan name')).toBeTruthy();
+    expect(screen.queryByTitle('Edit plan name')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
@@ -84,6 +102,8 @@ describe('PlanCard permissions', () => {
           name: 'Owned Plan',
           ownerId: 'owner-1',
           userId: 'owner-1',
+          accessLevel: 'owner',
+          shareMode: 'owned',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         }}

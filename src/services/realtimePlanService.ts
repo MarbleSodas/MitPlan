@@ -29,8 +29,14 @@ import {
   normalizePlanTimelineLayout,
 } from '../utils/timeline/planTimelineLayoutUtils';
 import { canAdminPlan } from '../utils/permissions/planPermissions';
+import { getUserDisplayNames } from './userService';
 
 const PLANS_PATH = 'plans';
+const PLAN_SHARE_VIEWS_PATH = 'planShareViews';
+const PLAN_SHARE_VIEW_TRACKING_PATH = 'planShareViewTracking';
+const PLAN_COLLABORATIONS_BY_USER_PATH = 'planCollaborationsByUser';
+const USER_PROFILES_PATH = 'userProfiles';
+const CURRENT_PLAN_VERSION = 4.1;
 
 const getBossName = (bossId) => {
   const bossNames = {
@@ -114,10 +120,133 @@ const buildPlanFieldPayload = (planData = {}) => {
   return withTimelineLayoutMirrors(planData);
 };
 
+const getPlanOwnerId = (planData = {}) => planData.ownerId || planData.userId || null;
+
+const getCollaboratorMap = (planData = {}) => (
+  planData.collaborators && typeof planData.collaborators === 'object'
+    ? planData.collaborators
+    : {}
+);
+
+const getShareSettings = (planData = {}) => {
+  const shareSettings = planData.shareSettings;
+  if (!shareSettings || typeof shareSettings !== 'object') {
+    return {
+      viewToken: null,
+      viewEnabled: false,
+      viewUpdatedAt: null,
+    };
+  }
+
+  return {
+    viewToken: shareSettings.viewToken || null,
+    viewEnabled: shareSettings.viewEnabled === true,
+    viewUpdatedAt: shareSettings.viewUpdatedAt || null,
+  };
+};
+
+const getAccessLevelFromPlan = (planData = {}, userId = null) => {
+  if (!userId) {
+    return null;
+  }
+
+  if (getPlanOwnerId(planData) === userId) {
+    return 'owner';
+  }
+
+  if (getCollaboratorMap(planData)?.[userId]?.role === 'editor') {
+    return 'editor';
+  }
+
+  return null;
+};
+
+const createRandomToken = () => {
+  const cryptoObject = globalThis.crypto;
+  if (cryptoObject?.getRandomValues) {
+    const bytes = new Uint8Array(24);
+    cryptoObject.getRandomValues(bytes);
+    return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+  }
+
+  return `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
+};
+
+const buildShareViewPayload = (planId, planData = {}, overrides = {}) => {
+  const normalizedPlan = normalizePlanRecord(planId, planData);
+  const shareSettings = getShareSettings(planData);
+
+  return sanitizeFirebaseValue({
+    planId,
+    ownerId: normalizedPlan.ownerId || null,
+    name: normalizedPlan.name,
+    description: normalizedPlan.description || '',
+    bossId: normalizedPlan.bossId,
+    selectedJobs: normalizedPlan.selectedJobs || {},
+    assignments: normalizedPlan.assignments || {},
+    tankPositions: normalizedPlan.tankPositions || {
+      mainTank: null,
+      offTank: null,
+    },
+    healthSettings: normalizedPlan.healthSettings || {},
+    sourceTimelineId: normalizedPlan.sourceTimelineId || null,
+    sourceTimelineName: normalizedPlan.sourceTimelineName || null,
+    phaseOverrides: normalizedPlan.phaseOverrides || {},
+    bossTags: normalizedPlan.bossTags || [],
+    bossMetadata: normalizedPlan.bossMetadata || null,
+    timelineLayout: normalizedPlan.timelineLayout || null,
+    viewEnabled: overrides.viewEnabled ?? shareSettings.viewEnabled,
+    updatedAt: Date.now(),
+    sourcePlanUpdatedAt: normalizedPlan.updatedAt || Date.now(),
+  });
+};
+
+const buildViewOnlyPlanRecord = (viewToken, viewData = {}) => {
+  const timelineLayout = getPlanTimelineLayout(viewData);
+  const bossId = getCanonicalBossId(viewData);
+
+  return {
+    id: viewData.planId || viewToken,
+    planId: viewData.planId || null,
+    name: viewData.name || 'Untitled Plan',
+    description: viewData.description || '',
+    bossId: timelineLayout?.bossId || bossId,
+    selectedJobs: viewData.selectedJobs || {},
+    assignments: viewData.assignments || {},
+    tankPositions: viewData.tankPositions || {
+      mainTank: null,
+      offTank: null,
+    },
+    healthSettings: viewData.healthSettings || {},
+    sourceTimelineId: viewData.sourceTimelineId || null,
+    sourceTimelineName: viewData.sourceTimelineName || null,
+    phaseOverrides: viewData.phaseOverrides || {},
+    bossTags: timelineLayout?.bossTags || viewData.bossTags || (bossId ? [bossId] : []),
+    bossMetadata: timelineLayout?.bossMetadata || viewData.bossMetadata || null,
+    timelineLayout,
+    ownerId: viewData.ownerId || null,
+    userId: viewData.ownerId || null,
+    createdAt: viewData.createdAt || null,
+    updatedAt: viewData.sourcePlanUpdatedAt || viewData.updatedAt || null,
+    accessLevel: 'viewer',
+    shareMode: 'view',
+    viewToken,
+    shareSettings: {
+      viewToken,
+      viewEnabled: viewData.viewEnabled === true,
+      viewUpdatedAt: viewData.updatedAt || null,
+    },
+  };
+};
+
 const normalizePlanRecord = (planId, planData = {}) => {
   const planFields = buildPlanFieldPayload(planData);
   const timelineLayout = getPlanTimelineLayout(planFields);
   const bossId = getCanonicalBossId(planFields);
+  const ownerId = getPlanOwnerId(planFields);
+  const collaborators = getCollaboratorMap(planFields);
+  const shareSettings = getShareSettings(planFields);
+  const accessLevel = planFields.accessLevel || getAccessLevelFromPlan(planFields, planFields.currentUserId || null);
 
   return {
     id: planId,
@@ -132,13 +261,15 @@ const normalizePlanRecord = (planId, planData = {}) => {
     },
     healthSettings: planFields.healthSettings || {},
     isPublic: planFields.isPublic || false,
-    userId: planFields.userId || planFields.ownerId || null,
-    ownerId: planFields.ownerId || planFields.userId || null,
+    userId: ownerId,
+    ownerId,
     accessedBy: planFields.accessedBy || {},
+    collaborators,
+    shareSettings,
     createdAt: planFields.createdAt,
     updatedAt: planFields.updatedAt,
     lastAccessedAt: planFields.lastAccessedAt,
-    version: planFields.version || 4.1,
+    version: planFields.version || CURRENT_PLAN_VERSION,
     lastModifiedBy: planFields.lastModifiedBy || null,
     lastChangeOrigin: planFields.lastChangeOrigin || null,
     sourceTimelineId: planFields.sourceTimelineId || null,
@@ -147,6 +278,9 @@ const normalizePlanRecord = (planId, planData = {}) => {
     bossTags: timelineLayout?.bossTags || planFields.bossTags || (bossId ? [bossId] : []),
     bossMetadata: timelineLayout?.bossMetadata || planFields.bossMetadata || null,
     timelineLayout,
+    accessLevel,
+    shareMode: planFields.shareMode || (accessLevel === 'owner' ? 'owned' : accessLevel === 'editor' ? 'edit' : 'owned'),
+    viewToken: planFields.viewToken || shareSettings.viewToken || null,
   };
 };
 
@@ -164,13 +298,19 @@ const preparePlanForStorage = (userId, planData = {}) => {
     isPublic: normalizedPlan.isPublic,
     lastModifiedBy: userId,
     lastChangeOrigin: 'creation',
-    version: 4.1,
+    version: CURRENT_PLAN_VERSION,
     sourceTimelineId: normalizedPlan.sourceTimelineId,
     sourceTimelineName: normalizedPlan.sourceTimelineName,
     phaseOverrides: normalizedPlan.phaseOverrides,
     bossTags: normalizedPlan.bossTags,
     bossMetadata: normalizedPlan.bossMetadata,
     timelineLayout: normalizedPlan.timelineLayout,
+    collaborators: {},
+    shareSettings: {
+      viewToken: null,
+      viewEnabled: false,
+      viewUpdatedAt: null,
+    },
   });
 };
 
@@ -245,6 +385,55 @@ const mergeOwnedPlanCollections = (...planGroups) => {
   return sortUserPlansByRecent(Array.from(mergedPlans.values()));
 };
 
+const assertAuthenticatedUser = (userId) => {
+  if (!userId) {
+    throw new Error('User ID required');
+  }
+};
+
+const assertCanAdminExistingPlan = (plan, userId) => {
+  assertAuthenticatedUser(userId);
+
+  if (!canAdminPlan(plan, userId)) {
+    throw new Error('Permission denied: Only the plan owner can manage sharing settings');
+  }
+};
+
+const syncPlanShareViewRecord = async (planId) => {
+  const plan = await getPlan(planId);
+  const shareSettings = getShareSettings(plan);
+
+  if (!shareSettings.viewToken) {
+    return null;
+  }
+
+  const shareViewRef = ref(database, `${PLAN_SHARE_VIEWS_PATH}/${shareSettings.viewToken}`);
+  const payload = buildShareViewPayload(planId, plan, {
+    viewEnabled: shareSettings.viewEnabled,
+  });
+
+  await set(shareViewRef, payload);
+
+  return {
+    viewToken: shareSettings.viewToken,
+    ...payload,
+  };
+};
+
+const removePlanCollaborationIndexes = async (planId, collaborators = {}) => {
+  const collaboratorIds = Object.keys(collaborators || {});
+  if (collaboratorIds.length === 0) {
+    return;
+  }
+
+  const cleanupUpdates = collaboratorIds.reduce((acc, collaboratorId) => {
+    acc[`${PLAN_COLLABORATIONS_BY_USER_PATH}/${collaboratorId}/${planId}`] = null;
+    return acc;
+  }, {});
+
+  await update(ref(database), cleanupUpdates);
+};
+
 /**
  * Create a new mitigation plan
  */
@@ -264,6 +453,7 @@ export const createPlan = async (userId, planData) => {
     const plansRef = ref(database, PLANS_PATH);
     const newPlanRef = push(plansRef);
     await set(newPlanRef, planDoc);
+    await syncPlanShareViewRecord(newPlanRef.key);
 
     console.log('[createPlan] Plan created successfully with ID:', newPlanRef.key);
     return normalizePlanRecord(newPlanRef.key, planDoc);
@@ -282,6 +472,7 @@ export const updatePlan = async (planId, planData) => {
     const updates = buildPlanUpdates(planId, planData);
     console.log('[updatePlan] Firebase updates:', updates);
     await update(ref(database), updates);
+    await syncPlanShareViewRecord(planId);
     console.log('[updatePlan] Update successful');
     return { id: planId, ...normalizePlanRecord(planId, planData), updatedAt: Date.now() };
   } catch (error) {
@@ -307,10 +498,12 @@ export const deletePlan = async (planId, userId = null) => {
     }
 
     const plan = normalizePlanRecord(planId, snapshot.val());
-    if (!canAdminPlan(plan, userId)) {
-      throw new Error('Permission denied: Only the plan owner can delete this plan');
-    }
+    assertCanAdminExistingPlan(plan, userId);
 
+    await removePlanCollaborationIndexes(planId, plan.collaborators);
+    if (plan.shareSettings?.viewToken) {
+      await remove(ref(database, `${PLAN_SHARE_VIEWS_PATH}/${plan.shareSettings.viewToken}`));
+    }
     await remove(planRef);
     return true;
   } catch (error) {
@@ -419,13 +612,25 @@ export const getUserPlans = async (userId) => {
 export const duplicatePlan = async (userId, originalPlanId, newName) => {
   try {
     const originalPlan = await getPlan(originalPlanId);
-    
-    // Remove Firebase-specific fields and create new plan
-    const { id, createdAt, updatedAt, ...planData } = originalPlan;
+
     const duplicatedPlan = {
-      ...planData,
-      name: newName || `Copy of ${originalPlan.name}`,
-      userId
+      name: newName || `${originalPlan.name} (Copy)`,
+      description: originalPlan.description || '',
+      bossId: originalPlan.bossId,
+      selectedJobs: originalPlan.selectedJobs || {},
+      assignments: originalPlan.assignments || {},
+      tankPositions: originalPlan.tankPositions || {
+        mainTank: null,
+        offTank: null,
+      },
+      healthSettings: originalPlan.healthSettings || {},
+      sourceTimelineId: originalPlan.sourceTimelineId || null,
+      sourceTimelineName: originalPlan.sourceTimelineName || null,
+      phaseOverrides: originalPlan.phaseOverrides || {},
+      bossTags: originalPlan.bossTags || [],
+      bossMetadata: originalPlan.bossMetadata || null,
+      timelineLayout: originalPlan.timelineLayout || null,
+      isPublic: false,
     };
 
     return await createPlan(userId, duplicatedPlan);
@@ -443,7 +648,19 @@ export const exportPlan = async (planId) => {
     const plan = await getPlan(planId);
     
     // Remove user-specific and Firebase-specific data for export
-    const { id, userId, createdAt, updatedAt, ...exportData } = plan;
+    const {
+      id,
+      userId,
+      ownerId,
+      collaborators,
+      shareSettings,
+      accessLevel,
+      shareMode,
+      viewToken,
+      createdAt,
+      updatedAt,
+      ...exportData
+    } = plan;
     
     return {
       ...exportData,
@@ -641,14 +858,7 @@ export const updatePlanField = async (planId, fieldPath, value, userId = null) =
  */
 export const updateTankPositionsRealtime = async (planId, tankPositions, userId, sessionId) => {
   try {
-    const updates = {
-      [`${PLANS_PATH}/${planId}/tankPositions`]: tankPositions,
-      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
-      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
-      [`${PLANS_PATH}/${planId}/lastChangeOrigin`]: sessionId
-    };
-
-    await update(ref(database), updates);
+    await updatePlanFieldsWithOrigin(planId, { tankPositions }, userId, sessionId);
     console.log('[updateTankPositionsRealtime] Successfully updated tank positions');
     return true;
   } catch (error) {
@@ -664,16 +874,7 @@ export const updateTankPositionsRealtime = async (planId, tankPositions, userId,
  */
 export const updatePlanAssignments = async (planId, assignments, userId = null) => {
   try {
-    const updates = {
-      [`${PLANS_PATH}/${planId}/assignments`]: assignments,
-      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp()
-    };
-
-    if (userId) {
-      updates[`${PLANS_PATH}/${planId}/lastModifiedBy`] = userId;
-    }
-
-    await update(ref(database), updates);
+    await updatePlanFieldsWithOrigin(planId, { assignments }, userId);
     return true;
   } catch (error) {
     console.error('Error updating plan assignments:', error);
@@ -686,16 +887,7 @@ export const updatePlanAssignments = async (planId, assignments, userId = null) 
  */
 export const updatePlanJobs = async (planId, selectedJobs, userId = null) => {
   try {
-    const updates = {
-      [`${PLANS_PATH}/${planId}/selectedJobs`]: selectedJobs,
-      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp()
-    };
-
-    if (userId) {
-      updates[`${PLANS_PATH}/${planId}/lastModifiedBy`] = userId;
-    }
-
-    await update(ref(database), updates);
+    await updatePlanFieldsWithOrigin(planId, { selectedJobs }, userId);
     return true;
   } catch (error) {
     console.error('Error updating plan jobs:', error);
@@ -708,16 +900,7 @@ export const updatePlanJobs = async (planId, selectedJobs, userId = null) => {
  */
 export const updatePlanBoss = async (planId, bossId, userId = null) => {
   try {
-    const updates = {
-      [`${PLANS_PATH}/${planId}/bossId`]: bossId,
-      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp()
-    };
-
-    if (userId) {
-      updates[`${PLANS_PATH}/${planId}/lastModifiedBy`] = userId;
-    }
-
-    await update(ref(database), updates);
+    await updatePlanFieldsWithOrigin(planId, { bossId }, userId);
     return true;
   } catch (error) {
     console.error('Error updating plan boss:', error);
@@ -725,50 +908,329 @@ export const updatePlanBoss = async (planId, bossId, userId = null) => {
   }
 };
 
-/**
- * Make a plan public for sharing
- */
-export const makePlanPublic = async (planId, isPublic = true, userId = null) => {
+export const getShareableEditLink = (planId) => {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${baseUrl}/plan/shared/${planId}`;
+};
+
+export const getShareableViewLink = (viewToken) => {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${baseUrl}/plan/view/${viewToken}`;
+};
+
+export const enablePlanShareView = async (planId, userId = null) => {
   try {
-    if (!userId) {
-      throw new Error('User ID required to change plan visibility');
-    }
-
     const plan = await getPlan(planId);
-    if (!canAdminPlan(plan, userId)) {
-      throw new Error('Permission denied: Only the plan owner can change sharing settings');
-    }
+    assertCanAdminExistingPlan(plan, userId);
 
-    const planRef = ref(database, `${PLANS_PATH}/${planId}/isPublic`);
-    await set(planRef, isPublic);
+    const existingShareSettings = getShareSettings(plan);
+    const viewToken = existingShareSettings.viewToken || createRandomToken();
+    const now = Date.now();
 
-    // Update timestamp
-    const timestampRef = ref(database, `${PLANS_PATH}/${planId}/updatedAt`);
-    await set(timestampRef, serverTimestamp());
+    await update(ref(database), {
+      [`${PLANS_PATH}/${planId}/shareSettings`]: {
+        viewToken,
+        viewEnabled: true,
+        viewUpdatedAt: now,
+      },
+      [`${PLANS_PATH}/${planId}/isPublic`]: false,
+      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
+      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
+    });
 
-    return true;
+    await syncPlanShareViewRecord(planId);
+
+    return {
+      viewToken,
+      editUrl: getShareableEditLink(planId),
+      viewUrl: getShareableViewLink(viewToken),
+    };
   } catch (error) {
-    console.error('Error updating plan visibility:', error);
-    throw new Error('Failed to update plan visibility');
+    console.error('Error enabling plan share view:', error);
+    throw new Error('Failed to enable plan sharing');
   }
 };
 
-/**
- * Get a public plan (for sharing)
- */
-export const getPublicPlan = async (planId) => {
+export const revokePlanShareView = async (planId, userId = null) => {
   try {
     const plan = await getPlan(planId);
+    assertCanAdminExistingPlan(plan, userId);
 
-    if (!plan.isPublic) {
-      throw new Error('Plan is not public');
+    const shareSettings = getShareSettings(plan);
+    if (!shareSettings.viewToken) {
+      return true;
     }
 
-    return plan;
+    const now = Date.now();
+    await update(ref(database), {
+      [`${PLANS_PATH}/${planId}/shareSettings`]: {
+        viewToken: shareSettings.viewToken,
+        viewEnabled: false,
+        viewUpdatedAt: now,
+      },
+      [`${PLAN_SHARE_VIEWS_PATH}/${shareSettings.viewToken}/viewEnabled`]: false,
+      [`${PLAN_SHARE_VIEWS_PATH}/${shareSettings.viewToken}/revokedAt`]: now,
+      [`${PLAN_SHARE_VIEWS_PATH}/${shareSettings.viewToken}/updatedAt`]: now,
+      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
+      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
+    });
+
+    return true;
   } catch (error) {
-    console.error('Error getting public plan:', error);
-    throw new Error('Failed to get public plan');
+    console.error('Error revoking plan share view:', error);
+    throw new Error('Failed to revoke the public view link');
   }
+};
+
+export const rotatePlanShareViewToken = async (planId, userId = null) => {
+  try {
+    const plan = await getPlan(planId);
+    assertCanAdminExistingPlan(plan, userId);
+
+    const previousShareSettings = getShareSettings(plan);
+    const previousToken = previousShareSettings.viewToken;
+    const nextToken = createRandomToken();
+    const now = Date.now();
+
+    const updates = {
+      [`${PLANS_PATH}/${planId}/shareSettings`]: {
+        viewToken: nextToken,
+        viewEnabled: true,
+        viewUpdatedAt: now,
+      },
+      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
+      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
+    };
+
+    if (previousToken) {
+      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/viewEnabled`] = false;
+      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/revokedAt`] = now;
+      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/updatedAt`] = now;
+    }
+
+    await update(ref(database), updates);
+    await syncPlanShareViewRecord(planId);
+
+    return {
+      viewToken: nextToken,
+      editUrl: getShareableEditLink(planId),
+      viewUrl: getShareableViewLink(nextToken),
+    };
+  } catch (error) {
+    console.error('Error rotating plan share view token:', error);
+    throw new Error('Failed to rotate the public view link');
+  }
+};
+
+export const getPlanShareView = async (viewToken) => {
+  try {
+    const shareViewRef = ref(database, `${PLAN_SHARE_VIEWS_PATH}/${viewToken}`);
+    const snapshot = await get(shareViewRef);
+
+    if (!snapshot.exists()) {
+      throw new Error('Shared plan view not found');
+    }
+
+    const shareView = snapshot.val();
+    if (shareView.viewEnabled !== true) {
+      throw new Error('Shared plan view is no longer available');
+    }
+
+    return buildViewOnlyPlanRecord(viewToken, shareView);
+  } catch (error) {
+    console.error('Error getting plan share view:', error);
+    throw new Error(error.message || 'Failed to get shared plan view');
+  }
+};
+
+export const subscribeToPlanShareView = (viewToken, callback) => {
+  const shareViewRef = ref(database, `${PLAN_SHARE_VIEWS_PATH}/${viewToken}`);
+
+  const unsubscribe = onValue(shareViewRef, (snapshot) => {
+    if (!snapshot.exists()) {
+      callback(null);
+      return;
+    }
+
+    const shareView = snapshot.val();
+    if (shareView.viewEnabled !== true) {
+      callback(null);
+      return;
+    }
+
+    callback(buildViewOnlyPlanRecord(viewToken, shareView));
+  }, (error) => {
+    console.error('Error listening to shared plan view changes:', error);
+    callback(null, error);
+  });
+
+  return () => off(shareViewRef, 'value', unsubscribe);
+};
+
+export const trackPlanShareViewAccess = async (viewToken, userId) => {
+  try {
+    if (!viewToken || !userId) {
+      return;
+    }
+
+    const shareView = await getPlanShareView(viewToken);
+    const now = Date.now();
+    const viewerRef = ref(database, `${PLAN_SHARE_VIEW_TRACKING_PATH}/${viewToken}/viewers/${userId}`);
+    const viewerSnapshot = await get(viewerRef);
+    const existingViewer = viewerSnapshot.exists() ? viewerSnapshot.val() : null;
+
+    await set(viewerRef, {
+      firstViewedAt: existingViewer?.firstViewedAt || now,
+      lastViewedAt: now,
+      accessCount: (existingViewer?.accessCount || 0) + 1,
+    });
+
+    await update(ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans/${shareView.planId}`), {
+      planId: shareView.planId,
+      viewToken,
+      accessType: 'view',
+      lastAccess: now,
+      accessCount: (existingViewer?.accessCount || 0) + 1,
+    });
+  } catch (error) {
+    if (!isPermissionDeniedError(error)) {
+      console.error('Error tracking shared plan view access:', error);
+    }
+  }
+};
+
+export const duplicatePlanFromViewToken = async (viewToken, userId, newName = null) => {
+  try {
+    const sharedView = await getPlanShareView(viewToken);
+    return await createPlan(userId, {
+      name: newName || `${sharedView.name} (Copy)`,
+      description: sharedView.description || '',
+      bossId: sharedView.bossId,
+      selectedJobs: sharedView.selectedJobs || {},
+      assignments: sharedView.assignments || {},
+      tankPositions: sharedView.tankPositions || {
+        mainTank: null,
+        offTank: null,
+      },
+      healthSettings: sharedView.healthSettings || {},
+      sourceTimelineId: sharedView.sourceTimelineId || null,
+      sourceTimelineName: sharedView.sourceTimelineName || null,
+      phaseOverrides: sharedView.phaseOverrides || {},
+      bossTags: sharedView.bossTags || [],
+      bossMetadata: sharedView.bossMetadata || null,
+      timelineLayout: sharedView.timelineLayout || null,
+      isPublic: false,
+    });
+  } catch (error) {
+    console.error('Error duplicating plan from shared view:', error);
+    throw new Error('Failed to create a copy of this plan');
+  }
+};
+
+export const addPlanCollaborator = async (planId, collaboratorId, userId = null) => {
+  try {
+    const plan = await getPlan(planId);
+    assertCanAdminExistingPlan(plan, userId);
+
+    if (!collaboratorId || collaboratorId === plan.ownerId) {
+      throw new Error('A different authenticated user is required');
+    }
+
+    const collaboratorRecord = {
+      role: 'editor',
+      addedAt: Date.now(),
+      addedBy: userId,
+    };
+
+    await update(ref(database), {
+      [`${PLANS_PATH}/${planId}/collaborators/${collaboratorId}`]: collaboratorRecord,
+      [`${PLAN_COLLABORATIONS_BY_USER_PATH}/${collaboratorId}/${planId}`]: {
+        planId,
+        role: 'editor',
+        addedAt: collaboratorRecord.addedAt,
+        addedBy: userId,
+      },
+      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
+      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
+    });
+
+    return collaboratorRecord;
+  } catch (error) {
+    console.error('Error adding plan collaborator:', error);
+    throw new Error(error.message || 'Failed to add collaborator');
+  }
+};
+
+export const removePlanCollaborator = async (planId, collaboratorId, userId = null) => {
+  try {
+    const plan = await getPlan(planId);
+    assertCanAdminExistingPlan(plan, userId);
+
+    await update(ref(database), {
+      [`${PLANS_PATH}/${planId}/collaborators/${collaboratorId}`]: null,
+      [`${PLAN_COLLABORATIONS_BY_USER_PATH}/${collaboratorId}/${planId}`]: null,
+      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
+      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error removing plan collaborator:', error);
+    throw new Error('Failed to remove collaborator');
+  }
+};
+
+export const getKnownPlanUsers = async (planId, userId = null) => {
+  try {
+    const plan = await getPlan(planId);
+    assertCanAdminExistingPlan(plan, userId);
+
+    const collaboratorIds = Object.keys(plan.collaborators || {});
+    const shareSettings = getShareSettings(plan);
+    const viewerIds = [];
+
+    if (shareSettings.viewToken) {
+      const viewersSnapshot = await get(ref(database, `${PLAN_SHARE_VIEW_TRACKING_PATH}/${shareSettings.viewToken}/viewers`));
+      if (viewersSnapshot.exists()) {
+        viewerIds.push(...Object.keys(viewersSnapshot.val() || {}));
+      }
+    }
+
+    const userIds = Array.from(
+      new Set([...collaboratorIds, ...viewerIds].filter((candidateId) => candidateId && candidateId !== plan.ownerId))
+    );
+
+    const displayNames = userIds.length > 0 ? await getUserDisplayNames(userIds) : {};
+
+    return userIds.map((candidateId) => ({
+      uid: candidateId,
+      displayName: displayNames[candidateId] || `User (${candidateId.slice(0, 8)}...)`,
+      isCollaborator: Boolean(plan.collaborators?.[candidateId]),
+      collaboratorRole: plan.collaborators?.[candidateId]?.role || null,
+    }));
+  } catch (error) {
+    console.error('Error loading known plan users:', error);
+    throw new Error('Failed to load known users for this plan');
+  }
+};
+
+export const makePlanPublic = async (planId, isPublic = true, userId = null) => {
+  if (isPublic) {
+    return enablePlanShareView(planId, userId);
+  }
+
+  return revokePlanShareView(planId, userId);
+};
+
+export const getPublicPlan = async (planId) => {
+  const plan = await getPlan(planId);
+  const shareSettings = getShareSettings(plan);
+
+  if (!shareSettings.viewEnabled || !shareSettings.viewToken) {
+    throw new Error('Shared plan view is no longer available');
+  }
+
+  return await getPlanShareView(shareSettings.viewToken);
 };
 
 /**
@@ -803,6 +1265,7 @@ export const updatePlanWithConflictResolution = async (planId, updates, userId, 
 
     // Perform atomic update
     await set(planRef, { ...currentPlan, ...updateData });
+    await syncPlanShareViewRecord(planId);
 
     return {
       success: true,
@@ -864,6 +1327,7 @@ export const mergePlanChanges = async (planId, localChanges, userId) => {
     }
 
     await set(planRef, mergedPlan);
+    await syncPlanShareViewRecord(planId);
 
     return {
       success: true,
@@ -932,6 +1396,7 @@ export const updatePlanFieldsWithOrigin = async (planId, fields, userId = null, 
   try {
     const updates = buildPlanUpdates(planId, fields, userId, sessionId);
     await update(ref(database), updates);
+    await syncPlanShareViewRecord(planId);
     return true;
   } catch (error) {
     console.error('Error updating plan fields with origin:', error);
@@ -1299,6 +1764,22 @@ export const ensurePlanStructure = async (planId) => {
       updates.accessedBy = {};
       needsUpdate = true;
       console.log('[ensurePlanStructure] Initializing accessedBy field for backward compatibility');
+    }
+
+    if (!plan.collaborators || typeof plan.collaborators !== 'object') {
+      updates.collaborators = {};
+      needsUpdate = true;
+      console.log('[ensurePlanStructure] Initializing collaborators field');
+    }
+
+    if (!plan.shareSettings || typeof plan.shareSettings !== 'object') {
+      updates.shareSettings = {
+        viewToken: null,
+        viewEnabled: false,
+        viewUpdatedAt: null,
+      };
+      needsUpdate = true;
+      console.log('[ensurePlanStructure] Initializing shareSettings field');
     }
 
     if (!plan.ownerId && plan.userId) {

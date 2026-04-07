@@ -10,7 +10,7 @@ import { getAvailableAbilities } from '../../utils';
 // import { useAutoAssignment } from '../../hooks/useAutoAssignment';
 import { useNavigate } from 'react-router-dom';
 
-import { Maximize2, Minimize2, Search, X, Menu, ArrowLeft, Printer, Edit2 } from 'lucide-react';
+import { Maximize2, Minimize2, Search, X, Menu, ArrowLeft, Edit2 } from 'lucide-react';
 
 import CollaboratorsList from '../collaboration/CollaboratorsList';
 import ActiveUsersDisplay from '../collaboration/ActiveUsersDisplay';
@@ -82,7 +82,6 @@ const PlanningInterface = ({
   onSave,
   saving,
   handleBack,
-  handlePrint,
   isReadOnlyView,
 }) => {
   const canEditPlan = !isReadOnlyView;
@@ -687,14 +686,11 @@ const PlanningInterface = ({
               <KofiButton />
               <DiscordButton />
               <ThemeToggle />
-              <Button onClick={handlePrint} variant="outline" size="icon" title="Print plan">
-                <Printer className="h-4 w-4" />
-              </Button>
               <Button onClick={onSave} disabled={saving || isReadOnlyView} className="px-4 py-2">
                 {isReadOnlyView ? 'View Only' : saving ? 'Saving...' : 'Save'}
               </Button>
               <Button onClick={handleBack} variant="outline">
-                {isReadOnlyView ? 'Back to Home' : 'Back to Dashboard'}
+                Back to Dashboard
               </Button>
             </div>
           </div>
@@ -1102,24 +1098,16 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
   // Use route param if available, otherwise fall back to prop (for backward compatibility)
   const planId = routePlanId || propPlanId;
 
-  const isActuallySharedPlan = isSharedPlan;
-  const isReadOnlyView = isActuallySharedPlan && !isAuthenticated;
+  const isReadOnlyView = !isAuthenticated;
 
   console.log('[MitigationPlanner] Rendering with planId:', planId);
 
   const handleBack = () => {
     if (onNavigateBack) {
       onNavigateBack();
-    } else if (isReadOnlyView) {
-      // For shared plans, go to landing page
-      navigate('/');
     } else {
       navigate('/dashboard');
     }
-  };
-
-  const handlePrint = () => {
-    window.open(`/plan/${planId}/print`, '_blank');
   };
 
   const handleSave = async () => {
@@ -1149,13 +1137,12 @@ const MitigationPlanner = ({ onNavigateBack, planId: propPlanId, isSharedPlan = 
     <RealtimeAppProvider
       planId={planId}
       readOnly={isReadOnlyView}
-      enableCollaboration={!isReadOnlyView}
+      enableCollaboration={isAuthenticated && !isReadOnlyView}
     >
       <MitigationPlannerContent
         planId={planId}
         isReadOnlyView={isReadOnlyView}
         handleBack={handleBack}
-        handlePrint={handlePrint}
         handleSave={handleSave}
         saving={saving}
       />
@@ -1168,7 +1155,6 @@ const MitigationPlannerContent = ({
   planId,
   isReadOnlyView,
   handleBack,
-  handlePrint,
   handleSave,
   saving
 }) => {
@@ -1181,7 +1167,7 @@ const MitigationPlannerContent = ({
 
       {isReadOnlyView && (
         <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
-          Public shared view. Sign in to edit or collaborate on this plan.
+          Sign in is required to edit this plan.
         </div>
       )}
 
@@ -1195,7 +1181,6 @@ const MitigationPlannerContent = ({
         onSave={handleSave}
         saving={saving}
         handleBack={handleBack}
-        handlePrint={handlePrint}
         isReadOnlyView={isReadOnlyView}
       />
     </div>

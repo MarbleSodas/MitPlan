@@ -355,6 +355,21 @@ export interface TankPositions {
 
 export type SelectedJobs = Record<Role, Job[] | JobId[]>;
 
+export type PlanAccessLevel = 'owner' | 'editor' | 'viewer';
+export type PlanShareMode = 'owned' | 'edit' | 'view';
+
+export interface PlanCollaborator {
+  role: 'editor';
+  addedAt: number;
+  addedBy: string;
+}
+
+export interface PlanShareSettings {
+  viewToken: string | null;
+  viewEnabled: boolean;
+  viewUpdatedAt?: number;
+}
+
 export interface Plan {
   id: string;
   name: string;
@@ -381,6 +396,11 @@ export interface Plan {
   bossTags?: string[];
   bossMetadata?: BossMetadata | null;
   timelineLayout?: PlanTimelineLayout | null;
+  collaborators?: Record<string, PlanCollaborator>;
+  shareSettings?: PlanShareSettings | null;
+  accessLevel?: PlanAccessLevel;
+  shareMode?: PlanShareMode;
+  viewToken?: string | null;
   isLocal?: boolean;
 }
 

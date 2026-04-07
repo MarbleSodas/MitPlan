@@ -108,12 +108,22 @@ describe('App routing', () => {
     expect(window.location.search).toContain(encodeURIComponent('/plan/edit/plan-123'));
   });
 
-  it('allows guests to open the public shared plan route', async () => {
+  it('redirects guests away from the collaborator edit route and preserves a return target', async () => {
     window.history.pushState({}, '', '/plan/shared/plan-123');
     render(<App />);
 
-    await screen.findByText('Shared Planner');
-    expect(window.location.pathname).toBe('/plan/shared/plan-123');
+    await screen.findByText('Landing Page');
+
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toContain(encodeURIComponent('/plan/shared/plan-123'));
+  });
+
+  it('allows guests to open the public view-only plan route', async () => {
+    window.history.pushState({}, '', '/plan/view/view-token-123');
+    render(<App />);
+
+    await screen.findByText('Consolidated View');
+    expect(window.location.pathname).toBe('/plan/view/view-token-123');
   });
 
   it('returns authenticated users to their requested route after sign-in', async () => {

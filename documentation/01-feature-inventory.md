@@ -157,9 +157,10 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - Access control and ownership tracking
 
 **Sharing System**:
-- Universal edit access (any user can edit any plan)
-- Shareable URLs for plan access
-- Read-only sharing for unauthenticated users
+- Separate editable and read-only share links
+- Invited editor access for the original plan
+- Tokenized read-only sharing for public viewers
+- Make-a-copy flow for signed-in viewers
 - Plan access history tracking
 - Backward compatibility for older plan formats
 

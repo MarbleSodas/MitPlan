@@ -14,6 +14,8 @@ import {
 
 const PLANS_PATH = 'plans';
 const USER_PROFILES_PATH = 'userProfiles';
+const PLAN_SHARE_VIEWS_PATH = 'planShareViews';
+const PLAN_COLLABORATIONS_BY_USER_PATH = 'planCollaborationsByUser';
 
 const getRecentPlanTimestamp = (plan) =>
   plan.accessInfo?.lastAccess ||
@@ -32,6 +34,13 @@ const normalizeDashboardPlan = (planId, planData, userId, overrides = {}) => {
   const isOwner =
     overrides.isOwner ?? (planData.ownerId === userId || planData.userId === userId);
   const accessInfo = overrides.accessInfo ?? planData.accessedBy?.[userId] ?? null;
+  const accessLevel = overrides.accessLevel ?? (isOwner ? 'owner' : 'viewer');
+  const shareMode = overrides.shareMode ?? (isOwner ? 'owned' : accessLevel === 'editor' ? 'edit' : 'view');
+  const shareSettings = planData.shareSettings || {
+    viewToken: overrides.viewToken || null,
+    viewEnabled: false,
+    viewUpdatedAt: null,
+  };
 
   return {
     id: planId,
@@ -39,8 +48,64 @@ const normalizeDashboardPlan = (planId, planData, userId, overrides = {}) => {
     name: normalizedName,
     isOwner,
     hasAccessed: overrides.hasAccessed ?? Boolean(accessInfo),
-    accessInfo
+    accessInfo,
+    accessLevel,
+    shareMode,
+    viewToken: overrides.viewToken ?? shareSettings.viewToken ?? null,
+    shareSettings,
   };
+};
+
+const normalizeViewedDashboardPlan = (viewToken, viewData, userId, overrides = {}) => {
+  const accessInfo = overrides.accessInfo ?? null;
+
+  return {
+    id: viewData.planId || viewToken,
+    planId: viewData.planId || null,
+    ownerId: viewData.ownerId || null,
+    userId: viewData.ownerId || null,
+    name: viewData.name || 'Untitled Plan',
+    description: viewData.description || '',
+    bossId: viewData.bossId || 'ketuduke',
+    selectedJobs: viewData.selectedJobs || {},
+    assignments: viewData.assignments || {},
+    tankPositions: viewData.tankPositions || {
+      mainTank: null,
+      offTank: null,
+    },
+    healthSettings: viewData.healthSettings || {},
+    sourceTimelineId: viewData.sourceTimelineId || null,
+    sourceTimelineName: viewData.sourceTimelineName || null,
+    phaseOverrides: viewData.phaseOverrides || {},
+    bossTags: viewData.bossTags || [],
+    bossMetadata: viewData.bossMetadata || null,
+    timelineLayout: viewData.timelineLayout || null,
+    createdAt: viewData.createdAt || null,
+    updatedAt: viewData.sourcePlanUpdatedAt || viewData.updatedAt || null,
+    isOwner: false,
+    hasAccessed: true,
+    accessInfo,
+    accessLevel: 'viewer',
+    shareMode: 'view',
+    viewToken,
+    shareSettings: {
+      viewToken,
+      viewEnabled: viewData.viewEnabled === true,
+      viewUpdatedAt: viewData.updatedAt || null,
+    },
+  };
+};
+
+const getPlanAccessRank = (plan) => {
+  if (plan?.isOwner) {
+    return 3;
+  }
+
+  if (plan?.accessLevel === 'editor' || plan?.shareMode === 'edit') {
+    return 2;
+  }
+
+  return 1;
 };
 
 const mergePlansById = (...planGroups) => {
@@ -57,7 +122,15 @@ const mergePlansById = (...planGroups) => {
     }
 
     const existingPlan = mergedPlans.get(plan.id);
-    if (!existingPlan.isOwner && plan.isOwner) {
+    if (getPlanAccessRank(plan) > getPlanAccessRank(existingPlan)) {
+      mergedPlans.set(plan.id, plan);
+      return;
+    }
+
+    if (
+      getPlanAccessRank(plan) === getPlanAccessRank(existingPlan) &&
+      getRecentPlanTimestamp(plan) > getRecentPlanTimestamp(existingPlan)
+    ) {
       mergedPlans.set(plan.id, plan);
     }
   });
@@ -117,7 +190,8 @@ export const trackPlanAccess = async (planId, userId) => {
     try {
       await update(ref(database, userAccessPath), {
         lastAccess: now,
-        planId: planId
+        planId,
+        accessType: 'edit',
       });
     } catch (error) {
        if (!isPermissionDeniedError(error)) {
@@ -235,13 +309,22 @@ export const hasAccessToPlan = async (planId, userId, planData = null) => {
     const isOwner =
       effectivePlanData.ownerId === userId ||
       effectivePlanData.userId === userId;
-    if (isOwner || effectivePlanData.isPublic === true || effectivePlanData.accessedBy?.[userId]) {
+    if (
+      isOwner ||
+      effectivePlanData.collaborators?.[userId]?.role === 'editor' ||
+      effectivePlanData.accessedBy?.[userId]
+    ) {
       return true;
     }
 
     const accessedPlanRef = ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans/${planId}`);
     const accessedPlanSnapshot = await get(accessedPlanRef);
-    return accessedPlanSnapshot.exists();
+    if (!accessedPlanSnapshot.exists()) {
+      return false;
+    }
+
+    const accessInfo = accessedPlanSnapshot.val();
+    return accessInfo?.accessType !== 'view';
   } catch (error) {
     if (!isPermissionDeniedError(error)) {
       console.error('[PlanAccessService] Error checking plan access:', error);
@@ -280,6 +363,12 @@ export const initializePlanOwnership = (planId, userId, planData) => {
     ownerId: userId,
     userId: userId, // Keep for backward compatibility
     accessedBy: {}, // Initialize empty access tracking
+    collaborators: planData.collaborators || {},
+    shareSettings: planData.shareSettings || {
+      viewToken: null,
+      viewEnabled: false,
+      viewUpdatedAt: null,
+    },
     createdAt: planData.createdAt || now,
     updatedAt: now,
     lastAccessedAt: now
@@ -302,6 +391,12 @@ export const migratePlanOwnership = (planId, planData) => {
     ...planData,
     ownerId,
     accessedBy: planData.accessedBy || {}, // Initialize if missing
+    collaborators: planData.collaborators || {},
+    shareSettings: planData.shareSettings || {
+      viewToken: null,
+      viewEnabled: false,
+      viewUpdatedAt: null,
+    },
     createdAt: planData.createdAt || now,
     updatedAt: planData.updatedAt || now,
     lastAccessedAt: planData.lastAccessedAt || now
@@ -327,31 +422,20 @@ export const getUserOwnedPlans = async (userId) => {
   }
 };
 
+const getUserCollaborativePlans = async (userId) => {
+  const collaborationIndexRef = ref(database, `${PLAN_COLLABORATIONS_BY_USER_PATH}/${userId}`);
+  const snapshot = await get(collaborationIndexRef);
 
-/**
- * Get plans shared with a user (accessed but not owned)
- * @param {string} userId - The user ID
- * @returns {Promise<Array>} Array of shared plans
- */
-export const getUserSharedPlans = async (userId) => {
-  try {
-    const userAccessRef = ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans`);
-    const snapshot = await get(userAccessRef);
+  if (!snapshot.exists()) {
+    return [];
+  }
 
-    if (!snapshot.exists()) {
-      return [];
-    }
+  const collaborationMap = snapshot.val();
+  const planIds = Object.keys(collaborationMap || {});
 
-    const accessedPlansMap = snapshot.val();
-    if (!accessedPlansMap || typeof accessedPlansMap !== 'object') {
-      return [];
-    }
-    const planIds = Object.keys(accessedPlansMap);
-    
-    const planPromises = planIds.map(async (planId) => {
-      const planRef = ref(database, `${PLANS_PATH}/${planId}`);
-      const planSnapshot = await get(planRef);
-
+  const collaborativePlans = await Promise.all(planIds.map(async (planId) => {
+    try {
+      const planSnapshot = await get(ref(database, `${PLANS_PATH}/${planId}`));
       if (!planSnapshot.exists()) {
         return null;
       }
@@ -364,15 +448,106 @@ export const getUserSharedPlans = async (userId) => {
       return normalizeDashboardPlan(planId, planData, userId, {
         isOwner: false,
         hasAccessed: true,
+        accessLevel: 'editor',
+        shareMode: 'edit',
         accessInfo: {
-          lastAccess: accessedPlansMap[planId]?.lastAccess || 0,
-          accessCount: accessedPlansMap[planId]?.accessCount || 1
-        }
+          lastAccess: collaborationMap[planId]?.lastAccess || collaborationMap[planId]?.addedAt || 0,
+          accessCount: collaborationMap[planId]?.accessCount || 1,
+        },
       });
-    });
+    } catch (error) {
+      if (!isPermissionDeniedError(error)) {
+        console.error('[PlanAccessService] Failed to load collaborative plan:', error);
+      }
+      return null;
+    }
+  }));
 
-    const results = await Promise.all(planPromises);
-    return sortPlansByRecent(results.filter((plan) => plan !== null));
+  return collaborativePlans.filter((plan) => plan !== null);
+};
+
+const getUserViewedPlans = async (userId) => {
+  const userAccessRef = ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans`);
+  const snapshot = await get(userAccessRef);
+
+  if (!snapshot.exists()) {
+    return [];
+  }
+
+  const accessedPlansMap = snapshot.val();
+  if (!accessedPlansMap || typeof accessedPlansMap !== 'object') {
+    return [];
+  }
+
+  const planEntries = await Promise.all(Object.entries(accessedPlansMap).map(async ([planId, accessInfo]) => {
+    try {
+      const normalizedAccessInfo = accessInfo && typeof accessInfo === 'object' ? accessInfo : {};
+      const accessType = normalizedAccessInfo.accessType || 'edit';
+
+      if (accessType === 'view' && normalizedAccessInfo.viewToken) {
+        const shareViewSnapshot = await get(ref(database, `${PLAN_SHARE_VIEWS_PATH}/${normalizedAccessInfo.viewToken}`));
+        if (!shareViewSnapshot.exists()) {
+          return null;
+        }
+
+        const shareViewData = shareViewSnapshot.val();
+        if (shareViewData.viewEnabled !== true) {
+          return null;
+        }
+
+        return normalizeViewedDashboardPlan(normalizedAccessInfo.viewToken, shareViewData, userId, {
+          accessInfo: {
+            lastAccess: normalizedAccessInfo.lastAccess || 0,
+            accessCount: normalizedAccessInfo.accessCount || 1,
+          },
+        });
+      }
+
+      const planSnapshot = await get(ref(database, `${PLANS_PATH}/${planId}`));
+      if (!planSnapshot.exists()) {
+        return null;
+      }
+
+      const planData = planSnapshot.val();
+      if (planData.ownerId === userId || planData.userId === userId) {
+        return null;
+      }
+
+      return normalizeDashboardPlan(planId, planData, userId, {
+        isOwner: false,
+        hasAccessed: true,
+        accessLevel: planData.collaborators?.[userId]?.role === 'editor' ? 'editor' : 'viewer',
+        shareMode: planData.collaborators?.[userId]?.role === 'editor' ? 'edit' : 'view',
+        accessInfo: {
+          lastAccess: normalizedAccessInfo.lastAccess || 0,
+          accessCount: normalizedAccessInfo.accessCount || 1,
+        },
+      });
+    } catch (error) {
+      if (!isPermissionDeniedError(error)) {
+        console.error('[PlanAccessService] Failed to load viewed plan:', error);
+      }
+      return null;
+    }
+  }));
+
+  return planEntries.filter((plan) => plan !== null);
+};
+
+
+/**
+ * Get plans shared with a user (accessed but not owned)
+ * @param {string} userId - The user ID
+ * @returns {Promise<Array>} Array of shared plans
+ */
+export const getUserSharedPlans = async (userId) => {
+  try {
+    const [collaborativePlans, viewedPlans] = await Promise.all([
+      getUserCollaborativePlans(userId),
+      getUserViewedPlans(userId),
+    ]);
+
+    return sortPlansByRecent(mergePlansById(collaborativePlans, viewedPlans));
   } catch (error) {
     console.error('[PlanAccessService] Error getting shared plans:', error);
     throw new Error(`Failed to load shared plans: ${getErrorMessage(error)}`);

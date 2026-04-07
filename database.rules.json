@@ -13,57 +13,102 @@
       ".write": false,
       ".indexOn": ["userId", "ownerId"],
       "$planId": {
-        ".read": "data.child('isPublic').val() === true || (auth != null && (data.child('ownerId').val() === auth.uid || data.child('userId').val() === auth.uid || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists()))",
+        ".read": "auth != null && (data.child('ownerId').val() === auth.uid || data.child('userId').val() === auth.uid || data.child('collaborators').child(auth.uid).child('role').val() === 'editor' || root.child('planCollaborationsByUser').child(auth.uid).child($planId).exists())",
         ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('ownerId').val() === auth.uid && newData.child('userId').val() === auth.uid) || (data.exists() && (data.child('ownerId').val() === auth.uid || data.child('userId').val() === auth.uid)))",
         "name": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "description": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "bossId": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "bossTags": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "bossMetadata": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "selectedJobs": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "assignments": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "tankPositions": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "healthSettings": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "timelineLayout": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "phaseOverrides": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "updatedAt": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "lastModifiedBy": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "lastChangeOrigin": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
         },
         "lastAccessedAt": {
-          ".write": "auth != null && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
+        },
+        "sourceTimelineId": {
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
+        },
+        "sourceTimelineName": {
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
+        },
+        "isPublic": {
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid)"
+        },
+        "shareSettings": {
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid)"
+        },
+        "collaborators": {
+          ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid)"
         },
         "accessedBy": {
           ".write": "auth != null && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid)",
           "$userId": {
-            ".write": "auth != null && auth.uid === $userId && (root.child('plans').child($planId).child('isPublic').val() === true || root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('accessedBy').child(auth.uid).exists() || root.child('userProfiles').child(auth.uid).child('accessedPlans').child($planId).exists())"
+            ".write": "auth != null && auth.uid === $userId && (root.child('plans').child($planId).child('ownerId').val() === auth.uid || root.child('plans').child($planId).child('userId').val() === auth.uid || root.child('plans').child($planId).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
+          }
+        }
+      }
+    },
+    "planCollaborationsByUser": {
+      ".read": false,
+      ".write": false,
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId",
+        "$planId": {
+          ".write": "auth != null && root.child('plans').child($planId).child('ownerId').val() === auth.uid"
+        }
+      }
+    },
+    "planShareViews": {
+      ".read": false,
+      ".write": false,
+      "$viewToken": {
+        ".read": "data.child('viewEnabled').val() === true || (auth != null && (root.child('plans').child(data.child('planId').val()).child('ownerId').val() === auth.uid || root.child('plans').child(data.child('planId').val()).child('userId').val() === auth.uid || root.child('plans').child(data.child('planId').val()).child('collaborators').child(auth.uid).child('role').val() === 'editor'))",
+        ".write": "auth != null && (root.child('plans').child((data.exists() ? data.child('planId').val() : newData.child('planId').val())).child('ownerId').val() === auth.uid || root.child('plans').child((data.exists() ? data.child('planId').val() : newData.child('planId').val())).child('userId').val() === auth.uid || root.child('plans').child((data.exists() ? data.child('planId').val() : newData.child('planId').val())).child('collaborators').child(auth.uid).child('role').val() === 'editor')"
+      }
+    },
+    "planShareViewTracking": {
+      ".read": false,
+      ".write": false,
+      "$viewToken": {
+        "viewers": {
+          ".read": "auth != null && (root.child('plans').child(root.child('planShareViews').child($viewToken).child('planId').val()).child('ownerId').val() === auth.uid || root.child('plans').child(root.child('planShareViews').child($viewToken).child('planId').val()).child('userId').val() === auth.uid || root.child('plans').child(root.child('planShareViews').child($viewToken).child('planId').val()).child('collaborators').child(auth.uid).child('role').val() === 'editor')",
+          "$userId": {
+            ".write": "auth != null && auth.uid === $userId && root.child('planShareViews').child($viewToken).child('viewEnabled').val() === true"
           }
         }
       }

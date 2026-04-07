@@ -167,9 +167,10 @@ Shared URL → Access Check → Plan View/Edit Mode
 ```
 
 **Sharing Features**:
-- Universal edit access (any user can edit any plan)
-- No permission restrictions
-- Real-time collaboration on shared plans
+- Separate editable and read-only share links
+- Original-plan editing for owner and invited editors only
+- Public tokenized read-only views with print support
+- Make-a-copy flow for signed-in viewers
 - Access tracking for analytics
 
 ### 6. Import/Export Workflow

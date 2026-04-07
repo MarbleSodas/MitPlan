@@ -1,8 +1,8 @@
 # Share Plan Feature Manual Test Guide
 
-This guide provides step-by-step instructions to manually test the share plan feature and verify that accessed plans appear in the shared plans section.
+This guide provides step-by-step instructions to manually test the split sharing model and verify that editable shared plans and read-only viewed plans appear correctly.
 
-## Test Scenario: Share Plan Access Tracking
+## Test Scenario: Secure Split Sharing
 
 ### Prerequisites
 - Firebase project configured
@@ -19,46 +19,75 @@ This guide provides step-by-step instructions to manually test the share plan fe
 5. Save the plan
 6. Note the plan ID from the URL
 
-#### Step 2: Share the Plan
+#### Step 2: Configure Sharing
 1. On the dashboard, click the "Share" button for the created plan
-2. Copy the share link (should be in format: `/plan/shared/{planId}`)
-3. Verify the share modal shows the correct URL
+2. Copy the editable link (should be in format: `/plan/shared/{planId}`)
+3. Enable the read-only view link
+4. Copy the view link (should be in format: `/plan/view/{viewToken}`)
+5. Verify the share modal shows separate editable and view-only URLs
 
-#### Step 3: Access Plan as Different User (User B)
+#### Step 3: Access the Read-Only View as Different User (User B)
 1. Log out from User A
-2. Log in as User B (or use anonymous mode)
-3. Navigate directly to the share URL copied in Step 2
+2. Navigate directly to the view URL copied in Step 2 as a guest
 4. Verify the plan loads correctly
-5. Make a small change (e.g., select a job or assign a mitigation)
-6. Save the plan
+5. Verify there is no way to edit the original plan from this page
+6. Verify the page exposes print functionality
+7. Sign in as User B
+8. Verify the page now shows "Make a Copy"
+9. Create a copy and verify User B is taken to a new editable plan
 
-#### Step 4: Verify Access Tracking
-1. Open browser console and check for access tracking logs:
-   - Look for `[RealtimePlanContext] Initial access tracked for authenticated user:`
-   - Look for `[PlanAccessService] Tracked access to plan:`
+#### Step 4: Promote a Known Viewer to Editor
+1. Log back in as User A
+2. Re-open the share modal
+3. Verify User B appears in the "Known Users" list after viewing the public link
+4. Add User B as an editor
+5. Copy the editable link again if needed
 
-#### Step 5: Check Shared Plans Section
+#### Step 5: Verify Editor Access
+1. Log in as User B
+2. Navigate to the editable link (`/plan/shared/{planId}`)
+3. Verify the original plan opens in the editor
+4. Make a small change and verify it saves successfully
+
+#### Step 6: Verify Access Tracking
+1. Open browser console and check for access tracking logs where applicable
+2. Verify User B's read-only access was tracked after opening the public view
+3. Verify editable access still works for invited editors
+
+#### Step 7: Check Shared Plans Section
 1. Navigate to User B's dashboard
 2. Verify the "Shared Plans" section appears (for authenticated users)
-3. Check if the accessed plan appears in the "Shared Plans" section
-4. Verify the plan count is correct
+3. Verify the viewed plan appears as read-only and opens the `/plan/view/{viewToken}` route
+4. Verify the invited editable plan appears and opens the `/plan/shared/{planId}` route
+5. Verify the plan count is correct
 5. **Check Creator Display Name**: Verify that the plan card shows "Created by: [User A's display name]" between the created and updated dates
 
-#### Step 6: Verify Database State
+#### Step 8: Verify Database State
 1. Check Firebase Realtime Database
-2. Navigate to `plans/{planId}/accessedBy/{userBId}`
-3. Verify access tracking data exists with:
+2. Navigate to `planShareViews/{viewToken}`
+3. Verify a sanitized public record exists for the shared view
+4. Navigate to `planShareViewTracking/{viewToken}/viewers/{userBId}`
+5. Verify viewer tracking data exists with:
    - `firstAccess`: timestamp
    - `lastAccess`: timestamp  
    - `accessCount`: number
+6. Navigate to `plans/{planId}/collaborators/{userBId}`
+7. Verify collaborator data exists with:
+   - `role: "editor"`
+   - `addedAt`
+   - `addedBy`
+8. Navigate to `planCollaborationsByUser/{userBId}/{planId}`
+9. Verify the reverse collaboration index exists
 
 ### Expected Results
 
-✅ **Access Tracking**: Console logs show access tracking is working
-✅ **Plan Loading**: Shared plan loads correctly for User B
-✅ **Shared Plans Section**: Plan appears in User B's "Shared Plans" section
+✅ **Read-Only View**: Public link loads a static view-only page
+✅ **Print**: View page prints correctly
+✅ **Make a Copy**: Signed-in viewers can create a private copy
+✅ **Editor Access**: Only invited editors can open the editable shared route
+✅ **Shared Plans Section**: Viewed and editable shared plans appear correctly in User B's "Shared Plans" section
 ✅ **Creator Display Name**: Plan card shows "Created by: [User A's display name]"
-✅ **Database State**: Access data is stored in Firebase
+✅ **Database State**: Share view, viewer tracking, and collaboration index data are stored in Firebase
 ✅ **Plan Counts**: Dashboard shows correct counts for owned vs shared plans
 
 ### Debugging
@@ -73,13 +102,21 @@ If the shared plans section is empty:
 
 2. Verify Firebase data structure:
    ```
-   plans/
-     {planId}/
-       accessedBy/
+   planShareViews/
+     {viewToken}/
+       planId: ...
+       viewEnabled: true
+   planShareViewTracking/
+     {viewToken}/
+       viewers/
          {userId}/
-           firstAccess: timestamp
-           lastAccess: timestamp
+           firstViewedAt: timestamp
+           lastViewedAt: timestamp
            accessCount: number
+   planCollaborationsByUser/
+     {userId}/
+       {planId}/
+         role: "editor"
    ```
 
 3. Check user authentication state and ensure User B is properly authenticated
@@ -99,10 +136,11 @@ If the creator display name is not showing:
 
 ### Common Issues
 
-- **Anonymous users**: Shared plans section only shows for authenticated users
-- **Access tracking**: Ensure plan is accessed via direct URL, not through dashboard
-- **User context**: Verify unifiedPlanService has correct user context set
-- **Firebase rules**: Ensure database rules allow read/write access
+- **Anonymous users**: Guests can view and print, but they must sign in before creating a copy
+- **Editable route denied**: Verify User B was added under `plans/{planId}/collaborators`
+- **Known users list empty**: Verify User B opened the read-only link while authenticated
+- **Shared plans missing**: Verify `userProfiles/{userId}/accessedPlans` and `planCollaborationsByUser/{userId}` are populated
+- **Firebase rules**: Ensure the new rules for `/plans`, `/planShareViews`, and `/planShareViewTracking` are deployed
 
 ### Expected Display Name Behavior
 
