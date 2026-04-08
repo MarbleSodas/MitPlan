@@ -133,7 +133,10 @@ const TimelineViewer = ({ isShared = false }) => {
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
       {/* Header */}
-      <div className="bg-[var(--color-cardBackground)] border-b border-[var(--color-border)] sticky top-0 z-10">
+      <div
+        data-testid="timeline-viewer-header"
+        className="sticky top-0 z-10 border-b border-border bg-card shadow-sm"
+      >
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

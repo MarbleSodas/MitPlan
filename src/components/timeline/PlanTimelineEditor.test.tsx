@@ -254,6 +254,7 @@ describe('PlanTimelineEditor', () => {
     planState.realtimePlan.userId = 'user-1';
     planState.realtimePlan.isPublic = false;
     planState.realtimePlan.accessedBy = {};
+    planState.realtimePlan.collaborators = {};
   });
 
   afterEach(() => {
@@ -318,7 +319,23 @@ describe('PlanTimelineEditor', () => {
     expect(navigateMock).not.toHaveBeenCalledWith('/timeline/edit/timeline-2');
   });
 
-  it('allows signed-in shared collaborators to edit and publish from the plan timeline', () => {
+  it('allows signed-in editors to edit and publish from the plan timeline', () => {
+    userState.uid = 'editor-2';
+    planState.realtimePlan.ownerId = 'owner-1';
+    planState.realtimePlan.userId = 'owner-1';
+    planState.realtimePlan.collaborators = {
+      'editor-2': {
+        role: 'editor',
+      },
+    };
+
+    render(<PlanTimelineEditor />);
+
+    expect(screen.getByText('editable')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeTruthy();
+  });
+
+  it('keeps the plan timeline read-only for view-only shared access', () => {
     userState.uid = 'viewer-2';
     planState.realtimePlan.ownerId = 'owner-1';
     planState.realtimePlan.userId = 'owner-1';
@@ -329,18 +346,7 @@ describe('PlanTimelineEditor', () => {
         accessCount: 1,
       },
     };
-
-    render(<PlanTimelineEditor />);
-
-    expect(screen.getByText('editable')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Publish' })).toBeTruthy();
-  });
-
-  it('keeps the plan timeline read-only when the signed-in user does not have plan access', () => {
-    userState.uid = 'viewer-2';
-    planState.realtimePlan.ownerId = 'owner-1';
-    planState.realtimePlan.userId = 'owner-1';
-    planState.realtimePlan.accessedBy = {};
+    planState.realtimePlan.collaborators = {};
 
     render(<PlanTimelineEditor />);
 

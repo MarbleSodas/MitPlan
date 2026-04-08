@@ -125,7 +125,7 @@ try {
   if (!foundTrackedSensitive) {
     console.log('✅ No sensitive files tracked by git');
   }
-} catch (error) {
+} catch {
   console.log('⚠️  Could not check git tracking (not a git repository?)');
 }
 

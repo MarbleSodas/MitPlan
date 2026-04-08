@@ -116,10 +116,13 @@ async function verifyDatabase() {
       { label: '/plans/$planId/lastAccessedAt/.write', path: ['rules', 'plans', '$planId', 'lastAccessedAt', '.write'] },
       { label: '/plans/$planId/accessedBy/.write', path: ['rules', 'plans', '$planId', 'accessedBy', '.write'] },
       { label: '/plans/$planId/accessedBy/$userId/.write', path: ['rules', 'plans', '$planId', 'accessedBy', '$userId', '.write'] },
+      { label: '/planCollaborationsByUser/.read', path: ['rules', 'planCollaborationsByUser', '.read'] },
       { label: '/planCollaboration/.read', path: ['rules', 'planCollaboration', '.read'] },
       { label: '/planCollaboration/.write', path: ['rules', 'planCollaboration', '.write'] },
       { label: '/planCollaboration/$planId/.read', path: ['rules', 'planCollaboration', '$planId', '.read'] },
       { label: '/planCollaboration/$planId/.write', path: ['rules', 'planCollaboration', '$planId', '.write'] },
+      { label: '/timelines/.read', path: ['rules', 'timelines', '.read'] },
+      { label: '/timelines/$timelineId/.read', path: ['rules', 'timelines', '$timelineId', '.read'] },
     ];
     const ruleMismatches = collectRuleMismatches(localRules, liveRules, ruleChecks);
 
@@ -132,7 +135,7 @@ async function verifyDatabase() {
       });
       return false;
     }
-    console.log('✅ Live rules include the expected field-scoped /plans permissions and /planCollaboration subtrees');
+    console.log('✅ Live rules include the expected plan, collaboration, and timeline permission rules');
 
     console.log('\n📋 Test 3: Checking available plan data...');
     const planKeys = databaseGet('/plans', ['--shallow', '--limit-to-first', '1']);

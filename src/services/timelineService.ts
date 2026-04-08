@@ -56,6 +56,70 @@ const sortBossTagTimelines = (timelines) => {
   });
 };
 
+const mergeTimelinesById = (...timelineGroups) => {
+  const mergedTimelines = new Map();
+
+  timelineGroups.flat().forEach((timeline) => {
+    if (!timeline?.id || mergedTimelines.has(timeline.id)) {
+      return;
+    }
+
+    mergedTimelines.set(timeline.id, timeline);
+  });
+
+  return Array.from(mergedTimelines.values());
+};
+
+const getOwnedTimelinesByField = async (userId, fieldName) => {
+  const timelinesRef = ref(database, TIMELINES_PATH);
+  const timelineQuery = query(timelinesRef, orderByChild(fieldName), equalTo(userId));
+  const snapshot = await get(timelineQuery);
+  const timelines = [];
+
+  if (snapshot.exists()) {
+    snapshot.forEach((childSnapshot) => {
+      timelines.push({
+        ...normalizeTimelineEntity(childSnapshot.key, childSnapshot.val()),
+        id: childSnapshot.key,
+        isOwned: true,
+        inCollection: false,
+      });
+    });
+  }
+
+  return timelines;
+};
+
+const getPublicCommunityTimelineSnapshot = async () => {
+  const timelinesRef = ref(database, TIMELINES_PATH);
+  const publicTimelinesQuery = query(timelinesRef, orderByChild('isPublic'), equalTo(true));
+  return await get(publicTimelinesQuery);
+};
+
+const sanitizeFirebaseValue = (value) => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => sanitizeFirebaseValue(entry))
+      .filter((entry) => entry !== undefined);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).reduce((accumulator, [key, entryValue]) => {
+      const sanitizedEntryValue = sanitizeFirebaseValue(entryValue);
+      if (sanitizedEntryValue !== undefined) {
+        accumulator[key] = sanitizedEntryValue;
+      }
+      return accumulator;
+    }, {} as Record<string, unknown>);
+  }
+
+  return value;
+};
+
 /**
  * @typedef {Object} BossAction
  * @property {string} id - Unique identifier for the action
@@ -131,7 +195,7 @@ export const createTimeline = async (userId, timelineData) => {
     const preparedTimeline = prepareTimelineForStorage(timelineData);
 
     // Prepare timeline document with adaptive-compatible structure
-    const timelineDoc = {
+    const timelineDoc = sanitizeFirebaseValue({
       name: timelineData.name || 'Untitled Timeline',
       bossTags: preparedTimeline.bossTags || [],
       bossId: preparedTimeline.bossId || null,
@@ -154,7 +218,7 @@ export const createTimeline = async (userId, timelineData) => {
       likeCount: 0,
       likedBy: {},
       guideSources: timelineData.guideSources || preparedTimeline.guideSources || []
-    };
+    });
 
     // Create timeline in Firebase
     const timelinesRef = ref(database, TIMELINES_PATH);
@@ -271,7 +335,7 @@ export const updateTimeline = async (timelineId, updates) => {
     }
 
     const timelineRef = ref(database, `${TIMELINES_PATH}/${timelineId}`);
-    await update(timelineRef, updateData);
+    await update(timelineRef, sanitizeFirebaseValue(updateData));
 
     console.log('[TimelineService] Timeline updated successfully');
   } catch (error) {
@@ -316,27 +380,11 @@ export const getUserTimelines = async (userId) => {
   try {
     console.log('[TimelineService] Fetching timelines for user:', userId);
 
-    const ownedTimelines = [];
-    try {
-      const timelinesRef = ref(database, TIMELINES_PATH);
-      const userTimelinesQuery = query(timelinesRef, orderByChild('userId'), equalTo(userId));
-      const ownedSnapshot = await get(userTimelinesQuery);
-
-      if (ownedSnapshot.exists()) {
-        ownedSnapshot.forEach((childSnapshot) => {
-          ownedTimelines.push({
-            ...normalizeTimelineEntity(childSnapshot.key, childSnapshot.val()),
-            id: childSnapshot.key,
-            isOwned: true,
-            inCollection: false
-          });
-        });
-      }
-    } catch (error) {
-      if (!isPermissionDeniedError(error)) {
-        throw error;
-      }
-    }
+    const [ownerTimelines, legacyTimelines] = await Promise.all([
+      getOwnedTimelinesByField(userId, 'ownerId'),
+      getOwnedTimelinesByField(userId, 'userId'),
+    ]);
+    const ownedTimelines = mergeTimelinesById(ownerTimelines, legacyTimelines);
 
     // Fetch collection timeline IDs
     const collectionIds = await getCollectionTimelineIds(userId);
@@ -608,8 +656,7 @@ export const getTimelinesByBossTag = async (bossTag, officialOnly = false) => {
     console.log('[TimelineService] Fetching timelines for boss tag:', bossTag);
 
     if (!officialOnly) {
-      const timelinesRef = ref(database, TIMELINES_PATH);
-      const snapshot = await get(timelinesRef);
+      const snapshot = await getPublicCommunityTimelineSnapshot();
 
       if (snapshot.exists()) {
         snapshot.forEach((childSnapshot) => {
@@ -653,8 +700,7 @@ export const getAllUniqueBossTags = async () => {
     console.log('[TimelineService] Fetching all unique boss tags');
     const tagsSet = new Set();
 
-    const timelinesRef = ref(database, TIMELINES_PATH);
-    const snapshot = await get(timelinesRef);
+    const snapshot = await getPublicCommunityTimelineSnapshot();
 
     if (snapshot.exists()) {
       snapshot.forEach((childSnapshot) => {

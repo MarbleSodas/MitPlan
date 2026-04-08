@@ -84,7 +84,7 @@
       }
     },
     "planCollaborationsByUser": {
-      ".read": false,
+      ".read": "auth != null && query.orderByKey === true && query.equalTo === auth.uid",
       ".write": false,
       "$userId": {
         ".read": "auth != null && auth.uid === $userId",
@@ -122,7 +122,7 @@
       }
     },
     "timelines": {
-      ".read": false,
+      ".read": "(query.orderByChild === 'isPublic' && query.equalTo === true) || (auth != null && ((query.orderByChild === 'userId' && query.equalTo === auth.uid) || (query.orderByChild === 'ownerId' && query.equalTo === auth.uid)))",
       ".write": false,
       ".indexOn": ["userId", "ownerId", "official", "isPublic", "likeCount"],
       "$timelineId": {

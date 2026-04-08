@@ -73,13 +73,7 @@ const Dashboard = () => {
     setError(null);
 
     try {
-      console.log('[Dashboard] Loading categorized plans for user:', user.uid);
       const plans = await unifiedPlanService.getCategorizedUserPlans();
-      console.log('[Dashboard] Categorized plans loaded:', {
-        ownedPlans: plans.ownedPlans.length,
-        sharedPlans: plans.sharedPlans.length,
-        totalPlans: plans.totalPlans
-      });
       setCategorizedPlans(plans);
     } catch (err) {
       console.error('Error loading categorized plans:', err);
@@ -99,9 +93,7 @@ const Dashboard = () => {
     setTimelinesLoading(true);
 
     try {
-      console.log('[Dashboard] Loading timelines for user:', user.uid);
       const userTimelines = await getUserTimelines(user.uid);
-      console.log('[Dashboard] Timelines loaded:', userTimelines.length);
       setTimelines(userTimelines);
     } catch (err) {
       console.error('Error loading timelines:', err);
