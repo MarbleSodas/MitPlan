@@ -1,21 +1,22 @@
-import React from 'react';
-import { render } from '@testing-library/react';
-import { vi } from 'vitest';
-import { ThemeProvider } from '../../contexts/ThemeContext';
+/* @vitest-environment jsdom */
+
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MitigationItem from './MitigationItem';
 
-// Mock contexts
 vi.mock('../../contexts', () => ({
   useTankPositionContext: () => ({
-    tankPositions: { mainTank: 'PLD', offTank: 'WAR' }
-  })
+    tankPositions: { mainTank: 'PLD', offTank: 'WAR' },
+  }),
 }));
 
-const TestWrapper = ({ children, isDarkMode = false }) => (
-  <ThemeProvider initialTheme={isDarkMode ? 'dark' : 'light'}>
-    {children}
-  </ThemeProvider>
-);
+vi.mock('../../contexts/UserJobAssignmentContext', () => ({
+  useUserJobAssignmentOptional: () => null,
+}));
+
+vi.mock('../collaboration/SelectionBorder', () => ({
+  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
 
 describe('MitigationItem Availability Indicators', () => {
   const mockMitigation = {
@@ -46,69 +47,50 @@ describe('MitigationItem Availability Indicators', () => {
   });
 
   it('should show blue border when mitigation is available', () => {
-    const { container } = render(
-      <TestWrapper>
-        <MitigationItem
-          {...mockProps}
-          isDisabled={false}
-          cooldownReason={null}
-        />
-      </TestWrapper>
+    render(
+      <MitigationItem
+        {...mockProps}
+        isDisabled={false}
+        cooldownReason={null}
+      />
     );
 
-    const mitigationContainer = container.querySelector('[class*="MitigationItemContainer"]');
-    expect(mitigationContainer).toBeTruthy();
-    
-    // Check that the component renders (detailed styling tests would require more setup)
-    expect(mitigationContainer).toBeInTheDocument();
+    expect(screen.getByText('Test Mitigation')).toBeInTheDocument();
+    expect(screen.getByText(/Cooldown: 120s/)).toBeInTheDocument();
+    expect(screen.queryByText('On cooldown')).toBeNull();
   });
 
-  it('should show red border when mitigation is disabled', () => {
-    const { container } = render(
-      <TestWrapper>
-        <MitigationItem
-          {...mockProps}
-          isDisabled={true}
-          cooldownReason="On cooldown"
-        />
-      </TestWrapper>
+  it('renders the cooldown overlay when the mitigation is disabled', () => {
+    render(
+      <MitigationItem
+        {...mockProps}
+        isDisabled={true}
+        cooldownReason="On cooldown"
+      />
     );
 
-    const mitigationContainer = container.querySelector('[class*="MitigationItemContainer"]');
-    expect(mitigationContainer).toBeTruthy();
-    expect(mitigationContainer).toBeInTheDocument();
+    expect(screen.getByText('On cooldown')).toBeInTheDocument();
   });
 
-  it('should work correctly in dark theme', () => {
-    const { container } = render(
-      <TestWrapper isDarkMode={true}>
-        <MitigationItem
-          {...mockProps}
-          isDisabled={false}
-          cooldownReason={null}
-        />
-      </TestWrapper>
+  it('shows a charge badge for multi-charge abilities', () => {
+    render(
+      <MitigationItem
+        {...mockProps}
+        mitigation={{
+          ...mockMitigation,
+          id: 'tetragrammaton',
+          name: 'Tetragrammaton',
+          count: 2,
+          jobs: ['WHM'],
+        }}
+        selectedJobs={{ healer: [{ id: 'WHM', selected: true }] }}
+        checkAbilityAvailability={vi.fn(() => ({
+          availableCharges: 1,
+          totalCharges: 2,
+        }))}
+      />
     );
 
-    const mitigationContainer = container.querySelector('[class*="MitigationItemContainer"]');
-    expect(mitigationContainer).toBeTruthy();
-    expect(mitigationContainer).toBeInTheDocument();
-  });
-
-  it('should handle drag and drop functionality with borders', () => {
-    const { container } = render(
-      <TestWrapper>
-        <MitigationItem
-          {...mockProps}
-          isDisabled={false}
-          cooldownReason={null}
-          isDragging={true}
-        />
-      </TestWrapper>
-    );
-
-    const mitigationContainer = container.querySelector('[class*="MitigationItemContainer"]');
-    expect(mitigationContainer).toBeTruthy();
-    expect(mitigationContainer).toBeInTheDocument();
+    expect(screen.getByText('1/2')).toBeInTheDocument();
   });
 });

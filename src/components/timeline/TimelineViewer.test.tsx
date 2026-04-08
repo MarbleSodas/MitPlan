@@ -73,4 +73,13 @@ describe('TimelineViewer', () => {
       expect(navigateMock).toHaveBeenCalledWith('/timeline/create/editor?sourceTimelineId=community-1');
     });
   });
+
+  it('renders the sticky header with a solid card background', async () => {
+    render(<TimelineViewer />);
+
+    const header = await screen.findByTestId('timeline-viewer-header');
+
+    expect(header.className).toContain('bg-card');
+    expect(header.className).not.toContain('bg-[var(--color-cardBackground)]');
+  });
 });

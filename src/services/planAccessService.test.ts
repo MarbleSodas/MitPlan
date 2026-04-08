@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 const equalToMock = vi.fn();
 const getMock = vi.fn();
 const orderByChildMock = vi.fn();
+const orderByKeyMock = vi.fn();
 const queryMock = vi.fn();
 const refMock = vi.fn();
 
@@ -17,6 +18,7 @@ vi.mock('firebase/database', () => ({
   update: vi.fn(),
   query: (...args: unknown[]) => queryMock(...args),
   orderByChild: (...args: unknown[]) => orderByChildMock(...args),
+  orderByKey: (...args: unknown[]) => orderByKeyMock(...args),
   equalTo: (...args: unknown[]) => equalToMock(...args),
 }));
 
@@ -53,16 +55,19 @@ describe('planAccessService', () => {
     equalToMock.mockReset();
     getMock.mockReset();
     orderByChildMock.mockReset();
+    orderByKeyMock.mockReset();
     queryMock.mockReset();
     refMock.mockReset();
 
     refMock.mockImplementation((_database: unknown, path: string) => ({ path }));
     orderByChildMock.mockImplementation((field: string) => ({ field }));
+    orderByKeyMock.mockImplementation(() => ({ orderByKey: true }));
     equalToMock.mockImplementation((value: string) => ({ value }));
     queryMock.mockImplementation(
-      (baseRef: { path: string }, order: { field: string }, equal: { value: string }) => ({
+      (baseRef: { path: string }, order: { field?: string; orderByKey?: boolean }, equal: { value: string }) => ({
         path: baseRef.path,
-        orderField: order.field,
+        orderField: order.field ?? null,
+        orderByKey: order.orderByKey === true,
         equalToValue: equal.value,
       })
     );
@@ -127,8 +132,8 @@ describe('planAccessService', () => {
   });
 
   it('loads shared plans from accessed history, excluding owned plans and missing records', async () => {
-    getMock.mockImplementation((target: { path: string; orderField?: string }) => {
-      if (target.path === 'planCollaborationsByUser/user-1') {
+    getMock.mockImplementation((target: { path: string; orderField?: string | null; orderByKey?: boolean; equalToValue?: string }) => {
+      if (target.path === 'planCollaborationsByUser' && target.orderByKey === true && target.equalToValue === 'user-1') {
         return Promise.resolve(buildSnapshot({}));
       }
 
@@ -196,8 +201,8 @@ describe('planAccessService', () => {
   });
 
   it('loads viewed plans from tokenized shared view records', async () => {
-    getMock.mockImplementation((target: { path: string; orderField?: string }) => {
-      if (target.path === 'planCollaborationsByUser/user-1') {
+    getMock.mockImplementation((target: { path: string; orderField?: string | null; orderByKey?: boolean; equalToValue?: string }) => {
+      if (target.path === 'planCollaborationsByUser' && target.orderByKey === true && target.equalToValue === 'user-1') {
         return Promise.resolve(buildSnapshot({}));
       }
 
@@ -251,8 +256,62 @@ describe('planAccessService', () => {
     );
   });
 
+  it('keeps loading viewed plans when the collaboration index is permission denied', async () => {
+    getMock.mockImplementation((target: { path: string; orderField?: string | null; orderByKey?: boolean; equalToValue?: string }) => {
+      if (target.path === 'planCollaborationsByUser' && target.orderByKey === true && target.equalToValue === 'user-1') {
+        return Promise.reject(new Error('Permission denied'));
+      }
+
+      if (target.path === 'userProfiles/user-1/accessedPlans') {
+        return Promise.resolve(
+          buildSnapshot({
+            'shared-plan': {
+              accessType: 'view',
+              viewToken: 'view-token-1',
+              lastAccess: 600,
+              accessCount: 2,
+            },
+          })
+        );
+      }
+
+      if (target.path === 'planShareViews/view-token-1') {
+        return Promise.resolve(
+          buildSnapshot({
+            planId: 'shared-plan',
+            ownerId: 'user-2',
+            name: 'Viewed Shared Plan',
+            bossId: 'lala',
+            selectedJobs: {},
+            assignments: {},
+            tankPositions: {
+              mainTank: null,
+              offTank: null,
+            },
+            viewEnabled: true,
+            updatedAt: 550,
+            sourcePlanUpdatedAt: 500,
+          })
+        );
+      }
+
+      throw new Error(`Unexpected get target: ${JSON.stringify(target)}`);
+    });
+
+    const plans = await getUserSharedPlans('user-1');
+
+    expect(plans).toHaveLength(1);
+    expect(plans[0]).toEqual(
+      expect.objectContaining({
+        id: 'shared-plan',
+        shareMode: 'view',
+        viewToken: 'view-token-1',
+      })
+    );
+  });
+
   it('merges owned and shared plans for accessible-plan loading', async () => {
-    getMock.mockImplementation((target: { path: string; orderField?: string }) => {
+    getMock.mockImplementation((target: { path: string; orderField?: string | null; orderByKey?: boolean; equalToValue?: string }) => {
       if (target.path === 'plans' && target.orderField === 'ownerId') {
         return Promise.resolve(
           buildSnapshot({
@@ -270,7 +329,7 @@ describe('planAccessService', () => {
         return Promise.resolve(buildSnapshot({}));
       }
 
-      if (target.path === 'planCollaborationsByUser/user-1') {
+      if (target.path === 'planCollaborationsByUser' && target.orderByKey === true && target.equalToValue === 'user-1') {
         return Promise.resolve(buildSnapshot({}));
       }
 

@@ -1,8 +1,14 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import adaptiveTimeline from '../data/timelines/the-tyrant-m11s.timeline.json';
 
+const equalToMock = vi.fn();
 const getMock = vi.fn();
+const orderByChildMock = vi.fn();
+const pushMock = vi.fn();
+const queryMock = vi.fn();
 const refMock = vi.fn();
+const setMock = vi.fn();
+const updateMock = vi.fn();
 
 vi.mock('../config/firebase', () => ({
   database: {},
@@ -10,22 +16,24 @@ vi.mock('../config/firebase', () => ({
 
 vi.mock('firebase/database', () => ({
   ref: (...args: unknown[]) => refMock(...args),
-  push: vi.fn(),
-  set: vi.fn(),
+  push: (...args: unknown[]) => pushMock(...args),
+  set: (...args: unknown[]) => setMock(...args),
   get: (...args: unknown[]) => getMock(...args),
-  update: vi.fn(),
+  update: (...args: unknown[]) => updateMock(...args),
   remove: vi.fn(),
-  query: vi.fn(),
-  orderByChild: vi.fn(),
-  equalTo: vi.fn(),
+  query: (...args: unknown[]) => queryMock(...args),
+  orderByChild: (...args: unknown[]) => orderByChildMock(...args),
+  equalTo: (...args: unknown[]) => equalToMock(...args),
 }));
 
 import {
+  createTimeline,
   getAllPublicTimelines,
   getAllUniqueBossTags,
   getTimeline,
   getTimelinesByBossTag,
   getUserTimelines,
+  updateTimeline,
 } from './timelineService';
 
 function buildSnapshot(value: unknown) {
@@ -51,9 +59,27 @@ describe('timelineService adaptive reads', () => {
   const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
   beforeEach(() => {
+    equalToMock.mockReset();
     getMock.mockReset();
+    orderByChildMock.mockReset();
+    pushMock.mockReset();
+    queryMock.mockReset();
     refMock.mockReset();
-    refMock.mockReturnValue({});
+    setMock.mockReset();
+    updateMock.mockReset();
+    refMock.mockImplementation((_database: unknown, path: string) => ({ path }));
+    orderByChildMock.mockImplementation((field: string) => ({ field }));
+    equalToMock.mockImplementation((value: string | boolean) => ({ value }));
+    pushMock.mockReturnValue({ key: 'new-timeline', path: 'timelines/new-timeline' });
+    setMock.mockResolvedValue(undefined);
+    updateMock.mockResolvedValue(undefined);
+    queryMock.mockImplementation(
+      (baseRef: { path: string }, order: { field?: string }, equal: { value: string | boolean }) => ({
+        path: baseRef.path,
+        orderField: order.field ?? null,
+        equalToValue: equal.value,
+      })
+    );
     consoleErrorSpy.mockClear();
   });
 
@@ -310,6 +336,65 @@ describe('timelineService adaptive reads', () => {
     expect(timelines.some((timeline) => timeline.id === 'community-lindwurm-ii-timeline')).toBe(true);
   });
 
+  it('loads owned timelines from both ownerId and legacy userId queries without duplicates', async () => {
+    getMock.mockImplementation((target: { path: string; orderField?: string | null; equalToValue?: string | boolean }) => {
+      if (target.path === 'timelines' && target.orderField === 'ownerId' && target.equalToValue === 'user-1') {
+        return Promise.resolve(
+          buildSnapshot({
+            'timeline-owner': {
+              ownerId: 'user-1',
+              userId: 'user-1',
+              name: 'Owner Timeline',
+              updatedAt: 200,
+              actions: [],
+            },
+            'timeline-modern': {
+              ownerId: 'user-1',
+              name: 'Modern Timeline',
+              updatedAt: 100,
+              actions: [],
+            },
+          })
+        );
+      }
+
+      if (target.path === 'timelines' && target.orderField === 'userId' && target.equalToValue === 'user-1') {
+        return Promise.resolve(
+          buildSnapshot({
+            'timeline-owner': {
+              ownerId: 'user-1',
+              userId: 'user-1',
+              name: 'Owner Timeline',
+              updatedAt: 200,
+              actions: [],
+            },
+            'timeline-legacy': {
+              userId: 'user-1',
+              name: 'Legacy Timeline',
+              updatedAt: 150,
+              actions: [],
+            },
+          })
+        );
+      }
+
+      if (target.path === 'userCollections/user-1/timelines') {
+        return Promise.resolve(buildSnapshot(null));
+      }
+
+      throw new Error(`Unexpected get target: ${JSON.stringify(target)}`);
+    });
+
+    const timelines = await getUserTimelines('user-1');
+
+    expect(timelines.map((timeline) => timeline.id)).toEqual([
+      'timeline-owner',
+      'timeline-legacy',
+      'timeline-modern',
+    ]);
+    expect(timelines.every((timeline) => timeline.isOwned)).toBe(true);
+  });
+
   it('returns an empty list when user timeline reads are permission denied', async () => {
     getMock.mockRejectedValue(new Error('Permission denied'));
 
@@ -325,5 +410,69 @@ describe('timelineService adaptive reads', () => {
     expect(timelines).toHaveLength(1);
     expect(timelines[0]?.id).toBe('official-the-tyrant-m11s');
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes undefined action fields before creating a timeline', async () => {
+    await createTimeline('user-1', {
+      name: 'Phase Test',
+      bossId: 'the-tyrant-m11s',
+      bossTags: ['the-tyrant-m11s'],
+      actions: [
+        {
+          id: 'anchor',
+          name: 'Anchor',
+          time: 10,
+          phaseId: 'phase_1',
+          isPhaseAnchor: undefined,
+          source: 'custom',
+          isCustom: true,
+        },
+      ],
+    });
+
+    expect(setMock).toHaveBeenCalledTimes(1);
+    const [, payload] = setMock.mock.calls[0];
+    expect(payload.actions[0]).not.toHaveProperty('isPhaseAnchor');
+  });
+
+  it('sanitizes undefined action fields before updating a timeline', async () => {
+    getMock.mockResolvedValue(buildSnapshot({
+      name: 'Existing Timeline',
+      bossId: 'the-tyrant-m11s',
+      bossTags: ['the-tyrant-m11s'],
+      actions: [
+        {
+          id: 'existing-action',
+          name: 'Existing Action',
+          time: 8,
+          source: 'custom',
+          isCustom: true,
+        },
+      ],
+      phases: [],
+      analysisSources: [],
+      format: 'legacy_flat',
+      schemaVersion: 1,
+      userId: 'user-1',
+      ownerId: 'user-1',
+    }));
+
+    await updateTimeline('timeline-1', {
+      actions: [
+        {
+          id: 'updated-action',
+          name: 'Updated Action',
+          time: 12,
+          phaseId: 'phase_1',
+          isPhaseAnchor: undefined,
+          source: 'custom',
+          isCustom: true,
+        },
+      ],
+    });
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    const [, payload] = updateMock.mock.calls[0];
+    expect(payload.actions[0]).not.toHaveProperty('isPhaseAnchor');
   });
 });

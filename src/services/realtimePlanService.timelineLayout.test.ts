@@ -95,6 +95,7 @@ describe('realtimePlanService timeline layout support', () => {
     format: 'legacy_flat',
     schemaVersion: 1,
   };
+  let storedPlan: Record<string, unknown> | null;
 
   beforeEach(() => {
     getMock.mockReset();
@@ -103,11 +104,37 @@ describe('realtimePlanService timeline layout support', () => {
     setMock.mockReset();
     updateMock.mockReset();
     getTimelineMock.mockReset();
+    storedPlan = null;
 
     refMock.mockImplementation((_database: unknown, path: string) => ({ path }));
-    pushMock.mockReturnValue({ key: 'plan-1' });
-    setMock.mockResolvedValue(undefined);
-    updateMock.mockResolvedValue(undefined);
+    pushMock.mockReturnValue({ key: 'plan-1', path: 'plans/plan-1' });
+    setMock.mockImplementation(async (target: { path?: string }, value: unknown) => {
+      if (target?.path === 'plans/plan-1') {
+        storedPlan = value as Record<string, unknown>;
+      }
+    });
+    updateMock.mockImplementation(async (_target: unknown, updates: Record<string, unknown>) => {
+      if (!storedPlan) {
+        storedPlan = {};
+      }
+
+      Object.entries(updates).forEach(([path, value]) => {
+        if (path.startsWith('plans/plan-1/')) {
+          const field = path.replace('plans/plan-1/', '');
+          storedPlan = {
+            ...storedPlan,
+            [field]: value,
+          };
+        }
+      });
+    });
+    getMock.mockImplementation(async (target: { path?: string }) => {
+      if (target?.path === 'plans/plan-1') {
+        return buildSnapshot(storedPlan);
+      }
+
+      return buildSnapshot(null);
+    });
     getTimelineMock.mockResolvedValue(sourceTimeline);
   });
 
@@ -152,8 +179,8 @@ describe('realtimePlanService timeline layout support', () => {
       })
     );
 
-    const storedPlan = setMock.mock.calls[0][1];
-    expect(storedPlan.timelineLayout.actions[0]).not.toHaveProperty('targetTank');
+    const createdPlan = setMock.mock.calls[0][1];
+    expect(createdPlan.timelineLayout.actions[0]).not.toHaveProperty('targetTank');
   });
 
   it('hydrates a missing timeline layout for older timeline-backed plans', async () => {
@@ -175,6 +202,23 @@ describe('realtimePlanService timeline layout support', () => {
         },
       })
     );
+    storedPlan = {
+      name: 'Older Plan',
+      bossId: 'the-tyrant-m11s',
+      ownerId: 'user-1',
+      userId: 'user-1',
+      accessedBy: {},
+      sourceTimelineId: 'timeline-1',
+      sourceTimelineName: 'The Tyrant Timeline',
+      shareSettings: { viewToken: 'plan-1', viewEnabled: false },
+      healthSettings: {
+        partyMinHealth: 160000,
+        tankMaxHealth: {
+          mainTank: 320000,
+          offTank: 315000,
+        },
+      },
+    };
 
     await hydratePlanTimelineLayoutIfMissing('plan-1', 'user-1', 'session-1');
 
@@ -203,6 +247,19 @@ describe('realtimePlanService timeline layout support', () => {
   });
 
   it('updates the plan timeline layout and clears legacy phase overrides in the same write', async () => {
+    storedPlan = {
+      id: 'plan-1',
+      name: 'The Tyrant Plan',
+      ownerId: 'user-1',
+      userId: 'user-1',
+      bossId: 'the-tyrant-m11s',
+      accessedBy: {},
+      shareSettings: { viewToken: 'plan-1', viewEnabled: false },
+      timelineLayout: {
+        bossId: 'the-tyrant-m11s',
+      },
+    };
+
     await updatePlanTimelineLayoutRealtime(
       'plan-1',
       {
@@ -245,6 +302,16 @@ describe('realtimePlanService timeline layout support', () => {
         'plans/plan-1/phaseOverrides': {},
         'plans/plan-1/lastModifiedBy': 'user-1',
         'plans/plan-1/lastChangeOrigin': 'session-1',
+      })
+    );
+    expect(setMock).toHaveBeenCalledWith(
+      { path: 'planShareViews/plan-1' },
+      expect.objectContaining({
+        planId: 'plan-1',
+        viewEnabled: false,
+        timelineLayout: expect.objectContaining({
+          description: 'Updated route',
+        }),
       })
     );
   });

@@ -1,4 +1,6 @@
-import { vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
+import { afterEach, vi } from 'vitest'
+import { cleanup } from '@testing-library/react'
 
 // Mock Firebase
 vi.mock('../config/firebase', () => ({
@@ -16,6 +18,37 @@ process.env.VITE_FIREBASE_STORAGE_BUCKET = 'test.appspot.com'
 process.env.VITE_FIREBASE_MESSAGING_SENDER_ID = '123456789'
 process.env.VITE_FIREBASE_APP_ID = 'test-app-id'
 
+const createStorageMock = () => {
+  const storage = new Map<string, string>()
+
+  return {
+    getItem: vi.fn((key: string) => storage.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      storage.set(String(key), String(value))
+    }),
+    removeItem: vi.fn((key: string) => {
+      storage.delete(String(key))
+    }),
+    clear: vi.fn(() => {
+      storage.clear()
+    }),
+    key: vi.fn((index: number) => Array.from(storage.keys())[index] ?? null),
+    get length() {
+      return storage.size
+    },
+  }
+}
+
+const resetLocalStorageMock = () => {
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    writable: true,
+    value: createStorageMock(),
+  })
+}
+
+resetLocalStorageMock()
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -32,8 +65,18 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+class MockResizeObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+
+global.ResizeObserver = MockResizeObserver as typeof ResizeObserver
+
+afterEach(() => {
+  cleanup()
+  if (typeof globalThis.localStorage?.clear === 'function') {
+    globalThis.localStorage.clear()
+  }
+  resetLocalStorageMock()
+})

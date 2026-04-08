@@ -5,20 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-// jsdom polyfills for features used by ThemeContext
-if (!window.matchMedia) {
-  window.matchMedia = () => ({
-    matches: false,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    onchange: null,
-    dispatchEvent: () => false,
-  });
-}
-
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, test, expect, vi } from 'vitest';
 
 import { ThemeProvider } from '../../../contexts/ThemeContext';
@@ -38,9 +25,11 @@ const mockBossActions = [
 ];
 
 const mockSelectedJobs = {
-  'PLD': true,
-  'SCH': true,
-  'BLM': true
+  tank: [{ id: 'PLD', selected: true }],
+  healer: [{ id: 'SCH', selected: true }],
+  melee: [],
+  ranged: [],
+  caster: [{ id: 'BLM', selected: true }],
 };
 
 const mockTankPositions = {
@@ -188,15 +177,12 @@ describe('Enhanced Cooldown System Integration', () => {
       assignments: mockAssignments
     });
 
-    expect(validationResult.isValid).toBe(true);
     expect(validationResult.errors).toHaveLength(0);
-
-    console.log('Validation report:', validationResult.getReport());
+    expect(validationResult.warnings).toHaveLength(0);
+    expect(validationResult.info.length).toBeGreaterThan(0);
   });
 
   test('should handle ability availability checking', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
     renderWithProviders(<TestComponent />);
 
     await waitFor(() => {
@@ -206,16 +192,7 @@ describe('Enhanced Cooldown System Integration', () => {
     // Test availability checking
     fireEvent.click(screen.getByTestId('test-availability'));
 
-    // Check that console.log was called with availability result
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Availability check result:',
-      expect.objectContaining({
-        abilityId: 'hallowed_ground',
-        isAvailable: expect.any(Boolean)
-      })
-    );
-
-    consoleSpy.mockRestore();
+    expect(screen.getByTestId('assignments-count')).toHaveTextContent('2');
   });
 
   test('should handle mitigation assignment', async () => {
@@ -226,11 +203,13 @@ describe('Enhanced Cooldown System Integration', () => {
     });
 
     // Test assignment
-    fireEvent.click(screen.getByTestId('test-assignment'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('test-assignment'));
+    });
 
-    // The assignment should be processed (we can't easily test the async result in this setup)
-    // but we can verify no errors are thrown
-    expect(screen.getByTestId('assignments-count')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('assignments-count')).toBeInTheDocument();
+    });
   });
 
   test('should handle cooldown-based disabling correctly', () => {
@@ -265,11 +244,30 @@ describe('Enhanced Cooldown System Integration', () => {
       assignments: mockAssignments
     });
 
-    // Test Lustrate (multi-charge ability) - should have charges available
     const availability = manager.checkAbilityAvailability('lustrate', 50, 'action3');
 
     expect(availability.isAvailable).toBe(true);
-    expect(availability.totalCharges).toBeGreaterThan(1);
+    expect(availability.reason).toBeNull();
+    expect(availability.availableCharges).toBe(1);
+    expect(availability.canAssign()).toBe(true);
+  });
+
+  test('should expose remaining charges when excluding the current assignment', () => {
+    const manager = getCooldownManager();
+
+    manager.update({
+      bossActions: mockBossActions,
+      bossLevel: 90,
+      selectedJobs: mockSelectedJobs,
+      tankPositions: mockTankPositions,
+      assignments: mockAssignments,
+    });
+
+    const availability = manager.checkAbilityAvailability('lustrate', 50, 'action3', {
+      excludeCurrentAssignment: true,
+    });
+
+    expect(availability.isAvailable).toBe(true);
     expect(availability.availableCharges).toBeGreaterThan(0);
     expect(availability.canAssign()).toBe(true);
   });

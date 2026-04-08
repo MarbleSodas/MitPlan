@@ -3,7 +3,7 @@
  * Handles plan ownership and access control tracking
  */
 
-import { ref, get, set, update, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, get, set, update, query, orderByChild, orderByKey, equalTo } from 'firebase/database';
 import { database } from '../config/firebase';
 import {
   getDashboardPlanLoadErrorMessage,
@@ -171,6 +171,21 @@ const getOwnedPlansByField = async (userId, fieldName) => {
   }
 
   return plans;
+};
+
+const getUserCollaborationMap = async (userId) => {
+  const collaborationRootRef = ref(database, PLAN_COLLABORATIONS_BY_USER_PATH);
+  const collaborationQuery = query(collaborationRootRef, orderByKey(), equalTo(userId));
+  const snapshot = await get(collaborationQuery);
+
+  if (!snapshot.exists()) {
+    return {};
+  }
+
+  const collaborationRoot = snapshot.val();
+  const collaborationMap = collaborationRoot?.[userId];
+
+  return collaborationMap && typeof collaborationMap === 'object' ? collaborationMap : {};
 };
 
 /**
@@ -423,15 +438,22 @@ export const getUserOwnedPlans = async (userId) => {
 };
 
 const getUserCollaborativePlans = async (userId) => {
-  const collaborationIndexRef = ref(database, `${PLAN_COLLABORATIONS_BY_USER_PATH}/${userId}`);
-  const snapshot = await get(collaborationIndexRef);
+  let collaborationMap = {};
 
-  if (!snapshot.exists()) {
-    return [];
+  try {
+    collaborationMap = await getUserCollaborationMap(userId);
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      return [];
+    }
+    throw error;
   }
 
-  const collaborationMap = snapshot.val();
   const planIds = Object.keys(collaborationMap || {});
+
+  if (planIds.length === 0) {
+    return [];
+  }
 
   const collaborativePlans = await Promise.all(planIds.map(async (planId) => {
     try {
