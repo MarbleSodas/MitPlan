@@ -168,8 +168,8 @@ Shared URL → Access Check → Plan View/Edit Mode
 
 **Sharing Features**:
 - Separate editable and read-only share links
-- Original-plan editing for owner and invited editors only
-- Public tokenized read-only views with print support
+- Public original-plan editing for signed-in users with the edit link
+- Public tokenized read-only snapshot views with print support
 - Make-a-copy flow for signed-in viewers
 - Access tracking for analytics
 

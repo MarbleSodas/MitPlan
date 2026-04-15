@@ -192,6 +192,8 @@ describe('planAccessService', () => {
         name: 'Shared Plan',
         isOwner: false,
         hasAccessed: true,
+        accessLevel: 'editor',
+        shareMode: 'edit',
         accessInfo: expect.objectContaining({
           lastAccess: 500,
           accessCount: 3,
@@ -360,6 +362,13 @@ describe('planAccessService', () => {
     const plans = await getUserAccessiblePlans('user-1');
 
     expect(plans.map((plan) => plan.id)).toEqual(['shared-plan', 'owned-plan']);
+    expect(plans[0]).toEqual(
+      expect.objectContaining({
+        id: 'shared-plan',
+        accessLevel: 'editor',
+        shareMode: 'edit',
+      })
+    );
   });
 
   it('surfaces owned-plan query failures instead of returning a fake empty state', async () => {

@@ -1,8 +1,8 @@
 # Share Plan Feature Manual Test Guide
 
-This guide provides step-by-step instructions to manually test the split sharing model and verify that editable shared plans and read-only viewed plans appear correctly.
+This guide provides step-by-step instructions to manually test the public edit link plus frozen snapshot sharing model and verify that editable and read-only shared plans appear correctly.
 
-## Test Scenario: Secure Split Sharing
+## Test Scenario: Public Edit + Frozen Snapshot Sharing
 
 ### Prerequisites
 - Firebase project configured
@@ -22,9 +22,10 @@ This guide provides step-by-step instructions to manually test the split sharing
 #### Step 2: Configure Sharing
 1. On the dashboard, click the "Share" button for the created plan
 2. Copy the editable link (should be in format: `/plan/shared/{planId}`)
-3. Enable the read-only view link
-4. Copy the view link (should be in format: `/plan/view/{viewToken}`)
-5. Verify the share modal shows separate editable and view-only URLs
+3. Enable the public edit link if needed and verify it uses `/plan/shared/{planId}`
+4. Enable the read-only snapshot link
+5. Copy the view link (should be in format: `/plan/view/{viewToken}`)
+6. Verify the share modal shows separate public edit and snapshot URLs
 
 #### Step 3: Access the Read-Only View as Different User (User B)
 1. Log out from User A
@@ -36,58 +37,58 @@ This guide provides step-by-step instructions to manually test the split sharing
 8. Verify the page now shows "Make a Copy"
 9. Create a copy and verify User B is taken to a new editable plan
 
-#### Step 4: Promote a Known Viewer to Editor
+#### Step 4: Verify Public Edit Access
 1. Log back in as User A
-2. Re-open the share modal
-3. Verify User B appears in the "Known Users" list after viewing the public link
-4. Add User B as an editor
-5. Copy the editable link again if needed
+2. Re-open the share modal and confirm the public edit link is still enabled
+3. Log in as User B
+4. Navigate to the editable link (`/plan/shared/{planId}`)
+5. Verify the original plan opens in the editor
+6. Make a small change and verify it saves successfully
 
-#### Step 5: Verify Editor Access
-1. Log in as User B
-2. Navigate to the editable link (`/plan/shared/{planId}`)
-3. Verify the original plan opens in the editor
-4. Make a small change and verify it saves successfully
+#### Step 5: Verify Frozen Snapshot Behavior
+1. Log back in as User A
+2. Edit the original plan again after the snapshot link already exists
+3. Open the existing snapshot link and verify it still shows the older captured state
+4. Re-open the share modal and regenerate the snapshot link
+5. Open the new snapshot link and verify it reflects the latest plan changes
 
 #### Step 6: Verify Access Tracking
 1. Open browser console and check for access tracking logs where applicable
 2. Verify User B's read-only access was tracked after opening the public view
-3. Verify editable access still works for invited editors
+3. Verify edit-link access was tracked as editable shared access
 
 #### Step 7: Check Shared Plans Section
 1. Navigate to User B's dashboard
 2. Verify the "Shared Plans" section appears (for authenticated users)
 3. Verify the viewed plan appears as read-only and opens the `/plan/view/{viewToken}` route
-4. Verify the invited editable plan appears and opens the `/plan/shared/{planId}` route
+4. Verify the editable shared plan appears and opens the `/plan/shared/{planId}` route
 5. Verify the plan count is correct
 5. **Check Creator Display Name**: Verify that the plan card shows "Created by: [User A's display name]" between the created and updated dates
 
 #### Step 8: Verify Database State
 1. Check Firebase Realtime Database
 2. Navigate to `planShareViews/{viewToken}`
-3. Verify a sanitized public record exists for the shared view
+3. Verify a sanitized frozen snapshot record exists for the shared view
+4. Verify the record includes `snapshotCreatedAt` and `sourcePlanUpdatedAt`
 4. Navigate to `planShareViewTracking/{viewToken}/viewers/{userBId}`
 5. Verify viewer tracking data exists with:
    - `firstAccess`: timestamp
    - `lastAccess`: timestamp  
    - `accessCount`: number
-6. Navigate to `plans/{planId}/collaborators/{userBId}`
-7. Verify collaborator data exists with:
-   - `role: "editor"`
-   - `addedAt`
-   - `addedBy`
-8. Navigate to `planCollaborationsByUser/{userBId}/{planId}`
-9. Verify the reverse collaboration index exists
+6. Navigate to `plans/{planId}`
+7. Verify `isPublic: true` while the public edit link is enabled
+8. Verify `shareSettings.viewToken` and `shareSettings.viewEnabled` match the active snapshot link
 
 ### Expected Results
 
-✅ **Read-Only View**: Public link loads a static view-only page
+✅ **Read-Only View**: Snapshot link loads a static frozen view-only page
 ✅ **Print**: View page prints correctly
 ✅ **Make a Copy**: Signed-in viewers can create a private copy
-✅ **Editor Access**: Only invited editors can open the editable shared route
+✅ **Editor Access**: Any signed-in user with the public edit link can open the editable shared route
+✅ **Frozen Snapshot**: Existing snapshot links do not change after later plan edits
 ✅ **Shared Plans Section**: Viewed and editable shared plans appear correctly in User B's "Shared Plans" section
 ✅ **Creator Display Name**: Plan card shows "Created by: [User A's display name]"
-✅ **Database State**: Share view, viewer tracking, and collaboration index data are stored in Firebase
+✅ **Database State**: Share view snapshot metadata and viewer tracking data are stored in Firebase
 ✅ **Plan Counts**: Dashboard shows correct counts for owned vs shared plans
 
 ### Debugging
@@ -105,6 +106,8 @@ If the shared plans section is empty:
    planShareViews/
      {viewToken}/
        planId: ...
+       snapshotCreatedAt: ...
+       sourcePlanUpdatedAt: ...
        viewEnabled: true
    planShareViewTracking/
      {viewToken}/
@@ -113,10 +116,6 @@ If the shared plans section is empty:
            firstViewedAt: timestamp
            lastViewedAt: timestamp
            accessCount: number
-   planCollaborationsByUser/
-     {userId}/
-       {planId}/
-         role: "editor"
    ```
 
 3. Check user authentication state and ensure User B is properly authenticated
@@ -137,9 +136,8 @@ If the creator display name is not showing:
 ### Common Issues
 
 - **Anonymous users**: Guests can view and print, but they must sign in before creating a copy
-- **Editable route denied**: Verify User B was added under `plans/{planId}/collaborators`
-- **Known users list empty**: Verify User B opened the read-only link while authenticated
-- **Shared plans missing**: Verify `userProfiles/{userId}/accessedPlans` and `planCollaborationsByUser/{userId}` are populated
+- **Editable route denied**: Verify the plan still has `isPublic: true` and User B is authenticated
+- **Shared plans missing**: Verify `userProfiles/{userId}/accessedPlans` is populated
 - **Firebase rules**: Ensure the new rules for `/plans`, `/planShareViews`, and `/planShareViewTracking` are deployed
 
 ### Expected Display Name Behavior

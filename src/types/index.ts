@@ -401,6 +401,8 @@ export interface Plan {
   accessLevel?: PlanAccessLevel;
   shareMode?: PlanShareMode;
   viewToken?: string | null;
+  snapshotCreatedAt?: number | null;
+  sourcePlanUpdatedAt?: number | null;
   isLocal?: boolean;
 }
 

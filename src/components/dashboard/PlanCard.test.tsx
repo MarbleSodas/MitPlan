@@ -33,6 +33,7 @@ vi.mock('../../services/realtimePlanService', () => ({
   updatePlanFieldsWithOrigin: vi.fn(),
   getShareableEditLink: vi.fn((planId: string) => `https://example.com/plan/shared/${planId}`),
   getShareableViewLink: vi.fn((viewToken: string) => `https://example.com/plan/view/${viewToken}`),
+  makePlanPublic: vi.fn(),
   enablePlanShareView: vi.fn(),
   rotatePlanShareViewToken: vi.fn(),
   revokePlanShareView: vi.fn(),

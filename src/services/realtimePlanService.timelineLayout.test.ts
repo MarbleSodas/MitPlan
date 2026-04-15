@@ -304,15 +304,6 @@ describe('realtimePlanService timeline layout support', () => {
         'plans/plan-1/lastChangeOrigin': 'session-1',
       })
     );
-    expect(setMock).toHaveBeenCalledWith(
-      { path: 'planShareViews/plan-1' },
-      expect.objectContaining({
-        planId: 'plan-1',
-        viewEnabled: false,
-        timelineLayout: expect.objectContaining({
-          description: 'Updated route',
-        }),
-      })
-    );
+    expect(setMock).not.toHaveBeenCalled();
   });
 });

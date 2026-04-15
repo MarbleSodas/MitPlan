@@ -2,7 +2,7 @@ import type { Plan, PlanAccessLevel } from '../../types';
 
 type PlanPermissionRecord = Pick<
   Plan,
-  'ownerId' | 'userId' | 'accessedBy' | 'collaborators' | 'accessLevel' | 'shareMode'
+  'ownerId' | 'userId' | 'isPublic' | 'accessedBy' | 'collaborators' | 'accessLevel' | 'shareMode'
 > & {
   hasAccessed?: boolean;
   accessInfo?: unknown;
@@ -51,6 +51,10 @@ export function getPlanAccessLevel(
   }
 
   if (isPlanCollaborator(plan, userId)) {
+    return 'editor';
+  }
+
+  if (plan.isPublic === true) {
     return 'editor';
   }
 
