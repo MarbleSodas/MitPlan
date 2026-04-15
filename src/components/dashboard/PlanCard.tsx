@@ -46,7 +46,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
   const sharingStatusLabel = canAdmin
     ? 'Owner'
     : plan.shareMode === 'edit'
-      ? 'Shared Editor'
+      ? (plan.isPublic ? 'Public Edit' : 'Shared Editor')
       : 'View Only';
 
   useEffect(() => {

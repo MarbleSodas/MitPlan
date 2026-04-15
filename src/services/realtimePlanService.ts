@@ -154,6 +154,10 @@ const getAccessLevelFromPlan = (planData = {}, userId = null) => {
     return 'owner';
   }
 
+  if (planData.isPublic === true) {
+    return 'editor';
+  }
+
   if (getCollaboratorMap(planData)?.[userId]?.role === 'editor') {
     return 'editor';
   }
@@ -175,6 +179,8 @@ const createRandomToken = () => {
 const buildShareViewPayload = (planId, planData = {}, overrides = {}) => {
   const normalizedPlan = normalizePlanRecord(planId, planData);
   const shareSettings = getShareSettings(planData);
+  const snapshotCreatedAt = overrides.snapshotCreatedAt ?? Date.now();
+  const sourcePlanUpdatedAt = overrides.sourcePlanUpdatedAt ?? normalizedPlan.updatedAt ?? snapshotCreatedAt;
 
   return sanitizeFirebaseValue({
     planId,
@@ -196,8 +202,9 @@ const buildShareViewPayload = (planId, planData = {}, overrides = {}) => {
     bossMetadata: normalizedPlan.bossMetadata || null,
     timelineLayout: normalizedPlan.timelineLayout || null,
     viewEnabled: overrides.viewEnabled ?? shareSettings.viewEnabled,
-    updatedAt: Date.now(),
-    sourcePlanUpdatedAt: normalizedPlan.updatedAt || Date.now(),
+    updatedAt: snapshotCreatedAt,
+    snapshotCreatedAt,
+    sourcePlanUpdatedAt,
   });
 };
 
@@ -228,6 +235,8 @@ const buildViewOnlyPlanRecord = (viewToken, viewData = {}) => {
     userId: viewData.ownerId || null,
     createdAt: viewData.createdAt || null,
     updatedAt: viewData.sourcePlanUpdatedAt || viewData.updatedAt || null,
+    snapshotCreatedAt: viewData.snapshotCreatedAt || viewData.updatedAt || null,
+    sourcePlanUpdatedAt: viewData.sourcePlanUpdatedAt || null,
     accessLevel: 'viewer',
     shareMode: 'view',
     viewToken,
@@ -279,7 +288,7 @@ const normalizePlanRecord = (planId, planData = {}) => {
     bossMetadata: timelineLayout?.bossMetadata || planFields.bossMetadata || null,
     timelineLayout,
     accessLevel,
-    shareMode: planFields.shareMode || (accessLevel === 'owner' ? 'owned' : accessLevel === 'editor' ? 'edit' : 'owned'),
+    shareMode: planFields.shareMode || (accessLevel === 'owner' ? 'owned' : accessLevel === 'editor' || planFields.isPublic === true ? 'edit' : 'owned'),
     viewToken: planFields.viewToken || shareSettings.viewToken || null,
   };
 };
@@ -399,23 +408,25 @@ const assertCanAdminExistingPlan = (plan, userId) => {
   }
 };
 
-const syncPlanShareViewRecord = async (planId) => {
-  const plan = await getPlan(planId);
-  const shareSettings = getShareSettings(plan);
+const capturePlanShareViewSnapshot = async (planId, planData = {}, overrides = {}) => {
+  const shareSettings = getShareSettings(planData);
+  const viewToken = overrides.viewToken || shareSettings.viewToken;
 
-  if (!shareSettings.viewToken) {
+  if (!viewToken) {
     return null;
   }
 
-  const shareViewRef = ref(database, `${PLAN_SHARE_VIEWS_PATH}/${shareSettings.viewToken}`);
-  const payload = buildShareViewPayload(planId, plan, {
-    viewEnabled: shareSettings.viewEnabled,
+  const shareViewRef = ref(database, `${PLAN_SHARE_VIEWS_PATH}/${viewToken}`);
+  const payload = buildShareViewPayload(planId, planData, {
+    ...overrides,
+    viewEnabled: overrides.viewEnabled ?? shareSettings.viewEnabled,
+    viewToken,
   });
 
   await set(shareViewRef, payload);
 
   return {
-    viewToken: shareSettings.viewToken,
+    viewToken,
     ...payload,
   };
 };
@@ -453,7 +464,6 @@ export const createPlan = async (userId, planData) => {
     const plansRef = ref(database, PLANS_PATH);
     const newPlanRef = push(plansRef);
     await set(newPlanRef, planDoc);
-    await syncPlanShareViewRecord(newPlanRef.key);
 
     console.log('[createPlan] Plan created successfully with ID:', newPlanRef.key);
     return normalizePlanRecord(newPlanRef.key, planDoc);
@@ -472,7 +482,6 @@ export const updatePlan = async (planId, planData) => {
     const updates = buildPlanUpdates(planId, planData);
     console.log('[updatePlan] Firebase updates:', updates);
     await update(ref(database), updates);
-    await syncPlanShareViewRecord(planId);
     console.log('[updatePlan] Update successful');
     return { id: planId, ...normalizePlanRecord(planId, planData), updatedAt: Date.now() };
   } catch (error) {
@@ -925,20 +934,31 @@ export const enablePlanShareView = async (planId, userId = null) => {
 
     const existingShareSettings = getShareSettings(plan);
     const viewToken = existingShareSettings.viewToken || createRandomToken();
-    const now = Date.now();
+    const snapshotCreatedAt = Date.now();
 
     await update(ref(database), {
       [`${PLANS_PATH}/${planId}/shareSettings`]: {
         viewToken,
         viewEnabled: true,
-        viewUpdatedAt: now,
+        viewUpdatedAt: snapshotCreatedAt,
       },
-      [`${PLANS_PATH}/${planId}/isPublic`]: false,
       [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
       [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
     });
 
-    await syncPlanShareViewRecord(planId);
+    await capturePlanShareViewSnapshot(planId, {
+      ...plan,
+      shareSettings: {
+        viewToken,
+        viewEnabled: true,
+        viewUpdatedAt: snapshotCreatedAt,
+      },
+    }, {
+      viewToken,
+      viewEnabled: true,
+      snapshotCreatedAt,
+      sourcePlanUpdatedAt: plan.updatedAt || snapshotCreatedAt,
+    });
 
     return {
       viewToken,
@@ -990,13 +1010,13 @@ export const rotatePlanShareViewToken = async (planId, userId = null) => {
     const previousShareSettings = getShareSettings(plan);
     const previousToken = previousShareSettings.viewToken;
     const nextToken = createRandomToken();
-    const now = Date.now();
+    const snapshotCreatedAt = Date.now();
 
     const updates = {
       [`${PLANS_PATH}/${planId}/shareSettings`]: {
         viewToken: nextToken,
         viewEnabled: true,
-        viewUpdatedAt: now,
+        viewUpdatedAt: snapshotCreatedAt,
       },
       [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
       [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
@@ -1004,12 +1024,24 @@ export const rotatePlanShareViewToken = async (planId, userId = null) => {
 
     if (previousToken) {
       updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/viewEnabled`] = false;
-      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/revokedAt`] = now;
-      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/updatedAt`] = now;
+      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/revokedAt`] = snapshotCreatedAt;
+      updates[`${PLAN_SHARE_VIEWS_PATH}/${previousToken}/updatedAt`] = snapshotCreatedAt;
     }
 
     await update(ref(database), updates);
-    await syncPlanShareViewRecord(planId);
+    await capturePlanShareViewSnapshot(planId, {
+      ...plan,
+      shareSettings: {
+        viewToken: nextToken,
+        viewEnabled: true,
+        viewUpdatedAt: snapshotCreatedAt,
+      },
+    }, {
+      viewToken: nextToken,
+      viewEnabled: true,
+      snapshotCreatedAt,
+      sourcePlanUpdatedAt: plan.updatedAt || snapshotCreatedAt,
+    });
 
     return {
       viewToken: nextToken,
@@ -1215,22 +1247,34 @@ export const getKnownPlanUsers = async (planId, userId = null) => {
 };
 
 export const makePlanPublic = async (planId, isPublic = true, userId = null) => {
-  if (isPublic) {
-    return enablePlanShareView(planId, userId);
-  }
+  try {
+    const plan = await getPlan(planId);
+    assertCanAdminExistingPlan(plan, userId);
 
-  return revokePlanShareView(planId, userId);
+    await update(ref(database), {
+      [`${PLANS_PATH}/${planId}/isPublic`]: isPublic,
+      [`${PLANS_PATH}/${planId}/updatedAt`]: serverTimestamp(),
+      [`${PLANS_PATH}/${planId}/lastModifiedBy`]: userId,
+    });
+
+    return {
+      isPublic,
+      editUrl: getShareableEditLink(planId),
+    };
+  } catch (error) {
+    console.error('Error updating public edit sharing:', error);
+    throw new Error('Failed to update public edit sharing');
+  }
 };
 
 export const getPublicPlan = async (planId) => {
   const plan = await getPlan(planId);
-  const shareSettings = getShareSettings(plan);
 
-  if (!shareSettings.viewEnabled || !shareSettings.viewToken) {
-    throw new Error('Shared plan view is no longer available');
+  if (!plan.isPublic) {
+    throw new Error('Shared plan is no longer publicly editable');
   }
 
-  return await getPlanShareView(shareSettings.viewToken);
+  return plan;
 };
 
 /**
@@ -1265,7 +1309,6 @@ export const updatePlanWithConflictResolution = async (planId, updates, userId, 
 
     // Perform atomic update
     await set(planRef, { ...currentPlan, ...updateData });
-    await syncPlanShareViewRecord(planId);
 
     return {
       success: true,
@@ -1327,7 +1370,6 @@ export const mergePlanChanges = async (planId, localChanges, userId) => {
     }
 
     await set(planRef, mergedPlan);
-    await syncPlanShareViewRecord(planId);
 
     return {
       success: true,
@@ -1396,7 +1438,6 @@ export const updatePlanFieldsWithOrigin = async (planId, fields, userId = null, 
   try {
     const updates = buildPlanUpdates(planId, fields, userId, sessionId);
     await update(ref(database), updates);
-    await syncPlanShareViewRecord(planId);
     return true;
   } catch (error) {
     console.error('Error updating plan fields with origin:', error);

@@ -95,7 +95,7 @@ const PlanTimelineEditorBody = () => {
       sourceRecord={realtimePlan?.timelineLayout || null}
       title={realtimePlan?.name ? `${realtimePlan.name} Timeline` : 'Plan Timeline'}
       backLabel="Back to Planner"
-      readOnlyMessage="This plan timeline is editable for signed-in collaborators who can access the plan."
+      readOnlyMessage="This plan timeline is editable for signed-in users who have public or shared edit access to the plan."
       onBack={() => navigate(planId ? `/plan/${planId}` : '/dashboard')}
       onSave={handleSave}
       onPublish={canEditPlan ? handlePublish : undefined}

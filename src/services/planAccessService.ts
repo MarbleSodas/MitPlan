@@ -34,7 +34,7 @@ const normalizeDashboardPlan = (planId, planData, userId, overrides = {}) => {
   const isOwner =
     overrides.isOwner ?? (planData.ownerId === userId || planData.userId === userId);
   const accessInfo = overrides.accessInfo ?? planData.accessedBy?.[userId] ?? null;
-  const accessLevel = overrides.accessLevel ?? (isOwner ? 'owner' : 'viewer');
+  const accessLevel = overrides.accessLevel ?? (isOwner ? 'owner' : planData.isPublic === true ? 'editor' : 'viewer');
   const shareMode = overrides.shareMode ?? (isOwner ? 'owned' : accessLevel === 'editor' ? 'edit' : 'view');
   const shareSettings = planData.shareSettings || {
     viewToken: overrides.viewToken || null,
@@ -82,6 +82,8 @@ const normalizeViewedDashboardPlan = (viewToken, viewData, userId, overrides = {
     timelineLayout: viewData.timelineLayout || null,
     createdAt: viewData.createdAt || null,
     updatedAt: viewData.sourcePlanUpdatedAt || viewData.updatedAt || null,
+    snapshotCreatedAt: viewData.snapshotCreatedAt || viewData.updatedAt || null,
+    sourcePlanUpdatedAt: viewData.sourcePlanUpdatedAt || null,
     isOwner: false,
     hasAccessed: true,
     accessInfo,
@@ -326,6 +328,7 @@ export const hasAccessToPlan = async (planId, userId, planData = null) => {
       effectivePlanData.userId === userId;
     if (
       isOwner ||
+      effectivePlanData.isPublic === true ||
       effectivePlanData.collaborators?.[userId]?.role === 'editor' ||
       effectivePlanData.accessedBy?.[userId]
     ) {
@@ -535,11 +538,16 @@ const getUserViewedPlans = async (userId) => {
         return null;
       }
 
+      const hasEditAccess =
+        planData.isPublic === true ||
+        planData.collaborators?.[userId]?.role === 'editor' ||
+        accessType !== 'view';
+
       return normalizeDashboardPlan(planId, planData, userId, {
         isOwner: false,
         hasAccessed: true,
-        accessLevel: planData.collaborators?.[userId]?.role === 'editor' ? 'editor' : 'viewer',
-        shareMode: planData.collaborators?.[userId]?.role === 'editor' ? 'edit' : 'view',
+        accessLevel: hasEditAccess ? 'editor' : 'viewer',
+        shareMode: hasEditAccess ? 'edit' : 'view',
         accessInfo: {
           lastAccess: normalizedAccessInfo.lastAccess || 0,
           accessCount: normalizedAccessInfo.accessCount || 1,

@@ -38,8 +38,8 @@ This document provides detailed technical information about how each feature in 
 /plan/:planId -> MitigationPlanner
 
 // Shared plan routes
-/plan/shared/:planId -> MitigationPlanner (authenticated collaborator editor only)
-/plan/view/:viewToken -> ConsolidatedView (public read-only shared view)
+/plan/shared/:planId -> MitigationPlanner (authenticated public/shared editor access)
+/plan/view/:viewToken -> ConsolidatedView (public read-only frozen snapshot)
 
 // Anonymous routes
 /anonymous -> AnonymousDashboard

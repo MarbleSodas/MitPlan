@@ -31,6 +31,20 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+const formatSnapshotDate = (value?: number | null): string => {
+  if (!value) {
+    return 'Unknown';
+  }
+
+  return new Date(value).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
 const MitigationCard = ({ mitigation, assignment }: { mitigation: MitigationAbility; assignment: AssignedMitigation }) => {
   const precastLabel = assignment.precastSeconds !== undefined && assignment.precastSeconds > 0
     ? `precast ${assignment.precastSeconds.toFixed(1)}s`
@@ -213,11 +227,8 @@ const SharedPlanView = () => {
 
   const boss = bosses.find((candidate: { id: string }) => candidate.id === sharedPlan.bossId);
   const displayBossName = bossMetadata?.name || boss?.name || sharedPlan.bossId;
-  const dateGenerated = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const snapshotCapturedAt = formatSnapshotDate(sharedPlan.snapshotCreatedAt);
+  const sourcePlanUpdatedAt = formatSnapshotDate(sharedPlan.sourcePlanUpdatedAt || sharedPlan.updatedAt);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -230,7 +241,8 @@ const SharedPlanView = () => {
             </p>
           </div>
           <div className="text-right text-sm text-muted-foreground">
-            <p>Generated: {dateGenerated}</p>
+            <p>Snapshot captured: {snapshotCapturedAt}</p>
+            <p>Source plan updated: {sourcePlanUpdatedAt}</p>
           </div>
         </div>
       </header>
@@ -245,12 +257,13 @@ const SharedPlanView = () => {
               </p>
             </div>
             <div className="text-right text-sm text-muted-foreground">
-              <p>Generated: {dateGenerated}</p>
+              <p>Snapshot captured: {snapshotCapturedAt}</p>
+              <p>Source plan updated: {sourcePlanUpdatedAt}</p>
             </div>
           </div>
 
           <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
-            Read-only shared plan. Print this view or create your own private copy to make changes.
+            Read-only plan snapshot. Print this view or create your own private copy to make changes. This link stays frozen until the owner regenerates it.
           </div>
 
           <div className="flex flex-wrap gap-2">

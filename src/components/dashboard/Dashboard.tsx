@@ -374,7 +374,7 @@ const Dashboard = () => {
               {categorizedPlans.sharedPlans.length === 0 ? (
                 <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
                   <p className="m-0 text-sm italic">
-                    No shared plans yet. Editable plans appear here when an owner adds you as an editor, and read-only plans appear after you open a shared view link.
+                    No shared plans yet. Editable plans appear here after you open a public edit link, and read-only plans appear after you open a snapshot link.
                   </p>
                 </div>
               ) : (
