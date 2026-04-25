@@ -71,144 +71,158 @@ const TimelineActionCard = ({
     setIsEditingTime(false);
   };
 
+  const classificationLabel = action.classification
+    ? (BOSS_ACTION_CLASSIFICATION_LABELS[action.classification] || getBossActionTypeLabel(action))
+    : getBossActionTypeLabel(action);
+
   return (
     <PresenceTarget
       target={eventTarget}
-      className="rounded-lg"
+      className="rounded-xl"
       publishHover={true}
     >
       <div
         className={cn(
-          "bg-card border border-border rounded-lg border-l-4 transition-all hover:border-primary",
+          'bg-card border border-border rounded-xl border-l-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/70 hover:shadow-md',
           getImportanceBorderColor(),
           getImportanceBackground(),
-          isDragging && "shadow-lg opacity-90"
+          isDragging && 'shadow-lg opacity-90'
         )}
       >
-      <div className="flex items-center gap-2 p-3">
-        <div
-          {...dragHandleProps}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1"
-        >
-          <GripVertical size={16} />
-        </div>
-
-        <PresenceTarget
-          target={{ ...eventTarget, field: 'time' }}
-          className="rounded-md"
-          showIndicator={false}
-          publishFocus={true}
-          focusInteraction="editing"
-        >
-          {isEditingTime ? (
-            <Input
-              type="number"
-              value={tempTime}
-              onChange={(e) => setTempTime(parseInt(e.target.value) || 0)}
-              onKeyDown={handleTimeKeyDown}
-              onBlur={handleTimeBlur}
-              autoFocus
-              variant="compact"
-              className="w-16"
-              min={0}
-            />
-          ) : (
-            <button
-              onClick={() => {
-                setTempTime(action.time);
-                setIsEditingTime(true);
-              }}
-              className="w-14 text-sm font-mono font-medium text-foreground hover:text-primary transition-colors text-left"
-              title="Click to edit time"
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 flex-1 gap-3">
+            <div
+              {...dragHandleProps}
+              className="mt-0.5 flex h-9 w-9 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
             >
-              {formatTime(action.time)}
-            </button>
-          )}
-        </PresenceTarget>
+              <GripVertical size={16} />
+            </div>
 
-        <span className="text-xl flex-shrink-0">{action.icon}</span>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <PresenceTarget
+                  target={{ ...eventTarget, field: 'time' }}
+                  className="rounded-lg"
+                  showIndicator={false}
+                  publishFocus={true}
+                  focusInteraction="editing"
+                >
+                  {isEditingTime ? (
+                    <Input
+                      type="number"
+                      value={tempTime}
+                      onChange={(e) => setTempTime(Number.parseInt(e.target.value, 10) || 0)}
+                      onKeyDown={handleTimeKeyDown}
+                      onBlur={handleTimeBlur}
+                      autoFocus
+                      variant="compact"
+                      className="h-9 w-20 rounded-lg font-mono text-center"
+                      min={0}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setTempTime(action.time);
+                        setIsEditingTime(true);
+                      }}
+                      className="inline-flex h-9 min-w-[4.75rem] items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-semibold font-mono text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+                      title="Click to edit time"
+                    >
+                      {formatTime(action.time)}
+                    </button>
+                  )}
+                </PresenceTarget>
 
-        <span className="flex-1 font-medium truncate text-sm">
-          {action.name}
-        </span>
+                <span className="text-2xl leading-none flex-shrink-0">{action.icon}</span>
+                <span className="min-w-0 truncate text-base font-semibold text-foreground">
+                  {action.name}
+                </span>
+              </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {(action.isTankBuster || isTankBusterClassification(action.classification)) && (
-            <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] font-medium rounded">
-              TB
-            </span>
-          )}
-          {action.isDualTankBuster && (
-            <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-medium rounded">
-              Dual
-            </span>
-          )}
-          {isSmallPartyClassification(action.classification) && (
-            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-medium rounded">
-              4P
-            </span>
-          )}
-          {action.isMultiHit && (
-            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-medium rounded">
-              {action.hitCount && action.hitCount > 1 ? `${action.hitCount}x` : 'Multi'}
-            </span>
-          )}
-          {action.hasDot && (
-            <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 text-[10px] font-medium rounded">
-              DoT
-            </span>
-          )}
-          {action.damageType && (
-            <span className={cn(
-              "px-1.5 py-0.5 text-[10px] font-medium rounded",
-              action.damageType === 'magical' 
-                ? 'bg-purple-500/20 text-purple-400' 
-                : 'bg-yellow-500/20 text-yellow-400'
-            )}>
-              {action.damageType === 'magical' ? 'Mag' : 'Phys'}
-            </span>
-          )}
-          {action.isCustom && (
-            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-medium rounded">
-              Custom
-            </span>
-          )}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground">
+                  {classificationLabel}
+                </span>
+                {(action.isTankBuster || isTankBusterClassification(action.classification)) && (
+                  <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-500">
+                    TB
+                  </span>
+                )}
+                {action.isDualTankBuster && (
+                  <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[11px] font-medium text-orange-500">
+                    Dual
+                  </span>
+                )}
+                {isSmallPartyClassification(action.classification) && (
+                  <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[11px] font-medium text-blue-500">
+                    4P
+                  </span>
+                )}
+                {action.isMultiHit && (
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-500">
+                    {action.hitCount && action.hitCount > 1 ? `${action.hitCount}x` : 'Multi'}
+                  </span>
+                )}
+                {action.hasDot && (
+                  <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[11px] font-medium text-cyan-500">
+                    DoT
+                  </span>
+                )}
+                {action.damageType && (
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-[11px] font-medium',
+                      action.damageType === 'magical'
+                        ? 'bg-purple-500/15 text-purple-500'
+                        : 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
+                    )}
+                  >
+                    {action.damageType === 'magical' ? 'Magical' : 'Physical'}
+                  </span>
+                )}
+                {action.isCustom && (
+                  <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[11px] font-medium text-blue-500">
+                    Custom
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-1 self-end sm:self-start">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onToggleExpand(action.id)}
+              className="h-9 w-9 rounded-lg"
+              title={isExpanded ? 'Collapse' : 'Expand'}
+            >
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(action)}
+              className="h-9 w-9 rounded-lg hover:text-primary"
+              title="Edit action"
+            >
+              <Edit2 size={16} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(action.id)}
+              className="h-9 w-9 rounded-lg hover:text-destructive hover:bg-destructive/10"
+              title="Delete action"
+            >
+              <Trash2 size={16} />
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onToggleExpand(action.id)}
-            className="h-8 w-8"
-            title={isExpanded ? 'Collapse' : 'Expand'}
-          >
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(action)}
-            className="h-8 w-8 hover:text-primary"
-            title="Edit action"
-          >
-            <Edit2 size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(action.id)}
-            className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
-            title="Delete action"
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      </div>
-
-      {isExpanded && (
-        <div className="px-3 pb-3 pt-0 border-t border-border mt-0">
-          <div className="pt-3 space-y-2">
+        {isExpanded && (
+          <div className="border-t border-border px-4 pb-4 pt-0">
+            <div className="space-y-2 pt-4">
             {action.unmitigatedDamage && (
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Damage:</span>
@@ -287,8 +301,8 @@ const TimelineActionCard = ({
               </Button>
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
       </div>
     </PresenceTarget>
   );
