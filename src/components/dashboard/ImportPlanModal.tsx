@@ -33,7 +33,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
         if (parsed.name && !planName) {
           setPlanName(parsed.name);
         }
-      } catch (err) {
+      } catch {
         setError('Invalid JSON file');
       }
     };
@@ -78,7 +78,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
           <DialogTitle className="text-2xl">Import Plan</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="planName">Plan Name *</Label>
             <Input
@@ -98,7 +98,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
               type="file"
               accept=".json"
               onChange={handleFileUpload}
-              className="border-dashed cursor-pointer"
+              className="cursor-pointer border-dashed bg-background"
             />
             <p className="text-muted-foreground text-sm">Select a JSON file exported from MitPlan (supports all versions)</p>
           </div>
@@ -110,7 +110,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
               placeholder="Paste your plan JSON data here..."
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
-              className="font-mono min-h-[200px]"
+              className="min-h-[180px] bg-background font-mono text-sm"
             />
             <p className="text-muted-foreground text-sm">Paste the JSON data from an exported plan (supports all versions)</p>
           </div>
@@ -121,7 +121,7 @@ const ImportPlanModal = ({ onClose, onSuccess }) => {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={loading}>
               {loading ? 'Importing...' : 'Import Plan'}

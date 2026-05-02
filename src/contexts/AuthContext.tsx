@@ -1,10 +1,14 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { legacyLocalPlanImportService } from '../services/legacyLocalPlanImportService';
 import { storeUserProfile } from '../services/userService';
+import { logger } from '../utils/logger';
+import type { AuthContextValue } from '../types/contexts';
+import { getErrorMessage } from '../services/firebaseErrorUtils';
 
-const AuthContext = createContext({});
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,19 +18,23 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [hasPendingMigration, setHasPendingMigration] = useState(false);
 
   // Check for pending plan migrations when user authenticates
-  const checkForPendingMigration = async (user) => {
+  const checkForPendingMigration = async (user: User | null) => {
     if (user) {
       try {
         setHasPendingMigration(legacyLocalPlanImportService.hasLegacyPlans());
       } catch (error) {
-        console.error('[AuthContext] Error checking for pending migration:', error);
+        logger.error('[AuthContext] Error checking for pending migration:', error);
         setHasPendingMigration(false);
       }
     } else {
@@ -35,11 +43,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    console.log('[AuthContext] Setting up Firebase auth listener');
+    logger.debug('[AuthContext] Setting up Firebase auth listener');
 
     const unsubscribe = onAuthStateChanged(auth,
       async (user) => {
-        console.log('[AuthContext] Auth state changed:', user ? 'User logged in' : 'No user');
+        logger.debug('[AuthContext] Auth state changed:', user ? 'User logged in' : 'No user');
         setUser(user);
         setLoading(false);
         setError(null);
@@ -49,19 +57,19 @@ export const AuthProvider = ({ children }) => {
           try {
             const displayName = user.displayName || user.email?.split('@')[0] || 'User';
             await storeUserProfile(user.uid, displayName, user.email);
-            console.log('[AuthContext] User profile stored for:', user.uid, displayName);
+            logger.debug('[AuthContext] User profile stored for:', user.uid, displayName);
           } catch (error) {
-            console.error('[AuthContext] Failed to store user profile:', error);
+            logger.error('[AuthContext] Failed to store user profile:', error);
           }
 
           checkForPendingMigration(user).catch(error => {
-            console.error('[AuthContext] Failed to check pending migration:', error);
+            logger.error('[AuthContext] Failed to check pending migration:', error);
           });
         }
       },
       (error) => {
-        console.error('Auth state change error:', error);
-        setError(error.message);
+        logger.error('Auth state change error:', error);
+        setError(getErrorMessage(error));
         setLoading(false);
       }
     );
@@ -72,10 +80,10 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await signOut(auth);
-      console.log('[AuthContext] User logged out successfully');
+      logger.debug('[AuthContext] User logged out successfully');
     } catch (error) {
-      console.error('Logout error:', error);
-      setError(error.message);
+      logger.error('Logout error:', error);
+      setError(getErrorMessage(error));
     }
   };
 
@@ -96,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     userId: user?.uid || null
   };
 
-  console.log('[AuthContext] Context value:', { loading, isAuthenticated, user: !!user, hasPendingMigration });
+  logger.debug('[AuthContext] Context value:', { loading, isAuthenticated, user: !!user, hasPendingMigration });
 
   return (
     <AuthContext.Provider value={value}>

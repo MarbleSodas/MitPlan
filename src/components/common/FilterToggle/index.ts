@@ -1,1 +1,1 @@
-export { default } from './FilterToggle.jsx';
+export { default } from './FilterToggle';

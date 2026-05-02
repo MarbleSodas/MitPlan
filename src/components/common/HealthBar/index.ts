@@ -1,3 +1,3 @@
-import HealthBar from './HealthBar.jsx';
+import HealthBar from './HealthBar';
 
 export default HealthBar;

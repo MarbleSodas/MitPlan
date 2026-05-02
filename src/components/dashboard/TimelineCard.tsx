@@ -238,41 +238,41 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
 
         <CardFooter className="flex flex-wrap gap-2 pt-4 border-t border-border">
           {isOwner() && (
-            <Button onClick={handleEdit} disabled={loading} className="gap-2">
+            <Button onClick={handleEdit} disabled={loading} className="min-w-[6.5rem] flex-1 gap-2">
               <Edit2 size={16} />
               Edit
             </Button>
           )}
 
-          <Button variant="secondary" onClick={handleView} disabled={loading} className="gap-2">
+          <Button variant="outline" onClick={handleView} disabled={loading} className="min-w-[6.5rem] flex-1 gap-2">
             <FileText size={16} />
             View
           </Button>
 
-          <Button variant="secondary" onClick={handleCreateMitplan} disabled={loading} className="gap-2">
+          <Button variant="outline" onClick={handleCreateMitplan} disabled={loading} className="min-w-[9rem] flex-1 gap-2">
             <FileText size={16} />
             Create Mitplan
           </Button>
 
-          <Button variant="secondary" onClick={handleDuplicate} disabled={loading} className="gap-2">
+          <Button variant="outline" onClick={handleDuplicate} disabled={loading} className="min-w-[8rem] flex-1 gap-2">
             <Copy size={16} />
             Duplicate
           </Button>
 
-          <Button variant="secondary" onClick={handleCopyShareLink} disabled={loading} className="gap-2">
+          <Button variant="outline" onClick={handleCopyShareLink} disabled={loading} className="min-w-[8rem] flex-1 gap-2">
             <Share2 size={16} />
             Copy Link
           </Button>
 
           {isOwner() && (
-            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading} className="gap-2">
+            <Button variant="ghost" onClick={() => setShowDeleteConfirm(true)} disabled={loading} className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
               <Trash2 size={16} />
               Delete
             </Button>
           )}
 
           {!isOwner() && timeline.inCollection && (
-            <Button variant="secondary" onClick={handleRemoveFromCollection} disabled={loading} className="gap-2">
+            <Button variant="outline" onClick={handleRemoveFromCollection} disabled={loading} className="gap-2">
               <BookmarkX size={16} />
               Remove from Collection
             </Button>

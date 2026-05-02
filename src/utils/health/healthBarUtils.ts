@@ -8,6 +8,12 @@ interface BuffsByJob {
   [jobId: string]: { additive: number; multiplicative: number };
 }
 
+interface BarrierCalculationOptions {
+  hitCount?: number;
+  healingMultiplier?: number;
+  activeAbilityIds?: string[];
+}
+
 export const calculateDamagePercentage = (damage: number | string | undefined, maxHealth: number): number => {
   if (!damage || !maxHealth) return 0;
 
@@ -35,18 +41,39 @@ export const calculateMitigatedDamage = (rawDamage: number | string | undefined,
 export const calculateBarrierAmount = (
   ability: Partial<MitigationAbility> | null | undefined,
   maxHealth: number,
-  healingPotencyPer100: number | null = null
+  healingPotencyPer100: number | null = null,
+  options: BarrierCalculationOptions = {}
 ): number => {
   if (!ability || !maxHealth) return 0;
 
   let amount = 0;
+  const healingMultiplier = options.healingMultiplier ?? 1;
 
   if (ability.barrierPotency && ability.barrierPotency > 0) {
     amount += maxHealth * ability.barrierPotency;
   }
 
+  ability.conditionalBarrierModifiers?.forEach(modifier => {
+    const matchedStacks = modifier.conditionAbilityIds.filter(id =>
+      options.activeAbilityIds?.includes(id)
+    ).length;
+    const stacks = modifier.maxStacks ? Math.min(matchedStacks, modifier.maxStacks) : matchedStacks;
+    if (stacks > 0) {
+      amount += maxHealth * modifier.value * stacks;
+    }
+  });
+
+  if (ability.stackBarrierEffect && healingPotencyPer100) {
+    const hitCount = Math.max(1, options.hitCount || 1);
+    const stacksUsed = hitCount > 1
+      ? Math.min(hitCount, ability.stackBarrierEffect.stackCount)
+      : 1;
+    amount += (ability.stackBarrierEffect.initialBarrierPotency / 100) * healingPotencyPer100 * stacksUsed * healingMultiplier;
+    return amount;
+  }
+
   if (ability.barrierFlatPotency && ability.barrierFlatPotency > 0 && healingPotencyPer100) {
-    amount += (ability.barrierFlatPotency / 100) * healingPotencyPer100;
+    amount += (ability.barrierFlatPotency / 100) * healingPotencyPer100 * healingMultiplier;
   }
 
   return amount;
@@ -118,18 +145,37 @@ export const getHealingPotency = (bossLevel: number = 90): number => {
   return HEALING_POTENCY_VALUES[bossLevel] ?? HEALING_POTENCY_VALUES[100] ?? 6000;
 };
 
-export const calculateHealingAmount = (
-  healingAbilities: HealingAbility[] | null | undefined,
-  healingPotencyPer100: number,
-  _bossLevel: number = 90,
-  maxHealth: number = 0
+export const calculateHealingReceivedMultiplier = (
+  abilities: Array<Partial<MitigationAbility>> | null | undefined,
+  bossLevel: number | null = null
 ): number => {
-  if (!healingAbilities || healingAbilities.length === 0 || !healingPotencyPer100) return 0;
+  if (!abilities || abilities.length === 0) return 1;
 
-  let totalHealing = 0;
+  return abilities.reduce((multiplier, ability) => {
+    if (!ability) return multiplier;
 
+    let bonus = ability.healingReceivedBonus || 0;
+    if (bossLevel && ability.levelHealingReceivedBonuses) {
+      const level = Object.keys(ability.levelHealingReceivedBonuses)
+        .map(Number)
+        .filter(levelKey => levelKey <= bossLevel)
+        .sort((a, b) => b - a)[0];
+      bonus = level !== undefined
+        ? ability.levelHealingReceivedBonuses[level] ?? bonus
+        : 0;
+    }
+
+    if (!bonus) return multiplier;
+    return multiplier * (1 + bonus);
+  }, 1);
+};
+
+export const calculateHealingBuffsByJob = (
+  healingAbilities: Array<Partial<HealingAbility>> | null | undefined
+): BuffsByJob => {
   const buffsByJob: BuffsByJob = {};
-  healingAbilities.forEach(a => {
+
+  healingAbilities?.forEach(a => {
     const job: JobId | null = (Array.isArray(a.jobs) && a.jobs.length > 0 && a.jobs[0]) ? a.jobs[0] : null;
     if (!job) return;
     const bonus = a.healingPotencyBonus || null;
@@ -150,6 +196,38 @@ export const calculateHealingAmount = (
       }
     }
   });
+
+  return buffsByJob;
+};
+
+export const calculateHealingPotencyModifierForAbility = (
+  ability: Partial<MitigationAbility> | null | undefined,
+  abilities: Array<Partial<HealingAbility>> | null | undefined
+): number => {
+  if (!ability) return 1;
+
+  const job: JobId | null = (Array.isArray(ability.jobs) && ability.jobs.length > 0 && ability.jobs[0]) ? ability.jobs[0] : null;
+  if (!job) return 1;
+
+  const buffsByJob = calculateHealingBuffsByJob(abilities);
+  const buffs = buffsByJob[job];
+  if (!buffs) return 1;
+
+  return (1 + (buffs.additive || 0)) * (buffs.multiplicative || 1);
+};
+
+export const calculateHealingAmount = (
+  healingAbilities: HealingAbility[] | null | undefined,
+  healingPotencyPer100: number,
+  bossLevel: number = 90,
+  maxHealth: number = 0,
+  healingReceivedMultiplier: number = calculateHealingReceivedMultiplier(healingAbilities, bossLevel)
+): number => {
+  if (!healingAbilities || healingAbilities.length === 0 || !healingPotencyPer100) return 0;
+
+  let totalHealing = 0;
+
+  const buffsByJob = calculateHealingBuffsByJob(healingAbilities);
 
   healingAbilities.forEach(ability => {
     if (ability.maxHpIncrease && ability.maxHpIncrease > 0 && maxHealth > 0) {
@@ -203,13 +281,13 @@ export const calculateHealingAmount = (
         }
 
         if (instantHealingPotency > 0) {
-          totalHealing += ((instantHealingPotency * modifier) / 100) * healingPotencyPer100;
+          totalHealing += ((instantHealingPotency * modifier * healingReceivedMultiplier) / 100) * healingPotencyPer100;
         }
 
         if (regenHealingPotency > 0 && ability.regenDuration) {
           const tickInterval = 3;
           const totalTicks = Math.floor(ability.regenDuration / tickInterval);
-          const regenHealing = ((regenHealingPotency * modifier) / 100) * healingPotencyPer100 * totalTicks;
+          const regenHealing = ((regenHealingPotency * modifier * healingReceivedMultiplier) / 100) * healingPotencyPer100 * totalTicks;
           totalHealing += regenHealing;
         }
       }
@@ -228,7 +306,7 @@ export const calculateHealingAmount = (
           const mult = buffsByJob['SGE'].multiplicative || 1;
           modifier = (1 + add) * mult;
         }
-        totalHealing += ((basePotency * modifier) / 100) * healingPotencyPer100;
+        totalHealing += ((basePotency * modifier * healingReceivedMultiplier) / 100) * healingPotencyPer100;
       }
     }
   } catch (_e) {
@@ -259,5 +337,8 @@ export default {
   formatPercentage,
   getHealingPotency,
   calculateHealingAmount,
+  calculateHealingBuffsByJob,
+  calculateHealingPotencyModifierForAbility,
+  calculateHealingReceivedMultiplier,
   calculateHealthAfterHealing
 };

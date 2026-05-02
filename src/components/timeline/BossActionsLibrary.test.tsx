@@ -34,11 +34,13 @@ describe('BossActionsLibrary', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /set time/i })[0]!);
 
     expect(onSelectAction).toHaveBeenCalledTimes(1);
-    expect(onSelectAction.mock.calls[0]?.[0]).toMatchObject({
+    const selectedAction = onSelectAction.mock.calls[0]?.[0];
+
+    expect(selectedAction).toMatchObject({
       name: 'Hardcore',
       classification: 'dual_tankbuster',
       sourceBoss: 'vamp-fatale-m9s',
     });
-    expect('time' in onSelectAction.mock.calls[0]?.[0]).toBe(false);
+    expect(selectedAction && 'time' in selectedAction).toBe(false);
   });
 });

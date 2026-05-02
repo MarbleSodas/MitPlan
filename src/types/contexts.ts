@@ -72,20 +72,41 @@ export interface CollaborationContextValue {
   collaborationError: string | null;
   displayName: string;
   isInitialized: boolean;
-  joinCollaborativeSession: (planId: string, displayName?: string | null) => Promise<void>;
+  joinCollaborativeSession: (planId: string, displayName?: string | null) => Promise<boolean>;
   leaveCollaborativeSession: () => Promise<void>;
+  debouncedUpdate: (
+    key: string,
+    updateFn: () => Promise<void> | void,
+    delay?: number,
+    priority?: 'low' | 'normal' | 'high'
+  ) => void;
+  batchUpdate: (
+    planId: string,
+    updates: Record<string, unknown>,
+    userId?: string | null,
+    sessionId?: string | null
+  ) => void;
   setChangeOrigin: (origin: string) => void;
   isOwnChange: (origin: string | null) => boolean;
   updateDisplayName: (name: string) => Promise<void>;
+  setDisplayName: (name: string) => void;
   getCollaboratorDisplayName: (userId: string) => string;
+  trackPerformance: (operation: string, startTime: number) => void;
+  isUpdating: boolean;
+  getPerformanceMetrics: () => {
+    updateCount: number;
+    lastUpdateTime: number;
+    averageUpdateTime: number;
+  };
 }
 
 export interface Collaborator {
-  id: string;
-  name: string;
   sessionId: string;
+  displayName: string;
   userId?: string;
-  lastActive?: number;
+  email?: string;
+  color?: string;
+  isActive?: boolean;
 }
 
 export interface PlanContextValue {
@@ -94,10 +115,16 @@ export interface PlanContextValue {
   loading: boolean;
   error: string | null;
   loadUserPlans: () => Promise<void>;
-  createPlan: (planData: Partial<Plan>) => Promise<Plan>;
-  updatePlan: (planId: string, updates: Partial<Plan>) => Promise<void>;
-  deletePlan: (planId: string) => Promise<void>;
+  loadUserPlansRealtime: () => void;
+  createNewPlan: (planData: Partial<Plan>) => Promise<Plan>;
+  updateExistingPlan: (planId: string, updates: Partial<Plan>) => Promise<Plan>;
+  updatePlanRealtime: (planId: string, updates: Partial<Plan>) => Promise<Plan>;
+  deletePlanById: (planId: string) => Promise<void>;
   loadPlan: (planId: string) => Promise<Plan | null>;
+  loadPlanRealtime: (planId: string) => Promise<Plan | null>;
+  duplicatePlanById: (planId: string, newName: string) => Promise<Plan>;
+  exportPlanById: (planId: string) => Promise<unknown>;
+  importPlanData: (importData: unknown, planName: string) => Promise<Plan>;
   setCurrentPlan: (plan: Plan | null) => void;
 }
 

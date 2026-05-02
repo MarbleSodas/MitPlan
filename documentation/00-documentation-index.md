@@ -71,7 +71,7 @@ This index provides a comprehensive overview of all MitPlan documentation, organ
 - ✅ Performance optimizations
 
 ### Technical Areas Documented
-- ✅ Frontend architecture (React, Vite, Styled Components)
+- ✅ Frontend architecture (React, Vite, Tailwind CSS)
 - ✅ Backend services (Firebase suite)
 - ✅ State management patterns
 - ✅ Real-time synchronization

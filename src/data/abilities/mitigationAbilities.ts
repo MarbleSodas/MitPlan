@@ -56,7 +56,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 420,
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/hallowed_ground.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Hallowed_Ground.png',
     type: 'invulnerability',
     mitigationValue: 1.0, // 100% mitigation
     damageType: 'both',
@@ -75,7 +75,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 240,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/holmgang.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Holmgang.png',
     type: 'invulnerability',
     mitigationValue: 1.0, // 100% mitigation
     damageType: 'both',
@@ -94,7 +94,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 300,
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/living_dead.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Living_Dead.png',
     type: 'invulnerability',
     mitigationValue: 1.0, // 100% mitigation
     damageType: 'both',
@@ -113,7 +113,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 360,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/superbolide.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Superbolide.png',
     type: 'invulnerability',
     mitigationValue: 1.0, // 100% mitigation
     damageType: 'both',
@@ -136,7 +136,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 60,
     jobs: ['PLD', 'WAR', 'DRK', 'GNB'],
-    icon: '/abilities-gamerescape/reprisal.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Role_Actions/Reprisal.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     // Mitigation value is always 10% at all levels
@@ -164,7 +164,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 90,
     jobs: ['PLD', 'WAR', 'DRK', 'GNB'],
-    icon: '/abilities-gamerescape/rampart.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Role_Actions/Rampart.png',
     type: 'mitigation',
     mitigationValue: 0.20,
     // Mitigation value is always 20% at all levels
@@ -178,6 +178,11 @@ export const mitigationAbilities: MitigationAbility[] = [
     forRaidWide: false,
     // Each tank has their own Rampart, but it's not a charge-based ability
     isRoleShared: true, // This allows tracking separate instances per tank
+    healingReceivedBonus: 0.15, // Enhanced Rampart at level 94+
+    levelHealingReceivedBonuses: {
+      8: 0,
+      94: 0.15
+    },
     count: 1 // Rampart has only 1 charge per tank
   },
 
@@ -193,7 +198,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/sentinel.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Sentinel.png',
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
@@ -214,7 +219,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 18,
     cooldown: 120,
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/passage_of_arms.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Passage_of_Arms.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
@@ -235,10 +240,12 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 30,
     cooldown: 90,
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/divine_veil.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Divine_Veil.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
     barrierPotency: 0.10, // Barrier absorbs 10% of max HP
+    healingPotency: 400,
+    healingType: 'instant',
     damageType: 'both',
     target: 'party', // Affects all party members
     forTankBusters: false, // Not typically used for tank busters
@@ -256,11 +263,14 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 5, // Uses oath gauge, not a traditional cooldown
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/holy_sheltron.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Holy_Sheltron.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     regenPotency: 250, // 250 potency per tick for healing over time
     regenDuration: 8,
+    layeredMitigation: [
+      { value: 0.15, duration: 4, description: 'Knight\'s Resolve' }
+    ],
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -279,7 +289,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 10, // Uses oath gauge, not a traditional cooldown
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/intervention.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Intervention.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     levelMitigationValues: {
@@ -288,6 +298,15 @@ export const mitigationAbilities: MitigationAbility[] = [
     },
     regenPotency: 250, // 250 potency per tick for healing over time (level 82+)
     regenDuration: 12, // Healing over time lasts for 12s at level 82+
+    layeredMitigation: [
+      { value: 0.10, duration: 4, description: 'Knight\'s Resolve' },
+      {
+        value: 0.10,
+        duration: 8,
+        conditionAbilityIds: ['rampart', 'guardian'],
+        description: 'Rampart/Guardian bonus'
+      }
+    ],
     damageType: 'both',
     target: 'single', // Can be cast on another player
     forTankBusters: true, // Commonly used for tank busters
@@ -306,9 +325,11 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['PLD'],
-    icon: '/abilities-gamerescape/guardian.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Guardian.png',
     type: 'mitigation',
     mitigationValue: 0.40,
+    barrierFlatPotency: 1000,
+    scaleBarrierWithHealing: true,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Primarily used for tank busters
@@ -348,7 +369,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/vengeance.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Vengeance.png',
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
@@ -370,10 +391,20 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 30,
     cooldown: 90,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/shake_it_off.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Shake_It_Off.png',
     type: 'barrier',
     mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
     barrierPotency: 0.15, // 15% max HP barrier
+    conditionalBarrierModifiers: [
+      {
+        value: 0.02,
+        maxStacks: 3,
+        conditionAbilityIds: ['thrill_of_battle', 'vengeance', 'damnation', 'bloodwhetting'],
+        description: 'Dispels active Warrior defensive effects'
+      }
+    ],
+    healingPotency: 300,
+    healingType: 'instant',
     damageType: 'both',
     target: 'party', // Affects all party members
     forTankBusters: false, // Not typically used for tank busters
@@ -391,11 +422,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 25,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/bloodwhetting.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Bloodwhetting.png',
     type: 'mitigation',
     mitigationValue: 0.10,
-    regenPotency: 400, // 400 potency per tick for healing over time
-    regenDuration: 8,
+    healingPotency: 400,
+    healingType: 'triggered',
+    barrierFlatPotency: 400,
+    layeredMitigation: [
+      { value: 0.10, duration: 4, description: 'Stem the Flow' }
+    ],
+    scaleBarrierWithHealing: true,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -414,11 +450,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 25,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/nascent_flash.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Nascent_Flash.png',
     type: 'mitigation',
     mitigationValue: 0.10,
-    regenPotency: 400, // 400 potency per tick for healing over time
-    regenDuration: 8,
+    healingPotency: 400,
+    healingType: 'triggered',
+    barrierFlatPotency: 400,
+    layeredMitigation: [
+      { value: 0.10, duration: 4, description: 'Stem the Flow' }
+    ],
+    scaleBarrierWithHealing: true,
     damageType: 'both',
     target: 'single', // Can be cast on another player
     forTankBusters: true, // Commonly used for tank busters
@@ -438,10 +479,15 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 90,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/thrill_of_battle.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Thrill_of_Battle.png',
     type: 'mitigation',
     mitigationValue: 0.20, // Effective mitigation through HP increase
     maxHpIncrease: 0.20, // Visual max HP increase for health bars
+    healingReceivedBonus: 0.20,
+    levelHealingReceivedBonuses: {
+      30: 0,
+      78: 0.20
+    },
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for tank busters
@@ -459,9 +505,11 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['WAR'],
-    icon: '/abilities-gamerescape/damnation.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Damnation.png',
     type: 'mitigation',
     mitigationValue: 0.40,
+    regenPotency: 300,
+    regenDuration: 15,
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Primarily used for tank busters
@@ -481,7 +529,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/shadow_wall.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Shadow_Wall.png',
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
@@ -501,7 +549,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 90,
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/dark_missionary.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Dark_Missionary.png',
     type: 'mitigation',
     mitigationValue: { magical: 0.10, physical: 0.05 },
     damageType: 'both',
@@ -522,7 +570,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     cooldown: 60,
     count: 2, // Has 2 charges
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/oblation.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Oblation.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -542,7 +590,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 7,
     cooldown: 15,
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/the_blackest_night.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/The_Blackest_Night.png',
     type: 'barrier',
     mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
     barrierPotency: 0.25, // 25% max HP barrier
@@ -564,10 +612,10 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 60,
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/dark_mind.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Dark_Mind.png',
     type: 'mitigation',
-    mitigationValue: 0.20,
-    damageType: 'magical', // Only works on magic damage
+    mitigationValue: { physical: 0.10, magical: 0.20 },
+    damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Commonly used for magic tank busters
     forRaidWide: false, // Not used for raid-wide damage
@@ -584,9 +632,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['DRK'],
-    icon: '/abilities-gamerescape/shadowed_vigil.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Shadowed_Vigil.png',
     type: 'mitigation',
     mitigationValue: 0.40,
+    healingPotency: 1200,
+    healingType: 'triggered',
+    lowHpTrigger: {
+      thresholdPercent: 50,
+      triggerOnExpire: true,
+      healingPotency: 1200
+    },
     damageType: 'both',
     target: 'self', // Can only be used on self
     forTankBusters: true, // Primarily used for tank busters
@@ -606,7 +661,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/nebula.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Nebula.png',
     type: 'mitigation',
     mitigationValue: 0.30,
     damageType: 'both',
@@ -626,7 +681,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 90,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/heart_of_light.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Heart_of_Light.png',
     type: 'mitigation',
     mitigationValue: { magical: 0.10, physical: 0.05 },
     damageType: 'both',
@@ -646,11 +701,19 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 25,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/heart_of_corundum.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Heart_of_Corundum.png',
     type: 'mitigation',
     mitigationValue: 0.15,
-    regenPotency: 250, // 250 potency per tick for healing over time
-    regenDuration: 8,
+    healingPotency: 900,
+    healingType: 'triggered',
+    lowHpTrigger: {
+      thresholdPercent: 50,
+      triggerOnExpire: true,
+      healingPotency: 900
+    },
+    layeredMitigation: [
+      { value: 0.15, duration: 4, description: 'Clarity of Corundum' }
+    ],
     damageType: 'both',
     target: 'single', // Can be cast on self or another player
     forTankBusters: true, // Commonly used for tank busters
@@ -669,7 +732,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 7,
     cooldown: 25,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/heart_of_stone.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Heart_of_Stone.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
@@ -690,7 +753,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 90,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/camouflage.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Camouflage.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -711,7 +774,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     cooldown: 60,
     count: 2, // Has 2 charges
     jobs: ['GNB'],
-    icon: '/abilities-official/aurora.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Aurora.png',
     type: 'healing',
     healingPotency: 0, // Pure regen, no instant healing
     regenPotency: 200, // 200 potency per tick
@@ -735,9 +798,10 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['GNB'],
-    icon: '/abilities-gamerescape/great_nebula.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Great_Nebula.png',
     type: 'mitigation',
     mitigationValue: 0.40,
+    maxHpIncrease: 0.20,
     damageType: 'both',
     target: 'self',
     forTankBusters: true,
@@ -757,7 +821,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     cooldown: 30,
     count: 2, // Has 2 charges
     jobs: ['WHM'],
-    icon: '/abilities-gamerescape/divine_benison.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Divine_Benison.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
     barrierFlatPotency: 500, // Official: absorbs damage equivalent to a heal of 500 potency
@@ -780,7 +844,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 120,
     jobs: ['WHM'],
-    icon: '/abilities-gamerescape/temperance.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Temperance.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -844,7 +908,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['WHM'],
-    icon: '/abilities-official/cure.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure.png',
     type: 'healing',
     healingPotency: 500,
     healingType: 'instant',
@@ -865,7 +929,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['WHM'],
-    icon: '/abilities-official/cure_ii.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure_II.png',
     type: 'healing',
     healingPotency: 800,
     healingType: 'instant',
@@ -886,7 +950,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['WHM'],
-    icon: '/abilities-official/medica.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Medica.png',
     type: 'healing',
     healingPotency: 400,
     healingType: 'instant',
@@ -907,7 +971,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 2.5,
     jobs: ['WHM'],
-    icon: '/abilities-official/medica_ii.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Medica_II.png',
     type: 'healing',
     healingPotency: 250, // Instant healing component
     regenPotency: 150, // 150 potency per tick
@@ -955,7 +1019,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 18,
     cooldown: 2.5,
     jobs: ['WHM'],
-    icon: '/abilities-official/regen.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Regen.png',
     type: 'healing',
     healingPotency: 0, // Pure regen, no instant healing
     regenPotency: 250, // 250 potency per tick
@@ -979,7 +1043,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 180,
     jobs: ['WHM'],
-    icon: '/abilities-official/benediction.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Benediction.png',
     type: 'healing',
     healingPotency: 0, // Full heal
     healingType: 'fullHeal',
@@ -1002,7 +1066,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     cooldown: 60,
     count: 2,
     jobs: ['WHM'],
-    icon: '/abilities-official/tetragrammaton.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Tetragrammaton.png',
     type: 'healing',
     healingPotency: 700,
     healingType: 'instant',
@@ -1023,7 +1087,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 60,
     jobs: ['WHM'],
-    icon: '/abilities-gamerescape/aquaveil.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Aquaveil.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     damageType: 'both',
@@ -1042,7 +1106,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 1,
     jobs: ['WHM'],
-    icon: '/abilities-gamerescape/divine_caress.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Divine_Caress.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
     barrierFlatPotency: 400, // Official: barrier equivalent to a heal of 400 potency (plus instant heal)
@@ -1060,10 +1124,10 @@ export const mitigationAbilities: MitigationAbility[] = [
   {
     id: 'asylum',
     name: 'Asylum',
-    description: 'Envelops a designated area in a field of healing.',
+    description: 'Envelops a designated area in a field of healing and increases HP recovery via healing actions by 10%.',
     levelRequirement: 52,
     levelDescriptions: {
-      52: 'Creates a healing area that restores HP over time for 24s'
+      52: 'Creates a healing area that restores HP over time for 24s and increases HP recovery via healing actions by 10%'
     },
     duration: 24,
     cooldown: 90,
@@ -1078,7 +1142,12 @@ export const mitigationAbilities: MitigationAbility[] = [
     damageType: 'both',
     target: 'area',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    healingReceivedBonus: 0.10,
+    levelHealingReceivedBonuses: {
+      52: 0,
+      78: 0.10
+    }
   },
   {
     id: 'cure_iii',
@@ -1178,7 +1247,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0, // Not a buff
     cooldown: 60,
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/aetherflow.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Aetherflow.png',
     type: 'utility',
     mitigationValue: 0,
     damageType: 'both',
@@ -1198,7 +1267,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0, // Not a buff
     cooldown: 1, // Effectively no cooldown, limited by Aetherflow stacks
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/energy_drain.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Energy_Drain.png',
     type: 'utility',
     mitigationValue: 0,
     damageType: 'both',
@@ -1219,7 +1288,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['SCH'],
-    icon: '/abilities-official/physick.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Physick.png',
     type: 'healing',
     healingPotency: 450,
     healingType: 'instant',
@@ -1240,11 +1309,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 30,
     cooldown: 2.5,
     jobs: ['SCH'],
-    icon: '/abilities-official/adloquium.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Adloquium.png',
     type: 'healing',
     healingPotency: 300,
     healingType: 'instant',
     barrierFlatPotency: 540, // 180% of healing as barrier → 300 * 1.8 = 540 potency
+    conditionalBarrierOnCrit: {
+      additionalBarrierMultiplier: 1.8,
+      stackingRule: 'add',
+      incompatibleWith: ['adloquium']
+    },
     mitigationValue: 0,
     damageType: 'both',
     target: 'single',
@@ -1262,7 +1336,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 30,
     cooldown: 2.5,
     jobs: ['SCH'],
-    icon: '/abilities-official/succor.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Succor.png',
     type: 'healing',
     healingPotency: 200,
     healingType: 'instant',
@@ -1307,7 +1381,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 1,
     jobs: ['SCH'],
-    icon: '/abilities-official/lustrate.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Lustrate.png',
     type: 'healing',
     healingPotency: 600,
     healingType: 'instant',
@@ -1316,7 +1390,12 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    consumesAetherflow: true
+    consumesAetherflow: true,
+    lowHpTrigger: {
+      thresholdPercent: 50,
+      triggerOnExpire: true,
+      healingPotency: 800
+    }
   },
   {
     id: 'indomitability',
@@ -1329,7 +1408,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 30,
     jobs: ['SCH'],
-    icon: '/abilities-official/indomitability.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Indomitability.png',
     type: 'healing',
     healingPotency: 400,
     healingType: 'instant',
@@ -1351,7 +1430,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 45,
     cooldown: 45,
     jobs: ['SCH'],
-    icon: '/abilities-official/excogitation.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Excogitation.png',
     type: 'healing',
     healingPotency: 800,
     healingType: 'triggered',
@@ -1374,7 +1453,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 30,
     jobs: ['SCH'],
-    icon: '/abilities-gamerescape/sacred_soil.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Sacred_Soil.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     regenPotency: 100, // 100 potency per tick for regen (level 78+)
@@ -1400,6 +1479,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     type: 'mitigation',
     mitigationValue: 0.10, // Model as effective 10% mitigation (EHP increase)
     maxHpIncrease: 0.10, // Visual max HP increase for health bars
+    healingReceivedBonus: 0.10,
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -1496,6 +1576,58 @@ export const mitigationAbilities: MitigationAbility[] = [
     forRaidWide: true,
     scaleBarrierWithHealing: true,
     requiresActiveWindow: { abilityId: 'summon_seraph' }
+  },
+  {
+    id: 'manifestation',
+    name: 'Manifestation',
+    description: 'Restores target\'s HP and grants a stronger Galvanize barrier while Seraphism is active. Critical heals grant an additional crit-only barrier not included in default math.',
+    levelRequirement: 100,
+    levelDescriptions: {
+      100: 'Restores target\'s HP with 360 potency and grants a barrier equal to 180% of the HP restored while Seraphism is active. Critical heals grant an additional crit-only barrier.'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Manifestation.png',
+    type: 'healing',
+    healingPotency: 360,
+    healingType: 'instant',
+    barrierFlatPotency: 648,
+    conditionalBarrierOnCrit: {
+      additionalBarrierMultiplier: 1.8,
+      stackingRule: 'add',
+      incompatibleWith: ['adloquium', 'manifestation']
+    },
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'single',
+    forTankBusters: true,
+    forRaidWide: false,
+    targetsTank: true,
+    requiresActiveWindow: { abilityId: 'seraphism', windowDuration: 20 }
+  },
+  {
+    id: 'accession',
+    name: 'Accession',
+    description: 'Restores party HP and grants a stronger Galvanize barrier while Seraphism is active.',
+    levelRequirement: 100,
+    levelDescriptions: {
+      100: 'Restores party HP with 240 potency and grants a barrier equal to 180% of the HP restored while Seraphism is active.'
+    },
+    duration: 30,
+    cooldown: 2.5,
+    jobs: ['SCH'],
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Accession.png',
+    type: 'healing',
+    healingPotency: 240,
+    healingType: 'instant',
+    barrierFlatPotency: 432,
+    mitigationValue: 0,
+    damageType: 'both',
+    target: 'party',
+    forTankBusters: false,
+    forRaidWide: true,
+    requiresActiveWindow: { abilityId: 'seraphism', windowDuration: 20 }
   },
   {
     id: 'expedient',
@@ -1614,14 +1746,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 8,
     cooldown: 60,
     jobs: ['AST'],
-    icon: '/abilities-official/exaltation.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Exaltation.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
     forRaidWide: false,
-    targetsTank: true
+    targetsTank: true,
+    healingPotency: 500,
+    healingType: 'triggered'
   },
   {
     id: 'macrocosmos',
@@ -1634,7 +1768,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 180,
     jobs: ['AST'],
-    icon: '/abilities-official/macrocosmos.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Macrocosmos.png',
     type: 'healing',
     healingPotency: 400, // Base healing plus recorded damage
     healingType: 'triggered',
@@ -1656,7 +1790,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     cooldown: 30,
     count: 2,
     jobs: ['AST'],
-    icon: '/abilities-official/celestial_intersection.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Celestial_Intersection.png',
     type: 'healing',
     healingPotency: 200,
     healingType: 'instant',
@@ -1680,7 +1814,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 120,
     jobs: ['AST'],
-    icon: '/abilities-official/neutral_sect.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Neutral_Sect.png',
     type: 'healing',
     healingPotency: 0, // Healing boost, not direct healing
     healingType: 'boost',
@@ -1703,7 +1837,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 30,
     cooldown: 2.5,
     jobs: ['AST'],
-    icon: '/abilities-official/aspected_benefic.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Aspected_Benefic.png',
     type: 'healing',
     healingPotency: 250,
     regenPotency: 250,
@@ -1757,7 +1891,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['AST'],
-    icon: '/abilities-official/benefic.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Benefic.png',
     type: 'healing',
     healingPotency: 500,
     healingType: 'instant',
@@ -1778,7 +1912,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['AST'],
-    icon: '/abilities-official/benefic_ii.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Benefic_II.png',
     type: 'healing',
     healingPotency: 800,
     healingType: 'instant',
@@ -1805,7 +1939,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     },
     count: 2,
     jobs: ['AST'],
-    icon: '/abilities-official/essential_dignity.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Essential_Dignity.png',
     type: 'healing',
     healingPotency: 900,
     healingType: 'instant',
@@ -1832,7 +1966,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['AST'],
-    icon: '/abilities-official/helios.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Helios.png',
     type: 'healing',
     healingPotency: 400,
     healingType: 'instant',
@@ -1853,7 +1987,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 2.5,
     jobs: ['AST'],
-    icon: '/abilities-official/aspected_helios.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Aspected_Helios.png',
     type: 'healing',
     healingPotency: 250,
     regenPotency: 150,
@@ -1901,7 +2035,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 2.5,
     jobs: ['AST'],
-    icon: '/abilities-official/aspected_benefic.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Aspected_Benefic.png',
     type: 'healing',
     healingPotency: 250, // Instant healing component
     regenPotency: 250, // 250 potency per tick
@@ -1925,7 +2059,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 60,
     jobs: ['AST'],
-    icon: '/abilities-official/earthly_star.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Earthly_Star.png',
     type: 'healing',
     healingPotency: 630, // Average of 540-720
     healingType: 'triggered',
@@ -1952,7 +2086,8 @@ export const mitigationAbilities: MitigationAbility[] = [
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 }
   },
   {
     id: 'kerachole',
@@ -1990,6 +2125,8 @@ export const mitigationAbilities: MitigationAbility[] = [
     jobs: ['SGE'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Holos.png',
     type: 'mitigation',
+    healingPotency: 300,
+    healingType: 'instant',
     mitigationValue: 0.10,
     damageType: 'both',
     target: 'party',
@@ -2001,10 +2138,10 @@ export const mitigationAbilities: MitigationAbility[] = [
   {
     id: 'eukrasian_diagnosis',
     name: 'Eukrasian Diagnosis',
-    description: 'Restores target\'s HP and erects a barrier equal to 180% of the HP restored',
+    description: 'Restores target\'s HP and erects a barrier equal to 180% of the HP restored. Critical heals grant an additional crit-only barrier not included in default math.',
     levelRequirement: 30,
     levelDescriptions: {
-      30: 'Restores target\'s HP with 300 potency and erects a barrier equal to 180% of the HP restored'
+      30: 'Restores target\'s HP with 300 potency and erects a barrier equal to 180% of the HP restored. Critical heals grant an additional crit-only barrier.'
     },
     duration: 30,
     cooldown: 2.5,
@@ -2016,6 +2153,11 @@ export const mitigationAbilities: MitigationAbility[] = [
     isSpell: true,
     mitigationValue: 0,
     barrierFlatPotency: 540, // Barrier equals 180% of HP restored → 300 * 1.8 = 540 potency
+    conditionalBarrierOnCrit: {
+      additionalBarrierMultiplier: 1.8,
+      stackingRule: 'add',
+      incompatibleWith: ['eukrasian_diagnosis']
+    },
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -2025,21 +2167,26 @@ export const mitigationAbilities: MitigationAbility[] = [
   {
     id: 'eukrasian_prognosis',
     name: 'Eukrasian Prognosis',
-    description: 'Restores own HP and the HP of all nearby party members and erects a barrier equal to 160% of the HP restored',
+    description: 'Restores own HP and the HP of all nearby party members and erects a barrier equal to 320% of the HP restored. Critical heals grant an additional crit-only barrier not included in default math.',
     levelRequirement: 30,
     levelDescriptions: {
-      30: 'Restores party HP with 200 potency and erects a barrier equal to 160% of the HP restored'
+      30: 'Restores party HP with 100 potency and erects a barrier equal to 320% of the HP restored. Critical heals grant an additional crit-only barrier.'
     },
     duration: 30,
     cooldown: 2.5,
     jobs: ['SGE'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Eukrasian_Prognosis.png',
     type: 'healing',
-    healingPotency: 200,
+    healingPotency: 100,
     healingType: 'instant',
     isSpell: true,
     mitigationValue: 0,
-    barrierFlatPotency: 320, // Barrier equals 160% of HP restored → 200 * 1.6 = 320 potency
+    barrierFlatPotency: 320, // Barrier equals 320% of HP restored -> 100 * 3.2 = 320 potency
+    conditionalBarrierOnCrit: {
+      additionalBarrierMultiplier: 3.2,
+      stackingRule: 'add',
+      incompatibleWith: ['eukrasian_prognosis', 'eukrasian_prognosis_ii']
+    },
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -2049,10 +2196,10 @@ export const mitigationAbilities: MitigationAbility[] = [
   {
     id: 'eukrasian_prognosis_ii',
     name: 'Eukrasian Prognosis II',
-    description: 'Restores party HP and erects a stronger barrier than Eukrasian Prognosis',
+    description: 'Restores party HP and erects a stronger barrier than Eukrasian Prognosis. Critical heals grant an additional crit-only barrier not included in default math.',
     levelRequirement: 96,
     levelDescriptions: {
-      96: 'Restores party HP with 100 potency and erects a barrier equal to 360% of the HP restored'
+      96: 'Restores party HP with 100 potency and erects a barrier equal to 360% of the HP restored. Critical heals grant an additional crit-only barrier.'
     },
     duration: 30,
     cooldown: 2.5,
@@ -2064,6 +2211,11 @@ export const mitigationAbilities: MitigationAbility[] = [
     isSpell: true,
     mitigationValue: 0,
     barrierFlatPotency: 360, // 360% of HP restored per job guide at 96
+    conditionalBarrierOnCrit: {
+      additionalBarrierMultiplier: 3.6,
+      stackingRule: 'add',
+      incompatibleWith: ['eukrasian_prognosis', 'eukrasian_prognosis_ii']
+    },
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -2084,6 +2236,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
     barrierFlatPotency: 300, // Healing-based barrier per stack (5 stacks total). For single-hit visualization, use 1 stack.
+    stackBarrierEffect: {
+      initialBarrierPotency: 300,
+      stackCount: 5,
+      barrierRefreshOnBreak: true,
+      healingOnExpire: {
+        enabled: true,
+        potencyPerStack: 150
+      },
+      stackConsumptionPerHit: 1
+    },
     damageType: 'both',
     target: 'single',
     forTankBusters: true,
@@ -2106,6 +2268,16 @@ export const mitigationAbilities: MitigationAbility[] = [
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
     barrierFlatPotency: 200, // Healing-based barrier per stack (5 stacks total). For single-hit visualization, use 1 stack.
+    stackBarrierEffect: {
+      initialBarrierPotency: 200,
+      stackCount: 5,
+      barrierRefreshOnBreak: true,
+      healingOnExpire: {
+        enabled: true,
+        potencyPerStack: 100
+      },
+      stackConsumptionPerHit: 1
+    },
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
@@ -2123,7 +2295,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 45,
     jobs: ['SGE'],
-    icon: '/abilities-official/taurochole.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Taurochole.png',
     type: 'mitigation',
     healingPotency: 700,
     healingType: 'instant',
@@ -2146,7 +2318,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 30,
     cooldown: 90,
     jobs: ['SGE'],
-    icon: '/abilities-official/zoe.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Zoe.png',
     type: 'healing',
     healingPotency: 0, // Healing boost, not direct healing
     healingType: 'boost',
@@ -2169,7 +2341,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 20,
     cooldown: 180,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/philosophia.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Philosophia.png',
     type: 'healing',
     healingPotency: 0, // Healing boost, not direct healing
     healingType: 'boost',
@@ -2227,7 +2399,6 @@ export const mitigationAbilities: MitigationAbility[] = [
     target: 'party',
     forTankBusters: false,
     forRaidWide: true,
-    healingPotencyBonus: { value: 0.10, stackMode: 'multiplicative' },
     healingReceivedBonus: 0.10
   },
   {
@@ -2251,7 +2422,6 @@ export const mitigationAbilities: MitigationAbility[] = [
     forTankBusters: true,
     forRaidWide: false,
     targetsTank: true,
-    healingPotencyBonus: { value: 0.20, stackMode: 'multiplicative' },
     healingReceivedBonus: 0.20
   },
   {
@@ -2265,7 +2435,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 90,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/rhizomata.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Rhizomata.png',
     type: 'utility',
     mitigationValue: 0,
     damageType: 'both',
@@ -2285,7 +2455,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 2.5,
     jobs: ['SGE'],
-    icon: '/abilities-gamerescape/toxikon.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Toxikon.png',
     type: 'healing',
     healingPotency: 170,
     healingType: 'instant',
@@ -2376,7 +2546,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 1,
     jobs: ['SGE'],
-    icon: '/abilities-official/druochole.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Druochole.png',
     type: 'healing',
     healingPotency: 600,
     healingType: 'instant',
@@ -2398,7 +2568,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 0,
     cooldown: 30,
     jobs: ['SGE'],
-    icon: '/abilities-official/ixochole.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Ixochole.png',
     type: 'healing',
     healingPotency: 400,
     healingType: 'instant',
@@ -2424,7 +2594,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 90,
     jobs: ['MNK', 'DRG', 'NIN', 'SAM', 'RPR', 'VPR'],
-    icon: '/abilities-gamerescape/feint.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/05_MNK/Role_Actions/Feint.png',
     type: 'mitigation',
     mitigationValue: { physical: 0.10, magical: 0.05 },
     levelMitigationValues: {
@@ -2449,7 +2619,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 90,
     jobs: ['BLM', 'SMN', 'RDM', 'PCT'],
-    icon: '/abilities-gamerescape/addle.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/14_BLM/Role_Actions/Addle.png',
     type: 'mitigation',
     mitigationValue: { magical: 0.10, physical: 0.05 },
     levelMitigationValues: {
@@ -2474,7 +2644,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 90,
     jobs: ['BRD'],
-    icon: '/abilities-gamerescape/troubadour.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/11_BRD/Troubadour.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     levelMitigationValues: {
@@ -2498,31 +2668,32 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 15,
     cooldown: 120,
     jobs: ['BRD'],
-    icon: '/abilities-official/natures_minne.png',
+    icon: "/icons/pve/FFXIVIcons Battle(PvE)/11_BRD/Nature's_Minne.png",
     type: 'healing',
     mitigationValue: 0,
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    healingReceivedBonus: 0.15
   },
   {
     id: 'tactician',
     name: 'Tactician',
     description: 'Reduces damage taken by party members by 15%',
-    levelRequirement: 62,
+    levelRequirement: 56,
     levelDescriptions: {
-      62: 'Reduces damage taken by party members by 10% for 15s',
+      56: 'Reduces damage taken by party members by 10% for 15s',
       98: 'Reduces damage taken by party members by 15% for 15s'
     },
     duration: 15,
     cooldown: 90,
     jobs: ['MCH'],
-    icon: '/abilities-gamerescape/tactician.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/12_MCH/Tactician.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     levelMitigationValues: {
-      62: 0.10,
+      56: 0.10,
       98: 0.15
     },
     damageType: 'both',
@@ -2542,7 +2713,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 120,
     jobs: ['MCH'],
-    icon: '/abilities-gamerescape/dismantle.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/12_MCH/Dismantle.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'both',
@@ -2555,19 +2726,19 @@ export const mitigationAbilities: MitigationAbility[] = [
     id: 'shield_samba',
     name: 'Shield Samba',
     description: 'Reduces damage taken by party members by 15%',
-    levelRequirement: 62,
+    levelRequirement: 56,
     levelDescriptions: {
-      62: 'Reduces damage taken by party members by 10% for 15s',
+      56: 'Reduces damage taken by party members by 10% for 15s',
       98: 'Reduces damage taken by party members by 15% for 15s'
     },
     duration: 15,
     cooldown: 90,
     jobs: ['DNC'],
-    icon: '/abilities-gamerescape/shield_samba.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/13_DNC/Shield_Samba.png',
     type: 'mitigation',
     mitigationValue: 0.15,
     levelMitigationValues: {
-      62: 0.10,
+      56: 0.10,
       98: 0.15
     },
     damageType: 'both',
@@ -2587,13 +2758,14 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 120,
     jobs: ['RDM'],
-    icon: '/abilities-gamerescape/magick_barrier.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/16_RDM/Magick_Barrier.png',
     type: 'mitigation',
     mitigationValue: 0.10,
     damageType: 'magical',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    healingReceivedBonus: 0.05
   },
   {
     id: 'tempera_coat',
@@ -2606,7 +2778,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 10,
     cooldown: 120,
     jobs: ['PCT'],
-    icon: '/abilities-gamerescape/tempera_coat.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/17_PCT/Tempera_Coat.png',
     type: 'barrier',
     mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
     barrierPotency: 0.20, // 20% max HP barrier
@@ -2624,32 +2796,35 @@ export const mitigationAbilities: MitigationAbility[] = [
       88: 'Creates a barrier that absorbs damage equal to 10% of maximum HP for 10s'
     },
     duration: 10,
-    cooldown: 90,
+    cooldown: 1,
     jobs: ['PCT'],
-    icon: '/abilities-gamerescape/tempera_grassa.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/17_PCT/Tempera_Grassa.png',
     type: 'barrier',
     mitigationValue: 0, // Changed to 0 since this is a barrier, not direct mitigation
     barrierPotency: 0.10, // 10% max HP barrier
     damageType: 'both',
     target: 'party',
     forTankBusters: false,
-    forRaidWide: true
+    forRaidWide: true,
+    requiresActiveWindow: { abilityId: 'tempera_coat', windowDuration: 10 }
   },
   {
     id: 'arcane_crest',
     name: 'Arcane Crest',
     description: 'Creates a barrier on self that heals nearby party members when broken',
-    levelRequirement: 64,
+    levelRequirement: 40,
     levelDescriptions: {
-      64: 'Creates a barrier on self that absorbs damage equal to 10% of maximum HP for 30s and heals nearby party members when broken'
+      40: 'Creates a barrier on self that absorbs damage equal to 10% of maximum HP for 5s and heals nearby party members when broken'
     },
-    duration: 30,
-    cooldown: 60,
+    duration: 5,
+    cooldown: 30,
     jobs: ['RPR'],
-    icon: '/abilities-gamerescape/arcane_crest.png',
+    icon: '/icons/pve/FFXIVIcons Battle(PvE)/08_RPR/Arcane_Crest.png',
     type: 'barrier',
     mitigationValue: 0, // Shield, not direct mitigation
     barrierPotency: 0.10, // 10% max HP barrier
+    regenPotency: 50,
+    regenDuration: 15,
     damageType: 'both',
     target: 'self',
     forTankBusters: false,
@@ -2667,7 +2842,7 @@ export const mitigationAbilities: MitigationAbility[] = [
     duration: 6,
     cooldown: 120,
     jobs: ['MNK', 'DRG', 'NIN', 'SAM', 'RPR', 'VPR', 'BRD', 'MCH', 'DNC', 'PLD', 'WAR', 'DRK', 'GNB'],
-    icon: '/abilities-gamerescape/arms_length.png',
+    icon: "/icons/pve/FFXIVIcons Battle(PvE)/05_MNK/Role_Actions/Arm's_Length.png",
     type: 'utility',
     mitigationValue: 0, // Utility, not direct mitigation
     damageType: 'both',

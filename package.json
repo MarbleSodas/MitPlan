@@ -1,13 +1,13 @@
 {
   "name": "mitplanffxiv",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "packageManager": "bun@1.3.2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
@@ -66,6 +66,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.0",
     "vite": "^7.3.0",
     "vitest": "^4.0.15",
     "ws": "^8.18.3"

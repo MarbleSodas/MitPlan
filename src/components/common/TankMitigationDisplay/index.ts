@@ -1,3 +1,3 @@
-import TankMitigationDisplay from './TankMitigationDisplay.jsx';
+import TankMitigationDisplay from './TankMitigationDisplay';
 
 export default TankMitigationDisplay;

@@ -1,14 +1,17 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
 import * as planService from '../services/realtimePlanService';
 import {
+  getErrorMessage,
   getDashboardPlanLoadErrorMessage,
   isPermissionDeniedError,
   isPlansCollectionPermissionDeniedError,
 } from '../services/firebaseErrorUtils';
+import type { Plan } from '../types';
+import type { PlanContextValue } from '../types/contexts';
 
-const PlanContext = createContext({});
+const PlanContext = createContext<PlanContextValue | null>(null);
 
 export const usePlan = () => {
   const context = useContext(PlanContext);
@@ -18,17 +21,21 @@ export const usePlan = () => {
   return context;
 };
 
-export const PlanProvider = ({ children }) => {
+interface PlanProviderProps {
+  children: ReactNode;
+}
+
+export const PlanProvider = ({ children }: PlanProviderProps) => {
   const { user, isAuthenticated } = useAuth();
   const { sessionId, isOwnChange, setChangeOrigin } = useCollaboration();
-  const [plans, setPlans] = useState([]);
-  const [currentPlan, setCurrentPlan] = useState(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Refs to track real-time listeners
-  const listenersRef = useRef(new Map());
-  const currentPlanListenerRef = useRef(null);
+  const listenersRef = useRef(new Map<string, () => void>());
+  const currentPlanListenerRef = useRef<(() => void) | null>(null);
 
   // Cleanup listeners function
   const cleanupListeners = useCallback(() => {
@@ -74,7 +81,7 @@ export const PlanProvider = ({ children }) => {
           } else if (isPermissionDeniedError(error)) {
             setError(null);
           } else {
-            setError(error.message || 'Error loading plans');
+            setError(getErrorMessage(error));
             console.error('Error loading plans:', error);
           }
           setPlans([]); // Set empty array to prevent further errors
@@ -95,7 +102,7 @@ export const PlanProvider = ({ children }) => {
         setPlans([]);
       } else {
         console.error('Error setting up plans listener:', err);
-        setError(err.message);
+        setError(getErrorMessage(err));
       }
       setLoading(false);
     }
@@ -117,7 +124,7 @@ export const PlanProvider = ({ children }) => {
       } else if (isPermissionDeniedError(err)) {
         setError(null);
       } else {
-        setError(err.message);
+        setError(getErrorMessage(err));
         console.error('Error loading plans:', err);
       }
       setPlans([]); // Set empty array to prevent further errors
@@ -126,7 +133,7 @@ export const PlanProvider = ({ children }) => {
     }
   }, [user]);
 
-  const createNewPlan = async (planData) => {
+  const createNewPlan = async (planData: Partial<Plan>) => {
     if (!user) throw new Error('User not authenticated');
     
     setLoading(true);
@@ -137,14 +144,14 @@ export const PlanProvider = ({ children }) => {
       setPlans(prev => [newPlan, ...prev]);
       return newPlan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateExistingPlan = async (planId, planData) => {
+  const updateExistingPlan = async (planId: string, planData: Partial<Plan>) => {
     setLoading(true);
     setError(null);
     
@@ -160,14 +167,14 @@ export const PlanProvider = ({ children }) => {
       
       return updatedPlan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const deletePlanById = async (planId) => {
+  const deletePlanById = async (planId: string) => {
     setLoading(true);
     setError(null);
 
@@ -189,7 +196,7 @@ export const PlanProvider = ({ children }) => {
       console.error('[PlanContext] Plan deletion failed, rolling back:', err);
       setPlans(previousPlans);
       setCurrentPlan(previousCurrentPlan);
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
@@ -197,7 +204,7 @@ export const PlanProvider = ({ children }) => {
   };
 
   // Real-time plan loading with collaboration support
-  const loadPlanRealtime = useCallback(async (planId) => {
+  const loadPlanRealtime = useCallback(async (planId: string) => {
     setLoading(true);
     setError(null);
 
@@ -213,7 +220,7 @@ export const PlanProvider = ({ children }) => {
         planId,
         (plan, changeOrigin, error) => {
           if (error) {
-            setError(error.message);
+            setError(getErrorMessage(error));
             setCurrentPlan(null);
           } else if (plan) {
             // Only update if change didn't originate from this session
@@ -236,14 +243,14 @@ export const PlanProvider = ({ children }) => {
       setCurrentPlan(plan);
       return plan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       setLoading(false);
       throw err;
     }
   }, [sessionId, isOwnChange]);
 
   // Legacy function for backward compatibility
-  const loadPlan = useCallback(async (planId) => {
+  const loadPlan = useCallback(async (planId: string) => {
     setLoading(true);
     setError(null);
 
@@ -253,14 +260,14 @@ export const PlanProvider = ({ children }) => {
       setCurrentPlan(plan);
       return plan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const duplicatePlanById = async (planId, newName) => {
+  const duplicatePlanById = async (planId: string, newName: string) => {
     if (!user) throw new Error('User not authenticated');
     
     setLoading(true);
@@ -271,14 +278,14 @@ export const PlanProvider = ({ children }) => {
       setPlans(prev => [duplicatedPlan, ...prev]);
       return duplicatedPlan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const exportPlanById = async (planId) => {
+  const exportPlanById = async (planId: string) => {
     setLoading(true);
     setError(null);
     
@@ -286,14 +293,14 @@ export const PlanProvider = ({ children }) => {
       const exportData = await planService.exportPlan(planId);
       return exportData;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const importPlanData = async (importData, planName) => {
+  const importPlanData = async (importData: unknown, planName: string) => {
     if (!user) throw new Error('User not authenticated');
     
     setLoading(true);
@@ -304,7 +311,7 @@ export const PlanProvider = ({ children }) => {
       setPlans(prev => [importedPlan, ...prev]);
       return importedPlan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);
@@ -312,7 +319,7 @@ export const PlanProvider = ({ children }) => {
   };
 
   // Real-time plan updates with collaboration support
-  const updatePlanRealtime = useCallback(async (planId, updates) => {
+  const updatePlanRealtime = useCallback(async (planId: string, updates: Partial<Plan>) => {
     if (!user) throw new Error('User not authenticated');
 
     setLoading(true);
@@ -340,7 +347,7 @@ export const PlanProvider = ({ children }) => {
 
       return updatedPlan;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
       throw err;
     } finally {
       setLoading(false);

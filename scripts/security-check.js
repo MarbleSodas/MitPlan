@@ -99,7 +99,7 @@ try {
 // Check 5: Verify build works
 console.log('\n📋 Testing build process...');
 try {
-  execSync('npm run build', { cwd: projectRoot, stdio: 'pipe' });
+  execSync('bun run build', { cwd: projectRoot, stdio: 'pipe' });
   console.log('✅ Build process completed successfully');
 } catch (error) {
   console.log('❌ Build process failed');

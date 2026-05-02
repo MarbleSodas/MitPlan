@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Share2, Edit2, Check, X } from 'lucide-react';
+import { Copy, Download, Share2, Edit2, Check, Trash2, X } from 'lucide-react';
 import { usePlan } from '../../contexts/PlanContext';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -228,7 +228,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
 
   return (
     <>
-      <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
+      <Card className="flex h-full flex-col overflow-hidden hover:border-primary/30 hover:shadow-md">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
@@ -283,25 +283,35 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
                   )}
                 </div>
               )}
-              <p className="text-sm text-muted-foreground mt-1">
-                Boss: {getBossDisplay()}
+              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground/80">Boss</span> {getBossDisplay()}
               </p>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="flex-1">
-          <div className="flex flex-col gap-2 pt-4 border-t border-border text-xs text-muted-foreground">
-            <div className="flex justify-between items-center">
-              <span>Created: {formatDate(plan.createdAt)}</span>
-              <span>Updated: {formatDate(plan.updatedAt)}</span>
+          <div className="grid gap-2 border-t border-border pt-4 text-xs text-muted-foreground sm:grid-cols-2">
+            <div className="rounded-md bg-muted/45 px-3 py-2">
+              <span className="block text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Created</span>
+              <span className="font-medium text-foreground">{formatDate(plan.createdAt)}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span>Status: {sharingStatusLabel}</span>
-              {plan.shareMode === 'view' && plan.viewToken ? <span>Read-only link</span> : null}
+            <div className="rounded-md bg-muted/45 px-3 py-2">
+              <span className="block text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Updated</span>
+              <span className="font-medium text-foreground">{formatDate(plan.updatedAt)}</span>
+            </div>
+            <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground">
+                {sharingStatusLabel}
+              </span>
+              {plan.shareMode === 'view' && plan.viewToken ? (
+                <span className="rounded-full border border-info/30 bg-info/10 px-2.5 py-1 text-xs font-medium text-info">
+                  Read-only link
+                </span>
+              ) : null}
             </div>
             {isSharedPlan && (
-              <div className="text-center italic text-primary font-medium">
+              <div className="sm:col-span-2 rounded-md border border-border bg-background px-3 py-2 text-center font-medium text-primary">
                 {fetchingCreator ? (
                   'Loading creator...'
                 ) : creatorDisplayName ? (
@@ -313,33 +323,37 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
         </CardContent>
 
         <CardFooter className="flex flex-wrap gap-2 pt-0">
-          <Button onClick={onEdit} disabled={loading} className="flex-1">
+          <Button onClick={onEdit} disabled={loading} className="min-w-[7rem] flex-1">
             {primaryActionLabel}
           </Button>
           {canAdmin && (
-            <Button variant="secondary" onClick={handleShare} disabled={loading} className="flex-1">
-              <Share2 size={16} className="mr-2" />
+            <Button variant="outline" onClick={handleShare} disabled={loading} className="flex-1 sm:flex-none">
+              <Share2 size={16} />
               Share
             </Button>
           )}
           {canDuplicatePlan && (
-            <Button variant="secondary" onClick={handleDuplicate} disabled={loading} className="flex-1">
+            <Button variant="outline" onClick={handleDuplicate} disabled={loading} className="flex-1 sm:flex-none">
+              <Copy size={16} />
               Duplicate
             </Button>
           )}
           {canExportPlan && (
-            <Button variant="secondary" onClick={handleExport} disabled={loading} className="flex-1">
+            <Button variant="outline" onClick={handleExport} disabled={loading} className="flex-1 sm:flex-none">
+              <Download size={16} />
               Export
             </Button>
           )}
           {canAdmin && (
             <Button
-              variant="destructive"
+              variant="ghost"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={loading}
-              className="flex-1"
+              title="Delete plan"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              Delete
+              <Trash2 size={16} />
+              <span className="sm:sr-only">Delete</span>
             </Button>
           )}
         </CardFooter>

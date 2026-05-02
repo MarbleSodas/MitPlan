@@ -290,8 +290,8 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 ## Technical Architecture Summary
 
 ### Frontend Stack
-- **React 18** with functional components and hooks
-- **Styled Components** for CSS-in-JS styling
+- **React 19** with functional components and hooks
+- **Tailwind CSS v4** for utility-first styling
 - **React Router** for client-side routing
 - **@dnd-kit** for drag and drop functionality
 - **Vite** for build tooling and development server

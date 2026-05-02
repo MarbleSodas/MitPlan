@@ -58,8 +58,8 @@ rm -rf node_modules bun.lockb
 # Reinstall dependencies
 bun install
 
-# If still failing, try with npm as fallback
-npm install
+# If still failing, refresh the Bun install
+bun install --force
 ```
 
 #### Issue: Version conflicts
@@ -134,7 +134,7 @@ bun run dev
 ```bash
 # Vercel deployments do not publish Firebase RTDB rules
 # Deploy the current repository rules to the live database
-npm run deploy:database-rules
+bun run deploy:database-rules
 
 # Confirm the deployed rules now include the query-scoped /plans read rule
 firebase database:get /.settings/rules --project xivmit --instance xivmit-default-rtdb --pretty
@@ -206,7 +206,7 @@ bun run dev
 **Solution:**
 ```bash
 # Check for TypeScript errors
-bun run type-check
+bun run typecheck
 
 # Check for linting errors
 bun run lint
@@ -253,7 +253,7 @@ VITE_FIREBASE_API_KEY=your_key_here
 {
   "buildCommand": "bun run build",
   "outputDirectory": "dist",
-  "installCommand": "bun install"
+  "installCommand": "bun install --frozen-lockfile"
 }
 ```
 

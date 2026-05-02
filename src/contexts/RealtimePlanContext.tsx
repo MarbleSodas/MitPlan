@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
 import * as planService from '../services/realtimePlanService';
+import { trackPlanAccess } from '../services/planAccessService';
 
 export const RealtimePlanDataContext = createContext(null);
 export const RealtimePlanActionsContext = createContext(null);
@@ -88,7 +89,6 @@ export const RealtimePlanProvider = ({ children, planId, readOnly = false }) => 
 
         if (user?.uid) {
           try {
-            const { trackPlanAccess } = await import('../services/planAccessService');
             await trackPlanAccess(planId, user.uid);
           } catch (accessError) {
             console.error('[RealtimePlanContext] Error tracking plan access:', accessError);

@@ -246,12 +246,12 @@ const TimelineBrowser = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="bg-[var(--color-cardBackground)] border-b border-[var(--color-border)] sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      <div className="sticky top-0 z-10 border-b border-border bg-card">
+        <div className="mx-auto max-w-7xl px-4 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -259,9 +259,9 @@ const TimelineBrowser = () => {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <div>
+              <div className="min-w-0">
                 <h1 className="text-2xl font-bold m-0">Browse Community Timelines</h1>
-                <p className="text-sm text-[var(--color-textSecondary)] m-0 mt-1">
+                <p className="m-0 mt-1 max-w-2xl text-sm text-muted-foreground">
                   Discover community-created timelines, collect favorites, and start your own community copy
                 </p>
               </div>
@@ -275,7 +275,7 @@ const TimelineBrowser = () => {
                 Open Timeline Hub
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={() => setShowFilters(!showFilters)}
                 className="md:hidden"
@@ -287,11 +287,11 @@ const TimelineBrowser = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-6">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Filters Sidebar */}
           <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-64 flex-shrink-0`}>
-            <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg p-4 sticky top-24">
+            <div className="sticky top-24 rounded-lg border border-border bg-card p-4">
               <h2 className="text-lg font-semibold mb-4">Filters</h2>
               
               {/* Sort By */}
@@ -313,7 +313,7 @@ const TimelineBrowser = () => {
               {/* Boss Tags Filter */}
               <div>
                 <Label className="block text-sm font-medium mb-2">Boss Tags</Label>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="max-h-[18rem] space-y-2 overflow-y-auto pr-1 md:max-h-96">
                   {availableBossTags.map(tag => {
                     const bossInfo = getBossInfo(tag);
                     const isSelected = selectedBossTags.includes(tag);
@@ -348,7 +348,7 @@ const TimelineBrowser = () => {
             {/* Search Bar */}
             <div className="mb-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-textSecondary)]" size={20} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
                 <Input
                   type="text"
                   placeholder="Search timelines..."
@@ -360,7 +360,7 @@ const TimelineBrowser = () => {
             </div>
 
             {/* Results Count */}
-            <div className="mb-4 text-sm text-[var(--color-textSecondary)]">
+            <div className="mb-4 text-sm text-muted-foreground">
               Showing {filteredTimelines.length} of {timelines.length} timelines
             </div>
 
@@ -368,11 +368,11 @@ const TimelineBrowser = () => {
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-[var(--color-textSecondary)]">Loading timelines...</p>
+                <p className="text-muted-foreground">Loading timelines...</p>
               </div>
             ) : filteredTimelines.length === 0 ? (
-              <div className="text-center py-12 bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg">
-                <p className="text-[var(--color-textSecondary)]">
+              <div className="rounded-lg border border-border bg-card py-12 text-center">
+                <p className="text-muted-foreground">
                   {searchTerm || selectedBossTags.length > 0
                     ? 'No timelines match your search criteria.'
                     : 'No community timelines available yet.'}
@@ -385,7 +385,7 @@ const TimelineBrowser = () => {
                   return (
                     <div
                       key={timeline.id}
-                      className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-lg p-4 hover:shadow-lg transition-all"
+                      className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/35"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
@@ -399,7 +399,7 @@ const TimelineBrowser = () => {
                       </div>
 
                       {timeline.description && (
-                        <p className="text-sm text-[var(--color-textSecondary)] mb-3 line-clamp-2">
+                        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
                           {timeline.description}
                         </p>
                       )}
@@ -410,7 +410,7 @@ const TimelineBrowser = () => {
                           return (
                             <span
                               key={tag}
-                              className="px-2 py-1 bg-[var(--color-background)] border border-[var(--color-border)] rounded text-xs"
+                              className="rounded-full border border-border bg-background px-2 py-1 text-xs"
                             >
                               {bossInfo.icon} {bossInfo.name}
                             </span>
@@ -418,13 +418,13 @@ const TimelineBrowser = () => {
                         })}
                       </div>
 
-                      <div className="text-sm text-[var(--color-textSecondary)] mb-3">
+                      <div className="mb-3 text-sm text-muted-foreground">
                         {timeline.actions?.length || 0} actions
                       </div>
 
                       {/* Like Button Row - Only for non-official timelines */}
                       {!timeline.official && (
-                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-[var(--color-border)]">
+                        <div className="mb-3 flex items-center gap-2 border-b border-border pb-3">
                           <Button
                             variant="outline"
                             size="sm"
@@ -443,17 +443,17 @@ const TimelineBrowser = () => {
                             />
                             <span className="font-medium">{timeline.likeCount || 0}</span>
                           </Button>
-                          <span className="text-xs text-[var(--color-textSecondary)]">
+                          <span className="text-xs text-muted-foreground">
                             {(timeline.likeCount || 0) === 1 ? '1 player likes this' : `${timeline.likeCount || 0} players like this`}
                           </span>
                         </div>
                       )}
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           onClick={() => handleViewTimeline(timeline.id)}
-                          className="flex-1"
+                          className="min-w-[7rem] flex-1"
                         >
                           <Eye size={16} />
                           View
@@ -461,7 +461,7 @@ const TimelineBrowser = () => {
                         <Button
                           variant="secondary"
                           onClick={() => navigate(`/timeline/create/editor?sourceTimelineId=${encodeURIComponent(timeline.id)}`)}
-                          className="flex-1"
+                          className="min-w-[9rem] flex-1"
                         >
                           <Copy size={16} />
                           Start From This
@@ -470,7 +470,7 @@ const TimelineBrowser = () => {
                           variant={timeline.official || collectionTimelineIds.has(timeline.id) ? 'outline' : 'default'}
                           onClick={() => handleAddToCollection(timeline)}
                           disabled={timeline.official || collectionTimelineIds.has(timeline.id) || addingToCollection.has(timeline.id)}
-                          className={`flex-1 ${
+                          className={`min-w-[10rem] flex-1 ${
                             timeline.official || collectionTimelineIds.has(timeline.id)
                               ? 'opacity-50'
                               : ''

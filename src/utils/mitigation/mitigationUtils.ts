@@ -169,9 +169,99 @@ export const findActiveMitigationsAtTime = (
 };
 
 interface MitigationWithValue {
+  id?: string;
+  name?: string;
   mitigationValue?: number | { physical: number; magical: number };
+  layeredMitigation?: MitigationAbility['layeredMitigation'];
   damageType?: string;
+  duration?: number;
+  remainingDuration?: number;
 }
+
+const resolveMitigationValue = (
+  mitigationValue: number | { physical: number; magical: number } | undefined,
+  damageType: string,
+  mitigationDamageType?: string
+): number => {
+  if (!mitigationValue) {
+    return 0;
+  }
+
+  if (typeof mitigationValue === 'object') {
+    if (damageType === 'magical' && mitigationValue.magical) {
+      return mitigationValue.magical;
+    }
+    if (damageType === 'physical' && mitigationValue.physical) {
+      return mitigationValue.physical;
+    }
+    if (damageType === 'both') {
+      return Math.max(mitigationValue.magical || 0, mitigationValue.physical || 0);
+    }
+    return 0;
+  }
+
+  if (mitigationDamageType === 'both' || mitigationDamageType === damageType || !mitigationDamageType) {
+    return mitigationValue;
+  }
+
+  return 0;
+};
+
+const isLayerActive = (
+  mitigation: MitigationWithValue,
+  layer: NonNullable<MitigationAbility['layeredMitigation']>[number],
+  bossLevel: number | null
+): boolean => {
+  if (mitigation.remainingDuration === undefined || mitigation.remainingDuration === null) {
+    return true;
+  }
+
+  const fullDuration = bossLevel
+    ? getAbilityDurationForLevel(mitigation as MitigationAbility, bossLevel)
+    : mitigation.duration || layer.duration;
+  const elapsed = Math.max(0, fullDuration - mitigation.remainingDuration);
+
+  return elapsed <= layer.duration;
+};
+
+const getMitigationEntries = (
+  mitigation: MitigationWithValue,
+  allMitigations: MitigationWithValue[],
+  damageType: string,
+  bossLevel: number | null
+): Array<{ value: number; label?: string }> => {
+  const mitigationValue = bossLevel ?
+    getAbilityMitigationValueForLevel(mitigation as MitigationAbility, bossLevel) :
+    mitigation.mitigationValue;
+
+  const entries: Array<{ value: number; label?: string }> = [];
+  const baseValue = resolveMitigationValue(mitigationValue, damageType, mitigation.damageType);
+  if (baseValue > 0) {
+    entries.push({ value: baseValue });
+  }
+
+  mitigation.layeredMitigation?.forEach(layer => {
+    if (layer.conditionAbilityIds?.length) {
+      const conditionActive = allMitigations.some(active => (
+        active.id !== mitigation.id && layer.conditionAbilityIds?.includes(active.id || '')
+      ));
+      if (!conditionActive) {
+        return;
+      }
+    }
+
+    if (!isLayerActive(mitigation, layer, bossLevel)) {
+      return;
+    }
+
+    const layerValue = resolveMitigationValue(layer.value, damageType, mitigation.damageType);
+    if (layerValue > 0) {
+      entries.push({ value: layerValue, label: layer.description });
+    }
+  });
+
+  return entries;
+};
 
 export const calculateTotalMitigation = (
   mitigations: MitigationWithValue[] | null | undefined,
@@ -185,34 +275,10 @@ export const calculateTotalMitigation = (
   let totalMultiplier = 1.0;
 
   mitigations.forEach(mitigation => {
-    const mitigationValue = bossLevel ?
-      getAbilityMitigationValueForLevel(mitigation as MitigationAbility, bossLevel) :
-      mitigation.mitigationValue;
-
-    if (!mitigationValue) {
-      return;
-    }
-
-    if (typeof mitigationValue === 'object') {
-      if (damageType === 'magical' && mitigationValue.magical) {
-        totalMultiplier *= (1 - mitigationValue.magical);
-      } else if (damageType === 'physical' && mitigationValue.physical) {
-        totalMultiplier *= (1 - mitigationValue.physical);
-      } else if (damageType === 'both') {
-        const value = Math.max(
-          mitigationValue.magical || 0,
-          mitigationValue.physical || 0
-        );
-        totalMultiplier *= (1 - value);
-      }
-    }
-    else if (
-      mitigation.damageType === 'both' ||
-      mitigation.damageType === damageType ||
-      !mitigation.damageType
-    ) {
-      totalMultiplier *= (1 - mitigationValue);
-    }
+    getMitigationEntries(mitigation, mitigations, damageType, bossLevel)
+      .forEach(entry => {
+        totalMultiplier *= (1 - entry.value);
+      });
   });
 
   const mitigationPercentage = 1 - totalMultiplier;
@@ -239,44 +305,11 @@ export const generateMitigationBreakdown = (
   let breakdown = `Total mitigation: ${formatMitigation(totalMitigation)}\n\nBreakdown:`;
 
   mitigations.forEach(mitigation => {
-    const mitigationValue = bossLevel ?
-      getAbilityMitigationValueForLevel(mitigation as MitigationAbility, bossLevel) :
-      mitigation.mitigationValue;
-
-    if (!mitigationValue) {
-      return;
-    }
-
-    let value = 0;
-
-    if (typeof mitigationValue === 'object') {
-      if (damageType === 'magical' && mitigationValue.magical) {
-        value = mitigationValue.magical;
-      } else if (damageType === 'physical' && mitigationValue.physical) {
-        value = mitigationValue.physical;
-      } else if (damageType === 'both') {
-        const magicalValue = mitigationValue.magical || 0;
-        const physicalValue = mitigationValue.physical || 0;
-
-        if (magicalValue === physicalValue) {
-          value = magicalValue;
-        } else {
-          breakdown += `\n• ${mitigation.name}: ${formatMitigation(physicalValue)} physical, ${formatMitigation(magicalValue)} magical`;
-          return;
-        }
-      }
-    }
-    else if (
-      mitigation.damageType === 'both' ||
-      mitigation.damageType === damageType ||
-      !mitigation.damageType
-    ) {
-      value = mitigationValue;
-    } else {
-      return;
-    }
-
-    breakdown += `\n• ${mitigation.name}: ${formatMitigation(value)}`;
+    getMitigationEntries(mitigation, mitigations, damageType, bossLevel)
+      .forEach(entry => {
+        const suffix = entry.label ? ` (${entry.label})` : '';
+        breakdown += `\n• ${mitigation.name}${suffix}: ${formatMitigation(entry.value)}`;
+      });
   });
 
   return breakdown;
