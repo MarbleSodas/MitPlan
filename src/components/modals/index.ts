@@ -1,1 +1,1 @@
-export { default as PlanMigrationModal } from './PlanMigrationModal.jsx';
+export { default as PlanMigrationModal } from './PlanMigrationModal';

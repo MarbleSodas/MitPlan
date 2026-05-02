@@ -6,22 +6,21 @@ This document provides detailed technical information about how each feature in 
 ## Core System Architecture
 
 ### Application Entry Point
-**File**: `src/main.jsx`
-- React 18 application bootstrap
+**File**: `src/main.tsx`
+- React 19 application bootstrap
 - StrictMode wrapper for development
 - Root DOM rendering
 
-**File**: `src/App.jsx`
+**File**: `src/App.tsx`
 - Main application component with routing
 - Global providers setup (Theme, Auth, Plan)
 - Route protection and navigation logic
 
 ### Routing System
-**Implementation**: React Router v6
+**Implementation**: React Router v7
 **Key Files**:
-- `src/App.jsx` - Main routing configuration
-- `src/components/routing/AppRouter.jsx` - Alternative router implementation
-- `src/components/guards/UnauthenticatedPlanGuard.jsx` - Route protection
+- `src/App.tsx` - Main routing configuration
+- `src/components/guards/UnauthenticatedPlanGuard.tsx` - Route protection
 
 **Route Structure**:
 ```javascript
@@ -52,45 +51,37 @@ This document provides detailed technical information about how each feature in 
 ### 1. Mitigation Planning System
 
 #### Core Components
-**File**: `src/components/planner/MitigationPlanner.jsx`
+**File**: `src/components/planner/MitigationPlanner.tsx`
 - Main planning interface
 - Drag and drop context setup
 - Real-time collaboration integration
 - State management coordination
 
-**File**: `src/components/BossActionItem/BossActionItem.jsx`
+**File**: `src/components/BossActionItem/BossActionItem.tsx`
 - Individual boss action display
 - Drop zone for mitigation abilities
 - Mitigation percentage calculation
 - Visual state management (selected/highlighted)
 
-**File**: `src/components/MitigationItem/MitigationItem.jsx`
+**File**: `src/components/MitigationItem/MitigationItem.tsx`
 - Draggable mitigation ability component
 - Cooldown status visualization
 - Availability indicators (blue/red borders)
 
 #### Drag and Drop System
-**File**: `src/hooks/useDragAndDrop.js`
-- Custom hook for drag and drop logic
-- Integration with @dnd-kit library
-- Tank selection modal triggering
-- Mitigation assignment processing
+**Implementation**: `src/components/planner/MitigationPlanner.tsx`
+- Owns drag start/end handlers
+- Integrates with @dnd-kit
+- Triggers tank/class selection modals
+- Coordinates mitigation assignment processing
 
-**Key Functions**:
-```javascript
-handleDragStart(event) // Sets active mitigation
-handleDragEnd(event) // Processes drop and assignment
-processMitigationAssignment() // Handles assignment logic
-```
-
-**File**: `src/components/dnd/Draggable/Draggable.jsx`
+**File**: `src/components/DragAndDrop/Draggable/Draggable.tsx`
 - Reusable draggable wrapper component
 - @dnd-kit integration
 - Visual feedback during drag
 
 #### State Management
-**File**: `src/contexts/MitigationContext.jsx` (Legacy)
-**File**: `src/contexts/EnhancedMitigationContext.jsx` (Current)
+**File**: `src/contexts/EnhancedMitigationContext.tsx`
 - Mitigation assignment state
 - Cooldown tracking integration
 - Real-time synchronization
@@ -98,7 +89,7 @@ processMitigationAssignment() // Handles assignment logic
 ### 2. Cooldown Management System
 
 #### Core Manager
-**File**: `src/utils/cooldown/cooldownManager.js`
+**File**: `src/utils/cooldown/cooldownManager.ts`
 - Main cooldown management class
 - Cache optimization for performance
 - Integration with specialized trackers
@@ -149,7 +140,7 @@ class AetherflowTracker {
 ### 3. Job System Implementation
 
 #### Job Data Structure
-**File**: `src/data/jobs/jobData.js`
+**File**: `src/data/jobs/jobData.ts`
 - FFXIV job definitions by role
 - Job metadata (id, name, icon, selection state)
 
@@ -168,13 +159,12 @@ export const ffxivJobs = {
 ```
 
 #### Job Selection Component
-**File**: `src/features/jobs/JobSelector/JobSelector.jsx`
+**File**: `src/features/jobs/JobSelector/JobSelector.tsx`
 - Role-based job organization
 - Real-time job selection synchronization
 - Visual job selection interface
 
-**File**: `src/contexts/JobContext.jsx` (Legacy)
-**File**: `src/contexts/RealtimeJobContext.jsx` (Current)
+**File**: `src/contexts/RealtimeJobContext.tsx`
 - Job selection state management
 - Real-time synchronization with Firebase
 
@@ -235,7 +225,7 @@ export const ffxivJobs = {
 ```
 
 #### Boss Context Management
-**File**: `src/contexts/BossContext.jsx`
+**File**: `src/contexts/RealtimeBossContext.tsx`
 - Boss selection state
 - Boss action filtering and processing
 - Timeline management
@@ -243,7 +233,7 @@ export const ffxivJobs = {
 ### 6. Real-Time Collaboration System
 
 #### Core Collaboration Context
-**File**: `src/contexts/CollaborationContext.jsx`
+**File**: `src/contexts/CollaborationContext.tsx`
 - Session management
 - Real-time user tracking
 - Change origin tracking
@@ -292,44 +282,22 @@ subscribeToPlan(planId, callback)
 ### 7. Authentication System
 
 #### Authentication Context
-**File**: `src/contexts/AuthContext.jsx`
+**File**: `src/contexts/AuthContext.tsx`
 - Firebase Authentication integration
-- Anonymous user management
-- Account migration handling
+- Account migration handling for legacy local plans
 
 **Key Functions**:
 ```javascript
-initializeAnonymousUser(displayName)
-enableAnonymousMode()
-disableAnonymousMode()
-getCurrentUser() // Returns authenticated or anonymous user
-```
-
-#### Anonymous User Service
-**File**: `src/services/anonymousUserService.js`
-- Anonymous user lifecycle management
-- Local storage persistence
-- Display name generation
-- Plan access tracking
-
-**Key Class**: `AnonymousUser`
-```javascript
-class AnonymousUser {
-  static initialize()
-  setDisplayName(name)
-  addPlan(planId)
-  trackPlanAccess(planId, accessType)
-  exportForMigration()
-}
+logout()
+checkForPendingMigration()
 ```
 
 ### 8. Data Persistence Layer
 
 #### Unified Plan Service
-**File**: `src/services/unifiedPlanService.js`
-- Abstraction layer for different storage backends
-- Automatic fallback between Firebase and localStorage
-- Mode switching based on authentication state
+**File**: `src/services/unifiedPlanService.ts`
+- Firebase-backed facade for plan operations
+- Maintains current authenticated user context
 
 **Key Class**: `UnifiedPlanService`
 ```javascript
@@ -345,21 +313,15 @@ class UnifiedPlanService {
 ```
 
 #### Firebase Plan Service
-**File**: `src/services/firebasePlanService.js`
+**File**: `src/services/realtimePlanService.ts`
 - Firebase-specific plan operations
 - Real-time subscription management
 - Access control and ownership tracking
 
-#### Local Storage Plan Service
-**File**: `src/services/localStoragePlanService.js`
-- Browser localStorage operations
-- Offline functionality
-- Data serialization and validation
-
 ### 9. Theme System Implementation
 
 #### Theme Context
-**File**: `src/contexts/ThemeContext.jsx`
+**File**: `src/contexts/ThemeContext.tsx`
 - Theme state management
 - Light/dark mode switching
 - Persistent theme storage
@@ -390,7 +352,7 @@ const lightTheme = {
 ```
 
 #### Global Styling
-**File**: `src/styles/global.css`
+**File**: `src/tailwind.css`
 - CSS custom properties for themes
 - Responsive utilities
 - Dark mode overrides
@@ -398,28 +360,22 @@ const lightTheme = {
 
 ### 10. Mobile Responsiveness
 
-#### Device Detection
-**File**: `src/hooks/useDeviceDetection.js`
-- Mobile device detection
-- Responsive breakpoint monitoring
-- Throttled resize handling
-
 #### Mobile Components
-**File**: `src/components/mobile/MobileMitigationSelector/MobileMitigationSelector.jsx`
-- Mobile-specific mitigation selector
+**File**: `src/components/planner/MobileBossTimeline.tsx`
+- Mobile-specific boss timeline
 - Bottom capsule view
 - Touch-optimized interactions
 
-#### Responsive Styled Components
-**Files**: `src/components/styled/*.jsx`
-- Responsive component definitions
+#### Responsive Tailwind Components
+**Files**: `src/components/**/*.tsx`
+- Tailwind utility classes
 - Breakpoint-based styling
 - Mobile-first design approach
 
 ## Performance Optimizations
 
 ### Caching Systems
-- **Cooldown Cache**: `src/utils/cooldown/cooldownManager.js`
+- **Cooldown Cache**: `src/utils/cooldown/cooldownManager.ts`
 - **Component Memoization**: React.memo usage throughout
 - **Context Optimization**: Selective context subscriptions
 

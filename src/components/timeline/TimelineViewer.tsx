@@ -6,6 +6,7 @@ import { getTimeline, getShareableLink } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { ArrowLeft, Edit2, Share2, FileText } from 'lucide-react';
 import { getBossActionTypeLabel } from '../../utils/boss/bossActionUtils';
+import { Button } from '@/components/ui/button';
 
 const TimelineViewer = ({ isShared = false }) => {
   const { timelineId } = useParams();
@@ -114,10 +115,10 @@ const TimelineViewer = ({ isShared = false }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-[var(--color-textSecondary)]">Loading timeline...</p>
+          <p className="text-muted-foreground">Loading timeline...</p>
         </div>
       </div>
     );
@@ -131,61 +132,61 @@ const TimelineViewer = ({ isShared = false }) => {
   const sortedActions = getSortedActions();
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <div
         data-testid="timeline-viewer-header"
         className="sticky top-0 z-10 border-b border-border bg-card shadow-sm"
       >
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
+        <div className="mx-auto max-w-7xl px-4 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => navigate(isShared ? '/' : '/dashboard')}
-                className="p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors"
               >
                 <ArrowLeft size={20} />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold m-0">{timeline.name}</h1>
+              </Button>
+              <div className="min-w-0">
+                <h1 className="m-0 truncate text-2xl font-bold">{timeline.name}</h1>
                 {bossInfo && (
-                  <p className="text-sm text-[var(--color-textSecondary)] m-0 mt-1">
+                  <p className="m-0 mt-1 text-sm text-muted-foreground">
                     {bossInfo.icon} {bossInfo.name}
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               {isOwner() && !isShared && (
-                <button
+                <Button
                   onClick={handleEdit}
-                  className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-semibold hover:bg-[#2563eb] transition-colors flex items-center gap-2"
                 >
                   <Edit2 size={18} />
                   Edit
-                </button>
+                </Button>
               )}
-              <button
+              <Button
+                variant="outline"
                 onClick={handleStartFromTimeline}
-                className="px-4 py-2 bg-[var(--select-bg)] text-[var(--color-primary)] rounded-lg font-semibold hover:bg-[var(--color-primary)] hover:text-white transition-colors flex items-center gap-2"
               >
                 <Edit2 size={18} />
                 {isOwner() && !isShared ? 'Duplicate Into Editor' : 'Start From This'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={handleCopyShareLink}
-                className="px-4 py-2 bg-[var(--select-bg)] text-[var(--color-primary)] rounded-lg font-semibold hover:bg-[var(--color-primary)] hover:text-white transition-colors flex items-center gap-2"
               >
                 <Share2 size={18} />
                 Share
-              </button>
-              <button
+              </Button>
+              <Button
+                className="bg-success text-success-foreground hover:bg-success/90"
                 onClick={handleCreateMitplan}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2"
               >
                 <FileText size={18} />
                 {user ? 'Create Mitplan' : 'Sign In to Create Mitplan'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -195,38 +196,38 @@ const TimelineViewer = ({ isShared = false }) => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Timeline Info */}
         {timeline.description && (
-          <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <div className="mb-6 rounded-xl border border-border bg-card p-6">
             <h2 className="text-lg font-semibold mb-2">Description</h2>
-            <p className="text-[var(--color-textSecondary)] m-0">{timeline.description}</p>
+            <p className="m-0 text-muted-foreground">{timeline.description}</p>
           </div>
         )}
 
         {/* Timeline Actions */}
-        <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold m-0">
               Boss Actions ({sortedActions.length})
             </h2>
-            <div className="text-sm text-[var(--color-textSecondary)]">
+            <div className="text-sm text-muted-foreground">
               Total Duration: {formatTime(sortedActions[sortedActions.length - 1]?.time || 0)}
             </div>
           </div>
 
           {sortedActions.length === 0 ? (
-            <div className="text-center py-12 text-[var(--color-textSecondary)]">
+            <div className="py-12 text-center text-muted-foreground">
               <p>No actions in this timeline.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedActions.map((action, index) => (
+              {sortedActions.map((action) => (
                 <div
                   key={action.id}
-                  className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-4"
+                  className="rounded-lg border border-border bg-background p-4"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 text-2xl">{action.icon}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
                         <span className="font-semibold">{action.name}</span>
                         {action.isCustom && (
                           <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">
@@ -247,7 +248,7 @@ const TimelineViewer = ({ isShared = false }) => {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-[var(--color-textSecondary)] mb-2">
+                      <div className="mb-2 text-sm text-muted-foreground">
                         ⏱️ {formatTime(action.time)} ({action.time}s)
                         {action.damageType && (
                           <span className="ml-3">
@@ -261,12 +262,12 @@ const TimelineViewer = ({ isShared = false }) => {
                         )}
                       </div>
                       {action.description && (
-                        <p className="text-sm text-[var(--color-textSecondary)] m-0 mb-2">
+                        <p className="m-0 mb-2 text-sm text-muted-foreground">
                           {action.description}
                         </p>
                       )}
                       {action.unmitigatedDamage && (
-                        <div className="text-sm text-[var(--color-textSecondary)]">
+                        <div className="text-sm text-muted-foreground">
                           Unmitigated Damage: {action.unmitigatedDamage}
                         </div>
                       )}
@@ -280,18 +281,18 @@ const TimelineViewer = ({ isShared = false }) => {
 
         {/* Timeline Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-4">
-            <div className="text-sm text-[var(--color-textSecondary)] mb-1">Total Actions</div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-1 text-sm text-muted-foreground">Total Actions</div>
             <div className="text-2xl font-bold">{sortedActions.length}</div>
           </div>
-          <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-4">
-            <div className="text-sm text-[var(--color-textSecondary)] mb-1">Custom Actions</div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-1 text-sm text-muted-foreground">Custom Actions</div>
             <div className="text-2xl font-bold">
               {sortedActions.filter(a => a.isCustom).length}
             </div>
           </div>
-          <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-4">
-            <div className="text-sm text-[var(--color-textSecondary)] mb-1">Tank Busters</div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-1 text-sm text-muted-foreground">Tank Busters</div>
             <div className="text-2xl font-bold">
               {sortedActions.filter(a => a.isTankBuster).length}
             </div>

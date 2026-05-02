@@ -93,19 +93,19 @@ const TimelineCreateHub = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <Button variant="outline" size="icon" onClick={() => navigate('/dashboard')}>
               <ArrowLeft size={18} />
             </Button>
             <div className="min-w-0">
               <h1 className="text-2xl font-bold truncate">Community Timeline Hub</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="max-w-2xl text-sm text-muted-foreground">
                 Continue your work, start from a plan or official route, or publish something new for the community.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => navigate('/timeline/browse')}>
               <Compass size={16} />
               Browse Public Timelines
@@ -119,7 +119,7 @@ const TimelineCreateHub = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <Card className="border-primary/30 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -188,7 +188,7 @@ const TimelineCreateHub = () => {
               No owned community timelines yet. Start blank, or seed one from a plan or official timeline below.
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {ownedTimelines.map((timeline) => (
                 <Card key={timeline.id}>
                   <CardHeader>
@@ -199,7 +199,7 @@ const TimelineCreateHub = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {timeline.description || 'No description yet.'}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button className="flex-1" onClick={() => navigate(`/timeline/edit/${timeline.id}`)}>
                         <Edit2 size={16} />
                         Continue Editing
@@ -231,7 +231,7 @@ const TimelineCreateHub = () => {
               No plan timelines available yet. Edit a plan timeline first, then come back here to branch it into a community timeline.
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {ownedPlans.map((plan) => (
                 <Card key={plan.id}>
                   <CardHeader>
@@ -242,7 +242,7 @@ const TimelineCreateHub = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {plan.description || 'Use this plan timeline as the starting point for a shareable community route.'}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button className="flex-1" onClick={() => openPlanSeed(plan.id)}>
                         Start From Plan Timeline
                       </Button>
@@ -264,7 +264,7 @@ const TimelineCreateHub = () => {
               Create a mutable community copy from the official encounter timelines.
             </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {featuredOfficialTimelines.map((timeline) => (
               <Card key={timeline.id}>
                 <CardHeader>
@@ -275,7 +275,7 @@ const TimelineCreateHub = () => {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {timeline.description || 'Start from the official route and adapt it into your own community timeline.'}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button className="flex-1" onClick={() => openTimelineSeed(timeline.id)}>
                       Use as Starting Point
                     </Button>
@@ -305,7 +305,7 @@ const TimelineCreateHub = () => {
               No collected timelines yet. Add one from the community browser or start from one of the public timelines below.
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {collectedTimelines.map((timeline) => (
                 <Card key={timeline.id}>
                   <CardHeader>
@@ -316,7 +316,7 @@ const TimelineCreateHub = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {timeline.description || 'Create a new community timeline based on this collected route.'}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button className="flex-1" onClick={() => openTimelineSeed(timeline.id)}>
                         Duplicate Into Editor
                       </Button>
@@ -332,7 +332,7 @@ const TimelineCreateHub = () => {
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Browse Public Community Timelines</h2>
               <p className="text-sm text-muted-foreground">
@@ -343,7 +343,7 @@ const TimelineCreateHub = () => {
               Open Full Browser
             </Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {featuredPublicTimelines.map((timeline) => (
               <Card key={timeline.id}>
                 <CardHeader>
@@ -354,7 +354,7 @@ const TimelineCreateHub = () => {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {timeline.description || 'Open this public route as the starting point for your own community timeline.'}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button className="flex-1" onClick={() => openTimelineSeed(timeline.id)}>
                       Start From This
                     </Button>

@@ -663,9 +663,9 @@ const TimelineEditorCore = ({
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <div className="bg-card border-b border-border sticky top-0 z-20">
-        <div className="max-w-[1800px] mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="mx-auto max-w-[1800px] px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <Button
                 onClick={onBack}
                 variant="outline"
@@ -740,7 +740,7 @@ const TimelineEditorCore = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex flex-shrink-0 flex-wrap items-center gap-2 sm:justify-end">
               <Button
                 variant="ghost"
                 onClick={() => setShowSettingsDrawer(true)}
@@ -841,7 +841,7 @@ const TimelineEditorCore = ({
               className="flex flex-1 min-h-0 flex-col overflow-hidden"
             >
               <div className="flex-1 overflow-y-auto p-4">
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold">Timeline Actions</h2>
                     <SectionPresencePill surface="timeline" section="timeline" />

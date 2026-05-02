@@ -107,8 +107,8 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
         <Card
           onClick={handleNoBossClick}
           className={cn(
-            'border-2 border-dashed p-4 flex items-center gap-4 cursor-pointer hover:bg-accent hover:-translate-y-0.5 transition-all',
-            selectedBoss?.id === null && 'opacity-70 scale-[0.98]'
+            'flex cursor-pointer items-center gap-4 border border-dashed p-4 transition-colors hover:border-primary/50 hover:bg-muted/60',
+            selectedBoss?.id === null && 'border-primary bg-primary/10'
           )}
         >
           <div className="text-2xl">✨</div>
@@ -118,7 +118,7 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
           </div>
         </Card>
 
-        <div className="border border-border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto mt-4">
+        <div className="mt-4 max-h-[55vh] overflow-y-auto rounded-lg border border-border">
           {BOSS_TIERS.map(tier => {
             const tierBosses = tier.bossIds
               .map(id => bosses.find(b => b.id === id))
@@ -129,7 +129,7 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                 <button
                   type="button"
                   onClick={() => toggleTier(tier.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary hover:bg-accent transition-colors text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/70 hover:bg-muted transition-colors text-left"
                 >
                   <span className="font-medium text-foreground">{tier.name}</span>
                   {expandedTiers[tier.id] ? (
@@ -139,7 +139,7 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                   )}
                 </button>
                 {expandedTiers[tier.id] && (
-                  <div className="bg-background grid grid-cols-2 gap-3 p-3">
+                  <div className="grid grid-cols-1 gap-3 bg-background p-3 sm:grid-cols-2">
                     {tierBosses.map(boss => {
                       const enabled = isBossEnabled(boss.id);
                       const isSelected = selectedBoss?.id === boss.id;
@@ -149,8 +149,8 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                           key={boss.id}
                           onClick={() => handleBossClick(boss)}
                           className={cn(
-                            'p-4 rounded-lg border transition-all text-center',
-                            enabled && !isSelected && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
+                            'p-4 rounded-lg border transition-colors text-center',
+                            enabled && !isSelected && 'border-border hover:border-primary/60 hover:bg-muted/60 cursor-pointer',
                             enabled && isSelected && 'border-primary bg-primary/10',
                             !enabled && 'border-border opacity-50 cursor-not-allowed'
                           )}

@@ -119,7 +119,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
     <div className="flex h-full min-h-0 flex-col">
       <div
         data-testid="boss-actions-library-controls"
-        className="sticky top-0 z-10 -mx-1 mb-3 space-y-3 bg-card px-1 pb-1"
+        className="sticky top-0 z-10 -mx-1 mb-3 space-y-3 border-b border-border bg-card/95 px-1 pb-3 backdrop-blur"
       >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
@@ -132,7 +132,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
           />
         </div>
 
-        <div className="flex border-b border-border">
+        <div className="flex overflow-x-auto border-b border-border">
           {CATEGORY_TABS.map((tab) => (
             <Button
               key={tab.id}
@@ -140,7 +140,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
               size="sm"
               onClick={() => setSelectedCategory(tab.id)}
               className={cn(
-                'px-3 py-2 text-xs font-medium rounded-none relative',
+                'relative rounded-none px-3 py-2 text-xs font-medium',
                 selectedCategory === tab.id
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -236,7 +236,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
         data-testid="boss-actions-library-results"
         className="flex-1 min-h-0 overflow-y-auto pr-1"
       >
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-2' : 'space-y-1.5'}>
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-2 xl:grid-cols-2' : 'space-y-1.5'}>
           {filteredActions.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-sm">
               No boss action templates found
@@ -252,10 +252,10 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
                   key={action.libraryId}
                   type="button"
                   onClick={() => handleDirectAdd(action)}
-                  className="cursor-pointer text-left p-3 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
+                  className="group cursor-pointer rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-muted/30"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-xl">{action.icon}</span>
+                    <span className="text-xl leading-none">{action.icon}</span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium truncate">{action.name}</span>
@@ -301,14 +301,14 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
               ) : (
                 <div
                   key={action.libraryId}
-                  className="flex items-start gap-3 px-3 py-2 bg-background border border-border rounded-lg hover:border-primary transition-colors group"
+                  className="group flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-colors hover:border-primary/50 hover:bg-muted/30"
                 >
                   <button
                     type="button"
                     onClick={() => handleDirectAdd(action)}
                     className="flex items-start gap-3 text-left min-w-0 flex-1"
                   >
-                    <span className="text-xl flex-shrink-0">{action.icon}</span>
+                    <span className="flex-shrink-0 text-xl leading-none">{action.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium truncate">{action.name}</span>

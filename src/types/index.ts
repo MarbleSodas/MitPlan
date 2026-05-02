@@ -46,6 +46,10 @@ export interface LevelCooldown {
   [level: number]: number;
 }
 
+export interface LevelHealingReceivedBonus {
+  [level: number]: number;
+}
+
 // New type for abilities that scale potency based on target's HP
 export interface HpBasedPotencyScaling {
   minPotency: number;      // Potency at 100% HP
@@ -78,6 +82,21 @@ export interface ConditionalBarrierOnCrit {
   additionalBarrierMultiplier: number; // Additional barrier (e.g., 1.8 = 180%)
   stackingRule: 'override' | 'add' | 'none';
   incompatibleWith: string[]; // Ability IDs that cannot stack
+}
+
+export interface ConditionalBarrierModifier {
+  value: number; // Additional max HP barrier value, e.g. 0.02 = 2%
+  conditionAbilityIds: string[];
+  maxStacks?: number;
+  description?: string;
+}
+
+// New type for mitigation layers that ride on top of an ability's base value
+export interface LayeredMitigationEffect {
+  value: number | { physical: number; magical: number };
+  duration: number;
+  conditionAbilityIds?: string[];
+  description?: string;
 }
 
 export interface MitigationAbility {
@@ -125,23 +144,30 @@ export interface MitigationAbility {
   providesAddersting?: boolean;
   adderstingCost?: number;
   requiresActiveWindow?: { abilityId: string; windowDuration?: number };
-  
+
   // NEW FIELDS FOR EXPANDED MECHANICS:
-  
+
   // HP-based potency scaling (Essential Dignity)
   hpBasedPotencyScaling?: HpBasedPotencyScaling;
-  
+
   // Stack-based barriers (Haima, Panhaima)
   stackBarrierEffect?: StackBarrierEffect;
-  
+
   // Low HP triggered healing (Excogitation)
   lowHpTrigger?: LowHpTrigger;
-  
+
   // Conditional barrier on critical heal (Eukrasian Diagnosis)
   conditionalBarrierOnCrit?: ConditionalBarrierOnCrit;
-  
+
+  // Deterministic barrier bonus from other active abilities (Shake It Off)
+  conditionalBarrierModifiers?: ConditionalBarrierModifier[];
+
+  // Additional mitigation layers (e.g., Knight's Resolve on Holy Sheltron)
+  layeredMitigation?: LayeredMitigationEffect[];
+
   // Healing received bonus (Krasis, Physis II)
   healingReceivedBonus?: number; // e.g., 0.10 = 10% increase
+  levelHealingReceivedBonuses?: LevelHealingReceivedBonus;
 }
 
 export interface BossAction {

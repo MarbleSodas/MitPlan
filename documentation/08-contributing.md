@@ -59,96 +59,58 @@ const MAX_MITIGATION_PERCENTAGE = 100;
 const FIREBASE_CONFIG_KEYS = [];
 
 // Files: kebab-case for components, camelCase for utilities
-// Components: MitigationPlanner.jsx
-// Utilities: cooldownManager.js
+// Components: MitigationPlanner.tsx
+// Utilities: cooldownManager.ts
 ```
 
 #### Component Structure
 ```javascript
 // 1. Imports (external libraries first, then internal)
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateInput } from '../../utils/validation';
 
-// 2. Styled components
-const Container = styled.div`
-  /* styles */
-`;
-
-// 3. Component definition
+// 2. Component definition
 const MyComponent = ({ prop1, prop2 }) => {
-  // 4. Hooks (state, context, custom hooks)
+  // 3. Hooks (state, context, custom hooks)
   const [localState, setLocalState] = useState();
   const { user } = useAuth();
-  
-  // 5. Event handlers
+
+  // 4. Event handlers
   const handleClick = () => {
     // handler logic
   };
-  
-  // 6. Effects
+
+  // 5. Effects
   useEffect(() => {
     // effect logic
   }, []);
-  
-  // 7. Render
+
+  // 6. Render
   return (
-    <Container>
+    <section className="flex flex-col gap-4">
       {/* JSX */}
-    </Container>
+    </section>
   );
 };
 
-// 8. Export
+// 7. Export
 export default MyComponent;
 ```
 
 ### CSS/Styling Standards
 
-#### Styled Components
-```javascript
-// Use theme variables
-const Button = styled.button`
-  background-color: ${props => props.theme.colors.primary};
-  color: ${props => props.theme.colors.buttonText};
-  padding: ${props => props.theme.spacing.medium};
-  border-radius: ${props => props.theme.borderRadius.medium};
-  
-  // Responsive design
-  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
-    padding: ${props => props.theme.spacing.small};
-  }
-`;
-
-// Use semantic prop names
-const StatusIndicator = styled.div`
-  border-left: 4px solid ${props => 
-    props.$isAvailable ? props.theme.colors.primary : props.theme.colors.error
-  };
-`;
-```
+#### Tailwind CSS
+Use shared UI primitives from `src/components/ui` where possible, and prefer Tailwind utility classes plus theme tokens from `src/tailwind.css`.
 
 #### Responsive Design
-```javascript
+```tsx
 // Mobile-first approach
-const ResponsiveContainer = styled.div`
-  // Base styles (mobile)
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.small};
-  
-  // Tablet and up
-  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
-    flex-direction: row;
-    gap: ${props => props.theme.spacing.medium};
-  }
-  
-  // Desktop and up
-  @media (min-width: ${props => props.theme.breakpoints.desktop}) {
-    gap: ${props => props.theme.spacing.large};
-  }
-`;
+const ResponsiveContainer = ({ children }) => (
+  <div className="flex flex-col gap-2 md:flex-row md:gap-4 xl:gap-6">
+    {children}
+  </div>
+);
 ```
 
 ### State Management Standards

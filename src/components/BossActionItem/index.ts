@@ -1,1 +1,1 @@
-export { default } from './BossActionItem.jsx';
+export { default } from './BossActionItem';

@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { RealtimePlanProvider } from './RealtimePlanContext';
 import { RealtimeBossProvider } from './RealtimeBossContext';
 import { RealtimeJobProvider } from './RealtimeJobContext';
@@ -17,7 +17,19 @@ import { UserJobAssignmentProvider } from './UserJobAssignmentContext';
  * Now uses the Enhanced Mitigation System for improved cooldown management
  * Includes PresenceProvider for real-time element selection tracking
  */
-export const RealtimeAppProvider = ({ children, planId, readOnly = false, enableCollaboration = !readOnly }) => {
+interface RealtimeAppProviderProps {
+  children: ReactNode;
+  planId: string;
+  readOnly?: boolean;
+  enableCollaboration?: boolean;
+}
+
+export const RealtimeAppProvider = ({
+  children,
+  planId,
+  readOnly = false,
+  enableCollaboration = !readOnly,
+}: RealtimeAppProviderProps) => {
   const appTree = (
     <RealtimePlanProvider planId={planId} readOnly={readOnly}>
       <RealtimeBossProvider>

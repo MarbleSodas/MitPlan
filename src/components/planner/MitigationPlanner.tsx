@@ -50,7 +50,7 @@ import {
   useTankPositionContext,
   useTankSelectionModalContext
 } from '../../contexts';
-import { useClassSelectionModalContext } from '../../contexts/ClassSelectionModalContext.jsx';
+import { useClassSelectionModalContext } from '../../contexts/ClassSelectionModalContext';
 
 // Import real-time contexts
 import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
@@ -629,11 +629,11 @@ const PlanningInterface = ({
       <header className="mb-6">
         {/* Mobile header: < 1024px */}
         <div className="lg:hidden">
-          <div className="flex items-center justify-between gap-2 px-2 mb-2">
+          <div className="mb-3 flex items-center justify-between gap-2 px-2">
             <span className="text-lg font-semibold text-foreground truncate min-w-0 flex-1">{realtimePlan?.name || 'Mitigation Planner'}</span>
             
             <div className="flex items-center gap-1 shrink-0">
-              <Button 
+              <Button
                 variant="outline" 
                 size="sm" 
                 onClick={onSave} 
@@ -781,7 +781,7 @@ const PlanningInterface = ({
           section="timeline"
           hideRemoteCursorsOnMobile={true}
           style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
-          className="bg-background rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0"
+            className="bg-background rounded-xl p-4 pb-6 shadow-sm border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] flex flex-col min-w-0"
         >
 
           <div className="relative flex flex-col p-4 w-full grow">
@@ -799,14 +799,14 @@ const PlanningInterface = ({
               section="mitigations"
               hideRemoteCursorsOnMobile={true}
               style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
-              className="bg-background rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] min-w-0"
+              className="bg-background rounded-xl p-4 shadow-sm border border-border overflow-y-auto overflow-x-auto h-[calc(100vh-100px)] min-h-[500px] min-w-0"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-foreground">Mitigations</h2>
                 <SectionPresencePill surface="planner" section="mitigations" />
               </div>
               {/* Search and filter bar */}
-              <div className="flex flex-col gap-2 mb-4">
+              <div className="sticky top-0 z-10 mb-4 flex flex-col gap-2 rounded-lg border border-border bg-background/95 p-3 backdrop-blur">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
@@ -814,7 +814,7 @@ const PlanningInterface = ({
                     placeholder="Search mitigations..."
                     value={mitigationSearchQuery}
                     onChange={(e) => setMitigationSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full rounded-md border border-input bg-card py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   {mitigationSearchQuery && (
                     <button
@@ -826,7 +826,7 @@ const PlanningInterface = ({
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
                     onClick={() => setSelectedJobFilter(null)}
@@ -911,7 +911,7 @@ const PlanningInterface = ({
 	        >
 	          {/* Click blocker to prevent background interaction */}
 	          <div className="absolute inset-0" onClick={closeFullscreen} />
-	          <div className={`relative m-4 flex w-[min(1800px,100%)] max-w-[100%] gap-4 rounded-xl bg-card p-4 shadow-2xl transition-transform duration-300 ${fsOpen ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.99]'}`}
+	            <div className={`relative m-4 flex w-[min(1800px,100%)] max-w-[100%] gap-4 rounded-xl bg-card p-4 shadow-2xl transition-transform duration-300 ${fsOpen ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.99]'}`}
 	               onClick={(e) => e.stopPropagation()}>
 	            {/* Exit button */}
 	            <button
@@ -932,7 +932,7 @@ const PlanningInterface = ({
 	                section="timeline"
 	                hideRemoteCursorsOnMobile={true}
 	                style={{ flex: '0 0 auto', width: `${timelinePercent-3}%`, minWidth: '40%', maxWidth: '80%' }}
-	                className="rounded-xl p-4 pb-6 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] flex flex-col min-w-0 bg-background"
+	                className="rounded-xl p-4 pb-6 shadow-sm border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] flex flex-col min-w-0 bg-background"
 	              >
 
 	                <div className="relative flex flex-col p-4 w-full grow">
@@ -950,13 +950,13 @@ const PlanningInterface = ({
                 section="mitigations"
                 hideRemoteCursorsOnMobile={true}
                 style={{ flex: '0 0 auto', width: `${mitigationPercent}%`, minWidth: '20%', maxWidth: '60%' }}
-                className="rounded-xl p-4 shadow-md border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] min-w-0 bg-background"
+                className="rounded-xl p-4 shadow-sm border border-border overflow-y-auto overflow-x-auto h-full min-h-[400px] min-w-0 bg-background"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-foreground">Mitigations</h2>
                   <SectionPresencePill surface="planner" section="mitigations" />
                 </div>
-                <div className="flex flex-col gap-2 mb-4">
+                <div className="sticky top-0 z-10 mb-4 flex flex-col gap-2 rounded-lg border border-border bg-background/95 p-3 backdrop-blur">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
@@ -964,7 +964,7 @@ const PlanningInterface = ({
                       placeholder="Search mitigations..."
                       value={mitigationSearchQuery}
                       onChange={(e) => setMitigationSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-8 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full rounded-md border border-input bg-card py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     {mitigationSearchQuery && (
                       <button
@@ -976,7 +976,7 @@ const PlanningInterface = ({
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
                       onClick={() => setSelectedJobFilter(null)}

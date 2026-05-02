@@ -1,3 +1,3 @@
-import TankSelectionModal from './TankSelectionModal.jsx';
+import TankSelectionModal from './TankSelectionModal';
 
 export default TankSelectionModal;

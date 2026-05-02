@@ -1,12 +1,19 @@
 import { useState } from 'react';
-import { Edit3 } from 'lucide-react';
-import { updateProfile } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, Edit3, Trash2 } from 'lucide-react';
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  updateProfile
+} from 'firebase/auth';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
-import { auth } from '../../config/firebase';
+import { auth, googleProvider } from '../../config/firebase';
+import { deleteCurrentUserAccount } from '../../services/accountDeletionService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 
 const generateUserColor = (userId) => {
   const colors = [
@@ -42,14 +49,23 @@ const getInitials = (displayName) => {
 };
 
 const UserProfile = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [reauthPassword, setReauthPassword] = useState('');
   const [error, setError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
   const userId = user?.uid || 'default';
+  const providerIds = user?.providerData?.map((provider) => provider.providerId) || [];
+  const requiresPasswordReauth = providerIds.includes('password') || (!providerIds.includes('google.com') && Boolean(user?.email));
+  const usesGoogleReauth = !requiresPasswordReauth && providerIds.includes('google.com');
 
   const handleEditClick = () => {
     setNewDisplayName(cleanDisplayName(displayName));
@@ -104,6 +120,101 @@ const UserProfile = () => {
     }
   };
 
+  const resetDeleteForm = () => {
+    setDeleteConfirmation('');
+    setReauthPassword('');
+    setDeleteError('');
+  };
+
+  const parseDeleteError = (err) => {
+    const code = err?.code || '';
+
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      return 'Google reauthentication was cancelled.';
+    }
+
+    if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      return 'That password did not match this account.';
+    }
+
+    if (code === 'auth/requires-recent-login' || code === 'functions/failed-precondition') {
+      return 'Please sign in again, then retry account deletion.';
+    }
+
+    if (code === 'functions/unauthenticated') {
+      return 'Your session expired. Please sign in again.';
+    }
+
+    if (code === 'functions/internal') {
+      return 'We could not finish deleting your account. Your account is still active, so please try again.';
+    }
+
+    return err?.message || 'Failed to delete account. Please try again.';
+  };
+
+  const handleDeleteClick = () => {
+    resetDeleteForm();
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+
+    if (deleteConfirmation !== 'DELETE') {
+      setDeleteError('Type DELETE to confirm account deletion.');
+      return;
+    }
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setDeleteError('You must be signed in to delete your account.');
+      return;
+    }
+
+    if (requiresPasswordReauth && !reauthPassword) {
+      setDeleteError('Enter your password to confirm this is your account.');
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    setDeleteError('');
+
+    try {
+      if (requiresPasswordReauth) {
+        const credential = EmailAuthProvider.credential(currentUser.email || '', reauthPassword);
+        await reauthenticateWithCredential(currentUser, credential);
+      } else if (usesGoogleReauth) {
+        await reauthenticateWithPopup(currentUser, googleProvider);
+      } else {
+        await currentUser.getIdToken(true);
+      }
+
+      await currentUser.getIdToken(true);
+      const result = await deleteCurrentUserAccount();
+
+      toast.success('Account deleted', {
+        description: `Removed ${result.deletedPlans} plans and ${result.deletedTimelines} timelines.`,
+      });
+
+      setIsDeleteDialogOpen(false);
+      setIsEditModalOpen(false);
+      resetDeleteForm();
+
+      try {
+        await logout?.();
+      } catch (logoutError) {
+        console.warn('Sign out after account deletion failed:', logoutError);
+      }
+
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      setDeleteError(parseDeleteError(err));
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   return (
     <>
       <div 
@@ -127,13 +238,19 @@ const UserProfile = () => {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Display Name</DialogTitle>
+            <DialogTitle>Account Settings</DialogTitle>
             <DialogDescription>
-              Enter a new display name for your profile.
+              Update your profile details or permanently delete your account.
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-4">
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Display name</h3>
+              <p className="mb-3 text-sm text-muted-foreground">
+                This is visible to collaborators in shared plans.
+              </p>
+            </div>
             <Input
               type="text"
               placeholder="Enter your display name"
@@ -152,6 +269,119 @@ const UserProfile = () => {
               </Button>
               <Button type="submit" disabled={isSubmitting || !newDisplayName.trim()}>
                 {isSubmitting ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </form>
+
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="mb-3 flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
+              <div>
+                <h3 className="text-sm font-semibold text-destructive">Delete account</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Permanently delete your account, owned plans, community timelines, and account profile data.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!isDeletingAccount) {
+            setIsDeleteDialogOpen(open);
+            if (!open) {
+              resetDeleteForm();
+            }
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Account</DialogTitle>
+            <DialogDescription>
+              This action permanently removes your account and owned MitPlan data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleDeleteAccount} className="flex flex-col gap-4 py-2">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-muted-foreground">
+              Owned plans, public view links, community timelines, profile data, collections, likes, and collaboration traces tied to this account will be deleted or removed.
+            </div>
+
+            {requiresPasswordReauth && (
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground" htmlFor="delete-account-password">
+                  Password
+                </label>
+                <Input
+                  id="delete-account-password"
+                  type="password"
+                  value={reauthPassword}
+                  onChange={(event) => {
+                    setReauthPassword(event.target.value);
+                    if (deleteError) setDeleteError('');
+                  }}
+                  disabled={isDeletingAccount}
+                  autoComplete="current-password"
+                />
+              </div>
+            )}
+
+            {usesGoogleReauth && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                You will be asked to confirm your Google account before deletion continues.
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="delete-account-confirmation">
+                Type DELETE to confirm
+              </label>
+              <Input
+                id="delete-account-confirmation"
+                value={deleteConfirmation}
+                onChange={(event) => {
+                  setDeleteConfirmation(event.target.value);
+                  if (deleteError) setDeleteError('');
+                }}
+                disabled={isDeletingAccount}
+                autoComplete="off"
+              />
+            </div>
+
+            {deleteError && <div className="text-sm text-destructive">{deleteError}</div>}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+                disabled={isDeletingAccount}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={
+                  isDeletingAccount ||
+                  deleteConfirmation !== 'DELETE' ||
+                  (requiresPasswordReauth && !reauthPassword)
+                }
+              >
+                {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
               </Button>
             </DialogFooter>
           </form>

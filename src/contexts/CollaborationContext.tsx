@@ -1,23 +1,18 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import sessionManager from '../services/sessionManager';
 import { storeUserProfile } from '../services/userService';
+import { batchUpdatePlanRealtime } from '../services/realtimePlanService';
 import {
   COLLABORATION_UNAVAILABLE_MESSAGE,
   getErrorMessage,
   isPermissionDeniedError,
 } from '../services/firebaseErrorUtils';
+import type { CollaborationContextValue, Collaborator } from '../types/contexts';
 
-const CollaborationContext = createContext({});
+const CollaborationContext = createContext<CollaborationContextValue | null>(null);
 
-type CollaboratorRecord = {
-  sessionId: string;
-  userId?: string;
-  displayName: string;
-  email?: string;
-  color?: string;
-  isActive?: boolean;
-};
+type CollaboratorRecord = Collaborator;
 
 export const useCollaboration = () => {
   const context = useContext(CollaborationContext);
@@ -29,7 +24,7 @@ export const useCollaboration = () => {
 
 const generateSessionId = () => `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
-const cleanDisplayName = (name) => {
+const cleanDisplayName = (name: string | null | undefined) => {
   if (!name) return name;
   if ((name.startsWith('"') && name.endsWith('"')) || (name.startsWith("'") && name.endsWith("'"))) {
     return name.slice(1, -1);
@@ -59,9 +54,14 @@ const areCollaboratorsEqual = (
   });
 };
 
-export const CollaborationProvider = ({ children, enabled = true }) => {
+interface CollaborationProviderProps {
+  children: ReactNode;
+  enabled?: boolean;
+}
+
+export const CollaborationProvider = ({ children, enabled = true }: CollaborationProviderProps) => {
   const { user, isAuthenticated, displayName: authDisplayName } = useAuth();
-  const [activePlanId, setActivePlanId] = useState(null);
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [collaborators, setCollaborators] = useState<CollaboratorRecord[]>([]);
   const [isCollaborating, setIsCollaborating] = useState(false);
   const [collaborationAvailable, setCollaborationAvailable] = useState(true);
@@ -72,11 +72,11 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
 
   const activePlanIdRef = useRef(activePlanId);
   const displayNameRef = useRef(displayName);
-  const listenersRef = useRef(new Map());
-  const lastChangeOriginRef = useRef(null);
-  const debounceTimersRef = useRef(new Map());
-  const batchedUpdates = useRef(new Map());
-  const batchTimer = useRef(null);
+  const listenersRef = useRef(new Map<string, () => void>());
+  const lastChangeOriginRef = useRef<string | null>(null);
+  const debounceTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const batchedUpdates = useRef(new Map<string, Record<string, unknown>>());
+  const batchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartedRef = useRef(false);
   const joinPromiseRef = useRef<Promise<boolean> | null>(null);
   const joiningPlanIdRef = useRef<string | null>(null);
@@ -128,7 +128,7 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     setCollaborationError(null);
   }, []);
 
-  const markCollaborationUnavailable = useCallback((error, stage) => {
+  const markCollaborationUnavailable = useCallback((error: unknown, stage: string) => {
     const detail = `${stage}:${getErrorMessage(error)}`;
 
     if (loggedCollaborationErrorRef.current !== detail) {
@@ -166,7 +166,7 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     setIsCollaborating(false);
   }, [cleanupListeners, sessionId]);
 
-  const joinCollaborativeSession = useCallback(async (planId, userDisplayName = null) => {
+  const joinCollaborativeSession = useCallback(async (planId: string, userDisplayName: string | null = null) => {
     if (!enabled || !isAuthenticated || !user?.uid || !planId) {
       return false;
     }
@@ -279,7 +279,7 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     sessionId
   ]);
 
-  const debouncedUpdate = useCallback((key, updateFn, delay = 500, priority = 'normal') => {
+  const debouncedUpdate = useCallback<CollaborationContextValue['debouncedUpdate']>((key, updateFn, delay = 500, priority = 'normal') => {
     if (debounceTimersRef.current.has(key)) {
       clearTimeout(debounceTimersRef.current.get(key));
     }
@@ -303,7 +303,7 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     debounceTimersRef.current.set(key, timer);
   }, []);
 
-  const batchUpdate = useCallback((planId, updates, userId, currentSessionId) => {
+  const batchUpdate = useCallback<CollaborationContextValue['batchUpdate']>((planId, updates, userId, currentSessionId) => {
     if (!enabled) return;
 
     if (!batchedUpdates.current.has(planId)) {
@@ -321,8 +321,7 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
       const allUpdates = batchedUpdates.current.get(planId);
       if (allUpdates && Object.keys(allUpdates).length > 0) {
         try {
-          const planService = await import('../services/realtimePlanService');
-          await planService.batchUpdatePlanRealtime(planId, allUpdates, userId, currentSessionId);
+          await batchUpdatePlanRealtime(planId, allUpdates, userId, currentSessionId);
         } catch (error) {
           console.error('Error in batch update:', error);
         }
@@ -332,7 +331,7 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     }, 300);
   }, [enabled]);
 
-  const setChangeOrigin = useCallback((origin) => {
+  const setChangeOrigin = useCallback((origin: string) => {
     lastChangeOriginRef.current = origin;
 
     setTimeout(() => {
@@ -342,11 +341,11 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     }, 1000);
   }, []);
 
-  const isOwnChange = useCallback((changeOrigin) => {
+  const isOwnChange = useCallback((changeOrigin: string | null) => {
     return changeOrigin === sessionId || changeOrigin === lastChangeOriginRef.current;
   }, [sessionId]);
 
-  const trackPerformance = useCallback((operation, startTime) => {
+  const trackPerformance = useCallback((operation: string, startTime: number) => {
     const duration = Date.now() - startTime;
 
     performanceMetrics.current.updateCount += 1;
@@ -383,7 +382,20 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     };
   }, [leaveCollaborativeSession, cleanupListeners]);
 
-  const value = useMemo(() => ({
+  const updateDisplayName = useCallback(async (name: string) => {
+    const nextDisplayName = cleanDisplayName(name) || 'User';
+    setDisplayName(nextDisplayName);
+
+    if (user?.uid) {
+      await storeUserProfile(user.uid, nextDisplayName, user.email);
+    }
+  }, [user?.email, user?.uid]);
+
+  const getCollaboratorDisplayName = useCallback((userId: string) => {
+    return collaborators.find((collaborator) => collaborator.userId === userId)?.displayName || 'Collaborator';
+  }, [collaborators]);
+
+  const value = useMemo<CollaborationContextValue>(() => ({
     activePlanId,
     collaborators,
     isCollaborating: enabled ? isCollaborating : false,
@@ -394,6 +406,8 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     isInitialized,
     joinCollaborativeSession,
     leaveCollaborativeSession,
+    updateDisplayName,
+    getCollaboratorDisplayName,
     setDisplayName,
     debouncedUpdate,
     batchUpdate,
@@ -414,6 +428,8 @@ export const CollaborationProvider = ({ children, enabled = true }) => {
     isInitialized,
     joinCollaborativeSession,
     leaveCollaborativeSession,
+    updateDisplayName,
+    getCollaboratorDisplayName,
     debouncedUpdate,
     batchUpdate,
     setChangeOrigin,

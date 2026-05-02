@@ -1,1 +1,1 @@
-export { default } from './AssignedMitigations.jsx';
+export { default } from './AssignedMitigations';

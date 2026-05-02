@@ -5,7 +5,7 @@ import { mitigationAbilities, ffxivJobs } from '../../data';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import { getAvailableAbilities } from '../../utils';
 import { useFilterContext, useTankPositionContext, useTankSelectionModalContext } from '../../contexts';
-import { useClassSelectionModalContext } from '../../contexts/ClassSelectionModalContext.jsx';
+import { useClassSelectionModalContext } from '../../contexts/ClassSelectionModalContext';
 import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentContext';
 import MitigationItem from '../MitigationItem/MitigationItem';
 import { cn } from '@/lib/utils';
@@ -217,8 +217,8 @@ const MitigationBottomSheet = memo(({
         side="bottom" 
         className="h-[90vh] rounded-t-2xl p-0 gap-0"
       >
-        <SheetHeader className="p-4 pb-2 border-b shrink-0">
-          <SheetTitle className="text-base">
+        <SheetHeader className="shrink-0 border-b p-4 pb-3">
+          <SheetTitle className="text-base leading-tight">
             {selectedBossAction ? selectedBossAction.name : 'Select Mitigation'}
           </SheetTitle>
           {selectedBossAction && (
@@ -229,7 +229,7 @@ const MitigationBottomSheet = memo(({
         </SheetHeader>
 
         {hasAssignments && (
-          <div className="px-4 py-3 border-b bg-primary/5 shrink-0">
+          <div className="shrink-0 border-b bg-primary/5 px-4 py-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-foreground">
                 Assigned Mitigations ({allAssignedMitigations.length})
@@ -239,7 +239,7 @@ const MitigationBottomSheet = memo(({
               {allAssignedMitigations.map((mit, idx) => (
                 <div
                   key={`${mit.id}-${idx}`}
-                  className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-md text-xs pr-1 text-foreground"
+                    className="flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 pr-1 text-xs text-foreground"
                 >
                   {mit.icon && typeof mit.icon === 'string' && mit.icon.startsWith('/') ? (
                     <img src={mit.icon} alt="" className="w-4 h-4 object-contain" />
@@ -260,7 +260,7 @@ const MitigationBottomSheet = memo(({
           </div>
         )}
 
-        <div className="px-4 py-3 border-b shrink-0 space-y-2">
+        <div className="sticky top-0 z-10 shrink-0 space-y-2 border-b bg-card px-4 py-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -268,7 +268,7 @@ const MitigationBottomSheet = memo(({
               placeholder="Search mitigations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {searchQuery && (
               <button
@@ -318,7 +318,7 @@ const MitigationBottomSheet = memo(({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+        <div className="flex-1 space-y-2 overflow-y-auto p-4" style={{ maxHeight: 'calc(90vh - 220px)' }}>
             {searchedMitigations.map((mitigation: any) => {
               const availability = selectedBossAction ? checkAbilityAvailability(
                 mitigation.id,
@@ -335,10 +335,10 @@ const MitigationBottomSheet = memo(({
                   key={mitigation.id}
                   onClick={() => !isDisabled && handleMitigationTap(mitigation)}
                   className={cn(
-                    "cursor-pointer rounded-lg border border-border bg-card p-3 transition-all",
+                    "cursor-pointer rounded-lg border border-border bg-card p-3 transition-colors",
                     isDisabled 
                       ? "opacity-50 cursor-not-allowed" 
-                      : "hover:border-primary/50 hover:shadow-sm active:scale-[0.98]"
+                      : "hover:border-primary/50 hover:bg-muted/30"
                   )}
                 >
                   <MitigationItem

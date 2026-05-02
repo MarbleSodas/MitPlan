@@ -9,7 +9,7 @@ MitPlan follows a modern web application architecture with a React frontend, Fir
 ┌─────────────────────────────────────────────────────────────┐
 │                    Client (Browser)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  React Application (Vite + React 18)                       │
+│  React Application (Vite + React 19)                       │
 │  ├── Components (UI Layer)                                 │
 │  ├── Contexts (State Management)                           │
 │  ├── Services (Business Logic)                             │
@@ -45,10 +45,10 @@ MitPlan follows a modern web application architecture with a React frontend, Fir
 ## Frontend Architecture
 
 ### Technology Stack
-- **React 18**: Modern React with concurrent features
+- **React 19**: Modern React UI runtime
 - **Vite**: Fast build tool and development server
-- **Styled Components**: CSS-in-JS styling solution
-- **React Router v6**: Client-side routing
+- **Tailwind CSS v4**: Utility-first styling
+- **React Router v7**: Client-side routing
 - **@dnd-kit**: Drag and drop functionality
 - **Firebase SDK**: Backend service integration
 
@@ -61,8 +61,7 @@ src/
 │   ├── dashboard/       # Dashboard-specific components
 │   ├── planner/         # Mitigation planner components
 │   ├── auth/           # Authentication components
-│   ├── mobile/         # Mobile-specific components
-│   └── styled/         # Styled component definitions
+│   └── ui/             # Shared UI primitives
 ├── features/           # Feature-specific components
 │   ├── jobs/           # Job selection feature
 │   └── bosses/         # Boss selection feature
@@ -71,7 +70,7 @@ src/
 ├── services/           # Business logic and API calls
 ├── utils/              # Helper functions and utilities
 ├── data/               # Static data (jobs, abilities, bosses)
-└── styles/             # Global styles and themes
+└── tailwind.css        # Global styles and theme tokens
 ```
 
 ### State Management Pattern

@@ -10,9 +10,8 @@ import {
   formatMitigation,
   generateMitigationBreakdown,
   isMitigationAvailable,
-  calculateBarrierAmount,
   getHealingPotency,
-  calculateHealingAmount,
+  calculateHealthProjection,
   parseUnmitigatedDamage
 } from '../../utils';
 
@@ -56,7 +55,7 @@ const BossAction = ({ children, className = '', $isSelected, $importance, $hasAs
         ? 'border-l-4 border-l-amber-500'
         : 'border-l-4 border-l-green-500';
   const hover = 'hover:shadow-md hover:border-blue-500';
-  
+
   return (
     <div {...rest} className={`${base} ${borderSel} ${leftBorder} ${hover} ${className}`}>
       {children}
@@ -162,8 +161,12 @@ const BossActionItem = memo(({
       });
     }
 
-    const inheritedMitigations = getActiveMitigations(action.id, action.time, tankPosition)
-      .map(m => mitigationAbilities.find(full => full.id === m.id))
+    const activeMitigations = getActiveMitigations(action.id, action.time, tankPosition);
+    const inheritedMitigations = activeMitigations
+      .map(m => {
+        const fullMitigation = mitigationAbilities.find(full => full.id === m.id);
+        return fullMitigation ? { ...fullMitigation, ...m } : null;
+      })
       .filter(Boolean);
 
     const filteredInheritedMitigations = inheritedMitigations.filter(mitigation =>
@@ -172,10 +175,9 @@ const BossActionItem = memo(({
 
     if (tankPosition) {
       const filteredByTarget = filteredInheritedMitigations.filter(mitigation => {
-        const originalAssignment = getActiveMitigations(action.id, action.time, tankPosition)
-          .find(m => m.id === mitigation.id);
+        const originalAssignment = activeMitigations.find(m => m.id === mitigation.id);
         if (!originalAssignment) return false;
-        
+
         if (mitigation.target === 'self' || mitigation.target === 'single') {
           return originalAssignment.tankPosition === tankPosition;
         }
@@ -201,9 +203,9 @@ const BossActionItem = memo(({
   const { allMitigations, hasMitigations } = calculateMitigationInfo();
 
   const isScholarSelected = selectedJobs && (
-    selectedJobs['SCH'] || 
-    (selectedJobs.healer && Array.isArray(selectedJobs.healer) && 
-     (typeof selectedJobs.healer[0] === 'string' ? selectedJobs.healer.includes('SCH') : 
+    selectedJobs['SCH'] ||
+    (selectedJobs.healer && Array.isArray(selectedJobs.healer) &&
+     (typeof selectedJobs.healer[0] === 'string' ? selectedJobs.healer.includes('SCH') :
       selectedJobs.healer.some(job => job?.id === 'SCH' && job.selected)))
   );
 
@@ -228,7 +230,6 @@ const BossActionItem = memo(({
     || effectiveBaseHealth.party;
 
   const unmitigatedDamage = parseUnmitigatedDamage(action.unmitigatedDamage);
-  const mitigationPercentage = calculateTotalMitigation(allMitigations, action.damageType, currentBossLevel);
 
   const mainTankMitigationInfo = (action.isTankBuster || action.isDualTankBuster) ? calculateMitigationInfo('mainTank') : { allMitigations: [], barrierMitigations: [] };
   const offTankMitigationInfo = action.isDualTankBuster ? calculateMitigationInfo('offTank') : { allMitigations: [], barrierMitigations: [] };
@@ -246,46 +247,6 @@ const BossActionItem = memo(({
     })
     .filter(mitigation => mitigation && isMitigationAvailable(mitigation, selectedJobs));
 
-  const healingBuffsByJob = useMemo(() => {
-    const buffs = {};
-    directMitigationsFull.forEach(a => {
-      const job = a.jobs?.[0];
-      if (!job || !a.healingPotencyBonus) return;
-      const val = typeof a.healingPotencyBonus === 'number' ? a.healingPotencyBonus : a.healingPotencyBonus.value || 0;
-      const mode = a.healingPotencyBonus.stackMode || 'multiplicative';
-      if (!buffs[job]) buffs[job] = { additive: 0, multiplicative: 1 };
-      if (mode === 'additive') buffs[job].additive += val;
-      else buffs[job].multiplicative *= (1 + val);
-    });
-    return buffs;
-  }, [directMitigationsFull]);
-
-  const withAdjustedBarrierPotency = (mitigation) => {
-    if ((mitigation.scaleBarrierWithHealing || mitigation.type === 'healing') && mitigation.barrierFlatPotency) {
-      const job = mitigation.jobs?.[0];
-      const buffs = healingBuffsByJob[job];
-      if (buffs) {
-        const mod = (1 + buffs.additive) * buffs.multiplicative;
-        return { ...mitigation, barrierFlatPotency: mitigation.barrierFlatPotency * mod };
-      }
-    }
-    return mitigation;
-  };
-
-  const directBarrierMitigations = directMitigationsFull.filter(m => m.type === 'barrier' || (m.type === 'healing' && (m.barrierPotency || m.barrierFlatPotency)));
-  const healingPotencyPer100 = getHealingPotency(currentBossLevel);
-  
-  const calcBarrier = (target, maxHp) => directBarrierMitigations.reduce((sum, m) => {
-    if (m.target === 'party' || m.target === 'area' || m.targetsTank || (target !== 'party' && (m.tankPosition === 'shared' || m.tankPosition === target))) {
-       return sum + calculateBarrierAmount(withAdjustedBarrierPotency(m), maxHp, healingPotencyPer100);
-    }
-    return sum;
-  }, 0);
-
-  const partyBarrierAmount = calcBarrier('party', partyBaseMaxHealth);
-  const mainTankBarrierAmount = calcBarrier('mainTank', mainTankBaseMaxHealth);
-  const offTankBarrierAmount = calcBarrier('offTank', offTankBaseMaxHealth);
-
   const computeHpInc = (pos) => directMitigationsFull.reduce((sum, m) => {
     if (m.target === 'party' || m.target === 'area' || m.tankPosition === 'shared' || ((m.target === 'self' || m.target === 'single') && m.tankPosition === pos)) {
       return sum + (m.maxHpIncrease || 0);
@@ -299,29 +260,47 @@ const BossActionItem = memo(({
   const offTankMaxHealthEffective = Math.round(offTankBaseMaxHealth * (1 + otHpInc));
 
   const healingPotency = getHealingPotency(currentBossLevel);
-  const getHeals = (pos) => directMitigationsFull.filter(m => {
-    if (!(m.type === 'healing' || m.healingPotency || m.regenPotency || m.healingPotencyBonus || m.maxHpIncrease)) return false;
-    if (pos === 'party') return m.target === 'party' || m.target === 'area' || m.healingPotencyBonus;
-    return m.target === 'party' || m.target === 'area' || m.tankPosition === pos || m.tankPosition === 'shared' || m.healingPotencyBonus;
+  const hitCount = (action.isMultiHit && action.hitCount) ? action.hitCount : 1;
+  const partyProjection = calculateHealthProjection({
+    mitigations: allMitigations,
+    target: 'party',
+    maxHealth: partyBaseMaxHealth,
+    rawDamage: unmitigatedDamage,
+    damageType: action.damageType,
+    bossLevel: currentBossLevel,
+    healingPotencyPer100: healingPotency,
+    hitCount
+  });
+  const mainTankProjection = calculateHealthProjection({
+    mitigations: mainTankMitigationInfo.allMitigations,
+    target: 'mainTank',
+    maxHealth: mainTankMaxHealthEffective,
+    rawDamage: unmitigatedDamage,
+    damageType: action.damageType,
+    bossLevel: currentBossLevel,
+    healingPotencyPer100: healingPotency,
+    hitCount
+  });
+  const offTankProjection = calculateHealthProjection({
+    mitigations: offTankMitigationInfo.allMitigations,
+    target: 'offTank',
+    maxHealth: offTankMaxHealthEffective,
+    rawDamage: unmitigatedDamage,
+    damageType: action.damageType,
+    bossLevel: currentBossLevel,
+    healingPotencyPer100: healingPotency,
+    hitCount
   });
 
-  const partyHealAmt = calculateHealingAmount(getHeals('party'), healingPotency, currentBossLevel, partyBaseMaxHealth);
-  const mtHealAmt = calculateHealingAmount(getHeals('mainTank'), healingPotency, currentBossLevel, mainTankBaseMaxHealth);
-  const otHealAmt = calculateHealingAmount(getHeals('offTank'), healingPotency, currentBossLevel, offTankBaseMaxHealth);
-
-  const LITURGY_ID = 'liturgy_of_the_bell';
-  const hasLiturgy = (pos) => directMitigationsFull.some(m => m.id === LITURGY_ID) || (getActiveMitigations(action.id, action.time, pos === 'party' ? null : pos) || []).some(m => m.id === LITURGY_ID);
-  
-  const hitCount = (action.isMultiHit && action.hitCount) ? action.hitCount : 1;
-  const liturgyAbility = mitigationAbilities.find(m => m.id === LITURGY_ID);
-  const litMod = liturgyAbility ? (1 + (healingBuffsByJob[liturgyAbility.jobs?.[0]]?.additive || 0)) * (healingBuffsByJob[liturgyAbility.jobs?.[0]]?.multiplicative || 1) : 1;
-  const litHeal = (( (liturgyAbility?.healingPotency || 400) * litMod) / 100) * healingPotency;
-
-  const calcRemaining = (maxHp, barrier, mit) => Math.max(0, maxHp - Math.max(0, unmitigatedDamage - barrier) * (1 - mit));
-  
-  const partyRem = calcRemaining(partyBaseMaxHealth, partyBarrierAmount, mitigationPercentage) + (hasLiturgy('party') ? Math.max(0, hitCount - 1) * litHeal : 0);
-  const mtRem = calcRemaining(mainTankMaxHealthEffective, mainTankBarrierAmount, mainTankMitigationPercentage) + (hasLiturgy('mainTank') ? Math.max(0, hitCount - 1) * litHeal : 0);
-  const otRem = calcRemaining(offTankMaxHealthEffective, offTankBarrierAmount, offTankMitigationPercentage) + (hasLiturgy('offTank') ? Math.max(0, hitCount - 1) * litHeal : 0);
+  const partyBarrierAmount = partyProjection.barrierAmount;
+  const mainTankBarrierAmount = mainTankProjection.barrierAmount;
+  const offTankBarrierAmount = offTankProjection.barrierAmount;
+  const partyHealAmt = partyProjection.healingAmount;
+  const mtHealAmt = mainTankProjection.healingAmount;
+  const otHealAmt = offTankProjection.healingAmount;
+  const partyRem = partyProjection.remainingHealth;
+  const mtRem = mainTankProjection.remainingHealth;
+  const otRem = offTankProjection.remainingHealth;
 
   return (
     <SelectionBorder elementType="bossAction" elementId={action.id} showIndicator indicatorPosition="top-right" className="rounded-lg">
@@ -351,32 +330,32 @@ const BossActionItem = memo(({
                     {hasMitigations && (
                       <div>
                         {action.isDualTankBuster ? (
-                          <TankMitigationDisplay 
-                            mainTankMitigations={mainTankMitigations} 
-                            offTankMitigations={offTankMitigations} 
-                            damageType={action.damageType} 
-                            bossLevel={currentBossLevel} 
-                            mainTankJob={tankPositions.mainTank} 
+                          <TankMitigationDisplay
+                            mainTankMitigations={mainTankMitigations}
+                            offTankMitigations={offTankMitigations}
+                            damageType={action.damageType}
+                            bossLevel={currentBossLevel}
+                            mainTankJob={tankPositions.mainTank}
                             offTankJob={tankPositions.offTank}
                             showOffTank={true}
                           />
                         ) : action.isTankBuster ? (
-                          <TankMitigationDisplay 
-                            mainTankMitigations={mainTankMitigations} 
-                            offTankMitigations={[]} 
-                            damageType={action.damageType} 
-                            bossLevel={currentBossLevel} 
-                            mainTankJob={tankPositions.mainTank} 
+                          <TankMitigationDisplay
+                            mainTankMitigations={mainTankMitigations}
+                            offTankMitigations={[]}
+                            damageType={action.damageType}
+                            bossLevel={currentBossLevel}
+                            mainTankJob={tankPositions.mainTank}
                             offTankJob={tankPositions.offTank}
                             showOffTank={false}
                             label="Tank"
                           />
                         ) : (
-                          <TankMitigationDisplay 
-                            mainTankMitigations={allMitigations} 
-                            offTankMitigations={[]} 
-                            damageType={action.damageType} 
-                            bossLevel={currentBossLevel} 
+                          <TankMitigationDisplay
+                            mainTankMitigations={allMitigations}
+                            offTankMitigations={[]}
+                            damageType={action.damageType}
+                            bossLevel={currentBossLevel}
                             mainTankJob={null}
                             offTankJob={null}
                             showOffTank={false}
@@ -424,7 +403,7 @@ const BossActionItem = memo(({
                   </>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
-                    <HealthBar label="Dmg" maxHealth={partyBaseMaxHealth} currentHealth={partyBaseMaxHealth} damageAmount={unmitigatedDamage} barrierAmount={partyBarrierAmount} applyBarrierFirst mitigationPercentage={mitigationPercentage} />
+                    <HealthBar label="Dmg" maxHealth={partyBaseMaxHealth} currentHealth={partyBaseMaxHealth} damageAmount={unmitigatedDamage} barrierAmount={partyBarrierAmount} applyBarrierFirst mitigationPercentage={partyProjection.mitigationPercentage} />
                     <HealingHealthBar label="Heal" maxHealth={partyBaseMaxHealth} remainingHealth={partyRem} healingAmount={partyHealAmt} />
                   </div>
                 )}

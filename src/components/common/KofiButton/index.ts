@@ -1,1 +1,1 @@
-export { default } from './KofiButton.jsx';
+export { default } from './KofiButton';

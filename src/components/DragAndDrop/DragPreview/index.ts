@@ -1,1 +1,1 @@
-export { default } from './DragPreview.jsx';
+export { default } from './DragPreview';

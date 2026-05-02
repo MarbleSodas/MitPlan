@@ -1,2 +1,2 @@
-export { default } from './PrecastToggle.jsx';
+export { default } from './PrecastToggle';
 

@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 const copyToClipboard = async (value) => {
   try {
     await navigator.clipboard.writeText(value);
-  } catch (_error) {
+  } catch {
     const textArea = document.createElement('textarea');
     textArea.value = value;
     document.body.appendChild(textArea);
@@ -207,9 +207,9 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
-          <section className="rounded-lg border border-border bg-muted/30 p-4">
-            <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="space-y-4">
+          <section className="rounded-lg border border-border bg-muted/25 p-4">
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-base font-semibold">Public Edit Link</h3>
               {!isPublicEditEnabled ? (
                 <Button onClick={handleEnablePublicEdit} disabled={workingAction === 'enable-public-edit'}>
@@ -222,11 +222,11 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
             </p>
             {isPublicEditEnabled ? (
               <>
-                <div className="flex gap-2">
-                  <Input value={editUrl} readOnly onClick={(event) => event.currentTarget.select()} />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input value={editUrl} readOnly onClick={(event) => event.currentTarget.select()} className="bg-background" />
                   <Button
                     onClick={() => markCopied(editUrl, 'edit-link', 'Public edit link copied')}
-                    className={cn(copiedKey === 'edit-link' && 'bg-green-500 hover:bg-green-600')}
+                    className={cn('sm:w-28', copiedKey === 'edit-link' && 'bg-success text-success-foreground hover:bg-success/90')}
                   >
                     {copiedKey === 'edit-link' ? <Check size={16} /> : <Copy size={16} />}
                     {copiedKey === 'edit-link' ? 'Copied' : 'Copy'}
@@ -234,9 +234,10 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={handleDisablePublicEdit}
                     disabled={workingAction === 'disable-public-edit'}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     {workingAction === 'disable-public-edit' ? 'Disabling...' : 'Disable Edit Link'}
                   </Button>
@@ -249,8 +250,8 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
             )}
           </section>
 
-          <section className="rounded-lg border border-border bg-muted/30 p-4">
-            <div className="mb-2 flex items-center justify-between gap-2">
+          <section className="rounded-lg border border-border bg-muted/25 p-4">
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-base font-semibold">Read-Only Snapshot Link</h3>
               {!shareState.viewEnabled ? (
                 <Button onClick={handleEnableViewLink} disabled={workingAction === 'enable-view'}>
@@ -263,11 +264,11 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
             </p>
             {shareState.viewEnabled && shareState.viewToken ? (
               <>
-                <div className="flex gap-2">
-                  <Input value={viewUrl} readOnly onClick={(event) => event.currentTarget.select()} />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input value={viewUrl} readOnly onClick={(event) => event.currentTarget.select()} className="bg-background" />
                   <Button
                     onClick={() => markCopied(viewUrl, 'view-link', 'Snapshot link copied')}
-                    className={cn(copiedKey === 'view-link' && 'bg-green-500 hover:bg-green-600')}
+                    className={cn('sm:w-28', copiedKey === 'view-link' && 'bg-success text-success-foreground hover:bg-success/90')}
                   >
                     {copiedKey === 'view-link' ? <Check size={16} /> : <Copy size={16} />}
                     {copiedKey === 'view-link' ? 'Copied' : 'Copy'}
@@ -283,9 +284,10 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
                     {workingAction === 'rotate-view' ? 'Regenerating...' : 'Regenerate Snapshot'}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={handleDisableViewLink}
                     disabled={workingAction === 'disable-view'}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     {workingAction === 'disable-view' ? 'Disabling...' : 'Disable Snapshot'}
                   </Button>
@@ -305,7 +307,7 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
           ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>

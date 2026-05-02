@@ -2,6 +2,7 @@ import React from 'react';
 
 import { Link } from 'react-router-dom';
 
+import { APP_VERSION_LABEL } from '@/config/version';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -43,7 +44,7 @@ const Footer = () => {
         </div>
 
         <div className="text-center text-xs text-muted-foreground">
-          © {currentYear} MitPlan. Made for the FFXIV community.
+          © {currentYear} MitPlan {APP_VERSION_LABEL}. Made for the FFXIV community.
           <br />
           Final Fantasy XIV is a trademark of Square Enix Holdings Co., Ltd.
         </div>

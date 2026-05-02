@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { PlanProvider } from './contexts/PlanContext';
+import { CollaborationProvider } from './contexts/CollaborationContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -84,9 +85,11 @@ const AppContent = () => {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <PlanProvider>
-                  <Dashboard />
-                </PlanProvider>
+                <CollaborationProvider enabled={false}>
+                  <PlanProvider>
+                    <Dashboard />
+                  </PlanProvider>
+                </CollaborationProvider>
               </ProtectedRoute>
             }
           />
@@ -206,9 +209,11 @@ const AppContent = () => {
             path="/plan/create-from-timeline/:timelineId"
             element={
               <ProtectedRoute>
-                <PlanProvider>
-                  <CreatePlanFromTimeline />
-                </PlanProvider>
+                <CollaborationProvider enabled={false}>
+                  <PlanProvider>
+                    <CreatePlanFromTimeline />
+                  </PlanProvider>
+                </CollaborationProvider>
               </ProtectedRoute>
             }
           />

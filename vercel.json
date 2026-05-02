@@ -1,6 +1,6 @@
 {
-  "installCommand": "rm -rf node_modules package-lock.json bun.lock && npm install",
-  "buildCommand": "npm run build",
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "routes": [

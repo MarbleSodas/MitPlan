@@ -14,7 +14,12 @@ import {
   equalTo
 } from 'firebase/database';
 import { database } from '../config/firebase';
-import { initializePlanOwnership, trackPlanAccess, getUserAccessiblePlans } from './planAccessService';
+import {
+  getUserAccessiblePlans,
+  initializePlanOwnership,
+  migratePlanOwnership,
+  trackPlanAccess,
+} from './planAccessService';
 import {
   getActiveUsersPath,
   getJobAssignmentPath,
@@ -543,7 +548,6 @@ export const getPlan = async (planId) => {
       });
 
       // Apply backward compatibility migration
-      const { migratePlanOwnership } = await import('./planAccessService');
       const migratedPlanData = migratePlanOwnership(planId, {
         ...planData,
         ...completePlan

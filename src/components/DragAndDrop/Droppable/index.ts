@@ -1,1 +1,1 @@
-export { default } from './Droppable.jsx';
+export { default } from './Droppable';

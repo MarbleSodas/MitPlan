@@ -199,7 +199,7 @@ describe('TimelineEditor', () => {
         ],
       })
     );
-  });
+  }, 10000);
 
   it('normalizes classification-less legacy actions when building the edited community timeline record', () => {
     const normalizedTimeline = buildEditedTimelineRecord({

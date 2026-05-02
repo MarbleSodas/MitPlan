@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { mitigationAbilities } from '../../data';
-import { isMitigationAvailable, calculateTotalMitigation, calculateBarrierAmount, getHealingPotency, calculateHealingAmount, parseUnmitigatedDamage } from '../../utils';
+import { isMitigationAvailable, getHealingPotency, calculateHealthProjection, parseUnmitigatedDamage } from '../../utils';
 import { cn } from '@/lib/utils';
 import HealthBar from '../common/HealthBar';
 import HealingHealthBar from '../common/HealingHealthBar';
@@ -77,7 +77,10 @@ const MobileBossTimeline = memo(({
 
     const inheritedMitigations = getActiveMitigations
       ? getActiveMitigations(action.id, action.time)
-          .map((m: any) => mitigationAbilities.find((full: any) => full.id === m.id))
+          .map((m: any) => {
+            const fullMitigation = mitigationAbilities.find((full: any) => full.id === m.id);
+            return fullMitigation ? { ...fullMitigation, ...m } : null;
+          })
           .filter(Boolean)
       : [];
 
@@ -95,7 +98,7 @@ const MobileBossTimeline = memo(({
 
   const getMitigationSummary = useCallback((action: any) => {
     const directAssignments = assignments[action.id] || [];
-    const activeAssignments = getActiveMitigations 
+    const activeAssignments = getActiveMitigations
       ? getActiveMitigations(action.id, action.time)
       : [];
     const total = directAssignments.length + activeAssignments.length;
@@ -126,7 +129,7 @@ const MobileBossTimeline = memo(({
   };
 
   return (
-    <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+    <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: 'calc(100vh - 280px)' }}>
       {sortedBossActions.map((action, index) => {
         const phaseSummary = phaseSummaryByAnchorActionId.get(action.id) || null;
         const phaseSkippedActions = phaseSummary
@@ -136,50 +139,60 @@ const MobileBossTimeline = memo(({
         const mitigationCount = getMitigationSummary(action);
         const mitigationInfo = calculateMitigationInfo(action);
         const damage = unmitigatedDamage(action);
-        
-        const mitigationPercentage = calculateTotalMitigation(mitigationInfo.allMitigations, action.damageType, currentBossLevel);
-        const healingPotency = getHealingPotency(currentBossLevel);
-        
-        const directBarrierMitigations = mitigationInfo.allMitigations.filter((m: any) => m.type === 'barrier' || (m.type === 'healing' && (m.barrierPotency || m.barrierFlatPotency)));
-        
-        const calcBarrier = (target: string, maxHp: number) => directBarrierMitigations.reduce((sum: number, m: any) => {
-          if (m.target === 'party' || m.target === 'area' || m.targetsTank || (target !== 'party' && (m.tankPosition === 'shared' || m.tankPosition === target))) {
-            return sum + calculateBarrierAmount(m, maxHp, healingPotency);
-          }
-          return sum;
-        }, 0);
 
-        const partyBarrierAmount = calcBarrier('party', partyBaseMaxHealth);
-        const mtBarrierAmount = calcBarrier('mainTank', mainTankBaseMaxHealth);
-        const otBarrierAmount = calcBarrier('offTank', offTankBaseMaxHealth);
-        
-        const calcRemaining = (maxHp: number, barrier: number, mit: number) => Math.max(0, maxHp - Math.max(0, damage - barrier) * (1 - mit));
-        
-        const partyRem = calcRemaining(partyBaseMaxHealth, partyBarrierAmount, mitigationPercentage);
-        const mtRem = calcRemaining(mainTankBaseMaxHealth, mtBarrierAmount, mitigationPercentage);
-        const otRem = calcRemaining(offTankBaseMaxHealth, otBarrierAmount, mitigationPercentage);
-        
-        const calcHealing = (targetMaxHp: number) => {
-          const healingMits = mitigationInfo.allMitigations.filter((m: any) => 
-            m.type === 'healing' || m.healingPotency || m.regenPotency || m.healingPotencyBonus || m.maxHpIncrease
-          );
-          return calculateHealingAmount(healingMits, healingPotency, currentBossLevel, targetMaxHp);
-        };
-        
-        const partyHealAmt = calcHealing(partyBaseMaxHealth);
-        const mtHealAmt = calcHealing(mainTankBaseMaxHealth);
-        const otHealAmt = calcHealing(offTankBaseMaxHealth);
-        
+        const healingPotency = getHealingPotency(currentBossLevel);
+        const hitCount = (action.isMultiHit && action.hitCount) ? action.hitCount : 1;
+        const partyProjection = calculateHealthProjection({
+          mitigations: mitigationInfo.allMitigations,
+          target: 'party',
+          maxHealth: partyBaseMaxHealth,
+          rawDamage: damage,
+          damageType: action.damageType,
+          bossLevel: currentBossLevel,
+          healingPotencyPer100: healingPotency,
+          hitCount
+        });
+        const mainTankProjection = calculateHealthProjection({
+          mitigations: mitigationInfo.allMitigations,
+          target: 'mainTank',
+          maxHealth: mainTankBaseMaxHealth,
+          rawDamage: damage,
+          damageType: action.damageType,
+          bossLevel: currentBossLevel,
+          healingPotencyPer100: healingPotency,
+          hitCount
+        });
+        const offTankProjection = calculateHealthProjection({
+          mitigations: mitigationInfo.allMitigations,
+          target: 'offTank',
+          maxHealth: offTankBaseMaxHealth,
+          rawDamage: damage,
+          damageType: action.damageType,
+          bossLevel: currentBossLevel,
+          healingPotencyPer100: healingPotency,
+          hitCount
+        });
+
+        const partyBarrierAmount = partyProjection.barrierAmount;
+        const mtBarrierAmount = mainTankProjection.barrierAmount;
+        const otBarrierAmount = offTankProjection.barrierAmount;
+        const partyRem = partyProjection.remainingHealth;
+        const mtRem = mainTankProjection.remainingHealth;
+        const otRem = offTankProjection.remainingHealth;
+        const partyHealAmt = partyProjection.healingAmount;
+        const mtHealAmt = mainTankProjection.healingAmount;
+        const otHealAmt = offTankProjection.healingAmount;
+
         return (
           <div
             key={`${action.id}-${index}`}
             data-testid={`mobile-action-${action.id}-${index}`}
             onClick={() => handleSelect(action)}
             className={cn(
-              "relative w-full rounded-lg border-2 transition-all cursor-pointer bg-card overflow-hidden",
-              isSelected 
-                ? "border-primary shadow-md" 
-                : "border-border hover:border-primary/50"
+              "relative w-full rounded-lg border transition-colors cursor-pointer bg-card overflow-hidden",
+              isSelected
+                ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/25"
+                : "border-border hover:border-primary/45"
             )}
           >
             <PhaseOverrideTimeStrip
@@ -193,27 +206,27 @@ const MobileBossTimeline = memo(({
 
             <div className="p-3">
             <div className="flex items-start gap-3">
-              <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
+              <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-md bg-muted">
                 {action.icon && typeof action.icon === 'string' && action.icon.startsWith('/') ? (
-                  <img src={action.icon} alt="" className="w-8 h-8 object-contain" />
+                  <img src={action.icon} alt="" className="h-7 w-7 object-contain" />
                 ) : (
-                  <span className="text-xl">{action.icon}</span>
+                  <span className="text-lg">{action.icon}</span>
                 )}
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-sm truncate text-foreground">
+                  <h3 className="font-semibold text-sm leading-tight truncate text-foreground">
                     {action.name}
                   </h3>
                 </div>
-                
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="text-xs text-muted-foreground">
+
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
                     {getDamageTypeIcon(action)} {getDamageTypeLabel(action)}
                   </span>
                   {action.unmitigatedDamage && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
                       Est. {action.unmitigatedDamage}
                     </span>
                   )}
@@ -221,7 +234,7 @@ const MobileBossTimeline = memo(({
 
                 {mitigationCount > 0 && (
                   <div className="mt-2 flex items-center gap-1">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {mitigationCount} mitigation{mitigationCount !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -229,86 +242,86 @@ const MobileBossTimeline = memo(({
               </div>
 
               {isSelected && (
-                <div className="absolute -right-1 -top-1 w-3 h-3 bg-primary rounded-full" />
+                <div className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
               )}
             </div>
 
             {damage > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/50">
+              <div className="mt-3 border-t border-border/50 pt-3">
                 {action.isTankBuster || action.isDualTankBuster ? (
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <HealthBar 
-                        label="MT" 
-                        maxHealth={mainTankBaseMaxHealth} 
-                        currentHealth={mainTankBaseMaxHealth} 
-                        damageAmount={damage} 
-                        barrierAmount={mtBarrierAmount} 
-                        isTankBuster 
-                        tankPosition="mainTank" 
-                        isDualTankBuster={action.isDualTankBuster} 
-                        applyBarrierFirst 
-                        mitigationPercentage={mitigationPercentage} 
+                      <HealthBar
+                        label="MT"
+                        maxHealth={mainTankBaseMaxHealth}
+                        currentHealth={mainTankBaseMaxHealth}
+                        damageAmount={damage}
+                        barrierAmount={mtBarrierAmount}
+                        isTankBuster
+                        tankPosition="mainTank"
+                        isDualTankBuster={action.isDualTankBuster}
+                        applyBarrierFirst
+                        mitigationPercentage={mainTankProjection.mitigationPercentage}
                       />
-                      <HealingHealthBar 
-                        label="MT" 
-                        maxHealth={mainTankBaseMaxHealth} 
-                        remainingHealth={mtRem} 
-                        healingAmount={mtHealAmt} 
-                        isTankBuster 
-                        tankPosition="mainTank" 
-                        isDualTankBuster={action.isDualTankBuster} 
+                      <HealingHealthBar
+                        label="MT"
+                        maxHealth={mainTankBaseMaxHealth}
+                        remainingHealth={mtRem}
+                        healingAmount={mtHealAmt}
+                        isTankBuster
+                        tankPosition="mainTank"
+                        isDualTankBuster={action.isDualTankBuster}
                       />
                     </div>
                     {action.isDualTankBuster && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <HealthBar 
-                          label="OT" 
-                          maxHealth={offTankBaseMaxHealth} 
-                          currentHealth={offTankBaseMaxHealth} 
-                          damageAmount={damage} 
-                          barrierAmount={otBarrierAmount} 
-                          isTankBuster 
-                          tankPosition="offTank" 
-                          isDualTankBuster 
-                          applyBarrierFirst 
-                          mitigationPercentage={mitigationPercentage} 
+                        <HealthBar
+                          label="OT"
+                          maxHealth={offTankBaseMaxHealth}
+                          currentHealth={offTankBaseMaxHealth}
+                          damageAmount={damage}
+                          barrierAmount={otBarrierAmount}
+                          isTankBuster
+                          tankPosition="offTank"
+                          isDualTankBuster
+                          applyBarrierFirst
+                          mitigationPercentage={offTankProjection.mitigationPercentage}
                         />
-                        <HealingHealthBar 
-                          label="OT" 
-                          maxHealth={offTankBaseMaxHealth} 
-                          remainingHealth={otRem} 
-                          healingAmount={otHealAmt} 
-                          isTankBuster 
-                          tankPosition="offTank" 
-                          isDualTankBuster 
+                        <HealingHealthBar
+                          label="OT"
+                          maxHealth={offTankBaseMaxHealth}
+                          remainingHealth={otRem}
+                          healingAmount={otHealAmt}
+                          isTankBuster
+                          tankPosition="offTank"
+                          isDualTankBuster
                         />
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <HealthBar 
-                      label="Dmg" 
-                      maxHealth={partyBaseMaxHealth} 
-                      currentHealth={partyBaseMaxHealth} 
-                      damageAmount={damage} 
-                      barrierAmount={partyBarrierAmount} 
-                      applyBarrierFirst 
-                      mitigationPercentage={mitigationPercentage} 
+                    <HealthBar
+                      label="Dmg"
+                      maxHealth={partyBaseMaxHealth}
+                      currentHealth={partyBaseMaxHealth}
+                      damageAmount={damage}
+                      barrierAmount={partyBarrierAmount}
+                      applyBarrierFirst
+                      mitigationPercentage={partyProjection.mitigationPercentage}
                     />
-                    <HealingHealthBar 
-                      label="Heal" 
-                      maxHealth={partyBaseMaxHealth} 
-                      remainingHealth={partyRem} 
-                      healingAmount={partyHealAmt} 
+                    <HealingHealthBar
+                      label="Heal"
+                      maxHealth={partyBaseMaxHealth}
+                      remainingHealth={partyRem}
+                      healingAmount={partyHealAmt}
                     />
                   </div>
                 )}
               </div>
             )}
 
-            <div className="mt-2 pt-2 border-t border-border/50">
+            <div className="mt-2 border-t border-border/50 pt-2">
               <p className="text-xs text-muted-foreground line-clamp-2">
                 {action.description}
               </p>
@@ -317,7 +330,7 @@ const MobileBossTimeline = memo(({
           </div>
         );
       })}
-      
+
       {sortedBossActions.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">No boss actions yet</p>

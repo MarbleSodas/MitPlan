@@ -30,8 +30,16 @@ export {
   formatPercentage,
   getHealingPotency,
   calculateHealingAmount,
+  calculateHealingBuffsByJob,
+  calculateHealingPotencyModifierForAbility,
+  calculateHealingReceivedMultiplier,
   calculateHealthAfterHealing
 } from './health/healthBarUtils.js';
+
+export {
+  appliesToProjectionTarget,
+  calculateHealthProjection
+} from './health/healthProjectionUtils.js';
 
 export {
   saveToLocalStorage,

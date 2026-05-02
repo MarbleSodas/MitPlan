@@ -299,23 +299,23 @@ const Dashboard = () => {
       </div>
 
       {error && (
-        <div className="mb-8 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-4 text-[#ef4444]">
+        <div className="mb-8 rounded-lg border border-destructive/25 bg-destructive/10 p-4 text-sm text-destructive">
           Plan loading issue: {error}
         </div>
       )}
 
-      <div className="mb-8 flex flex-wrap gap-4">
+      <div className="mb-8 flex flex-wrap gap-3">
         <Button onClick={handleCreatePlanByBoss}>
           Create New Plan
         </Button>
-        <Button variant="secondary" onClick={handleImportPlan}>
+        <Button variant="outline" onClick={handleImportPlan}>
           Import Plan
         </Button>
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-dashed border-[#fecaca] bg-[#fff7f7] px-8 py-16 text-center text-[#b91c1c]">
-          <h3 className="mb-4 text-2xl text-[#991b1b]">Plans Unavailable</h3>
+        <div className="rounded-lg border border-dashed border-destructive/30 bg-destructive/10 px-8 py-16 text-center text-destructive">
+          <h3 className="mb-4 text-2xl text-destructive">Plans Unavailable</h3>
           <p className="mb-0 text-base">
             {error}
           </p>
@@ -348,7 +348,7 @@ const Dashboard = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
+              <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
                 {categorizedPlans.ownedPlans.map((plan) => (
                   <PlanCard
                     key={plan.id}
@@ -378,7 +378,7 @@ const Dashboard = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
+                <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
                   {categorizedPlans.sharedPlans.map((plan) => (
                     <PlanCard
                       key={plan.id}
@@ -396,16 +396,16 @@ const Dashboard = () => {
 
           {/* Community Timelines Section */}
           <section className="mb-12 last:mb-0">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Community Timelines</h2>
                 <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-3">
                 <Button onClick={handleCreateTimeline}>
                   Open Timeline Hub
                 </Button>
-                <Button variant="secondary" onClick={() => navigate('/timeline/browse')}>
+                <Button variant="outline" onClick={() => navigate('/timeline/browse')}>
                   Browse Community Timelines
                 </Button>
               </div>
@@ -422,7 +422,7 @@ const Dashboard = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
+              <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
                 {timelines.map((timeline) => (
                   <TimelineCard
                     key={timeline.id}
