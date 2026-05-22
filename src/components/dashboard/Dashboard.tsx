@@ -125,6 +125,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleNavigateToPlanner = (planId) => {
+    navigate(`/plan/edit/${planId}`);
+  };
+
   const handleCreatePlanByBoss = () => {
     setShowBossSelectionModal(true);
   };
