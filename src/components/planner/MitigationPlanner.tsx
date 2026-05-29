@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import { DndContext, DragOverlay, closestCenter, useSensor, useSensors, MouseSensor, KeyboardSensor } from '@dnd-kit/core';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,8 +7,7 @@ import { useCollaboration } from '../../contexts/CollaborationContext';
 import { mitigationAbilities, ffxivJobs } from '../../data';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import { getAvailableAbilities } from '../../utils';
-// import { useAutoAssignment } from '../../hooks/useAutoAssignment';
-import { useNavigate } from 'react-router-dom';
+import { useSplitPane, useFullscreen } from './hooks';
 
 import { Maximize2, Minimize2, Search, X, Menu, ArrowLeft, Edit2 } from 'lucide-react';
 
@@ -119,63 +118,14 @@ const PlanningInterface = ({
 
   // Split pane ratio state (timeline/mitigation)
   const { planId } = useParams();
-  const splitContainerRef = useRef(null);
-  const [splitRatio, setSplitRatio] = useState(() => {
-    try {
-      const key = `plannerSplitRatio:${planId || 'default'}`;
-      const v = sessionStorage.getItem(key);
-      const parsed = v ? parseFloat(v) : NaN;
-      return Number.isFinite(parsed) ? Math.min(0.8, Math.max(0.4, parsed)) : 0.66;
-    } catch {
-      return 0.66;
-    }
-  });
-  useEffect(() => {
-    try {
-      const key = `plannerSplitRatio:${planId || 'default'}`;
-      sessionStorage.setItem(key, String(splitRatio));
-    } catch {
-      // ignore sessionStorage write errors (e.g., privacy mode)
-    }
-  }, [splitRatio, planId]);
 
-  const draggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const startRatioRef = useRef(splitRatio);
-
-
-  const onResizerMouseDown = useCallback((e) => {
-    // Prevent starting a DnD-kit drag from the handle
-    e.preventDefault();
-    e.stopPropagation();
-    if (!splitContainerRef.current) return;
-    draggingRef.current = true;
-    startXRef.current = e.clientX;
-    startRatioRef.current = splitRatio;
-
-    const onMove = (ev) => {
-      if (!draggingRef.current || !splitContainerRef.current) return;
-      const rect = splitContainerRef.current.getBoundingClientRect();
-      if (!rect.width) return;
-      const delta = (ev.clientX - startXRef.current) / rect.width;
-      let next = startRatioRef.current + delta;
-      // Clamp to keep reasonable min/max widths
-      next = Math.max(0.4, Math.min(0.8, next));
-      setSplitRatio(next);
-    };
-
-    const onUp = () => {
-      draggingRef.current = false;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [splitRatio]);
-
-  const timelinePercent = Math.round(splitRatio * 100);
-  const mitigationPercent = 100 - timelinePercent;
+  // Use the extracted useSplitPane hook
+  const {
+    timelinePercent,
+    mitigationPercent,
+    splitContainerRef,
+    onResizerMouseDown
+  } = useSplitPane({ planId });
 
   const { filterMitigations } = useFilterContext();
   const { tankPositions } = useTankPositionContext();
@@ -212,39 +162,8 @@ const PlanningInterface = ({
   // Mobile bottom sheet state
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
-  // Fullscreen overlay state and handlers for timeline + mitigations
-	  const [fsMounted, setFsMounted] = useState(false);
-	  const [fsOpen, setFsOpen] = useState(false);
-	  const openFullscreen = useCallback(() => {
-	    if (fsMounted) return;
-	    setFsMounted(true);
-	    // Next frame to allow transition from opacity-0 to 100
-	    requestAnimationFrame(() => setFsOpen(true));
-	  }, [fsMounted]);
-	  const closeFullscreen = useCallback(() => {
-	    setFsOpen(false);
-	    // Unmount after transition ends
-	    setTimeout(() => setFsMounted(false), 300);
-	  }, []);
-	  // ESC to exit fullscreen
-	  useEffect(() => {
-	    if (!fsMounted) return;
-	    const onKeyDown = (e) => {
-	      if (e.key === 'Escape') {
-	        e.preventDefault();
-	        closeFullscreen();
-	      }
-	    };
-	    window.addEventListener('keydown', onKeyDown);
-	    return () => window.removeEventListener('keydown', onKeyDown);
-	  }, [fsMounted, closeFullscreen]);
-	  // Lock page scroll when fullscreen is mounted
-	  useEffect(() => {
-	    if (!fsMounted) return;
-	    const prev = document.body.style.overflow;
-	    document.body.style.overflow = 'hidden';
-	    return () => { document.body.style.overflow = prev; };
-	  }, [fsMounted]);
+  // Fullscreen overlay state and handlers
+  const { isMounted: fsMounted, isOpen: fsOpen, openFullscreen, closeFullscreen } = useFullscreen();
 
   // Enhanced boss action selection with disabled auto-assignment
   const handleBossActionSelection = useCallback((action) => {
