@@ -88,15 +88,20 @@ App
 ├── AuthProvider (Authentication state)
 └── Router
     ├── PlanProvider (Plan management)
-    └── RealtimeAppProvider (Real-time features)
-        ├── CollaborationProvider (Session management)
-        ├── RealtimePlanProvider (Plan synchronization)
-        ├── RealtimeBossProvider (Boss state sync)
-        ├── RealtimeJobProvider (Job state sync)
-        ├── TankPositionProvider (Tank assignments)
-        ├── EnhancedMitigationProvider (Mitigation logic)
-        ├── FilterProvider (UI filters)
-        └── TankSelectionModalProvider (Modal state)
+    │   └── CreatePlanFromTimeline
+    ├── RealtimeAppProvider (Real-time features)
+    │   ├── CollaborationProvider (Session management + batching)
+    │   ├── PresenceProvider (Live cursors + section presence)
+    │   ├── RealtimePlanProvider (Plan synchronization)
+    │   ├── RealtimeBossProvider (Boss state sync)
+    │   ├── RealtimeJobProvider (Job state sync)
+    │   ├── TankPositionProvider (Tank assignments)
+    │   ├── EnhancedMitigationProvider (Mitigation logic + cooldown tracking)
+    │   ├── FilterProvider (UI filters)
+    │   └── TankSelectionModalProvider (Modal state)
+    └── Dashboard
+        └── Dashboard provides CollaborationProvider with enabled=false
+            (Collaboration only enabled in planner routes)
 ```
 
 ## Backend Architecture
@@ -114,27 +119,46 @@ App
 │   ├── createdAt: timestamp
 │   ├── updatedAt: timestamp
 │   ├── ownerId: "user_id"
-│   └── accessedBy: ["user1", "user2"]
+│   ├── accessedBy: ["user1", "user2"]
+│   └── phaseOverrides: [{...}]  // Optional phase customization
 ├── data/
 │   ├── selectedJobs: {...}
 │   ├── tankPositions: {...}
 │   ├── assignments: {...}
 │   └── bossId: "ketuduke"
-└── collaboration/
-    ├── activeUsers/
-    │   └── {sessionId}/
-    │       ├── userId: "user_id"
-    │       ├── displayName: "User Name"
-    │       ├── joinedAt: timestamp
-    │       ├── lastActivity: timestamp
-    │       └── isActive: true
-    └── changes/
-        └── {changeId}/
-            ├── userId: "user_id"
-            ├── sessionId: "session_id"
-            ├── timestamp: timestamp
-            ├── type: "assignment_added"
-            └── data: {...}
+├── collaboration/
+│   ├── activeUsers/
+│   │   └── {sessionId}/
+│   │       ├── userId: "user_id"
+│   │       ├── displayName: "User Name"
+│   │       ├── joinedAt: timestamp
+│   │       ├── lastActivity: timestamp
+│   │       └── isActive: true
+│   └── changes/
+│       └── {changeId}/
+│           ├── userId: "user_id"
+│           ├── sessionId: "session_id"
+│           ├── timestamp: timestamp
+│           ├── type: "assignment_added"
+│           └── data: {...}
+
+/timelines/{timelineId}/
+├── metadata/
+│   ├── name: "Timeline Name"
+│   ├── bossId: "boss_id"
+│   ├── createdBy: "user_id"
+│   ├── createdAt: timestamp
+│   ├── isPublic: boolean
+│   └── sourceUrl: "https://..." // cactbot/FF Logs source
+├── actions/
+│   └── {actionId}/
+│       ├── name: "Ability Name"
+│       ├── time: 120
+│       ├── damageType: "magical"
+│       └── importance: "high"
+└── officialData/
+    ├── analysisSources: [{kind: "cactbot", url: "..."}]
+    └── guideSources: [{site: "cactbot", url: "..."}]
 ```
 
 #### Firebase Authentication
@@ -310,6 +334,7 @@ Global Edge Locations
 - Firebase Realtime Database concurrent connections
 - Client-side state management complexity
 - Bundle size with feature growth
+- Presence updates can grow with many active collaborators
 
 ### Scaling Strategies
 1. **Database Sharding**: Separate plans by region/user
@@ -317,6 +342,8 @@ Global Edge Locations
 3. **Code Splitting**: Feature-based lazy loading
 4. **Service Workers**: Offline functionality
 5. **Edge Computing**: Vercel Edge Functions
+6. **Presence Throttling**: Rate-limit cursor updates for large sessions
+7. **Timeline Caching**: Cache parsed timelines to reduce processing
 
 ## Development Workflow
 

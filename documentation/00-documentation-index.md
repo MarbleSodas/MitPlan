@@ -10,15 +10,17 @@ This index provides a comprehensive overview of all MitPlan documentation, organ
 
 | File | Purpose | Target Audience | Last Updated |
 |------|---------|----------------|--------------|
-| [README.md](./README.md) | Main documentation hub and navigation | All users | 2024-12-07 |
-| [01-feature-inventory.md](./01-feature-inventory.md) | Complete feature catalog | Product, Design, Development | 2024-12-07 |
-| [02-technical-implementation.md](./02-technical-implementation.md) | Technical implementation details | Developers | 2024-12-07 |
-| [03-architecture-overview.md](./03-architecture-overview.md) | System architecture and design | Developers, Architects | 2024-12-07 |
-| [04-user-workflows.md](./04-user-workflows.md) | User journeys and interactions | Product, Design, QA | 2024-12-07 |
-| [05-database-schema.md](./05-database-schema.md) | Database structure and relationships | Developers, DevOps | 2024-12-07 |
-| [06-development-setup.md](./06-development-setup.md) | Development environment setup | New developers | 2024-12-07 |
-| [07-troubleshooting.md](./07-troubleshooting.md) | Common issues and solutions | Developers, Support | 2024-12-07 |
-| [08-contributing.md](./08-contributing.md) | Contribution guidelines | Contributors | 2024-12-07 |
+| [README.md](./README.md) | Main documentation hub and navigation | All users | 2026-05-22 |
+| [01-feature-inventory.md](./01-feature-inventory.md) | Complete feature catalog | Product, Design, Development | 2026-05-22 |
+| [02-technical-implementation.md](./02-technical-implementation.md) | Technical implementation details | Developers | 2026-05-22 |
+| [03-architecture-overview.md](./03-architecture-overview.md) | System architecture and design | Developers, Architects | 2026-05-22 |
+| [04-user-workflows.md](./04-user-workflows.md) | User journeys and interactions | Product, Design, QA | 2026-05-22 |
+| [05-database-schema.md](./05-database-schema.md) | Database structure and relationships | Developers, DevOps | 2026-05-22 |
+| [06-development-setup.md](./06-development-setup.md) | Development environment setup | New developers | 2026-05-22 |
+| [07-troubleshooting.md](./07-troubleshooting.md) | Common issues and solutions | Developers, Support | 2026-05-22 |
+| [08-contributing.md](./08-contributing.md) | Contribution guidelines | Contributors | 2026-05-22 |
+| [09-timeline-accuracy.md](./09-timeline-accuracy.md) | Timeline accuracy analyzer | Developers, Content Creators | 2026-05-22 |
+| [10-presence-system.md](./10-presence-system.md) | Real-time presence and collaboration | Developers | 2026-05-22 |
 
 ## 🎯 Quick Navigation by Role
 
@@ -27,7 +29,8 @@ This index provides a comprehensive overview of all MitPlan documentation, organ
 1. [Development Setup Guide](./06-development-setup.md) - Set up your environment
 2. [Architecture Overview](./03-architecture-overview.md) - Understand the system
 3. [Technical Implementation](./02-technical-implementation.md) - Learn the codebase
-4. [Contributing Guide](./08-contributing.md) - Follow development standards
+4. [Presence System](./10-presence-system.md) - Real-time collaboration
+5. [Contributing Guide](./08-contributing.md) - Follow development standards
 
 ### For Product Managers
 **Product Understanding Path:**
@@ -58,7 +61,7 @@ This index provides a comprehensive overview of all MitPlan documentation, organ
 ### Features Documented
 - ✅ Core mitigation planning system
 - ✅ Multi-boss support and timeline management
-- ✅ Real-time collaboration system
+- ✅ Real-time collaboration system with presence tracking
 - ✅ Authentication (Firebase Auth + anonymous users)
 - ✅ Tank position assignment and dual-tank systems
 - ✅ Job/class selection with FFXIV integration
@@ -66,21 +69,27 @@ This index provides a comprehensive overview of all MitPlan documentation, organ
 - ✅ Theme switching (light/dark modes)
 - ✅ Mobile responsiveness
 - ✅ Plan sharing and access control
-- ✅ Advanced cooldown management
-- ✅ Aetherflow system (Scholar)
-- ✅ Performance optimizations
+- ✅ Advanced cooldown management (charges, instances, aetherflow, lily, addersgall)
+- ✅ Health projection and healing estimation
+- ✅ Phase overrides for timeline customization
+- ✅ Timeline browsing, creation, and editing
+- ✅ Timeline accuracy analyzer (cactbot + FF Logs integration)
+- ✅ Live cursor and collaborator presence indicators
 
 ### Technical Areas Documented
-- ✅ Frontend architecture (React, Vite, Tailwind CSS)
+### Technical Areas Documented
+- ✅ Frontend architecture (React 19, Vite, Tailwind CSS v4)
 - ✅ Backend services (Firebase suite)
-- ✅ State management patterns
-- ✅ Real-time synchronization
+- ✅ State management patterns (Context API, hooks)
+- ✅ Real-time synchronization (Firebase RTDB)
+- ✅ Presence system (live cursors, collaborator tracking)
 - ✅ Database schema and relationships
 - ✅ Authentication and authorization
-- ✅ Performance optimization techniques
-- ✅ Security measures
-- ✅ Deployment and hosting
-
+- ✅ Performance optimization techniques (memoization, caching, batching)
+- ✅ Security measures (Firebase rules, env vars)
+- ✅ Deployment and hosting (Vercel)
+- ✅ Timeline utilities (adaptive layout, phase overrides, multi-hit sequences)
+- ✅ Health projection system
 ### Development Processes Documented
 - ✅ Environment setup and configuration
 - ✅ Code standards and style guidelines
@@ -111,18 +120,18 @@ This index provides a comprehensive overview of all MitPlan documentation, organ
 
 ### File Count and Size
 ```
-Total Documentation Files: 9
-Total Lines of Documentation: ~2,400
-Average File Size: ~270 lines
-Largest File: 02-technical-implementation.md (~300 lines)
+Total Documentation Files: 11
+Total Lines of Documentation: ~3,600
+Average File Size: ~330 lines
+Largest File: 10-presence-system.md (~400 lines)
 ```
 
 ### Content Breakdown
-- **Feature Documentation**: 35%
-- **Technical Implementation**: 30%
+- **Feature Documentation**: 30%
+- **Technical Implementation**: 25%
 - **Development Guides**: 20%
-- **User Experience**: 10%
-- **Process Documentation**: 5%
+- **User Experience**: 15%
+- **Architecture**: 10%
 
 ## 🔄 Maintenance Guidelines
 
@@ -137,7 +146,7 @@ Largest File: 02-technical-implementation.md (~300 lines)
 - **Weekly Review**: Update based on recent changes
 
 ### Version Control
-- **Documentation Version**: 1.0 (Initial comprehensive release)
+- **Documentation Version**: 1.1 (Added Presence System documentation)
 - **Sync with Application**: Documentation version tracks with major app releases
 - **Change Log**: Maintain change history in git commits
 

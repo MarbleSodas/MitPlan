@@ -11,7 +11,7 @@ This document outlines the key user journeys and workflows within the MitPlan ap
 ```
 Landing Page → Account Creation OR Anonymous Mode
     ↓
-Dashboard/Anonymous Dashboard
+Dashboard
     ↓
 Create First Plan
     ↓
@@ -21,13 +21,12 @@ Plan Creation Workflow
 **Landing Page Experience**:
 - Clean, minimalistic design with FFXIV theming
 - Authentication form (email/password)
-- "Continue as Guest" option for anonymous access
+- "Continue as Guest" option removed (all users must authenticate)
 - Theme toggle (light/dark mode)
 - Ko-fi donation and Discord community buttons
 
 **Decision Points**:
 - Create account for persistent plans and collaboration
-- Continue anonymously for immediate access
 
 #### Account Creation Flow
 ```

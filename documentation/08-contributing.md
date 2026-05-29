@@ -18,37 +18,81 @@ Before contributing, ensure you have:
 3. **Follow Standards**: Adhere to the coding standards outlined below
 
 ## Code Standards
+## Code Standards
 
-### JavaScript/React Standards
+### TypeScript/JavaScript Standards
+
+The codebase is predominantly TypeScript (`.ts` and `.tsx` files). Follow these standards:
+
+#### Type Definitions
+```typescript
+// Define interfaces for all data structures
+interface MitigationAbility {
+  id: string;
+  name: string;
+  cooldown: number;
+  mitigationValue: number;
+  target: 'self' | 'single' | 'party' | 'area';
+}
+
+// Use explicit return types for exported functions
+export function calculateMitigation(
+  assignments: Assignment[],
+  targetTime: number
+): number {
+  // Implementation
+}
+
+// Prefer interfaces over type aliases for object shapes
+interface PlanData {
+  id: string;
+  bossId: string;
+  selectedJobs: SelectedJobs;
+}
+
+// Use readonly where immutability is expected
+function processAssignments(readonly assignments: readonly Assignment[]): void {
+  // Implementation
+}
+```
 
 #### Code Style
-```javascript
+```typescript
 // Use functional components with hooks
-const MyComponent = ({ prop1, prop2 }) => {
-  const [state, setState] = useState(initialValue);
-  
+const MyComponent = ({ prop1, prop2 }: MyComponentProps) => {
+  const [state, setState] = useState<StateType>(initialValue);
+
   // Use descriptive variable names
   const isUserAuthenticated = user !== null;
   const selectedJobsCount = Object.values(selectedJobs).filter(job => job.selected).length;
-  
+
   // Use early returns to reduce nesting
   if (!isUserAuthenticated) {
     return <LoginPrompt />;
   }
-  
+
   return (
-    <div>
+    <section className="flex flex-col gap-4">
       {/* Component content */}
-    </div>
+    </section>
   );
 };
 ```
 
 #### Naming Conventions
-```javascript
+```typescript
+// Interfaces: PascalCase with descriptive names
+interface TankPositionContextValue {
+  tankPositions: TankPositions;
+  setMT: (jobId: string) => void;
+  setOT: (jobId: string) => void;
+}
+
+// Types: PascalCase
+type AssignmentStatus = 'available' | 'onCooldown' | 'assigned';
+
 // Components: PascalCase
-const MitigationPlanner = () => {};
-const BossActionItem = () => {};
+const MitigationPlanner = () => { /* ... */ };
 
 // Variables and functions: camelCase
 const selectedJobs = {};
@@ -56,37 +100,46 @@ const handleJobSelection = () => {};
 
 // Constants: SCREAMING_SNAKE_CASE
 const MAX_MITIGATION_PERCENTAGE = 100;
-const FIREBASE_CONFIG_KEYS = [];
+const AETHERFLOW_STACKS = 3;
 
-// Files: kebab-case for components, camelCase for utilities
-// Components: MitigationPlanner.tsx
-// Utilities: cooldownManager.ts
+// Files: kebab-case for utilities, PascalCase for components
+// MitigationPlanner.tsx (component)
+// cooldownManager.ts (utility)
+// cooldown-manager.test.ts (test)
 ```
-
 #### Component Structure
-```javascript
+#### Component Structure
+```typescript
 // 1. Imports (external libraries first, then internal)
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateInput } from '../../utils/validation';
+import type { PlanData, Assignment } from '../../types';
 
-// 2. Component definition
-const MyComponent = ({ prop1, prop2 }) => {
-  // 3. Hooks (state, context, custom hooks)
-  const [localState, setLocalState] = useState();
+// 2. Type definitions at the top for exports
+export interface MyComponentProps {
+  prop1: string;
+  prop2: number;
+  onAction: (data: Assignment) => void;
+}
+
+// 3. Component definition
+const MyComponent: React.FC<MyComponentProps> = ({ prop1, prop2, onAction }) => {
+  // 4. Hooks (state, context, custom hooks)
+  const [localState, setLocalState] = useState<string>('');
   const { user } = useAuth();
 
-  // 4. Event handlers
+  // 5. Event handlers
   const handleClick = () => {
     // handler logic
   };
 
-  // 5. Effects
+  // 6. Effects
   useEffect(() => {
     // effect logic
-  }, []);
+  }, [user]);
 
-  // 6. Render
+  // 7. Render
   return (
     <section className="flex flex-col gap-4">
       {/* JSX */}
@@ -94,10 +147,9 @@ const MyComponent = ({ prop1, prop2 }) => {
   );
 };
 
-// 7. Export
+// 8. Export
 export default MyComponent;
 ```
-
 ### CSS/Styling Standards
 
 #### Tailwind CSS
@@ -116,13 +168,13 @@ const ResponsiveContainer = ({ children }) => (
 ### State Management Standards
 
 #### Context Usage
-```javascript
-// Create focused contexts
-const JobContext = createContext();
-const BossContext = createContext();
+```typescript
+// Create focused contexts with proper typing
+const JobContext = createContext<JobContextValue | null>(null);
+const BossContext = createContext<BossContextValue | null>(null);
 // Avoid: const AppContext = createContext(); // Too broad
 
-// Use custom hooks for context access
+// Use custom hooks for context access with null checks
 export const useJobContext = () => {
   const context = useContext(JobContext);
   if (!context) {
@@ -130,10 +182,18 @@ export const useJobContext = () => {
   }
   return context;
 };
+
+// Type the context value interface
+interface JobContextValue {
+  selectedJobs: SelectedJobs;
+  selectJob: (jobId: string, role: JobRole) => void;
+  deselectJob: (jobId: string) => void;
+  clearJobs: () => void;
+}
 ```
 
 #### State Updates
-```javascript
+```typescript
 // Use functional updates for state that depends on previous state
 setCount(prevCount => prevCount + 1);
 
@@ -147,6 +207,17 @@ setUser(prevUser => ({
 useEffect(() => {
   fetchData();
 }, [userId, selectedBoss]); // Include all dependencies
+
+// Prefer useCallback for handlers passed to children
+const handleJobSelection = useCallback((jobId: string, role: JobRole) => {
+  setSelectedJobs(prev => ({
+    ...prev,
+    [role]: {
+      ...prev[role],
+      [jobId]: { ...prev[role][jobId], selected: true }
+    }
+  }));
+}, []);
 ```
 
 ## Git Workflow
@@ -238,37 +309,49 @@ Add screenshots for UI changes.
 ## Testing Standards
 
 ### Unit Testing
-```javascript
-// Use descriptive test names
+```typescript
+// Use descriptive test names with TypeScript
 describe('CooldownManager', () => {
   it('should calculate correct cooldown availability for single-charge abilities', () => {
     // Test implementation
   });
-  
+
   it('should handle aetherflow stack consumption correctly', () => {
     // Test implementation
+  });
+
+  it('should throw error for invalid ability ID', () => {
+    expect(() => {
+      manager.isAbilityAvailable('invalid_ability', 100, []);
+    }).toThrow('Unknown ability');
   });
 });
 
 // Test edge cases
 it('should handle empty assignments array', () => {
-  // Test implementation
+  const result = calculateMitigation([], 120);
+  expect(result).toBe(0);
 });
 
-it('should throw error for invalid ability ID', () => {
+it('should validate ability existence before processing', () => {
+  const assignments: Assignment[] = [{
+    id: 'test',
+    mitigationId: 'rampart',
+    targetTime: 100
+  }];
   // Test implementation
 });
 ```
 
 ### Integration Testing
-```javascript
+```typescript
 // Test component interactions
 it('should update mitigation assignments when job selection changes', () => {
-  // Test implementation
+  // Test implementation with proper typing
 });
 
 // Test Firebase integration
-it('should sync changes across multiple users in real-time', () => {
+it('should sync changes across multiple users in real-time', async () => {
   // Test implementation
 });
 ```
@@ -301,12 +384,16 @@ When adding features:
 4. Document any new environment variables
 
 ## Performance Guidelines
+## Performance Guidelines
 
 ### React Performance
-```javascript
-// Use React.memo for expensive components
-const ExpensiveComponent = React.memo(({ data }) => {
+```typescript
+// Use React.memo for expensive components with proper typing
+const ExpensiveComponent = React.memo<ExpensiveComponentProps>(({ data }) => {
   // Component implementation
+}, (prevProps, nextProps) => {
+  // Custom comparison if needed
+  return prevProps.data.id === nextProps.data.id;
 });
 
 // Use useMemo for expensive calculations
@@ -318,21 +405,35 @@ const expensiveValue = useMemo(() => {
 const handleClick = useCallback(() => {
   // Handler logic
 }, [dependency]);
+
+// Use selective context subscriptions to prevent unnecessary re-renders
+const MitigationPanel = () => {
+  // Only subscribe to mitigation-specific context
+  const { assignments } = useMitigationContext();
+  // ...
+};
 ```
 
 ### Firebase Performance
-```javascript
+```typescript
 // Batch Firebase operations
-const batch = {};
+const batch: Record<string, unknown> = {};
 batch[`plans/${planId}/data/selectedJobs`] = selectedJobs;
 batch[`plans/${planId}/data/assignments`] = assignments;
 await update(ref(database), batch);
 
-// Use appropriate Firebase queries
-// Avoid downloading unnecessary data
-const jobsRef = ref(database, `plans/${planId}/data/selectedJobs`);
-```
+// Debounce rapid updates during drag operations
+const debouncedUpdate = useMemo(
+  () => debounce((updates: PlanUpdates) => {
+    realtimePlanService.updatePlanRealtime(planId, updates, userId, sessionId);
+  }, 300),
+  [planId, userId, sessionId]
+);
 
+// Use appropriate Firebase queries
+const jobsRef = ref(database, `plans/${planId}/data/selectedJobs`);
+// Avoid downloading entire plan when only partial data is needed
+```
 ## Security Guidelines
 
 ### Environment Variables

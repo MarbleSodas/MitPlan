@@ -230,7 +230,70 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - Touch-friendly buttons and controls
 - Optimized scrolling and gestures
 
-### 11. Performance Optimization
+### 11. Phase Overrides System
+**Description**: Allow users to customize boss encounter timelines with phase overrides.
+
+**Features**:
+- Phase splitting at custom timestamps
+- Phase-specific timeline adaptation
+- Phase anchor editing
+- Multi-hit sequence detection and handling
+- Plan timeline layout optimization
+
+**Use Cases**:
+- Splitting timelines at transition phases
+- Adapting boss HP estimates per phase
+- Custom mitigation windows for phase-specific mechanics
+
+### 12. Health Projection System
+**Description**: Estimate player health after boss mechanics and required healing.
+
+**Features**:
+- Health bar visualization with damage and healing projections
+- Healing health bar for healers
+- Auto-assignment utilities for healing cooldowns
+- Health projection utilities for damage estimation
+
+**Components**:
+- `HealingHealthBar`: Visual component for healer perspective
+- `healthProjectionUtils`: Calculations for health after mechanics
+- `healthBarUtils`: Utilities for health bar display
+
+### 13. Timeline Management System
+**Description**: Full-featured timeline browsing, creation, and editing.
+
+**Features**:
+- Timeline browser for public/official timelines
+- Timeline creation hub with boss selection
+- Timeline editor with action management
+- Timeline viewer for shared/public timelines
+- Timeline accuracy analyzer (cactbot + FF Logs)
+- Multi-hit sequence detection
+
+**Routes**:
+- `/timeline/browse` - Browse available timelines
+- `/timeline/create` - Create new timeline
+- `/timeline/create/editor` - Timeline editor
+- `/timeline/edit/:timelineId` - Edit existing timeline
+- `/timeline/view/:timelineId` - View timeline
+- `/timeline/shared/:timelineId` - Shared timeline view
+
+### 14. Presence and Collaboration System
+**Description**: Real-time presence tracking showing collaborator activity.
+
+**Features**:
+- Live cursor tracking across the UI
+- Section presence pills showing who's viewing sections
+- Collaborators list with real-time status
+- Selection indicators showing others' selections
+- Active users display in planner
+
+**Services**:
+- `PresenceContext`: Context for presence state management
+- `presenceService`: Firebase-based presence synchronization
+- `sessionManager`: Session lifecycle management
+
+### 15. Performance Optimization
 **Description**: Various optimizations for smooth user experience.
 
 **Optimization Features**:
@@ -247,7 +310,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - Component render optimization
 - Local storage caching for offline support
 
-### 12. Accessibility & UX
+### 16. Accessibility & UX
 **Description**: Inclusive design with accessibility considerations.
 
 **Accessibility Features**:
@@ -267,9 +330,11 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - Consistent navigation patterns
 
 ## Integration Features
+## Data Features
 
 ### XIVAPI Integration
 **Description**: Integration with XIVAPI for official FFXIV data.
+
 
 **Features**:
 - Official job icons
@@ -292,8 +357,11 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 ### Frontend Stack
 - **React 19** with functional components and hooks
 - **Tailwind CSS v4** for utility-first styling
-- **React Router** for client-side routing
+- **React Router v7** for client-side routing
 - **@dnd-kit** for drag and drop functionality
+- **Radix UI** primitives for accessible components
+- **Sonner** for toast notifications
+- **Lucide React** for icons
 - **Vite** for build tooling and development server
 
 ### Backend Services
@@ -301,11 +369,12 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - **Firebase Authentication** for user management
 - **Firebase Analytics** for usage tracking
 - **Vercel** for hosting and deployment
+- **Vercel Analytics + Speed Insights** for performance monitoring
 
 ### State Management
-- **React Context API** for global state
+- **React Context API** for global state (18+ contexts)
 - **Custom hooks** for feature-specific logic
 - **Local storage** for offline functionality
-- **Real-time synchronization** with Firebase
-
+- **Real-time synchronization** with Firebase RTDB
+- **Presence system** for live cursor and collaborator tracking
 This feature inventory provides a comprehensive overview of MitPlan's capabilities, serving as a reference for developers and stakeholders to understand the application's scope and functionality.

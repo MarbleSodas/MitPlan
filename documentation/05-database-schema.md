@@ -10,6 +10,8 @@ MitPlan uses Firebase Realtime Database as the primary data store for real-time 
 /
 ├── plans/                    # All mitigation plans
 │   └── {planId}/            # Individual plan data
+├── timelines/                # User-created and official timelines
+│   └── {timelineId}/        # Individual timeline data
 └── users/                   # User-specific data (future use)
     └── {userId}/            # Individual user data
 ```
@@ -162,8 +164,225 @@ MitPlan uses Firebase Realtime Database as the primary data store for real-time 
 }
 ```
 
-## Data Types and Validation
+## Presence System Schema
 
+### Presence Collection Structure
+```
+/planCollaboration/
+└── plan:{planId}/               # Room ID format for plans
+│   └── presence/
+│       └── {sessionId}/
+│           ├── activeTarget/
+│           │   ├── surface: "planner" | "timeline"
+│           │   ├── entityType: "bossAction" | "assignment" | "job" | etc.
+│           │   ├── entityId: string
+│           │   ├── field?: string
+│           │   ├── slotId?: string
+│           │   ├── panel?: string
+│           │   ├── section?: string
+│           │   └── key: "surface|entityType|entityId|field|slotId"
+│           ├── interaction: "hovering" | "selected" | "editing" | null
+│           ├── cursor/
+│           │   ├── surface: "planner" | "timeline"
+│           │   ├── x: number
+│           │   ├── y: number
+│           │   ├── panel?: string
+│           │   ├── containerWidth?: number
+│           │   └── containerHeight?: number
+│           ├── viewport/
+│           │   ├── surface: "planner" | "timeline"
+│           │   ├── panel?: string
+│           │   ├── section?: string
+│           │   └── scrollTop?: number
+│           └── lastUpdated: timestamp
+│
+└── timeline:{timelineId}/       # Room ID format for timelines
+    └── presence/
+        └── {sessionId}/
+            └── (same structure as plan presence)
+```
+
+### Presence Data Schema
+```javascript
+/planCollaboration/plan:{planId}/presence/{sessionId}/
+{
+  "activeTarget": {                     // What the user is focused on
+    "surface": "planner",               // Collaboration surface
+    "entityType": "bossAction",         // Type of entity
+    "entityId": "tidal_roar_1",         // Entity identifier
+    "field": null,                      // Optional field within entity
+    "slotId": null,                     // Optional slot identifier
+    "panel": "timeline",                // UI panel (derived from entityType)
+    "section": "timeline",               // UI section (derived from entityType)
+    "key": "planner|bossAction|tidal_roar_1||" // Composite lookup key
+  },
+  "interaction": "selected",            // Current interaction state
+  "cursor": {                           // Cursor position
+    "surface": "planner",
+    "x": 450,
+    "y": 320,
+    "panel": "timeline",
+    "containerWidth": 800,
+    "containerHeight": 600
+  },
+  "viewport": {                         // Viewport/section info
+    "surface": "planner",
+    "panel": "timeline",
+    "section": "timeline",
+    "scrollTop": 150
+  },
+  "lastUpdated": 1703123456789          // Timestamp for staleness detection
+}
+```
+
+### Presence Constants (from `src/types/presence.ts`)
+```javascript
+{
+  "MAX_USERS_PER_PLAN": 24,             // Maximum collaborators
+  "PRESENCE_STALE_TIMEOUT": 30000,      // 30 seconds until stale
+  "PRESENCE_HEARTBEAT_INTERVAL": 10000, // 10 seconds heartbeat for sticky presence
+  "PRESENCE_THROTTLE": {
+    "activity": 0,      // Immediate updates
+    "cursor": 75,       // 75ms throttle
+    "viewport": 300     // 300ms throttle
+  },
+  "USER_COLORS": [                     // 24 distinct colors for users
+    "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+    "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1",
+    "#14b8a6", "#eab308", "#f43f5e", "#a855f7", "#0ea5e9",
+    "#22c55e", "#fb923c", "#e879f9", "#38bdf8", "#4ade80",
+    "#fbbf24", "#fb7185", "#c084fc", "#2dd4bf"
+  ]
+}
+```
+
+### Entity Type to Panel/Section Mapping
+```javascript
+// Planner surface
+const PLANNER_PANEL_BY_ENTITY = {
+  "assignment": "timeline",
+  "bossAction": "timeline",
+  "healthSetting": "jobs",
+  "job": "jobs",
+  "mitigation": "mitigations",
+  "planMeta": "header",
+  "tankPosition": "jobs"
+};
+
+const PLANNER_SECTION_BY_ENTITY = {
+  "assignment": "timeline",
+  "bossAction": "timeline",
+  "healthSetting": "jobs",
+  "job": "jobs",
+  "mitigation": "mitigations",
+  "planMeta": "planMeta",
+  "tankPosition": "jobs"
+};
+
+// Timeline surface
+const TIMELINE_PANEL_BY_ENTITY = {
+  "timelineBossTag": "metadata",
+  "timelineEvent": "timeline",
+  "timelineLibrary": "library",
+  "timelineMeta": "metadata"
+};
+
+const TIMELINE_SECTION_BY_ENTITY = {
+  "timelineBossTag": "metadata",
+  "timelineEvent": "timeline",
+  "timelineLibrary": "library",
+  "timelineMeta": "metadata"
+};
+```
+
+## Timeline Collection Schema
+
+### Timeline Root Structure
+```
+/timelines/{timelineId}/
+├── metadata/                # Timeline metadata and ownership
+├── actions/                 # Timeline actions/boss abilities
+├── phaseAnchors/           # Phase boundary definitions
+└── officialData/           # Source data (cactbot, FF Logs)
+```
+
+### Timeline Metadata Schema
+```javascript
+/timelines/{timelineId}/metadata/
+{
+  "name": "Vamp Fatale M9S Timeline",    // Timeline display name
+  "bossId": "vamp-fatale-m9s",           // Boss identifier
+  "createdBy": "user_abc123",            // Creator ID
+  "createdAt": 1703123456789,             // Creation timestamp
+  "updatedAt": 1703123456789,             // Last update timestamp
+  "isPublic": true,                      // Public access flag
+  "isOfficial": false,                    // Official/verified flag
+  "sourceUrl": "https://...",             // cactbot/FF Logs source URL
+  "description": "Timeline description",  // Optional description
+  "version": "1.0"                        // Timeline format version
+}
+```
+
+### Timeline Actions Schema
+```javascript
+/timelines/{timelineId}/actions/
+{
+  "action_abc123": {
+    "name": "Killer Voice",              // Action name
+    "time": 120,                         // Seconds from fight start
+    "damageType": "magical",             // 'magical' | 'physical' | 'both'
+    "importance": "high",                // 'critical' | 'high' | 'medium' | 'low'
+    "isTankBuster": true,               // Tank buster flag
+    "isDualTankBuster": false,           // Dual tank buster flag
+    "isRaidWide": false,                 // Raid-wide damage flag
+    "unmitigatedDamage": "100000",      // Damage estimate
+    "hits": 1,                          // Number of hits (for multi-hit)
+    "sourceAbilities": ["Killer Voice"], // Source ability names (normalized)
+    "phase": 1                          // Associated phase
+  }
+}
+```
+
+### Phase Anchors Schema
+```javascript
+/timelines/{timelineId}/phaseAnchors/
+{
+  "anchor_abc123": {
+    "name": "Phase 2 Transition",       // Anchor name
+    "time": 600,                        // Phase transition time
+    "hpThreshold": 70,                 // HP percentage trigger
+    "sourceAbility": "Boss Enrage"     // Triggering ability
+  }
+}
+```
+
+### Official Data Schema
+```javascript
+/timelines/{timelineId}/officialData/
+{
+  "analysisSources": [
+    {
+      "kind": "cactbot",
+      "url": "https://...",
+      "lastVerified": 1703123456789
+    }
+  ],
+  "guideSources": [
+    {
+      "site": "cactbot",
+      "url": "https://...",
+      "lastChecked": 1703123456789
+    }
+  ],
+  "accuracyReport": {
+    "lastRun": 1703123456789,
+    "status": "passing",
+    "issues": []
+  }
+}
+```
+
+## Data Types and Validation
 ### Plan ID Format
 - **Pattern**: `plan_[timestamp]_[random]`
 - **Example**: `plan_1703123456789_abc123`
