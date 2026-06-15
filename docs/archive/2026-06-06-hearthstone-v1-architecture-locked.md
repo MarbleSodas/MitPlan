@@ -57,6 +57,7 @@ The build is opinionated, dense, and bounded. No Live mode. No anonymous editing
 - **SSR for Learn mode** — Learn stays a SPA. SEO for the encounter browser is nice-to-have, not required. Deferred to v3.
 - **TanStack Query (the framework)** — the 2026-06-05 draft §15.4 mentioned TanStack Query but the gap analysis §2.1 G9 flagged this as unjustified. v1 uses **tRPC + zustand for server state and Yjs for realtime state**.
 - **R2 for ACT log storage** — defer. R2 stays in the stack for v2; v1 has no raw ACT payloads. (R2 is still used for backups; see §21.)
+- **Firebase as the integration platform** — three hard blockers: (a) Firebase Auth has no native Discord OAuth provider (the primary auth choice in §7.7.1), only a Cloud Function workaround; (b) Firebase Storage was removed from the Spark (free) plan in November 2024, closing the free community-upload path; (c) Firebase RTDB has LWW semantics — the exact bug MitPlan v1 ships today and the stated reason for the rewrite (gap analysis §2.1 G4). See `2026-06-06-hearthstone-firebase-rejection-v1.md` for the full evaluation. Firebase remains in scope for peripheral services only (Crashlytics for client errors is the one recommended swap; the Sentry line in §7.8 is the candidate).
 
 ### 1.3 Success metrics (12 months post-GA)
 
@@ -379,7 +380,7 @@ export async function linkIfPossible(session: Session) {
   const res = await fetch("/api/v1/account-link/eligible", {
     method: "POST",
     headers: { "Content-Type": "application/json",
-               Authorization: `Bearer ${session.access_token}` },
+               Authorization: `Bearer ${session.access_token}` }, 
     body: JSON.stringify({
       currentUserId: user.id,
       email: user.email,
