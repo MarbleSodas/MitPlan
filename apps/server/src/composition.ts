@@ -2,9 +2,12 @@
  * Composition root. Architecture §10.5, §16.5, Appendix A.
  * The only file that imports concrete classes. Tests substitute
  * `InMemory*` implementations via this entry point.
+ *
+ * Path A (ADR-0002): Upstash Redis removed. Catalog cache uses a
+ * Postgres materialized view refreshed by `pg_cron`; dirty-plan set
+ * and rate-limit counters use UNLOGGED tables with `pg_cron` TTL.
  */
 import { createDrizzleClient, type DrizzleClient } from '@xivmitplan/persistence';
-import { createRedisClient, upstashCache, type CacheClient } from '@xivmitplan/persistence/cache';
 import { MultiplicativeMitStackEvaluator } from '@xivmitplan/domain/math';
 import { CactbotTimelineParser } from '@xivmitplan/domain/parsers/cactbot';
 import { TriggernometryTimelineParser } from '@xivmitplan/domain/parsers/triggernometry';
@@ -20,7 +23,6 @@ export interface AppConfig {
 
 export interface AppContext {
   db: DrizzleClient;
-  cache: CacheClient;
   supabase: ReturnType<typeof createClient>;
   supabaseAdmin: ReturnType<typeof createClient>;
   config: AppConfig;
@@ -35,8 +37,6 @@ export interface AppContext {
 
 export const buildAppContext = async (env: Env): Promise<AppContext> => {
   const db = createDrizzleClient(env.DATABASE_URL);
-  const redis = createRedisClient(env.UPSTASH_REDIS_URL, env.UPSTASH_REDIS_TOKEN);
-  const cache = upstashCache(redis);
 
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -51,7 +51,6 @@ export const buildAppContext = async (env: Env): Promise<AppContext> => {
 
   return {
     db,
-    cache,
     supabase,
     supabaseAdmin,
     config: { environment: env.ENVIRONMENT, corsOrigins },

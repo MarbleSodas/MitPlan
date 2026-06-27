@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "XIVMitPlan persistence — Drizzle schema + Postgres + Redis implementations of the domain ports. See architecture §17 (data model) and §16.5 (composition root).",
+  "description": "XIVMitPlan persistence — Drizzle schema + Postgres. Path A (ADR-0002) removed Redis. See architecture §17 (data model) and §16.5 (composition root).",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -16,8 +16,7 @@
     "./repositories/timelines": "./src/repositories/timelines.ts",
     "./repositories/users": "./src/repositories/users.ts",
     "./repositories/ydoc-snapshots": "./src/repositories/ydoc-snapshots.ts",
-    "./repositories/legacy-plans": "./src/repositories/legacy-plans.ts",
-    "./cache": "./src/cache/index.ts"
+    "./repositories/legacy-plans": "./src/repositories/legacy-plans.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
@@ -37,7 +36,6 @@
     "drizzle-orm": "catalog:",
     "drizzle-zod": "catalog:",
     "postgres": "catalog:",
-    "@upstash/redis": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
