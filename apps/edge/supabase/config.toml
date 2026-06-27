@@ -1,0 +1,35 @@
+# Supabase project config for the XIVMitPlan edge functions.
+# Supabase CLI uses this file to map function source paths to deploy
+# units. See docs/adr/0002-supabase-only-backend.md §T-4.
+#
+# Usage:
+#   supabase functions deploy timelines-ingest-cactbot
+#   supabase functions deploy plans-create
+#   ... etc
+#
+# Secrets (set once per environment, then re-deploys are no-ops):
+#   supabase secrets set FFLOGS_OAUTH_TOKEN=...
+#   supabase secrets set JWT_SIGNING_KEY=...
+
+project_id = "xivmitplan-edge"
+
+[functions.timelines-ingest-cactbot]
+verify_jwt = true
+
+[functions.timelines-ingest-triggernometry]
+verify_jwt = true
+
+[functions.timelines-ingest-fflogs]
+verify_jwt = true
+
+[functions.plans-create]
+verify_jwt = true
+
+[functions.plans-snapshot]
+verify_jwt = true
+
+[functions.plans-share]
+verify_jwt = true
+
+[functions.auth-claim-legacy-plans]
+verify_jwt = true
