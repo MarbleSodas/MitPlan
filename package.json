@@ -1,0 +1,34 @@
+{
+  "name": "xivmitplan",
+  "version": "0.0.0",
+  "private": true,
+  "description": "XIVMitPlan v1.0 — FFXIV raid mitigation planner. Learn + Plan modes only; Live mode deferred to v2. See docs/adr/0002-supabase-only-backend.md (Path A: Supabase-managed services).",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.5.0"
+  },
+  "packageManager": "pnpm@10.8.1",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "test:stress": "turbo run test:stress",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md,mdx,json,yaml,yml}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,md,mdx,json,yaml,yml}\" --ignore-path .gitignore",
+    "db:generate": "pnpm --filter @xivmitplan/persistence db:generate",
+    "db:migrate": "pnpm --filter @xivmitplan/persistence db:migrate",
+    "db:push": "pnpm --filter @xivmitplan/persistence db:push",
+    "web:dev": "pnpm --filter @xivmitplan/web dev",
+    "supabase:deploy-functions": "supabase functions deploy",
+    "supabase:deploy-db": "supabase db push"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.0",
+    "typescript": "catalog:"
+  }
+}

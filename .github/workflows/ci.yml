@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, rebuild, dev]
+  push:
+    branches: [main, rebuild, dev]
+
+# Cancel in-progress runs on the same branch when a new commit is pushed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Per architecture §22.1 acceptance: CI is green on the initial commit.
+# Per §22.2 acceptance: typecheck + test pass; Playwright smoke test runs
+# in CI; the Realtime Worker deploys on `rebuild` and `main` pushes.
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  install:
+    name: Install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+  typecheck:
+    name: Typecheck
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r typecheck
+
+  lint:
+    name: Lint
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r lint
+        continue-on-error: true # Phase 0: ESLint config TBD
+
+  test:
+    name: Test
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r test --reporter=verbose
+      - name: Upload coverage
+        if: matrix.package != null
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.package }}
+          path: |
+            packages/*/coverage
+            apps/*/coverage
+          retention-days: 7
+        continue-on-error: true
+
+  smoke:
+    name: Playwright smoke
+    needs: [typecheck, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The smoke test runs against the staging DO. In Phase 0 it runs
+    # locally with stub auth. In Phase 1+ it requires the staging
+    # secrets; see docs/infra-setup.md.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm --filter @xivmitplan/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @xivmitplan/web test:e2e
+        env:
+          SMOKE_RUNS: 5
+          WEB_BASE_URL: http://localhost:5173
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

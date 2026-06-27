@@ -1,0 +1,105 @@
+# pnpm workspace configuration for XIVMitPlan v1.0
+# See docs/adr/0001-xivmitplan-v1-architecture-locked.md for the architecture lock
+# and EXECUTION-PLAN.md §1 Week 0 for the bootstrap.
+
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tools/*"
+
+# Locked package versions per architecture §1.5 (re-verified 2026-06-14).
+# The `catalog:` field is a pnpm 9.5+ feature. Each entry is referenced
+# as `catalog:` in the consuming package.json, which keeps the version
+# pins in one place and makes the build reproducible.
+#
+# When updating: re-verify against the Tech Review verdicts in
+# architecture §1.4. Float majors only after the v4 edge-path feedback
+# thread closes (T-1 re-evaluation: 2026-08-12).
+
+catalog:
+  # --- Realtime stack (T-1, T-3, Tech Review CONFIRMED) -------------------
+  # Path A (ADR-0002): Hocuspocus + y-partyserver replaced by y-supabase
+  # on Supabase Realtime Broadcast. ADR review date: 2026-07-15.
+  yjs: ^13.6.21
+  y-protocols: ^1.0.6
+  y-supabase: ^0.0.4-7-alpha
+  # --- DnD + timeline (T-3, RETIRED risk) ---------------------------------
+  dnd-timeline: ^3.1.1
+  "@dnd-kit/core": ^6.3.1
+  "@dnd-kit/utilities": ^3.2.2
+  "@dnd-kit/sortable": ^8.0.0
+  "@visx/axis": ^4.0.0
+  "@visx/scale": ^4.0.0
+  "@visx/group": ^4.0.0
+  "@visx/shape": ^4.0.0
+  # --- Frontend -----------------------------------------------------------
+  react: ^19.0.0
+  react-dom: ^19.0.0
+  "@types/react": ^19.0.0
+  "@types/react-dom": ^19.0.0
+  react-router: ^7.0.0
+  "@tanstack/react-virtual": ^3.10.0
+  zustand: ^5.0.0
+  # --- Backend ------------------------------------------------------------
+  hono: ^4.6.0
+  "@hono/zod-validator": ^0.4.0
+  "@hono/trpc-server": ^0.3.0
+  "@trpc/server": ^11.0.0
+  "@trpc/client": ^11.0.0
+  "@trpc/react-query": ^11.0.0  # NOT used for data fetching (see ADR); only type re-exports
+  zod: ^3.23.0
+  drizzle-orm: ^0.36.0
+  drizzle-zod: ^0.6.0
+  "@supabase/supabase-js": ^2.46.0
+  "@supabase/ssr": ^0.5.0
+  postgres: ^3.4.5
+  "@upstash/redis": ^1.34.0
+  jose: ^5.9.0
+  # --- Test tooling (T-8) -------------------------------------------------
+  vitest: ^2.1.0
+  "@vitest/ui": ^2.1.0
+  "@vitest/coverage-v8": ^2.1.0
+  "@testing-library/react": ^16.0.0
+  "@testing-library/user-event": ^14.5.0
+  "@testing-library/jest-dom": ^6.5.0
+  happy-dom: ^15.0.0
+  fast-check: ^3.23.0
+  testcontainers: ^10.13.0
+  "@playwright/test": ^1.48.0
+  msw: ^2.4.0
+  # --- Build + tooling ----------------------------------------------------
+  typescript: ^5.6.0
+  vite: ^5.4.0
+  "@vitejs/plugin-react": ^4.3.0
+  wrangler: ^3.78.0
+  "@cloudflare/workers-types": ^4.20240909.0
+  tsx: ^4.19.0
+  esbuild: ^0.24.0
+  pino: ^9.5.0
+  "@types/pino": ^7.0.0
+  "@sentry/react": ^8.30.0
+  "@sentry/cloudflare": ^8.30.0
+  "@microlabs/otel-cf-workers": ^1.0.0-rc.52
+  "@opentelemetry/api": ^1.9.0
+  # --- Dev dependencies shared --------------------------------------------
+  prettier: ^3.3.3
+  eslint: ^9.12.0
+  "@typescript-eslint/parser": ^8.8.0
+  "@typescript-eslint/eslint-plugin": ^8.8.0
+  eslint-plugin-react: ^7.37.0
+  eslint-plugin-react-hooks: ^5.0.0
+  "@types/node": ^22.7.0
+  supabase: ^1.215.0
+  dotenv: ^16.4.0
+
+# Block hoisted scripts; only allow explicit allow-list
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - "@parcel/watcher"
+  - "@swc/core"
+  - "@tailwindcss/oxide"
+  - core-js
+  - fsevents
+  - better-sqlite3
+  - workerd

@@ -1,0 +1,82 @@
+/* XIVMitPlan v1 — base styles.
+ * The full theme is in `src/ui/theme.css` (Phase 1+).
+ * Phase 0: minimal but readable defaults.
+ */
+
+:root {
+  --color-bg: #0b0d12;
+  --color-bg-elev: #11141b;
+  --color-bg-elev-2: #181c25;
+  --color-fg: #e6e8ee;
+  --color-fg-muted: #8a92a3;
+  --color-border: #232734;
+  --color-accent: #6aa9ff;
+  --color-success: #2fbf71;
+  --color-warning: #f0a020;
+  --color-error: #ef4444;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 12px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #fafbfc;
+    --color-bg-elev: #ffffff;
+    --color-bg-elev-2: #f3f5f8;
+    --color-fg: #1a1d23;
+    --color-fg-muted: #5b6373;
+    --color-border: #e1e5ec;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}

@@ -1,0 +1,85 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+!.env.example
+
+# Wrangler (Cloudflare)
+.wrangler/
+.dev.vars
+.dev.vars.*
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# IDE
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-error.log*
+lerna-debug.log*
+
+# Drizzle
+drizzle/
+drizzle.config.local.json
+
+# Yjs backups
+*.ydoc
+*.ydoc.bak
+
+# Misc
+.cache/
+.parcel-cache/
+.eslintcache
+*.tgz
+.npm/
+.yarn-integrity
+
+# OS
+.DS_Store
+.Trashes
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Local dev artifacts
+data/imports/*
+!data/imports/.gitkeep
+data/seeds/local/*
+!data/seeds/local/.gitkeep
