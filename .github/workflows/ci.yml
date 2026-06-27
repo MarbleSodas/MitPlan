@@ -11,9 +11,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Per architecture §22.1 acceptance: CI is green on the initial commit.
-# Per §22.2 acceptance: typecheck + test pass; Playwright smoke test runs
-# in CI; the Realtime Worker deploys on `rebuild` and `main` pushes.
+# ADR-0002 Path A: the compliance gate below is the architectural-lock
+# enforcement. It fails any PR that re-introduces a Path B dependency
+# (Hocuspocus, Hono, tRPC, Upstash, Cloudflare Workers/DO) or a Path B
+# directory (apps/realtime, apps/server, apps/act-ingester).
+#
+# Per architecture §22.1: CI is green on the initial commit.
+# Per §22.2: typecheck + test pass; the smoke job runs the
+# Playwright E2E against the staging Supabase project.
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -36,6 +41,83 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install --frozen-lockfile
+
+  compliance:
+    # ADR-0002 §"Compliance" (Path A enforcement). Fails any PR that
+    # re-introduces Path B technology or the cut-list directories.
+    name: ADR-0002 compliance gate
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Block Hocuspocus, y-partyserver, partykit
+        run: |
+          set -e
+          echo "Checking for prohibited realtime dependencies..."
+          if grep -rEn '("|@)(y-partyserver|partykit|hocuspocus)' --include='*.json' --include='*.ts' --include='*.tsx' --include='*.yaml' apps packages 2>/dev/null; then
+            echo "::error::ADR-0002 §T-1: Hocuspocus, y-partyserver, and partykit are prohibited (Path A: y-supabase only)."
+            exit 1
+          fi
+      - name: Block Hono, tRPC, Upstash, Cloudflare Workers
+        run: |
+          set -e
+          echo "Checking for prohibited API + cache + runtime dependencies..."
+          if grep -rEn '("|@)(hono|@hono/|@trpc/|@upstash/|wrangler)' --include='*.json' --include='*.ts' --include='*.tsx' --include='*.yaml' apps packages 2>/dev/null | grep -v 'node_modules' | grep -v 'pnpm-lock'; then
+            echo "::error::ADR-0002 §T-4 + §T-6 + §"Compliance": Hono, @hono/*, @trpc/*, @upstash/*, and wrangler are prohibited (Path A: PostgREST + Edge Functions only)."
+            exit 1
+          fi
+      - name: Block apps/realtime, apps/server, apps/act-ingester
+        run: |
+          set -e
+          echo "Checking for prohibited apps/ directories..."
+          for d in apps/realtime apps/server apps/act-ingester; do
+            if [ -d "$d" ]; then
+              echo "::error::ADR-0002 §"Compliance": $d is prohibited (Path A: deleted)."
+              exit 1
+            fi
+          done
+      - name: Block wrangler configs outside apps/edge
+        run: |
+          set -e
+          # apps/edge has supabase/config.toml, which is fine. Any other
+          # wrangler.{toml,jsonc} is a sign someone reintroduced a
+          # Cloudflare Worker.
+          matches=$(find . -path ./node_modules -prune -o \( -name 'wrangler.toml' -o -name 'wrangler.jsonc' \) -print 2>/dev/null | grep -v 'node_modules' || true)
+          if [ -n "$matches" ]; then
+            echo "::error::ADR-0002 §"Compliance": wrangler.{toml,jsonc} files are prohibited (Path A: no Cloudflare Workers):"
+            echo "$matches"
+            exit 1
+          fi
+      - name: Block live_sessions, act_events, is_anonymous
+        run: |
+          set -e
+          echo "Checking for cut-list tables/columns from ADR-0001..."
+          if grep -rEn 'live_sessions|act_events|is_anonymous' --include='*.ts' --include='*.tsx' --include='*.sql' apps packages 2>/dev/null; then
+            echo "::error::ADR-0001 §"Locked decisions": live_sessions, act_events, and is_anonymous are cut from v1 (Live mode deferred)."
+            exit 1
+          fi
+      - name: Verify migration 0002_acl.sql deployed
+        run: |
+          set -e
+          # The ACL gate + crdt validator must be in the migration set
+          # (ADR-0002 §"Compliance" item 7/8).
+          for m in 0001_xivmitplan_v1_initial.sql 0002_xivmitplan_v1_acl.sql 0003_xivmitplan_v1_rpcs.sql; do
+            if [ ! -f "packages/persistence/migrations/$m" ]; then
+              echo "::error::ADR-0002 §"Compliance": required migration $m is missing from packages/persistence/migrations/."
+              exit 1
+            fi
+          done
+          grep -q 'realtime.check_plan_access' packages/persistence/migrations/0002_xivmitplan_v1_acl.sql || {
+            echo "::error::ADR-0002 §"Compliance": realtime.check_plan_access() function missing from 0002_xivmitplan_v1_acl.sql."
+            exit 1
+          }
+          grep -q 'crdt_validate_plan_doc' packages/persistence/migrations/0002_xivmitplan_v1_acl.sql || {
+            echo "::error::ADR-0002 §"Compliance": crdt_validate_plan_doc() function missing from 0002_xivmitplan_v1_acl.sql."
+            exit 1
+          }
 
   typecheck:
     name: Typecheck
@@ -104,9 +186,11 @@ jobs:
     needs: [typecheck, test]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # The smoke test runs against the staging DO. In Phase 0 it runs
-    # locally with stub auth. In Phase 1+ it requires the staging
-    # secrets; see docs/infra-setup.md.
+    # Path A (ADR-0002): the smoke test runs against the staging
+    # Supabase project. The two browser tabs connect via y-supabase;
+    # the Realtime auth gate (realtime.check_plan_access, migration
+    # 0002) is configured in the Supabase Dashboard → Database →
+    # Replication → Policies UI per docs/infra-setup.md §3.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
