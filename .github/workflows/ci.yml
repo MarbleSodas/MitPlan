@@ -58,7 +58,7 @@ jobs:
           set -e
           echo "Checking for prohibited realtime dependencies..."
           if grep -rEn '("|@)(y-partyserver|partykit|hocuspocus)' --include='*.json' --include='*.ts' --include='*.tsx' --include='*.yaml' apps packages 2>/dev/null; then
-            echo "::error::ADR-0002 §T-1: Hocuspocus, y-partyserver, and partykit are prohibited (Path A: y-supabase only)."
+            echo "::error::ADR-0002 §T-1 + ADR-0003: Hocuspocus, y-partyserver, partykit, and y-supabase are prohibited (Path A Hardened: own SupabaseBroadcastProvider only)."
             exit 1
           fi
       - name: Block Hono, tRPC, Upstash, Cloudflare Workers

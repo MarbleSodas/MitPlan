@@ -34,7 +34,6 @@
     "react-router": "catalog:",
     "@tanstack/react-virtual": "catalog:",
     "yjs": "catalog:",
-    "y-supabase": "catalog:",
     "y-protocols": "catalog:",
     "zustand": "catalog:",
     "zod": "catalog:",

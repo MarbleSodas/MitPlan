@@ -4,21 +4,21 @@
  * Phase 0: stub + realtime provider wiring. Phase 2+ renders the
  * dual-pane editor (timeline + mit assignments + tank state).
  *
- * Path A (ADR-0002): the realtime provider wraps y-supabase and writes
- * snapshots via the upsert_ydoc_snapshot RPC (migration 0002). The
- * Supabase client is attached to the Y.Doc via `attachSupabaseClient`
- * so the provider can read it without constructing its own.
+ * Path A Hardened (ADR-0003): the realtime provider is our own
+ * SupabaseBroadcastProvider (~250 LOC). The Supabase client is the
+ * singleton from `lib/supabase.ts`, read directly by the factory.
+ * Snapshots are written via the upsert_ydoc_snapshot RPC
+ * (migration 0002) on a 2s debounce.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import * as Y from 'yjs';
 import { createPlanDoc } from '@xivmitplan/crdt/factory';
 import {
-  attachSupabaseClient,
   realtimeProvider,
   type RealtimeProvider,
 } from '../lib/realtime-provider.js';
-import { supabase, useSession } from '../lib/supabase.js';
+import { useSession } from '../lib/supabase.js';
 
 export const PlanEditor = () => {
   const { planId } = useParams<{ planId: string }>();
@@ -32,13 +32,17 @@ export const PlanEditor = () => {
   useEffect(() => {
     if (!planId) return;
     if (session.loading || !session.session) return;
+    // Guard against anon / incomplete sessions where access_token is
+    // undefined. The provider defensively handles undefined but the
+    // presence key would be empty, which is worse than not connecting.
+    const accessToken = session.session.access_token;
+    if (!accessToken) return;
     const doc = createPlanDoc().doc;
     docRef.current = doc;
-    attachSupabaseClient(doc, supabase);
     const provider = realtimeProvider({
       planId,
       ydoc: doc,
-      accessToken: session.session.access_token,
+      accessToken,
       onStatus: setStatus,
     });
     providerRef.current = provider;
@@ -48,7 +52,15 @@ export const PlanEditor = () => {
       providerRef.current = null;
       docRef.current = null;
     };
-  }, [planId, session.loading, session.session]);
+    // Depend on `session.user?.id` rather than `session.session`: a new
+    // Session object reference is produced by supabase-js's
+    // onAuthStateChange on every TOKEN_REFRESHED (~hourly). Depending
+    // on `session.session` would tear down and recreate the Y.Doc +
+    // provider on every refresh, abandoning any in-flight local edits.
+    // The provider captures accessToken once in the constructor for the
+    // presence key (display-only); the realtime auth gate reads from
+    // the supabase client's auto-refreshed session header.
+  }, [planId, session.loading, session.user?.id]);
 
   if (session.loading) return <p>Loading…</p>;
   if (!session.user) return <p>Please sign in.</p>;

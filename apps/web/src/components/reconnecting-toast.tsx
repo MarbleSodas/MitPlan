@@ -1,7 +1,12 @@
 /**
- * Reconnecting toast. Architecture §14.6.7 Guardrail 2.
- * Every plan editor shows this for the 150-400ms cold-start window
- * while a hibernated DO reloads its Y.Doc state from Supabase Postgres.
+ * Reconnecting toast. Architecture §14.6.7 Guardrail 2 (generalised).
+ *
+ * Every plan editor shows this for the SUBSCRIBE round-trip when the
+ * realtime provider reconnects (cold open of a plan, mid-session token
+ * refresh, network blip). The exact latency budget depends on the
+ * transport — Supabase Realtime Broadcast is typically <100ms for
+ * first SUBSCRIBE; a Hocuspocus-on-DO swap (ADR-0003 §"v2 re-introduction
+ * triggers") would push that to 150-400ms for hibernated DOs.
  */
 import { useEffect, useState } from 'react';
 

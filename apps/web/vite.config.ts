@@ -21,7 +21,13 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router'],
           'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/utilities', '@dnd-kit/sortable', 'dnd-timeline'],
           'visx-vendor': ['@visx/axis', '@visx/scale', '@visx/group', '@visx/shape'],
-          'yjs-vendor': ['yjs', 'y-protocols', 'y-supabase'],
+          // Yjs core. The realtime transport (SupabaseBroadcastProvider)
+          // is our own code in `apps/web/src/lib/`, not a vendored chunk.
+          // `y-protocols` is intentionally omitted — it has no `.` export,
+          // only subpath imports (e.g. `y-protocols/awareness`), so it
+          // cannot be a manualChunks root entry. Its files are bundled
+          // alongside the modules that import them.
+          'yjs-vendor': ['yjs'],
         },
       },
     },
@@ -34,5 +40,8 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    // Exclude Playwright e2e specs from the Vitest unit-test runner.
+    // Playwright owns `tests/e2e/**`; Vitest owns `src/**/*.test.ts(x)`.
+    exclude: ['node_modules', 'dist', 'tests/e2e/**', '**/playwright-report/**'],
   },
 });

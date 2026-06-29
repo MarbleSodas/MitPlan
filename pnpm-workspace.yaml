@@ -5,9 +5,9 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - "tools/*"
 
-# Locked package versions per architecture §1.5 (re-verified 2026-06-14).
+# Locked package versions per architecture §1.5 (re-verified 2026-06-14,
+# updated 2026-06-29 for ADR-0003 Path A Hardened).
 # The `catalog:` field is a pnpm 9.5+ feature. Each entry is referenced
 # as `catalog:` in the consuming package.json, which keeps the version
 # pins in one place and makes the build reproducible.
@@ -18,11 +18,12 @@ packages:
 
 catalog:
   # --- Realtime stack (T-1, T-3, Tech Review CONFIRMED) -------------------
-  # Path A (ADR-0002): Hocuspocus + y-partyserver replaced by y-supabase
-  # on Supabase Realtime Broadcast. ADR review date: 2026-07-15.
+  # ADR-0003 (2026-06-29): y-supabase removed. The realtime transport is
+  # now our own SupabaseBroadcastProvider (~250 LOC, see
+  # apps/web/src/lib/supabase-broadcast-provider.ts). Supabase Realtime
+  # Broadcast is itself production-grade (Supabase-maintained).
   yjs: ^13.6.21
   y-protocols: ^1.0.6
-  y-supabase: ^0.0.4-7-alpha
   # --- DnD + timeline (T-3, RETIRED risk) ---------------------------------
   dnd-timeline: ^3.1.1
   "@dnd-kit/core": ^6.3.1

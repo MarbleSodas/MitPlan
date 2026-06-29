@@ -1,16 +1,18 @@
 /**
- * Realtime provider abstraction. Architecture §14.1 (Path A: y-supabase).
+ * Realtime provider abstraction. Architecture §14.1 (Path A Hardened,
+ * ADR-0003).
  *
  * The `RealtimeProvider` interface is provider-agnostic — it hides the
- * wire-protocol implementation (y-supabase, Hocuspocus, Liveblocks, etc.)
- * from the consuming UI code. Consumers depend only on `connect` /
- * `disconnect` / `status` and on the `RealtimeProviderFactory` shape.
+ * wire-protocol implementation (SupabaseBroadcastProvider today;
+ * Hocuspocus, Liveblocks, PartyKit, etc. tomorrow) from the consuming
+ * UI code. Consumers depend only on `connect` / `disconnect` / `status`
+ * and on the `RealtimeProviderFactory` shape.
  *
- * Today (2026-06-27) the only binding is y-supabase in
- * `apps/web/src/lib/realtime-provider.ts`. The abstraction exists so a
- * future swap to Liveblocks, PartyKit, or Hocuspocus+DO (the v2
- * re-introduction trigger from ADR-0002 §"v2 re-introduction triggers")
- * is a mechanical change in `apps/web/`, not a multi-package refactor.
+ * Today (2026-06-29) the binding is our own SupabaseBroadcastProvider
+ * in `apps/web/src/lib/realtime-provider.ts` (ADR-0003 replaced
+ * y-supabase). The abstraction exists so a future swap to Hocuspocus+DO
+ * (ADR-0003 §"v2 re-introduction triggers") is a mechanical change in
+ * `apps/web/`, not a multi-package refactor.
  *
  * Server-side bindings (the old `apps/realtime` YServer subclass) do
  * not use this interface — they're a different abstraction entirely
@@ -32,7 +34,13 @@ export interface RealtimeProviderOptions {
   planId: string;
   /** The Y.Doc to sync. The provider attaches handlers; the consumer owns the lifecycle. */
   ydoc: Y.Doc;
-  /** Supabase (or other) access token; passed through for auth on the wire. */
+  /**
+   * Supabase (or other) access token; passed through for the channel
+   * presence key (display-only — Supabase Realtime's auth gate reads
+   * from the SDK's internal session, not from this field). May be an
+   * empty string for anon sessions; the provider guards against
+   * undefined.
+   */
   accessToken: string;
   /** Called when the high-level status changes. */
   onStatus: (status: RealtimeStatus) => void;
@@ -66,18 +74,6 @@ export interface RealtimeProvider {
 export type RealtimeProviderFactory = (
   opts: RealtimeProviderOptions,
 ) => RealtimeProvider;
-
-/**
- * Refresh the auth token and reconnect. Helper kept on the abstraction
- * surface so consumers can call it without depending on the concrete
- * provider type. (The concrete y-supabase binding re-reads the
- * Supabase client's auth headers on reconnect, so refreshing the token
- * in the underlying Supabase client is the typical call sequence.)
- */
-export type RefreshAndReconnect = (
-  provider: RealtimeProvider,
-  getAccessToken: () => Promise<string>,
-) => Promise<void>;
 
 /**
  * Re-exported for callers that want to construct their own Awareness
