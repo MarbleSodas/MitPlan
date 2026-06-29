@@ -3,10 +3,13 @@
  */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'node:path';
 
 export default defineConfig({
-  plugins: [react()],
+  // Tailwind v4 plugin must be registered before the React plugin so its
+  // virtual module is resolved before the React JSX transform runs.
+  plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
