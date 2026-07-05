@@ -1,17 +1,27 @@
 /**
  * Plan index. The user's plan list. Architecture §3.2, §15.1.
  *
- * Phase 0: stub. Phase 1+ swaps `listSamplePlans` for `rpc('list_my_plans')`.
+ * Phase 1:
+ *   - Lists the user's plans via `data-source.listMyPlans()` (which
+ *     routes to `rpc('plans_list')` when Supabase is configured).
+ *   - "New plan" CTA opens a dialog with a name input + encounter
+ *     picker (EncounterPicker). On submit, calls
+ *     `data-source.createPlan(...)` which hits the `plans-create`
+ *     Edge Function when Supabase is configured (minting a real
+ *     UUID + inserting a plans row + pre-creating the
+ *     `ydoc_snapshots` placeholder row), or mints a local UUID in
+ *     fallback mode.
+ *   - Navigates to `/plan/<planId>?encounter=<id>` on success.
  *
- * The Caffeine header layout: page title + new-plan CTA on the right,
- * skeleton during the 200ms simulated load, then a responsive grid of
- * PlanCards. The "New plan" CTA opens a Dialog to capture the plan name
- * + encounter, then navigates to `/plan/<freshly-generated-uuid>`.
+ * Caffeine header layout: page title + new-plan CTA on the right,
+ * skeleton during the data-source load, then a responsive grid of
+ * PlanCards.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Plus } from 'lucide-react';
 import { useSession } from '../lib/supabase.js';
+import { createPlan } from '@/lib/data-source';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,36 +35,55 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlanList } from '@/components/plan/plan-list';
-import { newPlanId, SAMPLE_PLANS, FRU_P1_ID } from '@/lib/sample-data';
+import { EncounterPicker } from '@/components/plan/encounter-picker';
 
 export const PlanIndex = () => {
   const session = useSession();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [encounterId, setEncounterId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (session.loading) return null;
-  if (!session.user) {
-    // Handled client-side — replace with the redirect helper when the
-    // auth gate moves into a layout route (Phase 2+).
-    navigate('/login?next=/plan', { replace: true });
-    return null;
-  }
 
-  const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    const id = newPlanId();
-    // Phase 0 stub: pretend we created the plan and bounce into the editor.
-    // Phase 1+ swaps this for `plans-create` Edge Function.
-    if (!SAMPLE_PLANS.some((p) => p.meta.id === id)) {
-      // (We don't actually push into SAMPLE_PLANS — it's a frozen stub
-      //  for the list view. The new id will resolve via `/plan/<id>` to
-      //  an empty PlanDoc in the editor.)
+  // Handled client-side — replace with the redirect helper when the
+  // auth gate moves into a layout route (Phase 2+). In a useEffect so
+  // we don't navigate during render.
+  useEffect(() => {
+    if (!session.loading && !session.user) {
+      navigate('/login?next=/plan', { replace: true });
     }
-    setOpen(false);
+  }, [session.loading, session.user, navigate]);
+
+  if (!session.user) return null;
+
+  const reset = () => {
     setName('');
-    navigate(`/plan/${id}?name=${encodeURIComponent(name.trim())}&encounterId=${FRU_P1_ID}`);
+    setEncounterId(null);
+    setSubmitError(null);
+    setSubmitting(false);
+  };
+
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!name.trim() || !encounterId || submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { planId } = await createPlan({
+        name: name.trim(),
+        encounterId,
+        mode: 'CURRENT',
+      });
+      setOpen(false);
+      reset();
+      navigate(`/plan/${planId}?name=${encodeURIComponent(name.trim())}&encounterId=${encounterId}`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create plan');
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -66,18 +95,25 @@ export const PlanIndex = () => {
             Plan FFXIV raid mitigations with your static group in real time.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next) reset();
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="lg">
               <Plus /> New plan
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-xl">
             <form onSubmit={handleCreate} className="flex flex-col gap-4">
               <DialogHeader>
                 <DialogTitle>New plan</DialogTitle>
                 <DialogDescription>
-                  Give your plan a name. You can rename it later.
+                  Pick a base timeline. You can rename the plan and re-anchor mitigations
+                  later.
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-1.5">
@@ -91,11 +127,25 @@ export const PlanIndex = () => {
                   required
                 />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Base timeline</Label>
+                <EncounterPicker value={encounterId} onChange={setEncounterId} />
+              </div>
+              {submitError && (
+                <p className="text-destructive text-sm">Could not create plan: {submitError}</p>
+              )}
               <DialogFooter className="-mx-4 -mb-4 mt-2">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={submitting}
+                >
                   Cancel
                 </Button>
-                <Button type="submit">Create</Button>
+                <Button type="submit" disabled={!name.trim() || !encounterId || submitting}>
+                  {submitting ? 'Creating…' : 'Create'}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

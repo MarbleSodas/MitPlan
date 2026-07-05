@@ -34,6 +34,7 @@
 import * as Y from 'yjs';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { showReconnecting } from '../components/reconnecting-toast.js';
+import { base64ToBytes, bytesToBase64 } from './bytes.js';
 import type { RealtimeProvider, RealtimeStatus } from '@xivmitplan/crdt';
 
 // ---------------------------------------------------------------------------
@@ -82,37 +83,12 @@ export interface SupabaseLike {
 }
 
 // ---------------------------------------------------------------------------
-// Base64 helpers (browser + Workers + happy-dom safe)
+// Base64 helpers — re-exported from `lib/bytes.ts` under the legacy
+// names (`base64ToUint8`, `uint8ToBase64`) so existing imports
+// (`from '@/lib/supabase-broadcast-provider'`) keep resolving.
 // ---------------------------------------------------------------------------
 
-/** Base64 encode a Uint8Array. Safe for browser + Workers + happy-dom. */
-export function uint8ToBase64(arr: Uint8Array): string {
-  // Buffer is available in Node + Wrangler dev. Branch to use it when
-  // present to avoid the String.fromCharCode O(n²) cost for large docs.
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength).toString('base64');
-  }
-  let binary = '';
-  for (let i = 0; i < arr.length; i++) {
-    binary += String.fromCharCode(arr[i]!);
-  }
-  // btoa is available in browsers + Workers + happy-dom.
-  return btoa(binary);
-}
-
-/** Base64 decode a string to a Uint8Array. */
-export function base64ToUint8(b64: string): Uint8Array {
-  if (typeof Buffer !== 'undefined') {
-    const buf = Buffer.from(b64, 'base64');
-    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-  }
-  const binary = atob(b64);
-  const arr = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    arr[i] = binary.charCodeAt(i);
-  }
-  return arr;
-}
+export { base64ToBytes as base64ToUint8, bytesToBase64 as uint8ToBase64 } from './bytes.js';
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -346,7 +322,7 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
   private applyRemoteUpdate(payload: YUpdatePayload): void {
     if (!payload?.update) return;
     try {
-      const update = base64ToUint8(payload.update);
+      const update = base64ToBytes(payload.update);
       // Origin 'remote' prevents the local handler from re-broadcasting.
       Y.applyUpdate(this.ydoc, update, 'remote');
     } catch (err) {
@@ -362,7 +338,7 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
 
   private broadcastUpdate(update: Uint8Array): void {
     if (!this.channel) return;
-    const payload: YUpdatePayload = { update: uint8ToBase64(update) };
+    const payload: YUpdatePayload = { update: bytesToBase64(update) };
     try {
       this.channel.send({
         type: 'broadcast',

@@ -6,25 +6,34 @@
 
 ## What works today
 
-The Phase 0 + Path A Hardened build is a runnable, type-safe, test-green
-monorepo with a stubbed-out UI. You can boot the dev server in ~150 ms,
-click through every route, and exercise the realtime bridge against
-mock supabase clients via Vitest. Cloud-side wiring (real Supabase, real
-Realtime, OAuth apps) is the next phase — see **Next steps** below.
+The Phase 0 + Path A Hardened + Phase 1 build is a runnable, type-safe,
+test-green monorepo. You can boot the dev server in ~150 ms, click
+through every route, and exercise the realtime bridge against mock
+Supabase clients via Vitest. With `VITE_SUPABASE_URL` +
+`VITE_SUPABASE_ANON_KEY` set, the same code hits a live Supabase
+project and the demo flow (create plan from FRU → anchor mitigations
+→ realtime broadcast) works end-to-end.
+
+The **working demo**: sign in, click **New plan**, pick **FRU P1**
+(Light Rampant) as the base timeline, click any event on the timeline
+to anchor a mitigation, and see it broadcast in real time to any other
+browser tab joined to the same plan URL.
 
 | Surface | State | Needs Supabase? |
 |---|---|---|
 | Web SPA shell + nav | ✅ Functional | No |
-| Learn mode index (`/learn`) | ✅ Renders 3 placeholder encounters | No |
-| Learn encounter view (`/learn/:id`) | 🟡 Stub — shows encounter ID | No |
-| Plan editor shell (`/plan/:planId`) | 🟡 Stub — opens, wires Y.Doc + realtime bridge | Yes (for realtime to connect) |
-| Plan list (`/plan`) | 🟡 Stub — shows "Phase 2+ lists your plans" | Yes (redirects to `/login`) |
+| Plan list (`/plan`) | ✅ Renders your plans via `rpc('plans_list')` | Yes (for live data) |
+| "New plan" dialog | ✅ Encounter picker with FRU P1/P2 + M1S/M2S/P1S/P4S | No (falls back to seed) |
+| Plan editor (`/plan/:planId`) | ✅ Timeline rail + mit assignment + realtime | Yes (for realtime to connect) |
 | Login (`/login`) | ✅ Discord / Google / email CTAs render | Yes (to actually sign in) |
 | OAuth callback (`/auth/callback`) | ✅ Handles the code-for-session exchange | Yes |
-| Realtime bridge (`SupabaseBroadcastProvider`) | ✅ 31 unit/integration/contract tests pass | Mocked in tests |
-| Snapshot persistence (`upsert_ydoc_snapshot`) | ✅ RPC defined + trigger installed | Yes (live Postgres) |
+| Realtime bridge (`SupabaseBroadcastProvider`) | ✅ 36 unit/integration/contract tests pass | Mocked in tests |
+| Snapshot persistence (`upsert_ydoc_snapshot`) | ✅ RPC + trigger installed | Yes (live Postgres) |
+| Snapshot restore (`load_ydoc_snapshot`) | ✅ Wired into plan editor cold-load | Yes |
 | Catalog API (`/v1/encounters` etc.) | ✅ 8 PostgREST RPCs in migration 0003 | Yes |
+| FRU base timeline seed | ✅ Migration 0004 (~18 P1 + ~20 P2 events) | Yes |
 | Edge Functions (timeline ingest, share, plan CRUD) | ✅ Deno source under `apps/edge/functions/` | Yes |
+| Data-source facade | ✅ 16 unit tests (fallback + RPC mock) | Either |
 
 ## Quick links
 
@@ -95,11 +104,12 @@ need real Supabase credentials.
 pnpm install
 
 # 2. (Optional) Set up Supabase for login + realtime
-#    Follow docs/infra-setup.md §1–§8, then:
+#    Run `./scripts/supabase-bootstrap.sh dev` after creating a
+#    project + Discord OAuth app per docs/infra-setup.md, then:
 cp .env.example .env.local
 # Edit .env.local with your Supabase URL + anon key.
 # Without this you'll see a one-time console.warn at module-load and
-# any actual API call will fail with a clear error from supabase-js.
+# any actual API call will fall back to in-memory sample data.
 
 # 3. Boot the dev server
 pnpm --filter @xivmitplan/web dev
@@ -107,9 +117,12 @@ pnpm --filter @xivmitplan/web dev
 ```
 
 Dev server boots in ~150 ms. With no env vars set, you can browse
-`/learn`, `/learn/:id`, `/plan/:any-uuid`, and `/login` (CTAs render
-but won't complete). Add `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
-to enable the full sign-in flow + realtime sync.
+`/plan`, `/plan/:any-uuid`, and `/login` (CTAs render but won't
+complete). The plan editor renders the FRU base timeline in fallback
+mode using sample data; mit assignments persist in the Y.Doc for the
+session but aren't synced across tabs. Add `VITE_SUPABASE_URL` +
+`VITE_SUPABASE_ANON_KEY` to enable the full sign-in flow + realtime
+sync + cross-tab broadcast.
 
 ## Manual test checklist
 
@@ -122,34 +135,58 @@ required for most of these):
 pnpm --filter @xivmitplan/web dev
 # In a second terminal:
 curl -s -o /dev/null -w "/             → %{http_code}\n"        http://localhost:5173/
-curl -s -o /dev/null -w "/learn        → %{http_code}\n"        http://localhost:5173/learn
-curl -s -o /dev/null -w "/learn/<id>   → %{http_code}\n"        http://localhost:5173/learn/00000000-0000-0000-0000-000000000001
 curl -s -o /dev/null -w "/plan         → %{http_code}\n"        http://localhost:5173/plan
 curl -s -o /dev/null -w "/plan/<id>    → %{http_code}\n"        http://localhost:5173/plan/00000000-0000-0000-0000-000000000001
 curl -s -o /dev/null -w "/login        → %{http_code}\n"        http://localhost:5173/login
 ```
 
-All seven should return `200`. The root `/` redirects to `/learn`
+All four should return `200`. The root `/` redirects to `/plan`
 (client-side, so curl sees `200` for both).
 
-### Browser walk-through (no Supabase)
+### Browser walk-through (no Supabase) — FRU demo flow
 
-1. Open http://localhost:5173/ — should redirect to `/learn`.
-2. Verify the app header has the **XIVMitPlan** title, **Learn** +
-   **Plans** nav links, and a **Sign in** link in the account slot.
-3. On `/learn`, click each of the 3 placeholder encounters. Each
-   `/learn/:id` page renders an `<h1>` with the encounter ID's first
-   8 chars (e.g. `Encounter 00000000`) and a "Phase 1+ renders the
-   timeline" hint.
-4. Navigate to `/plan/<any-uuid>` directly. The plan editor stub
-   opens with the title `Plan <first-8-of-id>` and a `<span
-   class="status status-connecting">connecting</span>` status badge
-   that flips to `error` after ~10s (no Supabase to subscribe to).
-   Without a session the page shows "Please sign in." above the stub.
-5. Navigate to `/plan` while signed out — redirects to
-   `/login?next=/plan`.
-6. Visit `/login` — Discord / Google buttons render; clicking them
-   surfaces a supabase-js error (since env vars are missing).
+1. Open http://localhost:5173/ — redirects to `/plan`.
+2. Without a session, `/plan` redirects to `/login`. Pick any auth
+   method (or click "Sign in" and sign in via your Supabase project
+   if env vars are set).
+3. Once signed in, on `/plan` click **New plan**. The dialog opens
+   with an encounter picker showing FRU P1 (Light Rampant), FRU P2
+   (Darklit Dragonsong), M1S, M2S, P1S, P4S grouped by raid.
+4. Type a plan name (e.g. "FRU P1 prog day 1"), select **Light
+   Rampant**, click **Create**. The URL becomes
+   `/plan/<new-uuid>?name=…&encounterId=…`.
+5. The plan editor opens. The right-side timeline rail shows the
+   ~18-event FRU P1 base timeline (Pull → Hello World → Light
+   Rampant tank buster → Darklit Dragonsong raidwide → … →
+   Crystallize Time → Enrage buster → Phase 1 clear), grouped by
+   minute (00:00, 01:00, 02:00, …).
+6. Click any event — the ability picker slides in from the right,
+   pre-anchored to that event. Pick a mit (e.g. Reprisal) → **Add
+   to plan**. The left-side mitigations rail updates with the new
+   row.
+7. The realtime status badge in the top bar flips `connecting` →
+   `Live` (or `Error` after 10s if no Supabase).
+8. Click another event, add another mit. Both rows persist in the
+   Y.Doc and (when Supabase is connected) are debounced into
+   `ydoc_snapshots` via the `upsert_ydoc_snapshot` RPC.
+9. Open the same `/plan/<uuid>` URL in a second browser profile.
+   When both are connected to Supabase, the second profile sees the
+   first profile's mitigations appear within ~100ms.
+
+### Without Supabase env vars
+
+Without `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` set, the
+`data-source` facade falls back to in-memory sample data:
+- `listEncounters()` returns 6 sample encounters
+- `listAbilities()` returns 23 sample abilities
+- `listMyPlans()` returns 3 sample plans
+- `getTimelineForEncounter()` returns the sample-data events
+- `createPlan()` mints a UUID locally (no persistence)
+- `getYDocSnapshot()` returns null (no restore on cold load)
+
+The dev server boots and the plan editor renders the timeline +
+ability picker; mitigations persist in the Y.Doc for the session
+but aren't synced to other tabs (no realtime).
 
 ### Realtime bridge — no Supabase needed (vitest)
 
@@ -205,47 +242,28 @@ The build emits 458 kB main + 79 kB yjs + 49 kB react vendor chunks
 wrangler / Cloudflare DO code in the bundle (CI compliance gate
 enforces this — see `.github/workflows/ci.yml`).
 
-## Next steps (Phase 1+)
+## Next steps (Phase 2+)
 
-The build is a runnable, tested foundation. The product work to get
-to a usable v1 beta falls into four phases. Pick one to start.
+Phase 1 is complete: the plan editor renders the encounter's base
+timeline, the encounter picker ships FRU P1/P2 as default options,
+and every Supabase RPC + Edge Function has a live code path with a
+sample-data fallback for offline dev. The product work to get to a
+usable v1 beta continues into Phase 2.
 
-### Phase 1 — Learn mode (read-only encounter browser)
+### Phase 2 — Learn mode (read-only encounter browser)
 
-The lowest-risk first slice. Renders the catalog API + timeline view
+The lowest-risk next slice. Renders the catalog API + timeline view
 + action cards with confidence badges. No write paths.
 
-- [ ] Wire `/learn` to `rpc('list_encounters')` (migration 0003) +
-      zod-validated `Encounter` schema from `packages/validation`.
-- [ ] Render the encounter detail page at `/learn/:id` with the
-      timeline graph (`packages/domain` `TimelineGraph`) — visx axes
-      + dnd-timeline shell.
+- [ ] Add `/learn` route + `/learn/:id` detail (consumes
+      `data-source.listEncounters()` + `getTimelineForEncounter()`).
+- [ ] Render the encounter detail page with the timeline graph
+      (`packages/domain` `TimelineGraph`) — visx axes + dnd-timeline
+      shell.
 - [ ] Add action cards with confidence badges (per-source fan-in from
       cactbot / triggernometry / fflogs sources).
-- [ ] Migrate the 3 hardcoded `PLACEHOLDER_ENCOUNTERS` in
-      `apps/web/src/routes/learn.index.tsx` to live data.
 - [ ] Add a Vitest + Playwright spec covering the encounter browse
       → detail navigation.
-
-### Phase 2 — Plan mode (the dual-pane editor)
-
-The flagship surface. Plan CRUD + the Y.Doc-backed editor + mit
-assignments + tank state. Realtime is already wired via the bridge.
-
-- [ ] Wire `/plan` to list the user's plans via `rpc('list_my_plans')`.
-- [ ] Add `plans-create` Edge Function (already scaffolded at
-      `apps/edge/functions/plans-create/index.ts`) for the "New plan"
-      CTA — generates a UUID, inserts `plans` row, returns share token.
-- [ ] Replace the `PlanEditor` stub at `apps/web/src/routes/plan.$planId.tsx`
-      with the dual-pane layout: timeline (left) + mit palette +
-      tank-state panel (right).
-- [ ] Render the Y.Doc shape (`PlanDoc` from `packages/crdt`) via
-      zustand selectors; bind the existing `realtimeProvider()`.
-- [ ] Add a `plans-snapshot` restore path — on cold load, fetch the
-      latest `ydoc_snapshots.update`, decode, apply to a fresh Y.Doc
-      before `provider.connect()`.
-- [ ] Wire share-link UX (read-only viewer + edit-with-token) via
-      the `plan_access` table + `share_token` Edge Function.
 
 ### Phase 3 — Awareness / presence (v1.1, ADR-0003 §"v2 re-introduction triggers")
 
@@ -272,17 +290,19 @@ ingestion path.
 - [ ] `TimelineMerger` from `packages/domain` to fuse multi-source
       timelines with confidence weighting.
 
-### Cloud setup (any phase, blocker for end-to-end testing)
+### Cloud setup (Phase 0+, blocker for end-to-end testing)
 
-Until this is done, the manual realtime test (two browsers) won't
-work — only the mocked test paths will exercise the bridge.
+The bootstrap script automates migrations + Edge Function deploy.
+The OAuth apps + Realtime policy binding are still manual GUI steps.
 
-- [ ] Create the live Supabase project (free tier is fine for dev).
-- [ ] Apply the three SQL migrations against the live DB.
-- [ ] Set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` in `.env.local`.
+- [ ] Run `./scripts/supabase-bootstrap.sh dev` (creates the project
+      link, applies migrations 0001-0004, deploys Edge Functions,
+      prints a manual checklist).
 - [ ] Create a Discord OAuth app, point the Supabase project's
       "Discord" provider at it.
-- [ ] (Optional, for backups) Cloudflare R2 bucket + keys.
+- [ ] Bind the Realtime authorization policy in the Supabase Dashboard
+      (Dashboard → Replication → Policies).
+- [ ] Set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` in `.env.local`.
 
 Full walkthrough: [docs/infra-setup.md](docs/infra-setup.md).
 
@@ -301,44 +321,53 @@ No Cloudflare account required. No Hocuspocus / Hono / Upstash / Durable Objects
 
 ```
 pnpm -r typecheck                                  → 6 packages, all pass
-pnpm --filter @xivmitplan/web test                 → 31 pass (3 test files)
+pnpm --filter @xivmitplan/web test                 → 52 pass (5 test files)
 pnpm --filter @xivmitplan/persistence test         → 0 (no tests yet; runs vitest in no-files mode)
 pnpm --filter @xivmitplan/shared test              → 16 pass
 pnpm --filter @xivmitplan/validation test          → 16 pass
 pnpm --filter @xivmitplan/domain test              → 21 pass
 pnpm --filter @xivmitplan/crdt test                → 2 pass
-pnpm --filter @xivmitplan/web build                → 458 kB main + 79 kB yjs + 49 kB react vendor
-pnpm --filter @xivmitplan/web dev                  → boots in ~150 ms; all 7 routes return 200
+pnpm --filter @xivmitplan/web build                → 690 kB main + 79 kB yjs + 50 kB react vendor
+pnpm --filter @xivmitplan/web dev                  → boots in ~150 ms; all 4 routes return 200
 ```
 
-Test count for the realtime bridge: 19 unit tests
-(`supabase-broadcast-provider.test.ts`), 4 cross-client integration
-tests (`supabase-broadcast-provider.integration.test.ts`), and 8
-contract tests enforcing the `RealtimeProvider` interface
-(`provider-contract.test.ts`). Total: **31 tests on the realtime
-path**.
+Test breakdown for the realtime + data path:
+- 19 unit tests (`supabase-broadcast-provider.test.ts`)
+- 4 cross-client integration tests (`supabase-broadcast-provider.integration.test.ts`)
+- 8 contract tests enforcing the `RealtimeProvider` interface (`provider-contract.test.ts`)
+- 16 data-source tests (8 fallback + 5 RPC + 1 internal, in `data-source.test.ts`)
+- 5 usePlanDoc tests (Y.Doc binding + add/remove + reactive observe)
 
 Note: `pnpm -r test` currently fails on `persistence` (no test files
 yet) — filter with `--filter=!@xivmitplan/persistence` or run per-package
-as shown above until Phase 1+ adds persistence tests.
+as shown above until persistence tests land in Phase 2.
 
-## Phase 0 status (working base to go off of)
+## Phase 1 status (complete as of 2026-06-30)
 
 - [x] Monorepo scaffolded (pnpm + Turborepo + catalog:)
 - [x] Architecture locks recorded (ADR-0001 + ADR-0002 + ADR-0003)
-- [x] Drizzle schema + 3 migrations (initial + ACL/RPC/validator + 8 PostgREST RPCs)
+- [x] Drizzle schema + 4 migrations (initial + ACL/RPC/validator + 8 PostgREST RPCs + reference seed)
 - [x] Yjs CRDT package (`PlanDoc`, `ThrottledAwareness`, `PlanSnapshotShape`, `RealtimeProvider` interface)
 - [x] Domain package (entities, ports, math, parsers, merger)
 - [x] Realtime: custom `SupabaseBroadcastProvider` (~390 LOC) on Supabase Realtime Broadcast, debounced `upsert_ydoc_snapshot` + `crdt_validate_plan_doc` trigger
 - [x] Web SPA scaffolded (React 19 + Vite + React Router 7) with the realtime bridge wired
-- [x] 31 realtime tests pass (19 unit + 4 integration + 8 contract)
+- [x] **Data-source facade** (`apps/web/src/lib/data-source.ts`) — unified read/write API with sample-data fallback when no Supabase env vars are set
+- [x] **Plan editor** renders the encounter's base timeline as a clickable rail of event cards; click an event → opens the ability picker pre-anchored
+- [x] **Snapshot restore** via `load_ydoc_snapshot` RPC on cold load, before the realtime provider connects
+- [x] **Encounter picker** in the "New plan" dialog — FRU P1, FRU P2, M1S, M2S, P1S, P4S are default options
+- [x] **FRU seed migration** (`0004_xivmitplan_v1_seed.sql`) — 18 FRU P1 events + 20 FRU P2 events + 8 jobs + 23 abilities + 5 roles + 2 expansions
+- [x] **Bootstrap script** (`scripts/supabase-bootstrap.sh`) — one-shot migrations + Edge Function deploy
+- [x] 52 tests pass (19 realtime unit + 4 integration + 8 contract + 16 data-source + 5 usePlanDoc)
 - [x] Production build passes (`vite build` produces a valid bundle)
-- [x] Dev server boots in ~150 ms; all 7 routes mount without Supabase
+- [x] Dev server boots in ~150 ms; all 4 routes return 200
 - [x] Deno compat verified for the Edge Functions path
 - [x] CI compliance gate enforces Path A (blocks re-introduction of y-supabase / Hocuspocus / Hono / Upstash / wrangler)
 - [ ] Live Supabase + R2 + Discord OAuth accounts (out-of-band; follow `docs/infra-setup.md`)
 
-Next: create the live accounts per `docs/infra-setup.md` and run the first end-to-end against staging.
+Next: run `scripts/supabase-bootstrap.sh dev` against a live Supabase
+project, configure the Realtime authorization policy in the Dashboard,
+and demo the create-plan-from-FRU flow end-to-end with a second
+browser tab joined to the same plan URL.
 
 ## License
 

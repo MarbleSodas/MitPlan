@@ -20,6 +20,7 @@ Cloudflare DO ($5-15/mo) and Workers Paid ($5/mo).
 
 ## Order of operations
 
+0. [One-shot bootstrap (recommended)](#0-one-shot-bootstrap-recommended)
 1. [Local dev (no cloud accounts needed)](#1-local-dev-no-cloud-accounts-needed)
 2. [Supabase projects (staging + prod)](#2-supabase-projects-staging--prod)
 3. [Realtime authorization policy](#3-realtime-authorization-policy)
@@ -30,6 +31,31 @@ Cloudflare DO ($5-15/mo) and Workers Paid ($5/mo).
 8. [Edge Function secrets](#8-edge-function-secrets)
 9. [Deploy the Edge Functions](#9-deploy-the-edge-functions)
 10. [Run the Playwright smoke test against staging](#10-run-the-playwright-smoke-test-against-staging)
+
+---
+
+## 0. One-shot bootstrap (recommended)
+
+The `scripts/supabase-bootstrap.sh` script automates the entire
+section §2 (migrations) + §8 (Edge Function secrets) + §9 (deploy).
+It does **not** automate the manual OAuth app creation (§5-§7) or
+the Realtime authorization policy binding (§3) — those are GUI
+operations. Run it once per environment.
+
+```sh
+# 1. Create the OAuth apps (§5-§7) so you have Client IDs/Secrets
+#    ready. Fill in the Edge-Function-specific values in
+#    apps/edge/.env.<env> (see .env.example for the schema).
+cp .env.example apps/edge/.env.dev
+$EDITOR apps/edge/.env.dev   # fill in JWT_SIGNING_KEY, CORS_ORIGINS, etc.
+
+# 2. Run the bootstrap. First run will prompt for your project ref.
+./scripts/supabase-bootstrap.sh dev
+```
+
+The script is idempotent — re-run it after pulling new migrations
+or Edge Function changes. See the script's source for the full
+list of what it does + the manual checklist it prints at the end.
 
 ---
 
@@ -57,11 +83,12 @@ pnpm install
 supabase start
 # Take note of the printed `API URL` and `anon key` + `service_role key`.
 
-# Apply the migrations (0001, 0002, 0003).
+# Apply the migrations (0001, 0002, 0003, 0004).
 DATABASE_URL=$(supabase status --output env | grep DB_URL | cut -d= -f2-)
 psql "$DATABASE_URL" -f packages/persistence/migrations/0001_xivmitplan_v1_initial.sql
 psql "$DATABASE_URL" -f packages/persistence/migrations/0002_xivmitplan_v1_acl.sql
 psql "$DATABASE_URL" -f packages/persistence/migrations/0003_xivmitplan_v1_rpcs.sql
+psql "$DATABASE_URL" -f packages/persistence/migrations/0004_xivmitplan_v1_seed.sql
 
 # Copy .env.example to .env.local and fill in the values.
 cp .env.example .env.local
@@ -98,9 +125,14 @@ architecture is the same; the env values differ.
 2. Pick a region close to your dev box (e.g., `us-west-1` for NA, `eu-west-1` for EU).
 3. Save the database password somewhere safe (1Password).
 4. Wait for the project to provision (~2 min).
-5. **Apply the three migrations** in order via the SQL editor:
+5. **Apply the four migrations** in order via the SQL editor:
    - Project Settings → API → copy `Project URL`, `anon` key, `service_role` key, and `JWT Secret`.
    - SQL Editor → New query → paste the contents of each migration file → Run.
+   - Migrations:
+     - `0001_xivmitplan_v1_initial.sql` — 14 tables (catalog, plans, snapshots, etc.)
+     - `0002_xivmitplan_v1_acl.sql` — RLS, realtime ACL gate, snapshot RPCs, Yjs validator
+     - `0003_xivmitplan_v1_rpcs.sql` — 8 PostgREST RPCs (encounters_list, plans_list, etc.)
+     - `0004_xivmitplan_v1_seed.sql` — Reference catalog seed (FRU P1 + P2 timelines, M1S/M2S, jobs, abilities). **Required for the demo to show FRU as a base timeline option.**
 6. **Enable Auth providers**:
    - Authentication → Providers → enable Discord, Google, Email.
    - Set redirect URLs for each environment.
@@ -110,7 +142,8 @@ architecture is the same; the env values differ.
 
 ```sh
 psql "$DATABASE_URL" -c "SELECT name FROM _xivmitplan_migrations ORDER BY id;"
-# Should list: 0001_xivmitplan_v1_initial, 0002_xivmitplan_v1_acl, 0003_xivmitplan_v1_rpcs
+# Should list: 0001_xivmitplan_v1_initial, 0002_xivmitplan_v1_acl,
+#              0003_xivmitplan_v1_rpcs, 0004_xivmitplan_v1_seed
 ```
 
 ---

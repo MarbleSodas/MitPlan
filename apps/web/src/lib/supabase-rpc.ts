@@ -22,6 +22,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { byteaHexToBytes } from "./bytes.js";
 import { TimelineGraph } from "@xivmitplan/validation/timeline";
 import { CactbotIngestRequest } from "@xivmitplan/validation/cactbot";
 import { TriggernometryIngestRequest } from "@xivmitplan/validation/triggernometry";
@@ -35,7 +36,7 @@ import { AbilityMode } from "@xivmitplan/validation/ability";
 // migration 0003 is finalized.
 // ---------------------------------------------------------------------------
 
-const Encounter = z.object({
+export const Encounter = z.object({
   id: z.string().uuid(),
   raid_id: z.string().uuid(),
   name: z.string(),
@@ -48,9 +49,9 @@ const Encounter = z.object({
   raid_slug: z.string(),
   expansion_slug: z.string(),
 });
-type Encounter = z.infer<typeof Encounter>;
+export type Encounter = z.infer<typeof Encounter>;
 
-const AbilityRow = z.object({
+export const AbilityRow = z.object({
   id: z.string().uuid(),
   job_id: z.string().uuid(),
   ability_id: z.string(),
@@ -69,16 +70,16 @@ const AbilityRow = z.object({
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });
-type AbilityRow = z.infer<typeof AbilityRow>;
+export type AbilityRow = z.infer<typeof AbilityRow>;
 
-const AuthMeResult = z.object({
+export const AuthMeResult = z.object({
   user_id: z.string().uuid().nullable(),
   email: z.string().email().nullable(),
   display_name: z.string().nullable(),
 });
-type AuthMeResult = z.infer<typeof AuthMeResult>;
+export type AuthMeResult = z.infer<typeof AuthMeResult>;
 
-const PlanRow = z.object({
+export const PlanRow = z.object({
   id: z.string().uuid(),
   owner_id: z.string().uuid(),
   name: z.string(),
@@ -90,9 +91,9 @@ const PlanRow = z.object({
   updated_at: z.string().datetime(),
   conflicts: z.array(z.unknown()),
 });
-type PlanRow = z.infer<typeof PlanRow>;
+export type PlanRow = z.infer<typeof PlanRow>;
 
-const TimelineRow = z.object({
+export const TimelineRow = z.object({
   id: z.string().uuid(),
   encounter_id: z.string().uuid(),
   version: z.string(),
@@ -112,9 +113,9 @@ const TimelineRow = z.object({
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });
-type TimelineRow = z.infer<typeof TimelineRow>;
+export type TimelineRow = z.infer<typeof TimelineRow>;
 
-const PlanAccessRow = z.object({
+export const PlanAccessRow = z.object({
   plan_id: z.string().uuid(),
   user_id: z.string().uuid(),
   role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
@@ -123,7 +124,7 @@ const PlanAccessRow = z.object({
   display_name: z.string().nullable(),
   email: z.string().email().nullable(),
 });
-type PlanAccessRow = z.infer<typeof PlanAccessRow>;
+export type PlanAccessRow = z.infer<typeof PlanAccessRow>;
 
 // Edge Function response envelopes.
 const IngestAck = z.object({
@@ -389,6 +390,50 @@ export const planAccessListForPlan = (
     PlanAccessListForPlanArgs,
     z.array(PlanAccessRow),
   );
+
+// ---------------------------------------------------------------------------
+// load_ydoc_snapshot
+// ---------------------------------------------------------------------------
+// Returns the latest Yjs snapshot for a plan, with ACL check (see
+// migration 0002). The SQL function returns BYTEA; PostgREST serializes
+// BYTEA as a hex-encoded string prefixed with `\x` by default. The
+// wrapper below decodes hex → Uint8Array directly so the consumer can
+// pass it to `Y.applyUpdate` without a base64 round-trip.
+
+const LoadYDocSnapshotArgs = z.object({ p_plan_id: z.string().uuid() });
+type LoadYDocSnapshotArgs = z.infer<typeof LoadYDocSnapshotArgs>;
+
+const LoadYDocSnapshotRow = z.object({
+  /** BYTEA serialized by PostgREST as `\x...` hex (default). */
+  update: z.string(),
+  byte_size: z.number().int().nonnegative(),
+  updated_at: z.string().datetime(),
+});
+type LoadYDocSnapshotRow = z.infer<typeof LoadYDocSnapshotRow>;
+
+export const loadYDocSnapshot = async (
+  client: SupabaseClient,
+  args: LoadYDocSnapshotArgs,
+): Promise<{ update: Uint8Array; byteSize: number; updatedAt: string } | null> => {
+  const parsed = LoadYDocSnapshotArgs.parse(args);
+  const { data, error } = await client.rpc('load_ydoc_snapshot', parsed);
+  if (error) throw new RpcError('load_ydoc_snapshot', error.message, error);
+  const result = z.array(LoadYDocSnapshotRow).safeParse(data);
+  if (!result.success) {
+    throw new RpcError(
+      'load_ydoc_snapshot',
+      `RPC "load_ydoc_snapshot" returned a payload that failed validation: ${result.error.message}`,
+      result.error,
+    );
+  }
+  const row = result.data[0];
+  if (!row) return null;
+  return {
+    update: byteaHexToBytes(row.update),
+    byteSize: row.byte_size,
+    updatedAt: row.updated_at,
+  };
+};
 
 // ===========================================================================
 // Edge Function wrappers — apps/edge/

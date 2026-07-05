@@ -1,10 +1,16 @@
 /**
  * AbilityPicker. Sheet (right-anchored slide-over) with a searchable
- * list of sample abilities grouped by category. The user picks an
- * ability + the event they want to anchor it to, and the parent writes
- * the assignment to the live PlanDoc.
+ * list of abilities grouped by category. The user picks an ability +
+ * the event they want to anchor it to, and the parent writes the
+ * assignment to the live PlanDoc.
+ *
+ * Abilities and the encounter timeline are passed in as props — the
+ * plan editor already fetched them via the cached data-source, so the
+ * picker doesn't make its own RPCs. The parent pins a specific event
+ * via `eventId` (e.g. when the user clicked a timeline card);
+ * otherwise the first event is pre-selected.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import {
   Sheet,
@@ -18,58 +24,74 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
-  ABILITY_CATEGORY_LABEL,
-  SAMPLE_ABILITIES,
-  SAMPLE_EVENTS,
-  type SampleAbility,
-  type SampleEvent,
-} from '@/lib/sample-data';
-import { cn } from '@/lib/utils';
-
-const formatMs = (ms: number): string => {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-};
+  type AbilityInfo,
+  type TimelineEventInfo,
+} from '@/lib/data-source';
+import { ABILITY_CATEGORY_LABEL, ABILITY_CATEGORY_ORDER } from '@/lib/sample-data';
+import { cn, formatMs } from '@/lib/utils';
 
 export const AbilityPicker = ({
   open,
   onOpenChange,
-  encounterId,
+  eventId,
+  abilities,
+  events,
   onPick,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  encounterId: string;
-  onPick: (input: { ability: SampleAbility; event: SampleEvent }) => void;
+  /** Pre-selected event id (e.g. the timeline card the user clicked).
+   * Ignored after the user has chosen an ability in this session —
+   * `pending.event` wins until they back out. */
+  eventId: string | null;
+  abilities: AbilityInfo[] | null;
+  events: TimelineEventInfo[] | null;
+  onPick: (input: { ability: AbilityInfo; event: TimelineEventInfo }) => void;
 }) => {
   const [query, setQuery] = useState('');
-  const [pending, setPending] = useState<{ ability: SampleAbility; event: SampleEvent } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{
+    ability: AbilityInfo;
+    event: TimelineEventInfo;
+  } | null>(null);
 
-  const events = SAMPLE_EVENTS[encounterId] ?? [];
+  // Reset transient state when the sheet closes so the next open
+  // doesn't surface a stale selection from a previous encounter.
+  useEffect(() => {
+    if (open) return;
+    setPending(null);
+    setQuery('');
+  }, [open]);
 
   const grouped = useMemo(() => {
+    if (!abilities) return new Map<AbilityInfo['category'], AbilityInfo[]>();
     const q = query.toLowerCase().trim();
     const matches = q
-      ? SAMPLE_ABILITIES.filter(
+      ? abilities.filter(
           (a) =>
             a.name.toLowerCase().includes(q) ||
             a.jobAbbrev.toLowerCase().includes(q) ||
-            a.description.toLowerCase().includes(q),
+            (a.description?.toLowerCase().includes(q) ?? false),
         )
-      : SAMPLE_ABILITIES;
-    const out: Record<SampleAbility['category'], SampleAbility[]> = {
-      'tank-cd': [],
-      'healer-cd': [],
-      'party-mit': [],
-      invuln: [],
-      shield: [],
-    };
-    for (const a of matches) out[a.category].push(a);
-    return out;
-  }, [query]);
+      : abilities;
+    const map = new Map<AbilityInfo['category'], AbilityInfo[]>();
+    for (const cat of ABILITY_CATEGORY_ORDER) map.set(cat, []);
+    for (const a of matches) {
+      const cur = map.get(a.category);
+      if (cur) cur.push(a);
+    }
+    return map;
+  }, [abilities, query]);
+
+  // Resolve the event to anchor new ability selections to. Order of
+  // precedence: pending.event (user picked one in this session) →
+  // parent eventId → first event of the loaded timeline. Computed once
+  // per render so the per-row `find()` isn't O(N) per ability.
+  const anchorEvent: TimelineEventInfo | null = useMemo(() => {
+    if (pending) return pending.event;
+    if (eventId && events) return events.find((e) => e.id === eventId) ?? null;
+    if (events && events.length > 0) return events[0]!;
+    return null;
+  }, [pending, eventId, events]);
 
   const handleConfirm = () => {
     if (!pending) return;
@@ -102,19 +124,20 @@ export const AbilityPicker = ({
               />
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-              {Object.entries(grouped).map(([cat, abilities]) =>
-                abilities.length === 0 ? null : (
+              {Array.from(grouped.entries()).map(([cat, list]) =>
+                list.length === 0 ? null : (
                   <div key={cat}>
                     <h4 className="text-muted-foreground mb-2 px-1 text-[10px] font-semibold tracking-widest uppercase">
-                      {ABILITY_CATEGORY_LABEL[cat as SampleAbility['category']]}
+                      {ABILITY_CATEGORY_LABEL[cat]}
                     </h4>
                     <div className="flex flex-col gap-1">
-                      {abilities.map((a) => (
+                      {list.map((a) => (
                         <button
                           key={a.id}
                           type="button"
-                          onClick={() => setPending({ ability: a, event: events[0]! })}
-                          className="hover:bg-muted flex items-center gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors"
+                          disabled={!anchorEvent}
+                          onClick={() => setPending({ ability: a, event: anchorEvent! })}
+                          className="hover:bg-muted flex items-center gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors disabled:opacity-50"
                         >
                           <Badge
                             variant="outline"
@@ -129,8 +152,8 @@ export const AbilityPicker = ({
                             </p>
                           </div>
                           <div className="text-muted-foreground flex shrink-0 flex-col items-end font-mono text-[10px]">
-                            <span>{a.recastS}s</span>
-                            {a.effectPct > 0 && (
+                            <span>{a.recastS ?? '–'}s</span>
+                            {a.effectPct != null && a.effectPct > 0 && (
                               <span className="text-chart-1">{a.effectPct}%</span>
                             )}
                           </div>
@@ -139,6 +162,11 @@ export const AbilityPicker = ({
                     </div>
                   </div>
                 ),
+              )}
+              {abilities && abilities.length === 0 && (
+                <p className="text-muted-foreground text-sm">
+                  No abilities match. Try a different search.
+                </p>
               )}
             </div>
           </div>
@@ -152,8 +180,8 @@ export const AbilityPicker = ({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Anchor to event</Label>
-              <div className="flex flex-col gap-1">
-                {events.map((e) => (
+              <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+                {(events ?? []).map((e) => (
                   <button
                     key={e.id}
                     type="button"
@@ -167,7 +195,7 @@ export const AbilityPicker = ({
                   >
                     <span className="font-medium">{e.name}</span>
                     <span className="text-muted-foreground font-mono text-xs">
-                      {formatMs(e.positionMs)}
+                      {formatMs(e.timestampMs)}
                     </span>
                   </button>
                 ))}

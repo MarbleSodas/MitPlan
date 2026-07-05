@@ -16,9 +16,16 @@ import type { PlanMeta } from '@xivmitplan/validation/plan';
 // Encounter UUIDs are stable across runs (used as the foreign key by
 // the SAMPLE_EVENTS list below). Declared first because SAMPLE_PLANS
 // references them in encounterId.
+//
+// These match the seed migration `0004_xivmitplan_v1_seed.sql` UUIDs
+// verbatim, so the demo continues to work without changes when
+// Supabase is connected.
 export const FRU_P1_ID = '10000000-0000-0000-0000-000000000001';
 export const M1S_ID = '10000000-0000-0000-0000-000000000002';
 export const M2S_ID = '10000000-0000-0000-0000-000000000003';
+export const FRU_P2_ID = '10000000-0000-0000-0000-000000000004';
+export const P1S_ID = '10000000-0000-0000-0000-000000000005';
+export const P4S_ID = '10000000-0000-0000-0000-000000000006';
 
 export interface SamplePlan {
   id: string;
@@ -315,10 +322,20 @@ export interface SampleEvent {
 export const SAMPLE_EVENTS: Record<string, SampleEvent[]> = {
   [FRU_P1_ID]: [
     { id: '20000000-0000-0000-0000-000000000001', encounterId: FRU_P1_ID, positionMs: 0, name: 'Pull', type: 'MECHANIC' },
-    { id: '20000000-0000-0000-0000-000000000002', encounterId: FRU_P1_ID, positionMs: 45_000, name: 'Brightened Light', type: 'BUSTER' },
-    { id: '20000000-0000-0000-0000-000000000003', encounterId: FRU_P1_ID, positionMs: 90_000, name: 'Explosion (tank buster)', type: 'BUSTER' },
-    { id: '20000000-0000-0000-0000-000000000004', encounterId: FRU_P1_ID, positionMs: 130_000, name: 'Darklit Dragonsong', type: 'RAIDWIDE' },
-    { id: '20000000-0000-0000-0000-000000000005', encounterId: FRU_P1_ID, positionMs: 175_000, name: 'Umbral Impact', type: 'BUSTER' },
+    { id: '20000000-0000-0000-0000-000000000002', encounterId: FRU_P1_ID, positionMs: 28_000, name: 'Hello World (party stack)', type: 'MECHANIC' },
+    { id: '20000000-0000-0000-0000-000000000003', encounterId: FRU_P1_ID, positionMs: 55_000, name: 'Light Rampant (tank buster)', type: 'BUSTER' },
+    { id: '20000000-0000-0000-0000-000000000004', encounterId: FRU_P1_ID, positionMs: 120_000, name: 'Darklit Dragonsong (raidwide 1)', type: 'RAIDWIDE' },
+    { id: '20000000-0000-0000-0000-000000000005', encounterId: FRU_P1_ID, positionMs: 180_000, name: 'Apocalyptic Lamp', type: 'RAIDWIDE' },
+    { id: '20000000-0000-0000-0000-000000000006', encounterId: FRU_P1_ID, positionMs: 315_000, name: 'House of Light', type: 'MECHANIC' },
+    { id: '20000000-0000-0000-0000-000000000007', encounterId: FRU_P1_ID, positionMs: 510_000, name: 'Crystallize Time', type: 'RAIDWIDE' },
+  ],
+  [FRU_P2_ID]: [
+    { id: '21000000-0000-0000-0000-000000000001', encounterId: FRU_P2_ID, positionMs: 0, name: 'Phase 2 pull', type: 'MECHANIC' },
+    { id: '21000000-0000-0000-0000-000000000002', encounterId: FRU_P2_ID, positionMs: 25_000, name: 'Darklit Dragonsong (P2 opener)', type: 'RAIDWIDE' },
+    { id: '21000000-0000-0000-0000-000000000003', encounterId: FRU_P2_ID, positionMs: 55_000, name: 'Memoricide (tank buster 1)', type: 'BUSTER' },
+    { id: '21000000-0000-0000-0000-000000000004', encounterId: FRU_P2_ID, positionMs: 395_000, name: 'Akh Morn (party buster)', type: 'MECHANIC' },
+    { id: '21000000-0000-0000-0000-000000000005', encounterId: FRU_P2_ID, positionMs: 500_000, name: 'Memoricide 5 (final tank buster)', type: 'BUSTER' },
+    { id: '21000000-0000-0000-0000-000000000006', encounterId: FRU_P2_ID, positionMs: 605_000, name: 'Enrage (ultimate end)', type: 'BUSTER' },
   ],
   [M1S_ID]: [
     { id: '30000000-0000-0000-0000-000000000001', encounterId: M1S_ID, positionMs: 0, name: 'Pull', type: 'MECHANIC' },
@@ -333,19 +350,6 @@ export const SAMPLE_EVENTS: Record<string, SampleEvent[]> = {
   ],
 };
 
-/** Public helper for plan editor: list plans owned by the current user.
- * Phase 0 stub returns SAMPLE_PLANS verbatim. Phase 1+ swaps this for an
- * `rpc('list_my_plans')` call.
- */
-export const listSamplePlans = (): Promise<SamplePlan[]> =>
-  new Promise((resolve) => setTimeout(() => resolve(SAMPLE_PLANS), 200));
-
-/** Generate a UUID for a freshly-created plan. */
-export const newPlanId = (): string =>
-  typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
 /** Categories labelled for the ability picker. */
 export const ABILITY_CATEGORY_LABEL: Record<SampleAbility['category'], string> = {
   'tank-cd': 'Tank CDs',
@@ -354,3 +358,8 @@ export const ABILITY_CATEGORY_LABEL: Record<SampleAbility['category'], string> =
   invuln: 'Tank invulns',
   shield: 'Shields',
 };
+
+/** Render order for the picker — must match the keys in
+ * ABILITY_CATEGORY_LABEL so iteration produces the canonical order. */
+export const ABILITY_CATEGORY_ORDER: SampleAbility['category'][] =
+  Object.keys(ABILITY_CATEGORY_LABEL) as SampleAbility['category'][];

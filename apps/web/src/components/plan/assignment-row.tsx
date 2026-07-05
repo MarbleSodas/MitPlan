@@ -1,21 +1,18 @@
 /**
  * AssignmentRow. Single mit assignment displayed in the plan editor's
- * left rail. Looks up the ability + event by ID from the sample-data
- * lookup, surfaces the recast + effect + target type as small badges
- * so the eye can scan a list quickly.
+ * left rail. Surfaces the ability + event + target type as small
+ * badges so the eye can scan a list quickly.
+ *
+ * The parent (plan editor) resolves the ability + event from the
+ * data-source caches and passes them as props. This keeps the row
+ * pure (no fetches in the list) and makes it trivial to memo.
  */
 import { Trash2 } from 'lucide-react';
 import type { Assignment } from '@xivmitplan/validation/plan';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { SAMPLE_ABILITIES, SAMPLE_EVENTS } from '@/lib/sample-data';
-import { cn } from '@/lib/utils';
-
-const formatMs = (ms: number): string => {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-};
+import type { AbilityInfo, TimelineEventInfo } from '@/lib/data-source';
+import { cn, formatMs } from '@/lib/utils';
 
 const TARGET_TYPE_LABEL: Record<Assignment['targetType'], string> = {
   MAIN_TANK: 'MT',
@@ -25,7 +22,7 @@ const TARGET_TYPE_LABEL: Record<Assignment['targetType'], string> = {
   COVER: 'Cover',
 };
 
-const CATEGORY_TINT: Record<string, string> = {
+const CATEGORY_TINT: Record<AbilityInfo['category'], string> = {
   'tank-cd': 'bg-chart-1/15 text-chart-1',
   'healer-cd': 'bg-chart-2/15 text-chart-2',
   'party-mit': 'bg-primary/15 text-primary',
@@ -35,18 +32,30 @@ const CATEGORY_TINT: Record<string, string> = {
 
 export const AssignmentRow = ({
   assignment,
+  ability,
+  event,
   onRemove,
 }: {
   assignment: Assignment;
+  ability: AbilityInfo | null;
+  event: TimelineEventInfo | null;
   onRemove: (id: string) => void;
 }) => {
-  const ability = SAMPLE_ABILITIES.find((a) => a.id === assignment.abilityId);
-  const event = Object.values(SAMPLE_EVENTS)
-    .flat()
-    .find((e) => e.id === assignment.eventId);
-  if (!ability || !event) return null;
+  // The parent passed nulls while the data-source is still loading.
+  // Render a skeleton row in that case so the rail doesn't pop.
+  if (!ability || !event) {
+    return (
+      <div className="bg-card/40 flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5">
+        <div className="bg-muted size-9 shrink-0 animate-pulse rounded-md" />
+        <div className="flex-1 space-y-1">
+          <div className="bg-muted h-3.5 w-2/3 animate-pulse rounded" />
+          <div className="bg-muted h-3 w-1/2 animate-pulse rounded" />
+        </div>
+      </div>
+    );
+  }
 
-  const tint = CATEGORY_TINT[ability.category] ?? 'bg-muted text-muted-foreground';
+  const tint = CATEGORY_TINT[ability.category];
 
   return (
     <div
@@ -82,12 +91,12 @@ export const AssignmentRow = ({
             {TARGET_TYPE_LABEL[assignment.targetType]}
           </Badge>
           <span>·</span>
-          <span>{formatMs(event.positionMs)}</span>
+          <span>{formatMs(event.timestampMs)}</span>
           <span>·</span>
           <span>{event.name}</span>
           <span className="ml-auto flex items-center gap-2 font-mono text-[10px]">
-            {ability.recastS}s
-            {ability.effectPct > 0 && (
+            {ability.recastS != null ? `${ability.recastS}s` : '–'}
+            {ability.effectPct != null && ability.effectPct > 0 && (
               <span className="text-chart-1">{ability.effectPct}%</span>
             )}
           </span>
