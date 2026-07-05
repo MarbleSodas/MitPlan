@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
 import * as planService from '../services/realtimePlanService';
 import { trackPlanAccess } from '../services/planAccessService';
+import { isPermissionDeniedError } from '../services/firebaseErrorUtils';
 
 export const RealtimePlanDataContext = createContext(null);
 export const RealtimePlanActionsContext = createContext(null);
@@ -81,9 +82,15 @@ export const RealtimePlanProvider = ({ children, planId, readOnly = false }) => 
           try {
             await planService.hydratePlanTimelineLayoutIfMissing(planId, user.uid, sessionId);
           } catch (hydrateError) {
-            if (!hydrateError.message?.includes('Permission denied')) {
-              throw hydrateError;
-            }
+            // Hydration is a best-effort back-fill for legacy plans. It is
+            // expected to fail for shared recipients who lack read access to
+            // the owner's source timeline (or write access to the plan). The
+            // plan still loads via the subscription below, so never treat a
+            // hydration failure as fatal.
+            console.warn(
+              '[RealtimePlanContext] Skipping timeline layout hydration:',
+              isPermissionDeniedError(hydrateError) ? 'permission denied' : hydrateError
+            );
           }
         }
 

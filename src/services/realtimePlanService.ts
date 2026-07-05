@@ -1614,8 +1614,11 @@ export const hydratePlanTimelineLayoutIfMissing = async (planId, userId = null, 
     await updatePlanFieldsWithOrigin(planId, updateFields, userId, sessionId);
     return timelineLayout;
   } catch (error) {
+    // Preserve the original error (e.g. permission_denied / Timeline not found)
+    // so callers can decide whether it is fatal. Hydration is a best-effort
+    // back-fill for legacy plans and must not mask the underlying signal.
     console.error('[hydratePlanTimelineLayoutIfMissing] Failed to hydrate plan timeline layout:', error);
-    throw new Error('Failed to hydrate plan timeline layout');
+    throw error;
   }
 };
 
