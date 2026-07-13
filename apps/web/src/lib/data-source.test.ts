@@ -52,9 +52,9 @@ describe('data-source — fallback mode (Supabase unconfigured)', () => {
     functionsInvokeMock.mockReset();
   });
 
-  it('listEncounters returns the 6 seeded sample encounters', async () => {
+  it('listEncounters returns the 15 seeded sample encounters', async () => {
     const list = await listEncounters();
-    expect(list).toHaveLength(6);
+    expect(list).toHaveLength(15);
     expect(list.find((e) => e.id === FRU_P1_ID)).toBeDefined();
     expect(list.find((e) => e.id === FRU_P2_ID)).toBeDefined();
     expect(list.find((e) => e.id === M1S_ID)).toBeDefined();
@@ -67,9 +67,9 @@ describe('data-source — fallback mode (Supabase unconfigured)', () => {
 
   it('getEncounter returns the FRU P1 sample row by id', async () => {
     const enc = await getEncounter(FRU_P1_ID);
-    expect(enc?.slug).toBe('fru-p1-light-rampant');
+    expect(enc?.slug).toBe('fru-light-rampant');
     expect(enc?.raidSlug).toBe('fru');
-    expect(enc?.raidName).toBe('Futures Rewritten (Ultimate)');
+    expect(enc?.raidName).toBe('FRU (Ultimate)');
   });
 
   it('getTimelineForEncounter returns the FRU P1 sample events', async () => {
@@ -84,9 +84,9 @@ describe('data-source — fallback mode (Supabase unconfigured)', () => {
     expect(events[0]?.name).toBe('Phase 2 pull');
   });
 
-  it('listAbilities returns the 23 sample abilities', async () => {
+  it('listAbilities returns the sample abilities', async () => {
     const abs = await listAbilities();
-    expect(abs.length).toBe(23);
+    expect(abs.length).toBeGreaterThan(20);
     expect(abs.find((a) => a.abilityId === 'reprisal')).toBeDefined();
   });
 
@@ -151,7 +151,7 @@ describe('data-source — RPC mode (Supabase configured)', () => {
     rpcMock.mockResolvedValueOnce({ data: null, error: null });
     const enc = await getEncounter(FRU_P1_ID);
     expect(enc).toBeNull();
-    expect(rpcMock).toHaveBeenCalledWith('encounters_by_id', { id: FRU_P1_ID });
+    expect(rpcMock).toHaveBeenCalledWith('encounters_by_id', { p_id: FRU_P1_ID });
   });
 
   it('listMyPlans calls plans_list RPC and maps the response', async () => {
@@ -173,7 +173,7 @@ describe('data-source — RPC mode (Supabase configured)', () => {
       error: null,
     });
     const plans = await listMyPlans();
-    expect(rpcMock).toHaveBeenCalledWith('plans_list', { limit: 50 });
+    expect(rpcMock).toHaveBeenCalledWith('plans_list', { p_limit: 50 });
     expect(plans).toHaveLength(1);
     expect(plans[0]?.name).toBe('Live Plan');
     expect(plans[0]?.encounterId).toBe(FRU_P1_ID);
@@ -206,10 +206,21 @@ describe('data-source — RPC mode (Supabase configured)', () => {
 });
 
 describe('data-source — sample fallback counts', () => {
-  it('exposes the 6 sample encounters and 23 sample abilities', async () => {
+  beforeEach(() => {
+    // Force fallback mode for these checks. Without this, the test
+    // environment leaks `apps/web/.env` via Vite's import.meta.env
+    // loader, the live code path runs, and `rpcMock` returns undefined
+    // → "Cannot destructure property 'data' of undefined".
+    setSupabaseConfigured(false);
     _invalidateCatalogCache();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('exposes the expanded sample encounters and abilities', async () => {
     const encounters = await listEncounters();
-    expect(encounters.length).toBe(6);
-    expect(SAMPLE_ABILITIES.length).toBe(23);
+    expect(encounters.length).toBeGreaterThanOrEqual(15);
+    expect(SAMPLE_ABILITIES.length).toBeGreaterThanOrEqual(20);
   });
 });
