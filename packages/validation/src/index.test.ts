@@ -201,7 +201,7 @@ describe('TimelineEvent + TimelineGraph + MergeResult', () => {
   });
 
   it('TimelineSource enum has the v1.0 sources', () => {
-    expect(TimelineSource.options).toEqual(['CACTBOT', 'TRIGGERNOMETRY', 'FFLOGS', 'MERGED']);
+    expect(TimelineSource.options).toEqual(['CACTBOT', 'TRIGGERNOMETRY', 'FFLOGS', 'MERGED', 'MANUAL']);
   });
 });
 

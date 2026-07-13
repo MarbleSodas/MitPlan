@@ -44,6 +44,8 @@ export interface RealtimeProviderOptions {
   accessToken: string;
   /** Called when the high-level status changes. */
   onStatus: (status: RealtimeStatus) => void;
+  /** When true, receive remote state only and never publish or persist local changes. */
+  readOnly?: boolean;
   /** Optional share-link token (X-Plan-Access-Token header on the legacy path). */
   shareToken?: string;
 }

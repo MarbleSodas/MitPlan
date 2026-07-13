@@ -29,6 +29,15 @@ export type MergeResult = ValidationMergeResult;
 export type { BranchCondition, TimelineSource, MergedFromSources };
 export type Confidence = number; // 0-1 (already constrained in the Zod schema)
 
+// Boss-action classification (slimmed port of main's bossActionUtils).
+export {
+  EVENT_CLASS,
+  TARGET_LABEL,
+  type EventClass,
+  type TimelineEventType,
+  type TimelineTargetKind,
+} from './classification.js';
+
 /** A canonical timeline (§12.4). The persisted representation. */
 export interface Timeline {
   readonly id: string;
