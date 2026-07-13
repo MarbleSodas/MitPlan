@@ -1,0 +1,39 @@
+{
+  "name": "@xivmitplan/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "XIVMitPlan shared — Cross-cutting: i18n, time, Result, branded IDs, error types. No domain knowledge. See architecture §8.2.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./time": "./src/time/index.ts",
+    "./result": "./src/result/index.ts",
+    "./ids": "./src/ids/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./logger": "./src/logger/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --reporter=verbose"
+  },
+  "dependencies": {
+    "pino": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:",
+    "@vitest/ui": "catalog:",
+    "fast-check": "catalog:",
+    "@types/pino": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "eslint": "catalog:",
+    "@typescript-eslint/parser": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "prettier": "catalog:"
+  }
+}

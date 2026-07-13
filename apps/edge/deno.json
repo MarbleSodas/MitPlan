@@ -1,0 +1,33 @@
+{
+  "tasks": {
+    "serve": "deno run --allow-net --allow-env --allow-read ./functions/timelines-ingest-cactbot/index.ts"
+  },
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.46.0",
+    "@xivmitplan/shared": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/index.ts",
+    "@xivmitplan/shared/result": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/result/index.ts",
+    "@xivmitplan/shared/ids": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/ids/index.ts",
+    "@xivmitplan/shared/errors": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/errors/index.ts",
+    "@xivmitplan/shared/time": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/time/index.ts",
+    "@xivmitplan/shared/i18n": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/i18n/index.ts",
+    "@xivmitplan/shared/logger": "/Users/eugene/Documents/Github/MitPlan/packages/shared/src/logger/index.ts",
+    "@xivmitplan/validation": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/index.ts",
+    "@xivmitplan/validation/timeline": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/timeline/index.ts",
+    "@xivmitplan/validation/cactbot": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/cactbot/index.ts",
+    "@xivmitplan/validation/triggernometry": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/triggernometry/index.ts",
+    "@xivmitplan/validation/fflogs": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/fflogs/index.ts",
+    "@xivmitplan/validation/ability": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/ability/index.ts",
+    "@xivmitplan/validation/auth": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/auth/index.ts",
+    "@xivmitplan/validation/plan": "/Users/eugene/Documents/Github/MitPlan/packages/validation/src/plan/index.ts",
+    "@xivmitplan/domain/parsers/cactbot": "/Users/eugene/Documents/Github/MitPlan/packages/domain/src/parsers/cactbot.ts",
+    "@xivmitplan/domain/parsers/triggernometry": "/Users/eugene/Documents/Github/MitPlan/packages/domain/src/parsers/triggernometry.ts",
+    "@xivmitplan/domain/parsers/fflogs": "/Users/eugene/Documents/Github/MitPlan/packages/domain/src/parsers/fflogs.ts",
+    "@xivmitplan/domain/parsers/merger": "/Users/eugene/Documents/Github/MitPlan/packages/domain/src/parsers/merger.ts",
+    "@xivmitplan/domain/ids": "/Users/eugene/Documents/Github/MitPlan/packages/domain/src/ids/index.ts",
+    "zod": "npm:zod@3.23.8"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.ns", "dom", "dom.iterable"]
+  }
+}

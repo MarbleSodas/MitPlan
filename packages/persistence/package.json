@@ -1,0 +1,55 @@
+{
+  "name": "@xivmitplan/persistence",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "XIVMitPlan persistence — Drizzle schema + Postgres. Path A (ADR-0002) removed Redis. See architecture §17 (data model) and §16.5 (composition root).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./repositories/abilities": "./src/repositories/abilities.ts",
+    "./repositories/encounters": "./src/repositories/encounters.ts",
+    "./repositories/jobs": "./src/repositories/jobs.ts",
+    "./repositories/plans": "./src/repositories/plans.ts",
+    "./repositories/timelines": "./src/repositories/timelines.ts",
+    "./repositories/users": "./src/repositories/users.ts",
+    "./repositories/ydoc-snapshots": "./src/repositories/ydoc-snapshots.ts",
+    "./repositories/legacy-plans": "./src/repositories/legacy-plans.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/seeds/index.ts",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests --reporter=verbose",
+    "test:integration": "vitest run --reporter=verbose --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@xivmitplan/domain": "workspace:*",
+    "@xivmitplan/shared": "workspace:*",
+    "@xivmitplan/validation": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "drizzle-zod": "catalog:",
+    "postgres": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.28.0",
+    "vitest": "catalog:",
+    "@vitest/ui": "catalog:",
+    "testcontainers": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsx": "catalog:",
+    "dotenv": "catalog:",
+    "eslint": "catalog:",
+    "@typescript-eslint/parser": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "prettier": "catalog:"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "@xivmitplan/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "XIVMitPlan domain — pure TypeScript, no I/O. Entities, value objects, ports, math (MitStackEvaluator), parsers (Cactbot, Triggernometry, FFLogs), merger, errors. See architecture §9, §10, §12.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./abilities": "./src/catalog/index.ts",
+    "./encounters": "./src/catalog/index.ts",
+    "./jobs": "./src/catalog/index.ts",
+    "./timeline": "./src/timeline/index.ts",
+    "./parsers": "./src/parsers/index.ts",
+    "./parsers/cactbot": "./src/parsers/cactbot.ts",
+    "./parsers/triggernometry": "./src/parsers/triggernometry.ts",
+    "./parsers/fflogs": "./src/parsers/fflogs.ts",
+    "./parsers/merger": "./src/parsers/merger.ts",
+    "./plan": "./src/plan/index.ts",
+    "./ports": "./src/ports/index.ts",
+    "./math": "./src/math/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./ids": "./src/ids/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest",
+    "test:property": "vitest run --reporter=verbose --dir src/math",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@xivmitplan/shared": "workspace:*",
+    "@xivmitplan/validation": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:",
+    "@vitest/ui": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "fast-check": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "eslint": "catalog:",
+    "@typescript-eslint/parser": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "prettier": "catalog:"
+  }
+}
