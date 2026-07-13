@@ -33,7 +33,6 @@ import {
   getPlanTimelineMirrorFields,
   normalizePlanTimelineLayout,
 } from '../utils/timeline/planTimelineLayoutUtils';
-import { canAdminPlan } from '../utils/permissions/planPermissions';
 import { getUserDisplayNames } from './userService';
 
 const PLANS_PATH = 'plans';
@@ -407,9 +406,10 @@ const assertAuthenticatedUser = (userId) => {
 
 const assertCanAdminExistingPlan = (plan, userId) => {
   assertAuthenticatedUser(userId);
-
-  if (!canAdminPlan(plan, userId)) {
-    throw new Error('Permission denied: Only the plan owner can manage sharing settings');
+  // Plan must exist — getPlan() above throws "Plan not found" if not, so this
+  // is just a defensive check.
+  if (!plan) {
+    throw new Error('Plan not found');
   }
 };
 

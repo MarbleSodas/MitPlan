@@ -94,6 +94,7 @@ vi.mock('react-router-dom', async () => {
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     user: userState.uid ? { uid: userState.uid } : null,
+    isAuthenticated: Boolean(userState.uid),
   }),
 }));
 
@@ -335,22 +336,19 @@ describe('PlanTimelineEditor', () => {
     expect(screen.getByRole('button', { name: 'Publish' })).toBeTruthy();
   });
 
-  it('keeps the plan timeline read-only for view-only shared access', () => {
-    userState.uid = 'viewer-2';
+  it('allows any signed-in user with the plan link to edit and publish', () => {
+    // Anyone with the plan link who is signed in can edit — owner /
+    // collaborator / accessedBy checks no longer gate writes. The planId in
+    // the URL is the capability.
+    userState.uid = 'stranger-99';
     planState.realtimePlan.ownerId = 'owner-1';
     planState.realtimePlan.userId = 'owner-1';
-    planState.realtimePlan.accessedBy = {
-      'viewer-2': {
-        firstAccess: 1,
-        lastAccess: 1,
-        accessCount: 1,
-      },
-    };
     planState.realtimePlan.collaborators = {};
+    planState.realtimePlan.accessedBy = {};
 
     render(<PlanTimelineEditor />);
 
-    expect(screen.getByText('read-only')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    expect(screen.getByText('editable')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeTruthy();
   });
 });
