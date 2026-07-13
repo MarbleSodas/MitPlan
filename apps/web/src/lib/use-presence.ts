@@ -21,16 +21,14 @@ export type PresenceUser = {
 };
 
 /**
- * Track presence on `plan-presence:${planId}`. Returns the list of
- * remote users currently online (excludes the local user). Heartbeat
+ * Track presence on the authorized `plan:${planId}` channel. Returns the
+ * list of remote users currently online (excludes the local user). Heartbeat
  * is automatic via Supabase's presence protocol (~10s default).
  *
- * The presence channel is separate from the realtime ACL gate on
- * `plan:*` — anyone with at least read access to the plan (owner,
- * editor, viewer) can join. The local user is excluded from the
- * returned list so callers can render a "No one else is here" state.
+ * Editors and owners announce their presence; viewers subscribe without
+ * tracking so they do not require a write-capable presence channel.
  */
-export function usePresence(planId: string | null): PresenceUser[] {
+export function usePresence(planId: string | null, canTrack: boolean): PresenceUser[] {
   const [users, setUsers] = useState<PresenceUser[]>([]);
   const session = useSession();
 
@@ -43,8 +41,8 @@ export function usePresence(planId: string | null): PresenceUser[] {
     const localUserId = session.user?.id ?? null;
     if (!localUserId) return;
 
-    const channel = supabase.channel(`plan-presence:${planId}`, {
-      config: { presence: { key: localUserId } },
+    const channel = supabase.channel(`plan:${planId}`, {
+      config: { private: true, presence: { key: localUserId } },
     });
 
     channel.on('presence', { event: 'sync' }, () => {
@@ -72,6 +70,7 @@ export function usePresence(planId: string | null): PresenceUser[] {
       const sessionUser = data.session?.user;
       if (!sessionUser) return;
 
+      if (!canTrack) return;
       await channel.track({
         userId: sessionUser.id,
         displayName:
@@ -86,7 +85,7 @@ export function usePresence(planId: string | null): PresenceUser[] {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [planId, session.loading, session.user?.id]);
+  }, [planId, canTrack, session.loading, session.user?.id]);
 
   return users;
 }

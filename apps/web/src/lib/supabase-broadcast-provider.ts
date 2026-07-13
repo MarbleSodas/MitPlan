@@ -103,6 +103,8 @@ export interface SupabaseBroadcastProviderOptions {
   accessToken: string;
   /** Called whenever the high-level status changes. */
   onStatus: (status: RealtimeStatus) => void;
+  /** Receive remote Yjs updates without publishing or snapshotting local mutations. */
+  readOnly?: boolean;
   /**
    * Reserved for the share-link path. v1.0 doesn't broadcast this; the
    * `plan_access` table is consulted by the realtime ACL gate
@@ -135,9 +137,9 @@ export interface SupabaseBroadcastProviderOptions {
 export class SupabaseBroadcastProvider implements RealtimeProvider {
   private readonly ydoc: Y.Doc;
   private readonly planId: string;
-  private readonly accessToken: string;
   private readonly onStatus: (status: RealtimeStatus) => void;
   private readonly supabase: SupabaseLike;
+  private readonly readOnly: boolean;
 
   private channel: RealtimeChannel | null = null;
   private snapshotTimer: ReturnType<typeof setTimeout> | null = null;
@@ -155,11 +157,9 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
   constructor(opts: SupabaseBroadcastProviderOptions) {
     this.ydoc = opts.ydoc;
     this.planId = opts.planId;
-    // Defensive: callers may pass an empty string (e.g. anon session,
-    // missing access_token). Slice of empty string is fine.
-    this.accessToken = opts.accessToken ?? '';
     this.onStatus = opts.onStatus;
     this.supabase = opts.supabase;
+    this.readOnly = opts.readOnly ?? false;
   }
 
   /** Current high-level status. Updated synchronously on transitions. */
@@ -184,8 +184,8 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
     const channelName = `plan:${this.planId}`;
     const channel = this.supabase.channel(channelName, {
       config: {
+        private: true,
         broadcast: { self: false },
-        presence: { key: this.accessToken.slice(0, 16) },
       },
     });
 
@@ -199,7 +199,7 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
     // either queues (supabase-js behavior) or drops pre-SUBSCRIBE
     // messages, both of which are safe — the next user edit after
     // SUBSCRIBED re-broadcasts the post-SUBSCRIBE state.
-    this.attachLocalUpdateHandler();
+    if (!this.readOnly) this.attachLocalUpdateHandler();
 
     // SUBSCRIBE timeout: if the broker doesn't reply within
     // SUBSCRIBE_TIMEOUT_MS, transition to 'error' so the consumer can

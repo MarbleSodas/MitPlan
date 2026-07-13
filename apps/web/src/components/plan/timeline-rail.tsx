@@ -10,9 +10,10 @@
  */
 import { useMemo } from 'react';
 import { Skull } from 'lucide-react';
-import { TimelineEventCard } from './timeline-event-card';
+import { DroppableEventCard } from './droppable-event-card';
 import type { TimelineEventInfo } from '@/lib/data-source';
 import type { Assignment } from '@xivmitplan/validation/plan';
+import type { MitStackResult } from '@/lib/mit-evaluator';
 
 const BUCKET_MIN_MS = 60_000;
 
@@ -45,10 +46,14 @@ const bucketize = (
 export const TimelineRail = ({
   events,
   assignments,
+  mitStacks,
+  selectedEventId,
   onPick,
 }: {
   events: TimelineEventInfo[] | null;
   assignments: Assignment[];
+  mitStacks?: Map<string, MitStackResult>;
+  selectedEventId?: string | null;
   onPick: (event: TimelineEventInfo) => void;
 }) => {
   // Single-pass count + bucket. Recomputes when events or assignments
@@ -88,10 +93,12 @@ export const TimelineRail = ({
           </header>
           <div className="flex flex-col gap-1.5">
             {bucket.events.map(({ event, count }) => (
-              <TimelineEventCard
+              <DroppableEventCard
                 key={event.id}
                 event={event}
                 assignmentCount={count}
+                mitStack={mitStacks?.get(event.id) ?? null}
+                isSelected={event.id === selectedEventId}
                 onPick={onPick}
               />
             ))}

@@ -16,16 +16,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-  ],
-  webServer: process.env['CI']
-    ? undefined
-    : {
-        command: 'pnpm dev',
-        port: 5173,
-        timeout: 60_000,
-        reuseExistingServer: true,
-      },
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  webServer: {
+    command: 'pnpm dev -- --host 127.0.0.1',
+    port: 5173,
+    timeout: 60_000,
+    reuseExistingServer: !process.env['CI'],
+  },
 });

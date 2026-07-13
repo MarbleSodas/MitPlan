@@ -44,6 +44,7 @@ export const realtimeProvider = (
     ydoc: opts.ydoc,
     accessToken: opts.accessToken,
     onStatus: opts.onStatus,
+    ...(opts.readOnly !== undefined ? { readOnly: opts.readOnly } : {}),
     supabase: opts.supabase ?? (defaultSupabase as unknown as SupabaseLike),
     ...(opts.shareToken !== undefined ? { shareToken: opts.shareToken } : {}),
   };

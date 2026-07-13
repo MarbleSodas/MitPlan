@@ -37,7 +37,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router';
 import { ArrowLeft, Plus, Share2, Sparkles, Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { DndContext, DragOverlay, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import * as Y from 'yjs';
 import { PlanDoc, createPlanDoc } from '@xivmitplan/crdt';
 import {
@@ -53,6 +53,7 @@ import {
   getPlan,
   getTimelineForEncounter,
   getYDocSnapshot,
+  getPlanRole,
   listAbilities,
   redeemShare,
   saveSnapshot,
@@ -110,6 +111,7 @@ export const PlanEditor = () => {
   // Plan-row metadata loaded from data-source.getPlan(). Once loaded,
   // its `encounterId` overrides the URL query param + FRU P1 fallback.
   const [planRow, setPlanRow] = useState<PlanInfo | null>(null);
+  const [planRole, setPlanRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER' | null | undefined>(undefined);
   // DnD: dragged ability chip for the overlay.
   const [activeDragAbility, setActiveDragAbility] = useState<AbilityInfo | null>(null);
 
@@ -126,7 +128,9 @@ export const PlanEditor = () => {
   );
 
   // Presence: track who's currently viewing this plan.
-  const presenceUsers = usePresence(planId ?? null);
+  const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
+  const isOwner = planRole === 'OWNER';
+  const presenceUsers = usePresence(planId ?? null, canEdit);
 
   // Create the Y.Doc once on mount, destroy on unmount.
   useEffect(() => {
@@ -217,6 +221,23 @@ export const PlanEditor = () => {
     };
   }, [shareToken, session.user, shareRedeemed, planId]);
 
+  // Role is derived by the database after share redemption completes. Do not
+  // infer write access from URL state or from a client-side share token.
+  useEffect(() => {
+    if (!planId || !session.user || (shareToken && shareRedeemed !== true)) return;
+    let mounted = true;
+    getPlanRole(planId)
+      .then((role) => {
+        if (mounted) setPlanRole(role);
+      })
+      .catch(() => {
+        if (mounted) setPlanRole(null);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [planId, session.user?.id, shareToken, shareRedeemed]);
+
   // Snapshot restore. When the Y.Doc mounts, fetch the latest
   // snapshot for the plan (if any) and apply it before the realtime
   // provider connects. Runs ONCE per plan mount — the snapshot is
@@ -261,7 +282,7 @@ export const PlanEditor = () => {
   // Gated on `hydrated` so we don't broadcast before the snapshot is
   // applied (which would race with the cold-load).
   useEffect(() => {
-    if (!planDoc || !planId || !hydrated) return;
+    if (!planDoc || !planId || !hydrated || !planRole) return;
     if (session.loading || !session.session) return;
     const accessToken = session.session.access_token;
     if (!accessToken) return;
@@ -270,6 +291,7 @@ export const PlanEditor = () => {
       ydoc: planDoc.doc,
       accessToken,
       onStatus: setStatus,
+      readOnly: !canEdit,
     });
     providerRef.current = provider;
     provider.connect();
@@ -315,7 +337,7 @@ export const PlanEditor = () => {
       clearTimeout(boundTimer);
       if (lateJoinTimer) clearTimeout(lateJoinTimer);
     };
-  }, [planDoc, planId, hydrated, session.loading, session.user?.id]);
+  }, [planDoc, planId, hydrated, planRole, canEdit, session.loading, session.user?.id]);
 
   // Resolve the event id the AbilityPicker will pre-anchor new mits to:
   // user-picked id → first event of the loaded timeline.
@@ -362,6 +384,7 @@ export const PlanEditor = () => {
   // hook count between renders.
   const handleAddAssignment = useCallback(
     ({ ability, event }: { ability: AbilityInfo; event: TimelineEventInfo }) => {
+      if (!canEdit) return;
       const assignmentId = addAssignment({ ability, event });
       if (assignmentId) {
         toast.success(`${ability.name} assigned`, {
@@ -376,12 +399,13 @@ export const PlanEditor = () => {
         });
       }
     },
-    [addAssignment, removeAssignment],
+    [addAssignment, removeAssignment, canEdit],
   );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setActiveDragAbility(null);
+      if (!canEdit) return;
       const { active, over } = event;
       if (!over) return;
 
@@ -412,10 +436,10 @@ export const PlanEditor = () => {
         });
       }
     },
-    [addAssignment, removeAssignment],
+    [addAssignment, removeAssignment, canEdit],
   );
 
-  const handleDragStart = useCallback((event: DragEndEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current;
     if (data?.type === 'ability') {
       setActiveDragAbility(data.ability as AbilityInfo);
@@ -455,6 +479,25 @@ export const PlanEditor = () => {
     );
   }
 
+  if (planRole === undefined) {
+    return (
+      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
+        <Loader2 className="text-muted-foreground size-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (planRole === null) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-20 text-center">
+        <p className="text-muted-foreground text-sm">You do not have access to this plan.</p>
+        <Button asChild className="mt-4">
+          <Link to="/plan">Back to plans</Link>
+        </Button>
+      </div>
+    );
+  }
+
   const statusInfo = STATUS_BADGE[status];
   const pickEvent = (e: TimelineEventInfo) => {
     setPickedEventId(e.id);
@@ -474,6 +517,7 @@ export const PlanEditor = () => {
         <Input
           value={planName}
           onChange={(e) => setPlanName(e.target.value)}
+          readOnly={!canEdit}
           className="h-8 max-w-md border-transparent bg-transparent px-2 text-sm font-semibold shadow-none focus-visible:border-input"
           aria-label="Plan name"
         />
@@ -486,31 +530,31 @@ export const PlanEditor = () => {
           {statusInfo.icon}
           {statusInfo.label}
         </Badge>
-        <PresenceBar users={presenceUsers} />
+          <PresenceBar users={presenceUsers} />
         <div className="ml-auto flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleSaveVersion}
-            disabled={!ready}
+            disabled={!ready || !canEdit}
             title="Save a versioned snapshot"
           >
             Save version
           </Button>
-          <Button
+          {isOwner && <Button
             variant="outline"
             size="sm"
             onClick={() => setShareOpen(true)}
           >
             <Share2 /> Share
-          </Button>
+          </Button>}
           <Button
             onClick={() => {
               setPickedEventId(null);
               setPickerOpen(true);
             }}
             size="sm"
-            disabled={!ready || !defaultEventId}
+            disabled={!ready || !defaultEventId || !canEdit}
             title={!defaultEventId ? 'Load a timeline first' : undefined}
           >
             <Plus /> Add mitigation
@@ -519,7 +563,7 @@ export const PlanEditor = () => {
       </div>
 
       {/* Body: left rail + main canvas */}
-      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext {...(canEdit ? { onDragStart: handleDragStart, onDragEnd: handleDragEnd } : {})}>
         <div className="flex flex-1 overflow-hidden">
           <aside className="bg-sidebar text-sidebar-foreground flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r p-4">
             <header className="flex items-center justify-between px-1">
@@ -557,7 +601,7 @@ export const PlanEditor = () => {
           </aside>
 
           <main className="bg-background/40 flex-1 overflow-y-auto p-6">
-            <DraggableAbilityStrip abilities={abilities} />
+            {canEdit && <DraggableAbilityStrip abilities={abilities} />}
             {eventsError ? (
               <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
                 <AlertCircle className="text-destructive size-6" />
@@ -586,7 +630,7 @@ export const PlanEditor = () => {
         </DragOverlay>
       </DndContext>
 
-      <AbilityPicker
+      {canEdit && <AbilityPicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         eventId={defaultEventId}
@@ -594,14 +638,14 @@ export const PlanEditor = () => {
         events={events}
         assignments={assignments}
         onPick={handleAddAssignment}
-      />
+      />}
 
-      <ShareDialog
+      {isOwner && <ShareDialog
         open={shareOpen}
         onOpenChange={setShareOpen}
         planId={planId ?? ''}
         viewers={presenceUsers}
-      />
+      />}
     </div>
   );
 };

@@ -20,8 +20,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { useSession } from '../lib/supabase.js';
-import { createPlan } from '@/lib/data-source';
+import { claimLegacyPlans, createPlan, listClaimableLegacyPlans } from '@/lib/data-source';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -45,6 +46,8 @@ export const PlanIndex = () => {
   const [encounterId, setEncounterId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [claimablePlans, setClaimablePlans] = useState<Array<{ id: string; name: string }>>([]);
+  const [claiming, setClaiming] = useState(false);
 
   // Handled client-side — replace with the redirect helper when the
   // auth gate moves into a layout route (Phase 2+). In a useEffect so
@@ -54,6 +57,21 @@ export const PlanIndex = () => {
       navigate('/login?next=/plan', { replace: true });
     }
   }, [session.loading, session.user, navigate]);
+
+  useEffect(() => {
+    if (!session.user) return;
+    let mounted = true;
+    listClaimableLegacyPlans()
+      .then((plans) => {
+        if (mounted) setClaimablePlans(plans);
+      })
+      .catch(() => {
+        if (mounted) setClaimablePlans([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [session.user?.id]);
 
   // Early returns go BELOW all hook declarations — the React Rules of
   // Hooks forbid changing the hook count between renders, so all
@@ -88,6 +106,20 @@ export const PlanIndex = () => {
     }
   };
 
+  const handleClaim = async () => {
+    if (claiming || claimablePlans.length === 0) return;
+    setClaiming(true);
+    try {
+      const claimed = await claimLegacyPlans(claimablePlans.map((plan) => plan.id));
+      setClaimablePlans([]);
+      toast.success(`Claimed ${claimed} imported ${claimed === 1 ? 'plan' : 'plans'}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not claim imported plans');
+    } finally {
+      setClaiming(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
       <header className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
@@ -97,6 +129,12 @@ export const PlanIndex = () => {
             Plan FFXIV raid mitigations with your static group in real time.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          {claimablePlans.length > 0 && (
+            <Button variant="outline" onClick={handleClaim} disabled={claiming}>
+              {claiming ? 'Claiming…' : `Claim ${claimablePlans.length} imported plans`}
+            </Button>
+          )}
         <Dialog
           open={open}
           onOpenChange={(next) => {
@@ -152,6 +190,7 @@ export const PlanIndex = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </header>
       <PlanList />
     </div>

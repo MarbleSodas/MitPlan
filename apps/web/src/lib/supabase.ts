@@ -28,7 +28,7 @@ export const supabase = createClient(
   SUPABASE_URL || 'http://localhost.invalid',
   SUPABASE_ANON_KEY || 'invalid-anon-key',
   {
-    auth: { persistSession: true, autoRefreshToken: true },
+    auth: { persistSession: true, autoRefreshToken: true, flowType: 'pkce' },
   },
 );
 

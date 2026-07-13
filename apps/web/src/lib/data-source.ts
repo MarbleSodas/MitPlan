@@ -46,6 +46,8 @@ import {
   planAccessListForPlan,
   sharePlan as rpcSharePlan,
   redeemShareToken,
+  planRoleForCurrentUser,
+  legacyClaimablePlanIds,
   claimLegacyPlans as rpcClaimLegacyPlans,
 } from './supabase-rpc.js';
 import type { Encounter, AbilityRow, PlanRow, TimelineRow, PlanAccessRow } from './supabase-rpc.js';
@@ -553,6 +555,14 @@ export const redeemShare = async (
   return redeemShareToken(defaultSupabase, { planId, token });
 };
 
+/** Return the caller's effective plan role. This must never be inferred from UI state. */
+export const getPlanRole = async (
+  planId: string,
+): Promise<'OWNER' | 'EDITOR' | 'VIEWER' | null> => {
+  if (!isSupabaseConfigured()) return 'OWNER';
+  return planRoleForCurrentUser(defaultSupabase, { p_plan_id: planId });
+};
+
 /**
  * List the access grants for a plan (owner + editors + viewers).
  * Returns an empty array in fallback mode (no Supabase configured).
@@ -580,6 +590,12 @@ export const claimLegacyPlans = async (planIds: string[]): Promise<number> => {
   if (!isSupabaseConfigured()) throw new Error('claimLegacyPlans requires Supabase');
   const { claimed } = await rpcClaimLegacyPlans(defaultSupabase, { planIds });
   return claimed;
+};
+
+/** List imported plans that the current verified identity may claim. */
+export const listClaimableLegacyPlans = async (): Promise<Array<{ id: string; name: string }>> => {
+  if (!isSupabaseConfigured()) return [];
+  return legacyClaimablePlanIds(defaultSupabase);
 };
 
 /**

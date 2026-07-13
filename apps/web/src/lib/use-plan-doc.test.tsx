@@ -35,11 +35,14 @@ const toAbilityInfo = (s: (typeof SAMPLE_ABILITIES)[number]): AbilityInfo => ({
   description: s.description,
   effectPct: s.effectPct > 0 ? s.effectPct : null,
   recastS: s.recastS,
-  durationS: null,
+  durationS: s.durationS,
   isInvuln: s.category === 'invuln',
   isHeal: s.category === 'healer-cd',
   isShield: s.category === 'shield',
   category: s.category,
+  damageType: s.damageType,
+  target: s.target,
+  charges: s.charges,
 });
 
 const toEventInfo = (s: (typeof SAMPLE_EVENTS)[string][number]): TimelineEventInfo => ({

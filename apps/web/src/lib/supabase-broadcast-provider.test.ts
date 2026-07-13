@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
 import {
   SupabaseBroadcastProvider,
+  SNAPSHOT_DEBOUNCE_MS,
   base64ToUint8,
   uint8ToBase64,
 } from './supabase-broadcast-provider.js';
@@ -402,6 +403,29 @@ describe('SupabaseBroadcastProvider', () => {
       Y.applyUpdate(remoteDoc, base64ToUint8(payload.update));
       expect(remoteDoc.getText('hello').toString()).toBe('world');
 
+      provider.disconnect();
+    });
+
+    it('does not publish or snapshot local updates in read-only mode', async () => {
+      const { channel, sent } = makeMockChannel();
+      const supabase = makeMockSupabase(channel);
+      const doc = new Y.Doc();
+      const provider = new SupabaseBroadcastProvider({
+        planId: 'plan-read-only',
+        ydoc: doc,
+        accessToken: 'tok',
+        onStatus: () => {},
+        readOnly: true,
+        supabase,
+      });
+      provider.connect();
+      channel.__completeSubscribe('SUBSCRIBED');
+
+      doc.getText('local').insert(0, 'blocked');
+      await vi.advanceTimersByTimeAsync(SNAPSHOT_DEBOUNCE_MS);
+
+      expect(sent).toHaveLength(0);
+      expect(supabase.rpc).not.toHaveBeenCalled();
       provider.disconnect();
     });
 

@@ -159,40 +159,56 @@ const ClaimLegacyPlansResult = z.object({
 });
 type ClaimLegacyPlansResult = z.infer<typeof ClaimLegacyPlansResult>;
 
+const RedeemShareTokenResult = z.object({
+  role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
+  expiresAt: z.string().datetime().nullable(),
+});
+type RedeemShareTokenResult = z.infer<typeof RedeemShareTokenResult>;
+
+const RedeemShareTokenArgs = z.object({
+  planId: z.string().uuid(),
+  token: z.string().min(1),
+});
+type RedeemShareTokenArgs = z.infer<typeof RedeemShareTokenArgs>;
+
+const PlanRoleArgs = z.object({ p_plan_id: z.string().uuid() });
+const PlanRoleResult = z.enum(["OWNER", "EDITOR", "VIEWER"]).nullable();
+const LegacyClaimablePlan = z.object({ id: z.string().uuid(), name: z.string() });
+
 // ---------------------------------------------------------------------------
 // Input arg schemas. These use snake_case to match the SQL function params.
 // ---------------------------------------------------------------------------
 
 const EncountersListArgs = z.object({
-  expansion_slug: z.string().optional(),
-  raid_slug: z.string().optional(),
+  p_expansion_slug: z.string().optional(),
+  p_raid_slug: z.string().optional(),
 });
 type EncountersListArgs = z.infer<typeof EncountersListArgs>;
 
-const EncountersByIdArgs = z.object({ id: z.string().uuid() });
+const EncountersByIdArgs = z.object({ p_id: z.string().uuid() });
 type EncountersByIdArgs = z.infer<typeof EncountersByIdArgs>;
 
 const AbilitiesListArgs = z.object({
-  job_id: z.string().uuid().optional(),
-  mode: AbilityMode.optional(),
-  encounter_id: z.string().uuid().optional(),
+  p_job_id: z.string().uuid().optional(),
+  p_mode: AbilityMode.optional(),
+  p_encounter_id: z.string().uuid().optional(),
 });
 type AbilitiesListArgs = z.infer<typeof AbilitiesListArgs>;
 
 const PlansListArgs = z.object({
-  limit: z.number().int().min(1).max(100).optional(),
+  p_limit: z.number().int().min(1).max(100).optional(),
 });
 type PlansListArgs = z.infer<typeof PlansListArgs>;
 
-const PlansByIdArgs = z.object({ id: z.string().uuid() });
+const PlansByIdArgs = z.object({ p_id: z.string().uuid() });
 type PlansByIdArgs = z.infer<typeof PlansByIdArgs>;
 
 const TimelinesByEncounterArgs = z.object({
-  encounter_id: z.string().uuid(),
+  p_encounter_id: z.string().uuid(),
 });
 type TimelinesByEncounterArgs = z.infer<typeof TimelinesByEncounterArgs>;
 
-const PlanAccessListForPlanArgs = z.object({ plan_id: z.string().uuid() });
+const PlanAccessListForPlanArgs = z.object({ p_plan_id: z.string().uuid() });
 type PlanAccessListForPlanArgs = z.infer<typeof PlanAccessListForPlanArgs>;
 
 const CreatePlanArgs = z.object({
@@ -480,3 +496,37 @@ export const claimLegacyPlans = (
   args: ClaimLegacyPlansArgs,
 ): Promise<ClaimLegacyPlansResult> =>
   callEdgeFunction(client, "auth-claim-legacy-plans", args, ClaimLegacyPlansResult);
+
+export const redeemShareToken = (
+  client: SupabaseClient,
+  args: RedeemShareTokenArgs,
+): Promise<RedeemShareTokenResult> =>
+  callEdgeFunction(client, "plans-share-redeem", args, RedeemShareTokenResult);
+
+/** Returns the caller's server-derived role for a plan, or null without access. */
+export const planRoleForCurrentUser = async (
+  client: SupabaseClient,
+  args: z.infer<typeof PlanRoleArgs>,
+): Promise<z.infer<typeof PlanRoleResult>> => {
+  const parsed = PlanRoleArgs.parse(args);
+  const { data, error } = await client.rpc('plan_role_for_current_user', parsed);
+  if (error) throw new RpcError('plan_role_for_current_user', error.message, error);
+  const result = PlanRoleResult.safeParse(data);
+  if (!result.success) {
+    throw new RpcError('plan_role_for_current_user', result.error.message, result.error);
+  }
+  return result.data;
+};
+
+/** Lists only legacy plans whose owner identity matches the current user. */
+export const legacyClaimablePlanIds = async (
+  client: SupabaseClient,
+): Promise<Array<z.infer<typeof LegacyClaimablePlan>>> => {
+  const { data, error } = await client.rpc('legacy_claimable_plan_ids');
+  if (error) throw new RpcError('legacy_claimable_plan_ids', error.message, error);
+  const result = z.array(LegacyClaimablePlan).safeParse(data);
+  if (!result.success) {
+    throw new RpcError('legacy_claimable_plan_ids', result.error.message, result.error);
+  }
+  return result.data;
+};
