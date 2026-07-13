@@ -136,7 +136,7 @@ architecture is the same; the env values differ.
     # migration file.
     supabase db push
     ```
-    The migration set is currently **0001–0008**:
+     The migration set is currently **0001–0009**:
       - `0001` — 14 tables (catalog, plans, snapshots, etc.)
       - `0002` — RLS, realtime ACL gate, snapshot RPCs, Yjs validator
       - `0003` — PostgREST RPCs (encounters_list, plans_list, etc.)
@@ -144,7 +144,8 @@ architecture is the same; the env values differ.
       - `0005` — share_tokens table (account-grant sharing)
       - `0006` — legacy import sentinel rows
       - `0007` — RLS recursion fix on `plan_access`
-      - `0008` — allow VIEWER role in `realtime.check_plan_access`
+       - `0008` — allow VIEWER role in `realtime.check_plan_access`
+       - `0009` — core-release access and legacy-claim hardening
     Copy `Project URL`, `anon` key, `service_role` key, and `JWT Secret`
     from Project Settings → API for the env vars below.
 6. **Enable Auth providers**:
@@ -156,62 +157,38 @@ architecture is the same; the env values differ.
 
 ```sh
 psql "$DATABASE_URL" -c "SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;"
-# Should list 0001 .. 0008 (see the migration set above).
+# Should list 0001 .. 0009 (see the migration set above).
 ```
 
 ---
 
 ## 3. Realtime authorization policy
 
-> **Path A replacement for the old `apps/realtime` checkAccess.**
-> The realtime.check_plan_access() function (migration 0002) must be
-> bound to channels named `plan:*` in the Supabase Dashboard.
+> **Path A replacement for the old `apps/realtime` checkAccess.** Migration
+> `0009` installs private-channel policies on `realtime.messages`: all plan
+> members may receive broadcasts/presence, while only owners/editors may
+> publish. Disable **Allow public access** under Realtime Settings for each
+> environment before releasing.
 
 ### Steps
 
-1. In the Supabase Dashboard, go to **Database → Replication**.
-2. Click **Policies** → **Create policy**.
-3. Choose **"Realtime messages from a client"** as the policy target.
-4. Set the policy:
-    - **Channel name pattern**: `plan:*`
-    - **Allowed**: expression
-    - **Expression**:
-      ```sql
-      realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata('claims'))
-      ```
-5. Click **Save**.
-
-> **Reproducible alternative (SQL).** The Dashboard step above is the
-> supported path, but the policy can also be inserted directly so it is
-> codifiable in runbooks/CI:
->
-> ```sql
-> INSERT INTO realtime.policies (name, topic, check, publish, subscribe, insert, update, delete)
-> VALUES (
->   'plan access',
->   'plan:*',
->   'realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata(''claims''))',
->   true, true, true, true, true
-> );
-> ```
->
-> Verify the `realtime.policies` column names match your Supabase
-> version before relying on this; the Dashboard path always works.
+1. Apply migration `0009` with `supabase db push`.
+2. In the Supabase Dashboard, go to **Realtime → Settings**.
+3. Disable **Allow public access**.
+4. Open a plan as an owner, editor, and viewer. Owners/editors must receive
+   and publish updates; viewers must receive updates but be unable to publish
+   or track presence.
 
 ### Verification
 
-The `realtime.check_plan_access()` function (migration 0002) exists and
-is referenced by the policy. On current Supabase hosted versions the
-`realtime.policies` table is **not** exposed for direct SQL inserts —
-the Dashboard path (Replication → Policies) is the only supported way
-to bind it, so the SQL alternative below may not apply to your version.
-If the Dashboard does not offer a "Realtime messages from a client"
-policy target, Realtime will broadcast without the custom access gate;
-the app still works (plan data remains protected by PostgREST RLS). Verify
-the function is present:
+Verify the installed policies and helper function:
 
 ```sql
-SELECT proname FROM pg_proc WHERE proname = 'check_plan_access';
+SELECT policyname FROM pg_policies
+WHERE schemaname = 'realtime' AND tablename = 'messages';
+-- Expect xivmitplan_plan_receive and xivmitplan_plan_publish.
+
+SELECT proname FROM pg_proc WHERE proname = 'plan_channel_access';
 -- Expect one row.
 ```
 
