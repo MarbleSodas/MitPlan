@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { AbilityMode } from '../ability/index.js';
 
 /** Source provenance (§12.3). */
-export const TimelineSource = z.enum(['CACTBOT', 'TRIGGERNOMETRY', 'FFLOGS', 'MERGED']);
+export const TimelineSource = z.enum(['CACTBOT', 'TRIGGERNOMETRY', 'FFLOGS', 'MERGED', 'MANUAL']);
 export type TimelineSource = z.infer<typeof TimelineSource>;
 
 /** Which sources the canonical event was merged from. */
