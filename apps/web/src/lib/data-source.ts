@@ -42,18 +42,18 @@ import {
   timelinesByEncounter,
   createPlan as rpcCreatePlan,
   loadYDocSnapshot,
+  snapshotPlan as rpcSnapshotPlan,
+  planAccessListForPlan,
+  sharePlan as rpcSharePlan,
+  redeemShareToken,
+  claimLegacyPlans as rpcClaimLegacyPlans,
 } from './supabase-rpc.js';
-import type { Encounter, AbilityRow, PlanRow, TimelineRow } from './supabase-rpc.js';
+import type { Encounter, AbilityRow, PlanRow, TimelineRow, PlanAccessRow } from './supabase-rpc.js';
 import {
-  FRU_P1_ID,
-  FRU_P2_ID,
-  M1S_ID,
-  M2S_ID,
-  P1S_ID,
-  P4S_ID,
   SAMPLE_PLANS,
   SAMPLE_ABILITIES,
   SAMPLE_EVENTS,
+  SAMPLE_ENCOUNTERS,
 } from './sample-data.js';
 import { capitalize } from './utils.js';
 
@@ -94,7 +94,10 @@ export interface AbilityInfo {
   isInvuln: boolean;
   isHeal: boolean;
   isShield: boolean;
-  category: 'tank-cd' | 'healer-cd' | 'party-mit' | 'invuln' | 'shield';
+  category: 'tank-cd' | 'healer-cd' | 'party-mit' | 'invuln' | 'shield' | 'utility';
+  damageType: 'physical' | 'magical' | 'both';
+  target: 'self' | 'single' | 'party' | 'area';
+  charges: number;
 }
 
 /** Plan row as the UI consumes it. */
@@ -168,15 +171,14 @@ const TANK_PARTY_MIT_IDS: ReadonlySet<string> = new Set([
 ]);
 
 /** Map sample-data `category` back into the same string for the live API.
- * The sample catalog uses 5 buckets that don't exist on the DB schema;
- * we infer them client-side from `is_invuln` / `is_shield` / `is_heal`
- * / `recast_s` / `job_id`. */
+ * The sample catalog uses 6 buckets; we infer them client-side from
+ * `is_invuln` / `is_shield` / `is_heal` / `recast_s` / `job_id`. */
 const inferAbilityCategory = (row: AbilityRow): AbilityInfo['category'] => {
   if (row.is_invuln) return 'invuln';
   if (row.is_shield) return 'shield';
   if (TANK_PARTY_MIT_IDS.has(row.ability_id)) return 'party-mit';
   const abbrev = JOB_ABBREV[row.job_id] ?? '';
-  if (abbrev === 'SCH' || abbrev === 'AST') {
+  if (abbrev === 'SCH' || abbrev === 'AST' || abbrev === 'SGE' || abbrev === 'WHM') {
     if (row.is_heal) return 'healer-cd';
   }
   if (abbrev === 'PLD' || abbrev === 'WAR' || abbrev === 'DRK' || abbrev === 'GNB') {
@@ -185,7 +187,10 @@ const inferAbilityCategory = (row: AbilityRow): AbilityInfo['category'] => {
   return 'party-mit';
 };
 
-/** Sample-data jobs (must mirror the seed migration 0004). */
+/** Sample-data jobs (must mirror the seed migration 0004).
+ * The 8 jobs in the seed are PLD/WAR/DRK/GNB/SCH/AST/BLM/MNK
+ * (migration 0004:124-132). The remaining 12 IDs (5.x and 9-20) are
+ * reserved for future seed expansion and not currently seeded. */
 const JOB_ABBREV: Record<string, string> = {
   '50000000-0000-0000-0000-000000000001': 'PLD',
   '50000000-0000-0000-0000-000000000002': 'WAR',
@@ -195,92 +200,51 @@ const JOB_ABBREV: Record<string, string> = {
   '50000000-0000-0000-0000-000000000006': 'AST',
   '50000000-0000-0000-0000-000000000007': 'BLM',
   '50000000-0000-0000-0000-000000000008': 'MNK',
+  '50000000-0000-0000-0000-000000000009': 'DRG',
+  '50000000-0000-0000-0000-000000000010': 'SAM',
+  '50000000-0000-0000-0000-000000000011': 'RPR',
+  '50000000-0000-0000-0000-000000000012': 'VPR',
+  '50000000-0000-0000-0000-000000000013': 'RDM',
+  '50000000-0000-0000-0000-000000000014': 'SMN',
+  '50000000-0000-0000-0000-000000000015': 'PCT',
+  '50000000-0000-0000-0000-000000000016': 'BRD',
+  '50000000-0000-0000-0000-000000000017': 'MCH',
+  '50000000-0000-0000-0000-000000000018': 'DNC',
+  '50000000-0000-0000-0000-000000000019': 'WHM',
+  '50000000-0000-0000-0000-000000000020': 'SGE',
 };
 
-/** Sample encounter rows (mirror the seed migration 0004 for the 6
- * encounters the demo cares about). Used when Supabase isn't
- * configured. */
-const SAMPLE_ENCOUNTERS: EncounterInfo[] = [
-  {
-    id: FRU_P1_ID,
-    name: 'Light Rampant',
-    slug: 'fru-p1-light-rampant',
-    patchVersion: '7.21',
-    raidSlug: 'fru',
-    raidName: 'Futures Rewritten (Ultimate)',
-    expansionSlug: 'dawntrail',
-    expansionName: 'Dawntrail',
-    effectiveFrom: '7.21',
-    effectiveTo: null,
-  },
-  {
-    id: FRU_P2_ID,
-    name: 'Darklit Dragonsong',
-    slug: 'fru-p2-darklit-dragonsong',
-    patchVersion: '7.21',
-    raidSlug: 'fru',
-    raidName: 'Futures Rewritten (Ultimate)',
-    expansionSlug: 'dawntrail',
-    expansionName: 'Dawntrail',
-    effectiveFrom: '7.21',
-    effectiveTo: null,
-  },
-  {
-    id: M1S_ID,
-    name: 'Sugar Riot',
-    slug: 'm1s-sugar-riot',
-    patchVersion: '7.05',
-    raidSlug: 'm1s',
-    raidName: 'Alexandrian (Savage) M1',
-    expansionSlug: 'dawntrail',
-    expansionName: 'Dawntrail',
-    effectiveFrom: '7.05',
-    effectiveTo: null,
-  },
-  {
-    id: M2S_ID,
-    name: 'Howling Blade',
-    slug: 'm2s-howling-blade',
-    patchVersion: '7.08',
-    raidSlug: 'm2s',
-    raidName: 'Alexandrian (Savage) M2',
-    expansionSlug: 'dawntrail',
-    expansionName: 'Dawntrail',
-    effectiveFrom: '7.08',
-    effectiveTo: null,
-  },
-  {
-    id: P1S_ID,
-    name: 'Erichthonios',
-    slug: 'p1s-erichthonios',
-    patchVersion: '6.05',
-    raidSlug: 'p1s',
-    raidName: 'Pandaemonium (Savage) P1',
-    expansionSlug: 'endwalker',
-    expansionName: 'Endwalker',
-    effectiveFrom: '6.05',
-    effectiveTo: '7.0',
-  },
-  {
-    id: P4S_ID,
-    name: 'Hephaistos',
-    slug: 'p4s-hephaistos',
-    patchVersion: '6.18',
-    raidSlug: 'p4s',
-    raidName: 'Pandaemonium (Savage) P4',
-    expansionSlug: 'endwalker',
-    expansionName: 'Endwalker',
-    effectiveFrom: '6.18',
-    effectiveTo: '7.0',
-  },
-];
+/** Sample encounter rows (mirror the expanded SAMPLE_ENCOUNTERS). */
+const SAMPLE_ENCOUNTERS_UI: EncounterInfo[] = SAMPLE_ENCOUNTERS.map((e) => ({
+  id: e.id,
+  name: e.name,
+  slug: `${e.raid.toLowerCase().replace(/\s+/g, '-')}-${e.name.toLowerCase().replace(/\s+/g, '-')}`,
+  patchVersion: e.patchVersion,
+  raidSlug: e.raid.toLowerCase().replace(/\s+/g, '-'),
+  raidName: `${e.raid} (${e.tier})`,
+  expansionSlug: parseInt(e.patchVersion) >= 7 ? 'dawntrail' : parseInt(e.patchVersion) >= 6 ? 'endwalker' : 'shadowbringers',
+  expansionName: parseInt(e.patchVersion) >= 7 ? 'Dawntrail' : parseInt(e.patchVersion) >= 6 ? 'Endwalker' : 'Shadowbringers',
+  effectiveFrom: e.patchVersion,
+  effectiveTo: null,
+}));
 
-/** Sample ability rows for the fallback path. Mirrors the seed
- * migration 0004 ability catalog. */
+/**
+ * Deterministic, valid-shaped UUID for a sample ability. The sample
+ * abilities use text ids like `a-hallowed-ground`; we derive a real
+ * UUID by index so the wire format matches what production rows have
+ * (and what the use-plan-doc test fixture uses).
+ */
+const sampleAbilityId = (sampleAbility: (typeof SAMPLE_ABILITIES)[number]): string => {
+  const idx = SAMPLE_ABILITIES.findIndex((a) => a.id === sampleAbility.id);
+  return `60000000-0000-0000-0000-${(idx + 1).toString(16).padStart(12, '0')}`;
+};
+
+/** Sample ability rows for the fallback path. Mirrors the expanded
+ * SAMPLE_ABILITIES catalog. */
 const SAMPLE_ABILITY_ROWS: AbilityInfo[] = SAMPLE_ABILITIES.map((s) => {
   const jobId = Object.entries(JOB_ABBREV).find(([, ab]) => ab === s.jobAbbrev)?.[0] ?? '';
   return {
-    id: s.id.replace('a-', '60000000-0000-0000-0000-000000000'), // Deterministic UUID
+    id: sampleAbilityId(s),
     jobId,
     jobAbbrev: s.jobAbbrev,
     abilityId: s.id.replace('a-', ''),
@@ -288,11 +252,14 @@ const SAMPLE_ABILITY_ROWS: AbilityInfo[] = SAMPLE_ABILITIES.map((s) => {
     description: s.description,
     effectPct: s.effectPct > 0 ? s.effectPct : null,
     recastS: s.recastS,
-    durationS: null,
+    durationS: s.durationS,
     isInvuln: s.category === 'invuln',
     isHeal: s.category === 'healer-cd',
     isShield: s.category === 'shield',
     category: s.category,
+    damageType: s.damageType,
+    target: s.target,
+    charges: s.charges,
   };
 });
 
@@ -338,6 +305,9 @@ const toAbilityInfo = (row: AbilityRow): AbilityInfo => ({
   isHeal: row.is_heal,
   isShield: row.is_shield,
   category: inferAbilityCategory(row),
+  damageType: 'both',
+  target: row.is_invuln ? 'self' : 'party',
+  charges: 1,
 });
 
 const toPlanInfo = (row: PlanRow): PlanInfo => ({
@@ -397,7 +367,7 @@ const toTimelineEvent = (e: unknown): TimelineEventInfo => {
  * `_invalidateCatalogCache()` to force a refetch.
  */
 async function listEncountersImpl(): Promise<EncounterInfo[]> {
-  if (!isSupabaseConfigured()) return SAMPLE_ENCOUNTERS;
+  if (!isSupabaseConfigured()) return SAMPLE_ENCOUNTERS_UI;
   const rows = await encountersList(defaultSupabase, {});
   return rows.map(toEncounterInfo);
 }
@@ -412,9 +382,9 @@ export const listEncounters = (): Promise<EncounterInfo[]> =>
  */
 export const getEncounter = async (id: string): Promise<EncounterInfo | null> => {
   if (!isSupabaseConfigured()) {
-    return SAMPLE_ENCOUNTERS.find((e) => e.id === id) ?? null;
+    return SAMPLE_ENCOUNTERS_UI.find((e) => e.id === id) ?? null;
   }
-  const row = await encountersById(defaultSupabase, { id });
+  const row = await encountersById(defaultSupabase, { p_id: id });
   return row ? toEncounterInfo(row) : null;
 };
 
@@ -450,7 +420,7 @@ export const listAbilities = (): Promise<AbilityInfo[]> =>
  */
 export const listMyPlans = async (): Promise<PlanInfo[]> => {
   if (!isSupabaseConfigured()) return SAMPLE_PLANS_CAMEL;
-  const rows = await plansList(defaultSupabase, { limit: 50 });
+  const rows = await plansList(defaultSupabase, { p_limit: 50 });
   return rows.map(toPlanInfo);
 };
 
@@ -461,7 +431,7 @@ export const getPlan = async (id: string): Promise<PlanInfo | null> => {
   if (!isSupabaseConfigured()) {
     return SAMPLE_PLANS_CAMEL.find((p) => p.id === id) ?? null;
   }
-  const row = await plansById(defaultSupabase, { id });
+  const row = await plansById(defaultSupabase, { p_id: id });
   return row ? toPlanInfo(row) : null;
 };
 
@@ -491,7 +461,7 @@ async function getTimelineForEncounterImpl(
     }));
   }
   const rows: TimelineRow[] = await timelinesByEncounter(defaultSupabase, {
-    encounter_id: encounterId,
+    p_encounter_id: encounterId,
   });
   // Pick the newest version per encounter (RPC returns DESC).
   const latest = rows[0];
@@ -539,4 +509,89 @@ export const createPlan = async (input: {
     return { planId, createdAt: new Date().toISOString() };
   }
   return rpcCreatePlan(defaultSupabase, input);
+};
+
+// ---------------------------------------------------------------------------
+// Sharing (account-grant model). Phase 2 scope — previously stubbed.
+// ---------------------------------------------------------------------------
+
+/** Plan access grant as the UI consumes it. */
+export interface PlanAccessInfo {
+  planId: string;
+  userId: string;
+  role: 'OWNER' | 'EDITOR' | 'VIEWER';
+  viaShareToken: boolean;
+  grantedAt: string;
+  displayName: string | null;
+  email: string | null;
+}
+
+/**
+ * Mint a share link for a plan. Returns the opaque capability token;
+ * the caller builds the link `/plan/:planId?token=...`. Requires
+ * Supabase (account-required sharing).
+ */
+export const sharePlan = async (input: {
+  planId: string;
+  role: 'read' | 'edit';
+  expiresInDays: number;
+}): Promise<{ token: string; expiresAt: string }> => {
+  if (!isSupabaseConfigured()) throw new Error('sharePlan requires Supabase');
+  return rpcSharePlan(defaultSupabase, input);
+};
+
+/**
+ * Redeem a share-link token. Grants the caller a `plan_access` row so
+ * the plan becomes readable/editable through the standard RLS +
+ * realtime paths. Requires Supabase (account-required sharing).
+ */
+export const redeemShare = async (
+  planId: string,
+  token: string,
+): Promise<{ role: 'OWNER' | 'EDITOR' | 'VIEWER'; expiresAt: string | null }> => {
+  if (!isSupabaseConfigured()) throw new Error('redeemShare requires Supabase');
+  return redeemShareToken(defaultSupabase, { planId, token });
+};
+
+/**
+ * List the access grants for a plan (owner + editors + viewers).
+ * Returns an empty array in fallback mode (no Supabase configured).
+ */
+export const listPlanAccess = async (planId: string): Promise<PlanAccessInfo[]> => {
+  if (!isSupabaseConfigured()) return [];
+  const rows = await planAccessListForPlan(defaultSupabase, { p_plan_id: planId });
+  return rows.map((r: PlanAccessRow) => ({
+    planId: r.plan_id,
+    userId: r.user_id,
+    role: r.role,
+    viaShareToken: r.via_share_token,
+    grantedAt: r.granted_at,
+    displayName: r.display_name,
+    email: r.email,
+  }));
+};
+
+/**
+ * Claim MitPlan v1 (Firebase) legacy plans for the current user. Bridges
+ * old plans into XIVMitPlan v1.0 via the `claim_legacy_plans` RPC
+ * (migration 0001). Requires Supabase.
+ */
+export const claimLegacyPlans = async (planIds: string[]): Promise<number> => {
+  if (!isSupabaseConfigured()) throw new Error('claimLegacyPlans requires Supabase');
+  const { claimed } = await rpcClaimLegacyPlans(defaultSupabase, { planIds });
+  return claimed;
+};
+
+/**
+ * Write a versioned snapshot of the plan's current Yjs state to
+ * `plan_snapshots` (distinct from the debounced `ydoc_snapshots`
+ * autosave). Use this for an explicit "save version" action. Requires
+ * Supabase.
+ */
+export const saveSnapshot = async (
+  planId: string,
+  reason: 'IDLE' | 'USER_SAVE' | 'ASSIGNMENT_DELETE' | 'REBUILD' = 'USER_SAVE',
+): Promise<{ snapshotId: string; byteSize: number; createdAt: string }> => {
+  if (!isSupabaseConfigured()) throw new Error('saveSnapshot requires Supabase');
+  return rpcSnapshotPlan(defaultSupabase, { planId, reason });
 };
