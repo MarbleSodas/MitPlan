@@ -26,7 +26,6 @@ const handler = async (req: Request): Promise<Response> => {
   const ctx = await createSupabaseClient(req);
   const unauth = requireUser(ctx, "*");
   if (unauth) return unauth;
-  const userId = ctx.userId!;
 
   let body: RequestBody;
   try {
@@ -36,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   const { data, error } = await ctx.supabase.rpc("claim_legacy_plans", {
-    plan_ids: body.planIds,
+    p_plan_ids: body.planIds,
   });
 
   if (error) {

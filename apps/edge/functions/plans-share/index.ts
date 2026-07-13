@@ -7,14 +7,15 @@
 // Auth: required (must be the plan owner).
 // Returns: { token, expiresAt }
 //
-// The share token is an HS256 JWT signed with `JWT_SIGNING_KEY`.
-// Claims include a `plan_access` field that the realtime authorization
-// function (`realtime.check_plan_access` in 0002) accepts for anonymous
-// channel access.
+// Mints an opaque share capability token stored in `share_tokens`.
+// The recipient redeems it via plans-share-redeem, which grants a
+// normal `plan_access` row (account-grant model). This replaces the
+// previous custom-JWT anonymous-link approach, which could not pass
+// `realtime.check_plan_access` (it derived the user from
+// `claims->>'sub'::UUID` but minted `sub: 'system-share'`).
 //
 // Env:
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (auto)
-//   JWT_SIGNING_KEY (custom secret — required, HS256)
 import { z } from "zod";
 import { withCors, errorResponse, json } from "../../_shared/cors.ts";
 import { createSupabaseClient, requireUser } from "../../_shared/supabase-client.ts";
@@ -25,29 +26,6 @@ const RequestBody = z.object({
   expiresInDays: z.number().int().min(1).max(90),
 });
 type RequestBody = z.infer<typeof RequestBody>;
-
-// --- JWT (HS256) helpers. Web Crypto only; no Node `crypto`. --------------
-
-const base64UrlEncode = (bytes: Uint8Array): string => {
-  let s = "";
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]!);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-};
-
-const base64UrlEncodeString = (s: string): string =>
-  base64UrlEncode(new TextEncoder().encode(s));
-
-const signHS256 = async (key: string, data: string): Promise<string> => {
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(key),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", cryptoKey, new TextEncoder().encode(data));
-  return base64UrlEncode(new Uint8Array(sig));
-};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return errorResponse(405, "METHOD_NOT_ALLOWED", "Use POST");
@@ -64,12 +42,6 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse(400, "INVALID_BODY", "Body must match { planId, role, expiresInDays 1..90 }", "*");
   }
 
-  const signingKey = Deno.env.get("JWT_SIGNING_KEY");
-  if (!signingKey) return errorResponse(500, "MISSING_SECRET", "JWT_SIGNING_KEY not configured", "*");
-
-  // Map the public role to the internal plan_access.role enum.
-  const internalRole = body.role === "read" ? "VIEWER" : "EDITOR";
-
   // Confirm the caller owns the plan. RLS would let any viewer read,
   // but only owners should be able to mint share tokens.
   const { data: plan, error: planErr } = await ctx.supabase
@@ -83,37 +55,25 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse(403, "NOT_OWNER", "Only the plan owner can mint share tokens", "*");
   }
 
-  // Mint the JWT.
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + body.expiresInDays * 86_400;
-  const header = { alg: "HS256", typ: "JWT" };
-  const payload = {
-    sub: "system-share",
-    plan_id: body.planId,
-    plan_access: body.role,
-    iat: now,
-    exp,
-  };
-  const headerB64 = base64UrlEncodeString(JSON.stringify(header));
-  const payloadB64 = base64UrlEncodeString(JSON.stringify(payload));
-  const signature = await signHS256(signingKey, `${headerB64}.${payloadB64}`);
-  const token = `${headerB64}.${payloadB64}.${signature}`;
+  // Map the public role to the internal plan_access_role enum.
+  const internalRole = body.role === "read" ? "VIEWER" : "EDITOR";
 
-  // Audit row (best-effort).
-  const { error: accessErr } = await ctx.supabaseAdmin.from("plan_access").upsert(
-    {
-      plan_id: body.planId,
-      user_id: userId,
-      role: internalRole,
-      via_share_token: true,
-    },
-    { onConflict: "plan_id,user_id" },
-  );
-  if (accessErr) {
-    console.error(`plan_access upsert failed: ${accessErr.message}`);
+  // Opaque capability token. crypto.randomUUID is URL-safe enough for
+  // a query-param link; collision probability is negligible.
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + body.expiresInDays * 86_400_000).toISOString();
+
+  const { error: tokErr } = await ctx.supabase.from("share_tokens").insert({
+    token,
+    plan_id: body.planId,
+    role: internalRole,
+    created_by: userId,
+    expires_at: expiresAt,
+  });
+  if (tokErr) {
+    return errorResponse(500, "TOKEN_FAILED", tokErr.message, "*");
   }
 
-  const expiresAt = new Date(exp * 1000).toISOString();
   return json({ token, expiresAt });
 };
 

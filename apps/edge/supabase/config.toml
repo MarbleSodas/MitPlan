@@ -9,7 +9,6 @@
 #
 # Secrets (set once per environment, then re-deploys are no-ops):
 #   supabase secrets set FFLOGS_OAUTH_TOKEN=...
-#   supabase secrets set JWT_SIGNING_KEY=...
 
 project_id = "xivmitplan-edge"
 
@@ -29,6 +28,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.plans-share]
+verify_jwt = true
+
+[functions.plans-share-redeem]
 verify_jwt = true
 
 [functions.auth-claim-legacy-plans]

@@ -32,26 +32,26 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
 /** Explicit role check on top of RLS — VIEWERs are read-only at the
  * snapshot RPC layer even though the ydoc_snapshots SELECT RLS policy
  * accepts any plan_access role. Mirrors upsert_ydoc_snapshot's
- * OWNER/EDITOR gate (migration 0002:138-152). */
+ * OWNER/EDITOR gate and the realtime.check_plan_access owner-OR-role
+ * rule (migration 0002): the plan owner (plans.owner_id) is granted
+ * access even though owners have no plan_access row. */
 const assertEditorAccess = async (
   ctx: { supabase: ReturnType<typeof Object> },
   planId: string,
   userId: string,
 ): Promise<{ ok: true } | { ok: false; status: number; code: string; message: string }> => {
-  // Use the user-scoped client so we benefit from the existing RLS
-  // policy for plan_access SELECT — non-members can't probe.
+  // Left-join plan_access (no !inner) so the owner is returned even
+  // when they have no plan_access row.
   const { data, error } = await ctx.supabase
     .from("plans")
-    .select("owner_id, plan_access!inner(role)")
+    .select("owner_id, plan_access(role)")
     .eq("id", planId)
-    .eq("plan_access.user_id", userId)
     .maybeSingle();
   if (error) return { ok: false, status: 500, code: "ACL_QUERY_FAILED", message: error.message };
-  // No row → caller has no access at all.
+  // No plan row → invalid plan id.
   if (!data) return { ok: false, status: 403, code: "FORBIDDEN", message: "No access to this plan" };
-  // Supabase returns `plan_access` as an array via the !inner join.
-  const rows = (data as { plan_access?: Array<{ role: string }> }).plan_access ?? [];
   const isOwner = (data as { owner_id: string }).owner_id === userId;
+  const rows = (data as { plan_access?: Array<{ role: string }> | null }).plan_access ?? [];
   const isEditor = rows.some((r) => r.role === "OWNER" || r.role === "EDITOR");
   if (!isOwner && !isEditor) {
     return { ok: false, status: 403, code: "FORBIDDEN", message: "Editor access required" };

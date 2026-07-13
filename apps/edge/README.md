@@ -1,7 +1,7 @@
 # XIVMitPlan Edge Functions
 
 Deno-based Supabase Edge Functions. Path A (ADR-0002 §T-4) collapses the
-Cloudflare Workers API tier into PostgREST + these 7 Edge Functions.
+Cloudflare Workers API tier into PostgREST + these 8 Edge Functions.
 
 | Function | Method | Auth | Env vars |
 |---|---|---|---|
@@ -10,7 +10,8 @@ Cloudflare Workers API tier into PostgREST + these 7 Edge Functions.
 | `timelines-ingest-fflogs` | POST | required | `FFLOGS_OAUTH_TOKEN` |
 | `plans-create` | POST | required | — |
 | `plans-snapshot` | POST | required | — |
-| `plans-share` | POST | required | `JWT_SIGNING_KEY` |
+| `plans-share` | POST | required | — |
+| `plans-share-redeem` | POST | required | — |
 | `auth-claim-legacy-plans` | POST | required | — |
 
 All functions share:
@@ -38,12 +39,12 @@ for f in timelines-ingest-cactbot \
          plans-create \
          plans-snapshot \
          plans-share \
+         plans-share-redeem \
          auth-claim-legacy-plans; do
   supabase functions deploy "$f"
 done
 
 supabase secrets set FFLOGS_OAUTH_TOKEN=...
-supabase secrets set JWT_SIGNING_KEY=...
 supabase secrets set CORS_ORIGINS=https://xivmitplan.app
 ```
 

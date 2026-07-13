@@ -61,12 +61,22 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse(500, "INSERT_FAILED", planErr.message, "*");
   }
 
-  // Pre-create the ydoc_snapshots row with a single-byte placeholder.
-  const placeholder = new Uint8Array([0]);
-  const { error: ydocErr } = await ctx.supabaseAdmin.from("ydoc_snapshots").insert({
-    plan_id: planId,
-    update: placeholder,
-    byte_size: placeholder.byteLength,
+  // Pre-create the ydoc_snapshots row with a single-byte placeholder
+  // (`\x00`). Use the same SECURITY DEFINER RPC the web client uses
+  // (upsert_ydoc_snapshot) so the BYTEA arrives as a canonical hex
+  // literal rather than a JSON-serialized Uint8Array (`{"0":0}`), which
+  // would corrupt the snapshot. The caller is the plan owner, so the
+  // RPC's internal ACL check passes.
+  // Pre-create the ydoc_snapshots row with a single-byte placeholder
+  // (`\x00`). Use the same SECURITY DEFINER RPC the web client uses
+  // (upsert_ydoc_snapshot) so the BYTEA arrives as a canonical hex
+  // literal rather than a JSON-serialized Uint8Array (`{"0":0}`) or a
+  // literal base64 string — both of which would corrupt the snapshot.
+  // The caller is the plan owner, so the RPC's internal ACL check passes.
+  const { error: ydocErr } = await ctx.supabase.rpc("upsert_ydoc_snapshot", {
+    p_plan_id: planId,
+    p_update: "\\x00",
+    p_byte_size: 1,
   });
   if (ydocErr) {
     return errorResponse(
