@@ -31,6 +31,23 @@ export const byteaHexToBytes = (hex: string): Uint8Array => {
   return bytes;
 };
 
+/**
+ * Encode a Uint8Array as a PostgREST BYTEA hex string (`\x...`).
+ *
+ * Used when calling RPCs that take a `BYTEA` argument. JSON.stringify
+ * of a raw `Uint8Array` produces `{0: byte, 1: byte, …}`, which
+ * Postgres rejects; the `\x…` hex form is the canonical wire format
+ * that PostgREST round-trips back into `BYTEA`.
+ */
+export const bytesToByteaHex = (bytes: Uint8Array): string => {
+  let out = '\\x';
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i]!;
+    out += HEX_CHARS[(b >> 4) & 0xf] + HEX_CHARS[b & 0xf];
+  }
+  return out;
+};
+
 /** Base64 encode a Uint8Array. Safe for browser + Workers + happy-dom. */
 export function bytesToBase64(arr: Uint8Array): string {
   if (typeof Buffer !== 'undefined') {
@@ -67,3 +84,8 @@ const HEX: number[] = (() => {
   }
   return t;
 })();
+
+// `0-9a-f` character lookup for byte → hex encoding. Index is the
+// nibble value (0..15). Faster than `b.toString(16)` because it
+// avoids the per-call string concat + allocation in the Yjs hot path.
+const HEX_CHARS = '0123456789abcdef';

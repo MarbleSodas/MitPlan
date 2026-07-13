@@ -46,8 +46,6 @@ export const PlanIndex = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  if (session.loading) return null;
-
   // Handled client-side — replace with the redirect helper when the
   // auth gate moves into a layout route (Phase 2+). In a useEffect so
   // we don't navigate during render.
@@ -57,6 +55,10 @@ export const PlanIndex = () => {
     }
   }, [session.loading, session.user, navigate]);
 
+  // Early returns go BELOW all hook declarations — the React Rules of
+  // Hooks forbid changing the hook count between renders, so all
+  // `useState`/`useEffect` calls must happen unconditionally.
+  if (session.loading) return null;
   if (!session.user) return null;
 
   const reset = () => {

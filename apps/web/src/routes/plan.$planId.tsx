@@ -16,19 +16,28 @@
  *
  * Cold-load flow:
  *   1. Mount Y.Doc.
- *   2. Hydrate Y.Doc from `data-source.getYDocSnapshot(planId)` if
+ *   2. Fetch plan-row metadata via `data-source.getPlan()` so the
+ *      editor knows the right encounter + plan name (used for plans
+ *      opened from a PlanCard with no `?encounterId=` URL param).
+ *   3. Hydrate Y.Doc from `data-source.getYDocSnapshot(planId)` if
  *      one exists (the `load_ydoc_snapshot` RPC). This runs once per
  *      plan mount — encounter changes do NOT re-hydrate because the
- *      snapshot is per-plan, not per-encounter.
- *   3. Connect the realtime provider; broadcast + sync the doc.
+ *      snapshot is per-plan, not per-encounter. If a `?token=` is
+ *      present the snapshot effect waits for `redeemShare()` to
+ *      complete first (the recipient needs a `plan_access` row before
+ *      the snapshot RPC will authorize them).
+ *   4. Connect the realtime provider; broadcast + sync the doc.
  *
- * The encounter is read from the `?encounterId=` query param if
- * present (set by `plan.index.tsx`'s "New plan" CTA). Otherwise we
- * fall back to FRU P1 for the cold-open demo.
+ * The encounter is determined by (a) the `?encounterId=` query param
+ * (set by `plan.index.tsx`'s "New plan" CTA), (b) the plan row
+ * (`planRow.encounterId` from `getPlan()`), or (c) the FRU P1 default
+ * for the cold-open demo.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router';
-import { ArrowLeft, Plus, Sparkles, Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Share2, Sparkles, Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { DndContext, DragOverlay, type DragEndEvent } from '@dnd-kit/core';
 import * as Y from 'yjs';
 import { PlanDoc, createPlanDoc } from '@xivmitplan/crdt';
 import {
@@ -38,15 +47,22 @@ import {
 } from '../lib/realtime-provider.js';
 import { useSession } from '../lib/supabase.js';
 import { usePlanDoc } from '@/lib/use-plan-doc';
+import { usePresence } from '@/lib/use-presence';
 import {
   getEncounter,
+  getPlan,
   getTimelineForEncounter,
   getYDocSnapshot,
   listAbilities,
+  redeemShare,
+  saveSnapshot,
   type AbilityInfo,
   type EncounterInfo,
+  type PlanInfo,
   type TimelineEventInfo,
 } from '@/lib/data-source';
+import { evaluateEventMit, detectDoubleBookings, type MitStackResult } from '@/lib/mit-evaluator';
+import { formatMs } from '@/lib/utils';
 import { FRU_P1_ID } from '@/lib/sample-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +70,9 @@ import { Input } from '@/components/ui/input';
 import { AssignmentRow } from '@/components/plan/assignment-row';
 import { AbilityPicker } from '@/components/plan/ability-picker';
 import { TimelineRail } from '@/components/plan/timeline-rail';
+import { DraggableAbilityStrip } from '@/components/plan/draggable-ability-strip';
+import { PresenceBar } from '@/components/plan/presence-bar';
+import { ShareDialog } from '@/components/plan/share-dialog';
 import { Logo } from '@/components/logo';
 
 const STATUS_BADGE: Record<
@@ -78,15 +97,26 @@ export const PlanEditor = () => {
   const [hydrated, setHydrated] = useState(false);
   const providerRef = useRef<RealtimeProvider | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>('connecting');
+  // Share-link capability token (from /plan/:id?token=...). When present
+  // and the viewer is signed in, it is redeemed for a plan_access row.
+  const shareToken = search.get('token') ?? null;
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  // null = no token to redeem; false = pending; true = redeemed (or skipped).
+  const [shareRedeemed, setShareRedeemed] = useState<boolean | null>(shareToken ? false : null);
   // Only the picked id is needed — AbilityPicker resolves the full
   // event from the timeline events it already has.
   const [pickedEventId, setPickedEventId] = useState<string | null>(null);
+  // Plan-row metadata loaded from data-source.getPlan(). Once loaded,
+  // its `encounterId` overrides the URL query param + FRU P1 fallback.
+  const [planRow, setPlanRow] = useState<PlanInfo | null>(null);
+  // DnD: dragged ability chip for the overlay.
+  const [activeDragAbility, setActiveDragAbility] = useState<AbilityInfo | null>(null);
 
   // The encounter is determined by (a) the URL query param set by the
-  // "New plan" CTA, (b) the encounter stored in the plan row (Phase 2+),
-  // or (c) the FRU P1 default for the cold-open demo.
-  const encounterId = search.get('encounterId') ?? FRU_P1_ID;
+  // "New plan" CTA, (b) the encounter stored in the plan row (loaded
+  // below), or (c) the FRU P1 default for the cold-open demo.
+  const urlEncounterId = search.get('encounterId');
   const initialName = search.get('name') ?? '';
 
   const { assignments, addAssignment, removeAssignment, planName, setPlanName, ready } = usePlanDoc(
@@ -94,6 +124,9 @@ export const PlanEditor = () => {
     planId ?? '00000000-0000-0000-0000-000000000000',
     initialName,
   );
+
+  // Presence: track who's currently viewing this plan.
+  const presenceUsers = usePresence(planId ?? null);
 
   // Create the Y.Doc once on mount, destroy on unmount.
   useEffect(() => {
@@ -104,6 +137,30 @@ export const PlanEditor = () => {
       setPlanDoc(null);
     };
   }, []);
+
+  // Load the plan-row metadata so the editor can render the right
+  // encounter + name when opened from a PlanCard (no `?encounterId=`
+  // URL param). Runs once per plan mount; failure is non-fatal — the
+  // editor falls back to the URL param, then FRU P1.
+  useEffect(() => {
+    if (!planId) return;
+    let mounted = true;
+    getPlan(planId)
+      .then((row) => {
+        if (!mounted) return;
+        setPlanRow(row);
+      })
+      .catch((err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.warn('[plan-editor] getPlan failed', err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [planId]);
+
+  // Effective encounter id: URL query param > plan row > FRU P1 default.
+  const encounterId = urlEncounterId ?? planRow?.encounterId ?? FRU_P1_ID;
 
   // Load the encounter + timeline + ability catalog when the
   // encounter changes. Runs in parallel; the timeline rail renders as
@@ -138,13 +195,42 @@ export const PlanEditor = () => {
     };
   }, [encounterId]);
 
+  // Redeem a share-link token (account-grant model). Runs once when the
+  // viewer is signed in and a ?token= is present. Grants a plan_access
+  // row so the snapshot load + realtime connect below succeed. Errors
+  // are non-fatal: the editor still proceeds (the snapshot simply won't
+  // load, and the user can retry by reopening the link).
+  useEffect(() => {
+    if (!shareToken || !session.user || shareRedeemed !== false || !planId) return;
+    let mounted = true;
+    redeemShare(planId, shareToken)
+      .then(() => {
+        if (mounted) setShareRedeemed(true);
+      })
+      .catch((err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.warn('[plan-editor] share token redeem failed', err);
+        if (mounted) setShareRedeemed(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [shareToken, session.user, shareRedeemed, planId]);
+
   // Snapshot restore. When the Y.Doc mounts, fetch the latest
   // snapshot for the plan (if any) and apply it before the realtime
   // provider connects. Runs ONCE per plan mount — the snapshot is
   // per-plan, not per-encounter, so encounter changes don't re-fire
-  // this effect.
+  // this effect. Waits for any share-token redeem to finish first.
+  //
+  // NOTE: `shareRedeemed` is intentionally in the dep list. Without it
+  // a share-link recipient would mount the doc + bail out of this
+  // effect while redemption is pending, then never re-run when
+  // redemption completes — leaving `hydrated` stuck at `false` and the
+  // realtime provider unconnected.
   useEffect(() => {
     if (!planDoc || !planId) return;
+    if (shareToken && shareRedeemed !== true) return;
     let mounted = true;
     void (async () => {
       try {
@@ -168,7 +254,7 @@ export const PlanEditor = () => {
     return () => {
       mounted = false;
     };
-  }, [planDoc, planId]);
+  }, [planDoc, planId, shareToken, shareRedeemed]);
 
   // Wire the realtime provider to the same Y.Doc. Re-runs only when
   // auth state changes; the Y.Doc itself is stable across renders.
@@ -211,6 +297,103 @@ export const PlanEditor = () => {
     return m;
   }, [events]);
 
+  // Compute mit stacks for every event. Used by TimelineRail to show
+  // residual % badges. Recomputes when assignments or abilities change.
+  const mitStacks = useMemo(() => {
+    if (!events) return new Map<string, MitStackResult>();
+    const m = new Map<string, MitStackResult>();
+    for (const e of events) {
+      m.set(e.id, evaluateEventMit(e.id, assignments, abilityById));
+    }
+    return m;
+  }, [events, assignments, abilityById]);
+
+  // Detect double-bookings: same ability + job on the same event or
+  // within the recast window of another event.
+  const conflictingAssignmentIds = useMemo(() => {
+    const conflicts = detectDoubleBookings(assignments, abilityById);
+    const ids = new Set<string>();
+    for (const [, list] of conflicts) {
+      for (const a of list) ids.add(a.id);
+    }
+    return ids;
+  }, [assignments, abilityById]);
+
+  // All useCallback / useState hooks must be declared above the early
+  // returns below — the React Rules of Hooks forbid changing the
+  // hook count between renders.
+  const handleAddAssignment = useCallback(
+    ({ ability, event }: { ability: AbilityInfo; event: TimelineEventInfo }) => {
+      const assignmentId = addAssignment({ ability, event });
+      if (assignmentId) {
+        toast.success(`${ability.name} assigned`, {
+          description: `Anchored to ${event.name} at ${formatMs(event.timestampMs)}`,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              removeAssignment(assignmentId);
+              toast.info('Assignment removed');
+            },
+          },
+        });
+      }
+    },
+    [addAssignment, removeAssignment],
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDragAbility(null);
+      const { active, over } = event;
+      if (!over) return;
+
+      const abilityData = active.data.current;
+      const eventData = over.data.current;
+      if (
+        !abilityData ||
+        abilityData.type !== 'ability' ||
+        !eventData ||
+        eventData.type !== 'event'
+      )
+        return;
+
+      const ability = abilityData.ability as AbilityInfo;
+      const timelineEvent = eventData.event as TimelineEventInfo;
+
+      const assignmentId = addAssignment({ ability, event: timelineEvent });
+      if (assignmentId) {
+        toast.success(`${ability.name} assigned`, {
+          description: `Anchored to ${timelineEvent.name} at ${formatMs(timelineEvent.timestampMs)}`,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              removeAssignment(assignmentId);
+              toast.info('Assignment removed');
+            },
+          },
+        });
+      }
+    },
+    [addAssignment, removeAssignment],
+  );
+
+  const handleDragStart = useCallback((event: DragEndEvent) => {
+    const data = event.active.data.current;
+    if (data?.type === 'ability') {
+      setActiveDragAbility(data.ability as AbilityInfo);
+    }
+  }, []);
+
+  const handleSaveVersion = useCallback(async () => {
+    if (!planId) return;
+    try {
+      await saveSnapshot(planId, 'USER_SAVE');
+      toast.success('Version saved');
+    } catch {
+      toast.error('Could not save version');
+    }
+  }, [planId]);
+
   if (session.loading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
@@ -219,11 +402,16 @@ export const PlanEditor = () => {
     );
   }
   if (!session.user) {
+    // Preserve any `?token=` share-link through the auth redirect so
+    // the recipient doesn't lose their share context after sign-in.
+    const next = shareToken
+      ? `/plan/${planId}?token=${encodeURIComponent(shareToken)}`
+      : `/plan/${planId}`;
     return (
       <div className="mx-auto max-w-md px-6 py-20 text-center">
         <p className="text-muted-foreground text-sm">Please sign in to view this plan.</p>
         <Button asChild className="mt-4">
-          <Link to={`/login?next=/plan/${planId}`}>Sign in</Link>
+          <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link>
         </Button>
       </div>
     );
@@ -260,7 +448,24 @@ export const PlanEditor = () => {
           {statusInfo.icon}
           {statusInfo.label}
         </Badge>
-        <div className="ml-auto">
+        <PresenceBar users={presenceUsers} />
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSaveVersion}
+            disabled={!ready}
+            title="Save a versioned snapshot"
+          >
+            Save version
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 /> Share
+          </Button>
           <Button
             onClick={() => {
               setPickedEventId(null);
@@ -276,56 +481,72 @@ export const PlanEditor = () => {
       </div>
 
       {/* Body: left rail + main canvas */}
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="bg-sidebar text-sidebar-foreground flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r p-4">
-          <header className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-semibold tracking-widest uppercase">Mitigations</h2>
-            <span className="text-muted-foreground font-mono text-[10px]">
-              {assignments.length}
-            </span>
-          </header>
-          {assignments.length === 0 ? (
-            <div className="border-border bg-card/40 flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
-              <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full">
-                <Sparkles className="size-5" />
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="flex flex-1 overflow-hidden">
+          <aside className="bg-sidebar text-sidebar-foreground flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r p-4">
+            <header className="flex items-center justify-between px-1">
+              <h2 className="text-xs font-semibold tracking-widest uppercase">Mitigations</h2>
+              <span className="text-muted-foreground font-mono text-[10px]">
+                {assignments.length}
+              </span>
+            </header>
+            {assignments.length === 0 ? (
+              <div className="border-border bg-card/40 flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
+                <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full">
+                  <Sparkles className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">No mitigations yet</p>
+                  <p className="text-muted-foreground text-xs">
+                    Click an event on the timeline to plan your first.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">No mitigations yet</p>
-                <p className="text-muted-foreground text-xs">
-                  Click an event on the timeline to plan your first.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
+            ) : (
+              <div className="flex flex-col gap-1">
               {assignments.map((a) => (
                 <AssignmentRow
                   key={a.id}
                   assignment={a}
                   ability={abilityById.get(a.abilityId) ?? null}
                   event={eventById.get(a.eventId) ?? null}
+                  isConflicting={conflictingAssignmentIds.has(a.id)}
                   onRemove={removeAssignment}
                 />
               ))}
-            </div>
-          )}
-        </aside>
+              </div>
+            )}
+          </aside>
 
-        <main className="bg-background/40 flex-1 overflow-y-auto p-6">
-          {eventsError ? (
-            <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
-              <AlertCircle className="text-destructive size-6" />
-              <p className="text-sm">Could not load timeline: {eventsError}</p>
+          <main className="bg-background/40 flex-1 overflow-y-auto p-6">
+            <DraggableAbilityStrip abilities={abilities} />
+            {eventsError ? (
+              <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
+                <AlertCircle className="text-destructive size-6" />
+                <p className="text-sm">Could not load timeline: {eventsError}</p>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <TimelineRail
+                  events={events}
+                  assignments={assignments}
+                  mitStacks={mitStacks}
+                  selectedEventId={pickedEventId}
+                  onPick={pickEvent}
+                />
+              </div>
+            )}
+          </main>
+        </div>
+
+        <DragOverlay>
+          {activeDragAbility && (
+            <div className="bg-primary text-primary-foreground rounded-md border px-3 py-1.5 text-xs font-medium shadow-lg">
+              {activeDragAbility.jobAbbrev} {activeDragAbility.name}
             </div>
-          ) : (
-            <TimelineRail
-              events={events}
-              assignments={assignments}
-              onPick={pickEvent}
-            />
           )}
-        </main>
-      </div>
+        </DragOverlay>
+      </DndContext>
 
       <AbilityPicker
         open={pickerOpen}
@@ -333,9 +554,15 @@ export const PlanEditor = () => {
         eventId={defaultEventId}
         abilities={abilities}
         events={events}
-        onPick={({ ability, event }) => {
-          addAssignment({ ability, event });
-        }}
+        assignments={assignments}
+        onPick={handleAddAssignment}
+      />
+
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        planId={planId ?? ''}
+        viewers={presenceUsers}
       />
     </div>
   );

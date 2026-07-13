@@ -551,6 +551,39 @@ describe('SupabaseBroadcastProvider', () => {
 
       provider.disconnect();
     });
+
+    it('encodes the snapshot as BYTEA hex (\\x...) not a raw Uint8Array', async () => {
+      const { channel } = makeMockChannel();
+      const supabase = makeMockSupabase(channel);
+      const doc = new Y.Doc();
+
+      const provider = new SupabaseBroadcastProvider({
+        planId: 'plan-snap-hex',
+        ydoc: doc,
+        accessToken: 'tok',
+        onStatus: () => {},
+        supabase,
+      });
+      provider.connect();
+      channel.__completeSubscribe('SUBSCRIBED');
+
+      doc.getText('hello').insert(0, 'a');
+      doc.getText('hello').insert(1, 'b');
+      doc.getText('hello').insert(2, 'c');
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      expect(supabase.rpc).toHaveBeenCalledTimes(1);
+      const [fn, args] = (supabase.rpc as ReturnType<typeof vi.fn>).mock.calls[0]!;
+      expect(fn).toBe('upsert_ydoc_snapshot');
+      // `p_update` must be a `\x…` hex string so PostgREST round-trips
+      // it as BYTEA. A raw Uint8Array would JSON-serialize to
+      // `{0: byte, 1: byte, …}` and Postgres would reject it.
+      expect(typeof args.p_update).toBe('string');
+      expect(args.p_update as string).toMatch(/^\\x[0-9a-f]+$/);
+      expect(typeof args.p_byte_size).toBe('number');
+
+      provider.disconnect();
+    });
   });
 
   describe('base64 helpers', () => {

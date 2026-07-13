@@ -34,7 +34,7 @@
 import * as Y from 'yjs';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { showReconnecting } from '../components/reconnecting-toast.js';
-import { base64ToBytes, bytesToBase64 } from './bytes.js';
+import { base64ToBytes, bytesToBase64, bytesToByteaHex } from './bytes.js';
 import type { RealtimeProvider, RealtimeStatus } from '@xivmitplan/crdt';
 
 // ---------------------------------------------------------------------------
@@ -370,9 +370,14 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
   private async flushSnapshot(): Promise<void> {
     const update = Y.encodeStateAsUpdate(this.ydoc);
     try {
+      // PostgREST expects BYTEA as a `\x…` hex string (or base64).
+      // Passing a raw Uint8Array JSON-serializes to `{0: byte, 1: byte, …}`
+      // which Postgres rejects — encode explicitly so the wire payload
+      // is the canonical BYTEA hex form (mirroring what
+      // `loadYDocSnapshot` decodes back to a Uint8Array).
       const { error } = await this.supabase.rpc('upsert_ydoc_snapshot', {
         p_plan_id: this.planId,
-        p_update: update as unknown as Uint8Array,
+        p_update: bytesToByteaHex(update),
         p_byte_size: update.byteLength,
       });
       if (error) {
