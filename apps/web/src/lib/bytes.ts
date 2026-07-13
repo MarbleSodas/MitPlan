@@ -42,8 +42,8 @@ export const byteaHexToBytes = (hex: string): Uint8Array => {
 export const bytesToByteaHex = (bytes: Uint8Array): string => {
   let out = '\\x';
   for (let i = 0; i < bytes.length; i++) {
-    const b = bytes[i]!;
-    out += HEX_CHARS[(b >> 4) & 0xf] + HEX_CHARS[b & 0xf];
+    const b = bytes[i] as number;
+    out += (HEX_CHARS[(b >> 4) & 0xf] as string) + (HEX_CHARS[b & 0xf] as string);
   }
   return out;
 };

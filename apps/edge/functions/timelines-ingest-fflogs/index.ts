@@ -80,7 +80,10 @@ const handler = async (req: Request): Promise<Response> => {
 
   const contentHash = await sha256Hex(JSON.stringify(validated));
 
-  const { data: row, error: upErr } = await ctx.supabase
+  // timelines has only a SELECT RLS policy (migration 0001:359). Writes
+  // must go through the admin client; ingest is a server-side
+  // pipeline so bypassing RLS is intentional and contained.
+  const { data: row, error: upErr } = await ctx.supabaseAdmin
     .from("timelines")
     .upsert(
       {
@@ -90,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
         events: validated,
         branches: [],
         joins: [],
-        merged_from_sources: { cactbot: false, triggernometry: false, fflogs: true },
+merged_from_sources: { cactbot: false, triggernometry: false, fflogs: true },
         byte_size: JSON.stringify(validated).length,
         content_hash: contentHash,
       },
