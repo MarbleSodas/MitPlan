@@ -24,11 +24,14 @@
     "db:push": "pnpm --filter @xivmitplan/persistence db:push",
     "web:dev": "pnpm --filter @xivmitplan/web dev",
     "supabase:deploy-functions": "supabase functions deploy",
-    "supabase:deploy-db": "supabase db push"
+    "supabase:deploy-db": "supabase db push",
+    "release:preflight": "bash ./scripts/release-preflight.sh"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
     "turbo": "^2.3.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "yjs": "catalog:",
+    "postgres": "catalog:"
   }
 }

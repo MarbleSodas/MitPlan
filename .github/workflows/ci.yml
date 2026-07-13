@@ -17,8 +17,8 @@ concurrency:
 # directory (apps/realtime, apps/server, apps/act-ingester).
 #
 # Per architecture §22.1: CI is green on the initial commit.
-# Per §22.2: typecheck + test pass; the smoke job runs the
-# Playwright E2E against the staging Supabase project.
+# Per §22.2: typecheck + test pass; the smoke job runs a credential-free
+# browser check. Authenticated collaboration runs against staging separately.
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -118,6 +118,8 @@ jobs:
             echo "::error::ADR-0002 §"Compliance": crdt_validate_plan_doc() function missing from 0002_xivmitplan_v1_acl.sql."
             exit 1
           }
+      - name: Release artifact preflight
+        run: bash ./scripts/release-preflight.sh
 
   typecheck:
     name: Typecheck
@@ -186,11 +188,8 @@ jobs:
     needs: [typecheck, test]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Path A (ADR-0002): the smoke test runs against the staging
-    # Supabase project. The two browser tabs connect via y-supabase;
-    # the Realtime auth gate (realtime.check_plan_access, migration
-    # 0002) is configured in the Supabase Dashboard → Database →
-    # Replication → Policies UI per docs/infra-setup.md §3.
+    # Production collaboration is validated separately against staging with
+    # real Supabase sessions and private-channel RLS from migration 0009.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

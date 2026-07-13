@@ -9,13 +9,11 @@
 #   1. Verify the supabase CLI is installed.
 #   2. Link the local repo to a Supabase project (interactive on first
 #      run; cached in .supabase/ for subsequent runs).
-#   3. Apply all 8 SQL migrations in order (initial + ACL + RPCs + seed
-#      + share tokens + legacy sentinel + RLS recursion fix + viewer ACL).
+#   3. Apply all SQL migrations in order.
 #   4. Set the Edge Function secrets required by the runtime.
-#   5. Deploy all 8 Edge Functions (3 timeline ingests + 5 plan flows
-#      including plans-share-redeem + 1 legacy claim).
-#   6. Print a checklist for the manual steps (OAuth apps, Realtime
-#      policy binding) that this script can't automate.
+#   5. Deploy all Edge Functions (3 timeline ingests, 4 plan flows, and
+#      1 legacy claim flow).
+#   6. Print a checklist for the manual OAuth and Realtime settings.
 #
 # Usage:
 #   ./scripts/supabase-bootstrap.sh                    # bootstrap default env (dev)
@@ -108,7 +106,7 @@ fi
 
 say "Applying migrations"
 # Discover migrations dynamically so the script stays in sync as new
-# migrations are added (current count: 0001-0008). Files are applied
+# migrations are added. Files are applied
 # in lexicographic order which matches the leading number.
 shopt -s nullglob
 MIGRATIONS=( "${MIGRATIONS_DIR}"/0*.sql )
@@ -196,7 +194,7 @@ else
       continue
     fi
     printf "  ${BOLD}->${RESET} %s ... " "${FUNCTION}"
-    supabase functions deploy "${FUNCTION}" --no-verify-jwt >/dev/null 2>&1 \
+    supabase functions deploy "${FUNCTION}" >/dev/null 2>&1 \
       && echo "${GREEN}deployed${RESET}" \
       || echo "${YELLOW}failed${RESET} (run 'supabase functions deploy ${FUNCTION}' manually to see the error)"
   done
@@ -219,16 +217,13 @@ ${BOLD}Next manual steps (not automatable from the CLI):${RESET}
      Email. Optionally Google. See docs/infra-setup.md §5-§7 for
      the OAuth app creation steps.
 
-  2. ${YELLOW}Bind the Realtime authorization policy${RESET}:
-     Dashboard → Database → Replication → Policies → Create policy
-       Target:    "Realtime messages from a client"
-       Channels:  plan:*
-       Allowed:   expression
-       Expression: realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata('claims'))
+   2. ${YELLOW}Disable public Realtime access${RESET}:
+      Dashboard → Realtime → Settings → disable "Allow public access".
+      Migration 0009 installs the private-channel RLS policies.
 
   3. ${YELLOW}Verify migrations${RESET} in the SQL editor:
        SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;
-     Expected: 8 rows (0001..0008).
+     Expected: every migration in supabase/migrations, including 0009.
 
   4. ${YELLOW}Copy .env.example to .env.local${RESET} at the repo root
      and fill in:

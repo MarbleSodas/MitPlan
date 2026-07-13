@@ -41,7 +41,9 @@ browser tab joined to the same plan URL.
 - [ADR-0001](docs/adr/0001-xivmitplan-v1-architecture-locked.md) — the original architecture lock + tech review verdicts.
 - [ADR-0002](docs/adr/0002-supabase-only-backend.md) — Path A (Supabase-only backend) collapse.
 - [ADR-0003](docs/adr/0003-path-a-hardened-supabase-broadcast.md) — y-supabase replaced with our own `SupabaseBroadcastProvider`. **The current authoritative realtime decision** (2026-06-29).
-- [Infrastructure setup](docs/infra-setup.md) — one-time manual walkthrough for Supabase + Cloudflare R2 + OAuth.
+- [ADR-0004](docs/adr/0004-core-release-scope.md) — the migration-focused core release boundary.
+- [Infrastructure setup](docs/infra-setup.md) — one-time Supabase + OAuth walkthrough.
+- [Firebase migration](docs/firebase-migration.md) — Supabase-supported Auth import plus legacy-plan cutover.
 
 ## Tech stack (Path A Hardened, ADR-0003)
 
@@ -52,7 +54,7 @@ browser tab joined to the same plan URL.
 | Persistence | Supabase Postgres + Drizzle ORM + `upsert_ydoc_snapshot` RPC (migration 0002) + `crdt_validate_plan_doc` trigger |
 | API tier | PostgREST RPCs (catalog reads, migration 0003) + Supabase Edge Functions (timeline ingest, share-token, plan CRUD) |
 | Auth | Supabase Auth (Discord + Google + email + magic link) |
-| Realtime ACL gate | `realtime.check_plan_access()` Postgres function bound to `plan:*` channels |
+| Realtime ACL gate | Private Supabase Realtime channels with `realtime.messages` RLS (migration 0009) |
 | Snapshots | Cloudflare R2 (10GB free, zero egress) |
 | Observability | Pino → Supabase Logs; Sentry (web); Honeycomb OTel |
 | Tests | Vitest (unit) + Playwright (E2E) + fast-check (property) |
