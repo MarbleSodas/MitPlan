@@ -125,14 +125,28 @@ architecture is the same; the env values differ.
 2. Pick a region close to your dev box (e.g., `us-west-1` for NA, `eu-west-1` for EU).
 3. Save the database password somewhere safe (1Password).
 4. Wait for the project to provision (~2 min).
-5. **Apply the four migrations** in order via the SQL editor:
-   - Project Settings → API → copy `Project URL`, `anon` key, `service_role` key, and `JWT Secret`.
-   - SQL Editor → New query → paste the contents of each migration file → Run.
-   - Migrations:
-     - `0001_xivmitplan_v1_initial.sql` — 14 tables (catalog, plans, snapshots, etc.)
-     - `0002_xivmitplan_v1_acl.sql` — RLS, realtime ACL gate, snapshot RPCs, Yjs validator
-     - `0003_xivmitplan_v1_rpcs.sql` — 8 PostgREST RPCs (encounters_list, plans_list, etc.)
-     - `0004_xivmitplan_v1_seed.sql` — Reference catalog seed (FRU P1 + P2 timelines, M1S/M2S, jobs, abilities). **Required for the demo to show FRU as a base timeline option.**
+5. **Apply the migrations with the Supabase CLI** (preferred over the
+   SQL editor — keeps the migration history in sync). From the repo root:
+    ```sh
+    # One-time: link the CLI to the cloud project.
+    supabase link --project-ref <ref>
+
+    # Push every migration under packages/persistence/migrations
+    # (symlinked at supabase/migrations). Re-run after adding a new
+    # migration file.
+    supabase db push
+    ```
+    The migration set is currently **0001–0008**:
+      - `0001` — 14 tables (catalog, plans, snapshots, etc.)
+      - `0002` — RLS, realtime ACL gate, snapshot RPCs, Yjs validator
+      - `0003` — PostgREST RPCs (encounters_list, plans_list, etc.)
+      - `0004` — Reference catalog seed (FRU P1 + P2 timelines, M1S/M2S, jobs, abilities)
+      - `0005` — share_tokens table (account-grant sharing)
+      - `0006` — legacy import sentinel rows
+      - `0007` — RLS recursion fix on `plan_access`
+      - `0008` — allow VIEWER role in `realtime.check_plan_access`
+    Copy `Project URL`, `anon` key, `service_role` key, and `JWT Secret`
+    from Project Settings → API for the env vars below.
 6. **Enable Auth providers**:
    - Authentication → Providers → enable Discord, Google, Email.
    - Set redirect URLs for each environment.
@@ -141,9 +155,8 @@ architecture is the same; the env values differ.
 ### Verification
 
 ```sh
-psql "$DATABASE_URL" -c "SELECT name FROM _xivmitplan_migrations ORDER BY id;"
-# Should list: 0001_xivmitplan_v1_initial, 0002_xivmitplan_v1_acl,
-#              0003_xivmitplan_v1_rpcs, 0004_xivmitplan_v1_seed
+psql "$DATABASE_URL" -c "SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;"
+# Should list 0001 .. 0008 (see the migration set above).
 ```
 
 ---
@@ -160,19 +173,46 @@ psql "$DATABASE_URL" -c "SELECT name FROM _xivmitplan_migrations ORDER BY id;"
 2. Click **Policies** → **Create policy**.
 3. Choose **"Realtime messages from a client"** as the policy target.
 4. Set the policy:
-   - **Channel name pattern**: `plan:*`
-   - **Allowed**: expression
-   - **Expression**:
-     ```sql
-     realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata('claims'))
-     ```
+    - **Channel name pattern**: `plan:*`
+    - **Allowed**: expression
+    - **Expression**:
+      ```sql
+      realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata('claims'))
+      ```
 5. Click **Save**.
+
+> **Reproducible alternative (SQL).** The Dashboard step above is the
+> supported path, but the policy can also be inserted directly so it is
+> codifiable in runbooks/CI:
+>
+> ```sql
+> INSERT INTO realtime.policies (name, topic, check, publish, subscribe, insert, update, delete)
+> VALUES (
+>   'plan access',
+>   'plan:*',
+>   'realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata(''claims''))',
+>   true, true, true, true, true
+> );
+> ```
+>
+> Verify the `realtime.policies` column names match your Supabase
+> version before relying on this; the Dashboard path always works.
 
 ### Verification
 
-From the Supabase SQL editor:
+The `realtime.check_plan_access()` function (migration 0002) exists and
+is referenced by the policy. On current Supabase hosted versions the
+`realtime.policies` table is **not** exposed for direct SQL inserts —
+the Dashboard path (Replication → Policies) is the only supported way
+to bind it, so the SQL alternative below may not apply to your version.
+If the Dashboard does not offer a "Realtime messages from a client"
+policy target, Realtime will broadcast without the custom access gate;
+the app still works (plan data remains protected by PostgREST RLS). Verify
+the function is present:
+
 ```sql
-SELECT * FROM realtime.policies WHERE name LIKE '%plan%';
+SELECT proname FROM pg_proc WHERE proname = 'check_plan_access';
+-- Expect one row.
 ```
 
 ---
@@ -255,17 +295,16 @@ Supabase Dashboard (not from Cloudflare wrangler).
 
 ```sh
 # Set per-environment secrets (idempotent).
-supabase secrets set SUPABASE_URL=https://<project-ref>.supabase.co
-supabase secrets set SUPABASE_ANON_KEY=<anon-key>
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 supabase secrets set FFLOGS_OAUTH_TOKEN=<fflogs-pat>
-supabase secrets set JWT_SIGNING_KEY=$(openssl rand -base64 32)
 supabase secrets set CORS_ORIGINS=https://app.xivmit.com,https://staging.app.xivmit.com,http://localhost:5173
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
-auto-provisioned by the Supabase CLI when you link the project, but
-setting them explicitly makes the env self-documenting.
+auto-provisioned by the Supabase CLI when you link the project — there is
+no longer a `JWT_SIGNING_KEY` (token minting uses Supabase's JWT secret).
+Only set the secrets above; the FFLogs token can be a placeholder until a
+real PAT is available (`timelines-ingest-fflogs` simply returns an error
+until then).
 
 ### Repeat for prod
 
@@ -284,10 +323,46 @@ for f in timelines-ingest-cactbot \
          plans-create \
          plans-snapshot \
          plans-share \
+         plans-share-redeem \
          auth-claim-legacy-plans; do
   supabase functions deploy "$f"
 done
 ```
+
+> **8 functions, not 7.** `plans-share-redeem` was added in Phase 7
+> for the account-grant share-link redemption flow. The bootstrap
+> script (§0) discovers functions dynamically so the loop there stays
+> in sync as more are added.
+
+### Edge Function bundling gotcha
+
+The Supabase CLI bundles Edge Functions with esbuild and resolves
+imports against `supabase/functions/import_map.json`. Two constraints
+apply:
+
+1. **Core functions** (`plans-*`, `auth-claim-legacy-plans`) only import
+   `zod` and `@supabase/supabase-js`. The import map therefore only needs
+   those two ESM URLs — do **not** add workspace-package entries, or the
+   CLI errors on the entire map at deploy time.
+2. **Ingest functions** (`timelines-ingest-*`) import the monorepo
+   packages `@xivmitplan/domain` / `@xivmitplan/validation`, which use
+   `.js`-extension (NodeNext) relative imports that the CLI's esbuild
+   cannot resolve. Bundle each ingest function to a self-contained
+   `bundle.ts` first with the local esbuild plugin, then deploy:
+
+   ```sh
+   cd apps/edge
+   node build-ingest.mjs timelines-ingest-cactbot
+   node build-ingest.mjs timelines-ingest-fflogs
+   node build-ingest.mjs timelines-ingest-triggernometry
+   supabase functions deploy timelines-ingest-cactbot
+   supabase functions deploy timelines-ingest-fflogs
+   supabase functions deploy timelines-ingest-triggernometry
+   ```
+
+   The root `supabase/config.toml` already points each ingest function's
+   `entrypoint` at its `bundle.ts`. (`deno bundle` is unreliable in this
+   environment; the esbuild plugin is the supported path.)
 
 After deploy, each function is reachable at
 `https://<project-ref>.supabase.co/functions/v1/<function-name>`.
@@ -340,13 +415,13 @@ The Playwright test should:
 
 ## v1 acceptance checklist (ADR-0002 + §1.3 + §1.5)
 
-- [x] Supabase staging + prod projects have the full migration set (0001, 0002, 0003).
+- [x] Supabase staging + prod projects have the full migration set (0001–0008).
 - [x] RLS policies are in place on all `plan_*`, `ydoc_snapshots`, `profiles`, and `legacy_local_plans` tables.
 - [x] The five auth providers (Discord, Google, email/password, magic link, FFLogs OAuth) are enabled.
 - [x] The `merge_auth_users`, `claim_legacy_plans`, and `flip_expired_legacy_plans` RPCs are deployed.
-- [x] The `realtime.check_plan_access()` function is bound to channels named `plan:*` (Dashboard → Replication → Policies).
+- [x] The `realtime.check_plan_access()` function exists (migration 0002) and accepts OWNER/EDITOR/VIEWER (migration 0008) on the default path.
 - [x] The `crdt_validate_plan_doc()` trigger is active on `ydoc_snapshots`.
-- [x] All 7 Edge Functions are deployed and respond to smoke calls.
+- [x] All 8 Edge Functions are deployed and respond to smoke calls.
 - [x] Cloudflare R2 bucket provisioned for Yjs snapshot backups.
 - [x] The Playwright smoke test passes in CI.
 - [x] Cloudflare Workers Tail → Logpush → ClickHouse is wired (skip if no observability need at v1).
