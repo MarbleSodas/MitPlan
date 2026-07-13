@@ -273,9 +273,47 @@ export const PlanEditor = () => {
     });
     providerRef.current = provider;
     provider.connect();
+
+    // Late-join sync. After SUBSCRIBED, another debounced fetch picks
+    // up any edits that were committed between our initial snapshot
+    // read and the channel handshake — the 2s debounce in the
+    // broadcast provider means the snapshot is briefly behind any
+    // active editors. The 1500ms delay lands before the next debounce
+    // fires. Origin 'remote' prevents echoing back as a local update.
+    let lateJoinTimer: ReturnType<typeof setTimeout> | null = null;
+    const wasStatus = (s: RealtimeStatus) => provider.status === s;
+    const checkLateJoin = () => {
+      if (wasStatus('connected')) {
+        getYDocSnapshot(planId)
+          .then((snap) => {
+            if (snap && snap.byteSize > 1) {
+              Y.applyUpdate(planDoc.doc, snap.update, 'remote');
+            }
+          })
+          .catch(() => {
+            /* non-fatal — broadcast will catch up on next edit */
+          });
+      }
+    };
+    const intervalId = setInterval(() => {
+      if (wasStatus('connected')) {
+        lateJoinTimer = null;
+        clearInterval(intervalId);
+        // Two re-fetches spaced 1500ms apart cover the 2s snapshot
+        // debounce window so we converge on any in-flight edits.
+        lateJoinTimer = setTimeout(checkLateJoin, 1500);
+        setTimeout(checkLateJoin, 3000);
+      }
+    }, 200);
+    // Bound the late-join window at 30s in case connection never lands.
+    const boundTimer = setTimeout(() => clearInterval(intervalId), 30_000);
+
     return () => {
       provider.disconnect();
       providerRef.current = null;
+      clearInterval(intervalId);
+      clearTimeout(boundTimer);
+      if (lateJoinTimer) clearTimeout(lateJoinTimer);
     };
   }, [planDoc, planId, hydrated, session.loading, session.user?.id]);
 
