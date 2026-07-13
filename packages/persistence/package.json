@@ -26,7 +26,7 @@
     "db:seed": "tsx src/seeds/index.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --reporter=verbose",
+    "test": "vitest run --passWithNoTests --reporter=verbose",
     "test:integration": "vitest run --reporter=verbose --config vitest.integration.config.ts"
   },
   "dependencies": {

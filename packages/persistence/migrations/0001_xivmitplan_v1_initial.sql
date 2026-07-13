@@ -254,12 +254,30 @@ CREATE TABLE legacy_local_plans (
   captured_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   claimed_by      UUID,
   claimed_at      TIMESTAMPTZ,
-  -- 90-day auto-flip clock. Generated from captured_at.
-  expires_at      TIMESTAMPTZ GENERATED ALWAYS AS (captured_at + interval '90 days') STORED
+  -- 90-day auto-flip clock. Computed from captured_at by a trigger
+  -- (STORED generated columns forbid timestamptz + interval, which is
+  -- only STABLE, not IMMUTABLE in PostgreSQL).
+  expires_at      TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX legacy_plans_discord_idx ON legacy_local_plans(owner_discord_id) WHERE claimed_by IS NULL;
 CREATE INDEX legacy_plans_email_idx   ON legacy_local_plans(owner_email)     WHERE claimed_by IS NULL;
 CREATE INDEX legacy_plans_expires_idx ON legacy_local_plans(expires_at)      WHERE claimed_by IS NULL;
+
+-- Keep expires_at in sync with captured_at (the 90-day auto-flip clock).
+CREATE OR REPLACE FUNCTION public.legacy_set_expiry()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.expires_at := NEW.captured_at + interval '90 days';
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER legacy_local_plans_expiry
+  BEFORE INSERT OR UPDATE OF captured_at ON legacy_local_plans
+  FOR EACH ROW
+  EXECUTE FUNCTION public.legacy_set_expiry();
 
 -- =========================================================================
 -- RLS policies (§17.3)

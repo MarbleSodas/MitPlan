@@ -56,8 +56,8 @@
 -- so the web app can render hierarchical nav without a follow-up RPC.
 
 CREATE OR REPLACE FUNCTION encounters_list(
-  expansion_slug TEXT DEFAULT NULL,
-  raid_slug      TEXT DEFAULT NULL
+  p_expansion_slug TEXT DEFAULT NULL,
+  p_raid_slug      TEXT DEFAULT NULL
 ) RETURNS TABLE (
   id                 UUID,
   raid_id            UUID,
@@ -92,8 +92,8 @@ BEGIN
     FROM encounters e
     JOIN raids      r ON r.id = e.raid_id
     JOIN expansions x ON x.id = r.expansion_id
-    WHERE (encounters_list.expansion_slug IS NULL OR x.slug = encounters_list.expansion_slug)
-      AND (encounters_list.raid_slug      IS NULL OR r.slug = encounters_list.raid_slug)
+    WHERE (p_expansion_slug IS NULL OR x.slug = p_expansion_slug)
+      AND (p_raid_slug      IS NULL OR r.slug = p_raid_slug)
     ORDER BY x.release_patch DESC, r.tier ASC, e.slug ASC;
 END;
 $$;
@@ -113,7 +113,7 @@ COMMENT ON FUNCTION encounters_list(TEXT, TEXT) IS
 -- or RLS hides it — the web app treats both as "not found."
 
 CREATE OR REPLACE FUNCTION encounters_by_id(
-  id UUID
+  p_id UUID
 ) RETURNS TABLE (
   id                 UUID,
   raid_id            UUID,
@@ -148,7 +148,7 @@ BEGIN
     FROM encounters e
     JOIN raids      r ON r.id = e.raid_id
     JOIN expansions x ON x.id = r.expansion_id
-    WHERE e.id = encounters_by_id.id;
+    WHERE e.id = p_id;
 END;
 $$;
 
@@ -172,9 +172,9 @@ COMMENT ON FUNCTION encounters_by_id(UUID) IS
 -- RLS enforces auth via the existing abilities_read policy from 0001.
 
 CREATE OR REPLACE FUNCTION abilities_list(
-  job_id       UUID DEFAULT NULL,
-  mode         TEXT DEFAULT NULL,
-  encounter_id UUID DEFAULT NULL
+  p_job_id       UUID DEFAULT NULL,
+  p_mode         TEXT DEFAULT NULL,
+  p_encounter_id UUID DEFAULT NULL
 ) RETURNS TABLE (
   id             UUID,
   job_id         UUID,
@@ -219,10 +219,10 @@ BEGIN
       a.created_at,
       a.updated_at
     FROM abilities a
-    WHERE (abilities_list.job_id IS NULL OR a.job_id = abilities_list.job_id)
+    WHERE (p_job_id IS NULL OR a.job_id = p_job_id)
       AND (
-        abilities_list.mode IS NULL
-        OR a.mode = abilities_list.mode::ability_mode
+        p_mode IS NULL
+        OR a.mode = p_mode::ability_mode
         OR a.mode = 'ALL'
       )
     ORDER BY a.job_id, a.ability_id, a.mode;
@@ -300,7 +300,7 @@ COMMENT ON FUNCTION auth_me() IS
 -- appear first in the dashboard.
 
 CREATE OR REPLACE FUNCTION plans_list(
-  limit INT DEFAULT 50
+  p_limit INT DEFAULT 50
 ) RETURNS TABLE (
   id            UUID,
   owner_id      UUID,
@@ -337,7 +337,7 @@ BEGIN
          WHERE pa.plan_id = p.id AND pa.user_id = auth.uid()
        )
     ORDER BY p.updated_at DESC
-    LIMIT GREATEST(COALESCE(plans_list.limit, 50), 1);
+    LIMIT GREATEST(COALESCE(p_limit, 50), 1);
 END;
 $$;
 
@@ -357,7 +357,7 @@ COMMENT ON FUNCTION plans_list(INT) IS
 -- the same rules on the broadcast path.
 
 CREATE OR REPLACE FUNCTION plans_by_id(
-  id UUID
+  p_id UUID
 ) RETURNS TABLE (
   id            UUID,
   owner_id      UUID,
@@ -388,7 +388,7 @@ BEGIN
       p.updated_at,
       p.conflicts
     FROM plans p
-    WHERE p.id = plans_by_id.id;
+    WHERE p.id = p_id;
 END;
 $$;
 
@@ -412,7 +412,7 @@ COMMENT ON FUNCTION plans_by_id(UUID) IS
 -- requested patch and mode.
 
 CREATE OR REPLACE FUNCTION timelines_by_encounter(
-  encounter_id UUID
+  p_encounter_id UUID
 ) RETURNS TABLE (
   id                   UUID,
   encounter_id         UUID,
@@ -451,7 +451,7 @@ BEGIN
       t.created_at,
       t.updated_at
     FROM timelines t
-    WHERE t.encounter_id = timelines_by_encounter.encounter_id
+    WHERE t.encounter_id = p_encounter_id
     ORDER BY t.version DESC, t.source ASC;
 END;
 $$;
@@ -479,7 +479,7 @@ COMMENT ON FUNCTION timelines_by_encounter(UUID) IS
 -- plan_access from the calling JWT.
 
 CREATE OR REPLACE FUNCTION plan_access_list_for_plan(
-  plan_id UUID
+  p_plan_id UUID
 ) RETURNS TABLE (
   plan_id         UUID,
   user_id         UUID,
@@ -497,12 +497,12 @@ BEGIN
   -- Gate: caller must own the plan or have a plan_access row for it.
   IF NOT EXISTS (
     SELECT 1 FROM plans p
-    WHERE p.id = plan_access_list_for_plan.plan_id
+    WHERE p.id = p_plan_id
       AND (
         p.owner_id = auth.uid()
         OR EXISTS (
           SELECT 1 FROM plan_access pa
-          WHERE pa.plan_id = plan_access_list_for_plan.plan_id
+          WHERE pa.plan_id = p_plan_id
             AND pa.user_id = auth.uid()
         )
       )
@@ -522,7 +522,7 @@ BEGIN
     FROM plan_access pa
     LEFT JOIN profiles  p ON p.id = pa.user_id
     LEFT JOIN auth.users u ON u.id = pa.user_id
-    WHERE pa.plan_id = plan_access_list_for_plan.plan_id
+    WHERE pa.plan_id = p_plan_id
     ORDER BY pa.granted_at ASC;
 END;
 $$;

@@ -235,9 +235,16 @@ LANGUAGE plpgsql
 IMMUTABLE
 AS $$
 BEGIN
-  -- Reject empty / NULL updates.
-  IF p_update IS NULL OR octet_length(p_update) = 0 THEN
+  -- Reject NULL updates.
+  IF p_update IS NULL THEN
     RETURN FALSE;
+  END IF;
+
+  -- Allow the single-byte placeholder row that plans-create inserts
+  -- (Uint8Array([0])); the plan editor treats byte_size <= 1 as empty
+  -- and skips it on load. Anything larger must be a real Yjs update.
+  IF octet_length(p_update) <= 1 THEN
+    RETURN TRUE;
   END IF;
 
   -- Reject anything over 256 KB. Matches the Supabase Realtime
@@ -249,7 +256,9 @@ BEGIN
   -- Yjs binary updates are varint-prefixed. The first byte is the
   -- struct length varint, which for a non-trivial doc is always >= 1.
   -- A leading 0x00 byte is a malformed varint (varint zero is
-  -- reserved for "no more values" in the Yjs encoding).
+  -- reserved for "no more values" in the Yjs encoding). The single-byte
+  -- placeholder is already allowed above, so this only fires for
+  -- multi-byte updates whose first byte is 0x00.
   IF get_byte(p_update, 0) = 0 THEN
     RETURN FALSE;
   END IF;
@@ -265,9 +274,11 @@ COMMENT ON FUNCTION public.crdt_validate_plan_doc(BYTEA) IS
 -- 5. Size + structural validation trigger on ydoc_snapshots
 -- =========================================================================
 
-CREATE TRIGGER ydoc_snapshots_validate
-  BEFORE INSERT OR UPDATE ON ydoc_snapshots
-  FOR EACH ROW EXECUTE FUNCTION public.crdt_validate_plan_doc(NEW.update);
+-- Enforced as a CHECK constraint: a trigger function must return type
+-- `trigger`, but crdt_validate_plan_doc returns BOOLEAN. The constraint
+-- fires on every INSERT/UPDATE and reuses the same validation.
+ALTER TABLE ydoc_snapshots
+  ADD CONSTRAINT ydoc_snapshots_validate CHECK (public.crdt_validate_plan_doc("update"));
 
 -- =========================================================================
 -- 6. End of migration
