@@ -9,10 +9,11 @@
 #   1. Verify the supabase CLI is installed.
 #   2. Link the local repo to a Supabase project (interactive on first
 #      run; cached in .supabase/ for subsequent runs).
-#   3. Apply all 4 SQL migrations in order (initial + ACL + RPCs + seed).
+#   3. Apply all 8 SQL migrations in order (initial + ACL + RPCs + seed
+#      + share tokens + legacy sentinel + RLS recursion fix + viewer ACL).
 #   4. Set the Edge Function secrets required by the runtime.
-#   5. Deploy all 7 Edge Functions (3 timeline ingests + 3 plan flows
-#      + 1 legacy claim).
+#   5. Deploy all 8 Edge Functions (3 timeline ingests + 5 plan flows
+#      including plans-share-redeem + 1 legacy claim).
 #   6. Print a checklist for the manual steps (OAuth apps, Realtime
 #      policy binding) that this script can't automate.
 #
@@ -106,35 +107,45 @@ fi
 # ---------------------------------------------------------------------------
 
 say "Applying migrations"
-for MIGRATION in \
-  "0001_xivmitplan_v1_initial.sql" \
-  "0002_xivmitplan_v1_acl.sql" \
-  "0003_xivmitplan_v1_rpcs.sql" \
-  "0004_xivmitplan_v1_seed.sql"
-do
-  PATH_TO_MIGRATION="${MIGRATIONS_DIR}/${MIGRATION}"
-  if [ ! -f "${PATH_TO_MIGRATION}" ]; then
-    die "Migration file not found: ${PATH_TO_MIGRATION}"
+# Discover migrations dynamically so the script stays in sync as new
+# migrations are added (current count: 0001-0008). Files are applied
+# in lexicographic order which matches the leading number.
+shopt -s nullglob
+MIGRATIONS=( "${MIGRATIONS_DIR}"/0*.sql )
+shopt -u nullglob
+if [ "${#MIGRATIONS[@]}" -eq 0 ]; then
+  die "No migration files found in ${MIGRATIONS_DIR}"
+fi
+# Use db push for the canonical apply — Supabase CLI handles the
+# remote state tracking so re-runs are no-ops. We only use psql as a
+# last-resort fallback when db push can't reach the remote (e.g.
+# local DB not running, no Docker daemon).
+DB_PUSH_OK=false
+if supabase db push --include-all 2>&1 | tee /tmp/_supabase_db_push.log | grep -qE "Finished|already up to date"; then
+  DB_PUSH_OK=true
+fi
+if [ "${DB_PUSH_OK}" = false ]; then
+  warn "supabase db push did not report success; falling back to per-file psql apply"
+  if ! command -v psql >/dev/null 2>&1; then
+    die "psql not found and db push failed. Install psql or run supabase db push manually."
   fi
-  printf "  ${BOLD}->${RESET} %s ... " "${MIGRATION}"
-  if supabase db push --include-all 2>/dev/null | grep -q "${MIGRATION}"; then
-    echo "${GREEN}applied${RESET}"
-  else
-    # db push is all-or-nothing. Fall back to per-file apply with psql.
-    if command -v psql >/dev/null 2>&1; then
-      DB_URL=$(supabase status --output env 2>/dev/null | grep "^DB_URL=" | cut -d= -f2- || true)
-      if [ -z "${DB_URL}" ]; then
-        # Remote project: read the connection string from secrets
-        warn "Could not auto-detect DB_URL; falling back to manual apply"
-        warn "Run: psql \"\${DATABASE_URL}\" -f ${PATH_TO_MIGRATION}"
-        continue
-      fi
-      psql "${DB_URL}" -v ON_ERROR_STOP=1 -f "${PATH_TO_MIGRATION}" >/dev/null && echo "${GREEN}applied${RESET}" || die "Failed to apply ${MIGRATION}"
-    else
-      die "psql not found and db push didn't match ${MIGRATION}. Install psql or run the migration manually."
-    fi
+  DB_URL=$(supabase status --output env 2>/dev/null | grep "^DB_URL=" | cut -d= -f2- || true)
+  if [ -z "${DB_URL}" ]; then
+    die "Could not auto-detect DB_URL. Set DATABASE_URL and re-run."
   fi
-done
+  for PATH_TO_MIGRATION in "${MIGRATIONS[@]}"; do
+    MIGRATION="$(basename "${PATH_TO_MIGRATION}")"
+    printf "  ${BOLD}->${RESET} %s ... " "${MIGRATION}"
+    psql "${DB_URL}" -v ON_ERROR_STOP=1 -f "${PATH_TO_MIGRATION}" >/dev/null \
+      && echo "${GREEN}applied${RESET}" \
+      || die "Failed to apply ${MIGRATION}"
+  done
+else
+  # Print what db push reported
+  while IFS= read -r line; do
+    printf "  ${BOLD}->${RESET} %s\n" "${line}"
+  done < /tmp/_supabase_db_push.log
+fi
 
 # ---------------------------------------------------------------------------
 # 4. Set Edge Function secrets
@@ -169,17 +180,20 @@ if [ "${SKIP_DEPLOY}" = true ]; then
   warn "Skipping Edge Function deploy (--skip-deploy)"
 else
   say "Deploying Edge Functions"
-  for FUNCTION in \
-    "timelines-ingest-cactbot" \
-    "timelines-ingest-triggernometry" \
-    "timelines-ingest-fflogs" \
-    "plans-create" \
-    "plans-snapshot" \
-    "plans-share" \
-    "auth-claim-legacy-plans"
-  do
-    if [ ! -d "${EDGE_FUNCTIONS_DIR}/${FUNCTION}" ]; then
-      die "Edge function source not found: ${EDGE_FUNCTIONS_DIR}/${FUNCTION}"
+  # Discover function directories dynamically so the script stays in
+  # sync as new functions are added. Each function is a subdirectory
+  # under apps/edge/functions/ with its own index.ts.
+  shopt -s nullglob
+  FUNCTIONS=( "${EDGE_FUNCTIONS_DIR}"/*/ )
+  shopt -u nullglob
+  if [ "${#FUNCTIONS[@]}" -eq 0 ]; then
+    die "No edge function source directories found under ${EDGE_FUNCTIONS_DIR}"
+  fi
+  for FUNCTION_DIR in "${FUNCTIONS[@]}"; do
+    FUNCTION="$(basename "${FUNCTION_DIR%/}")"
+    if [ ! -f "${FUNCTION_DIR}index.ts" ]; then
+      # Skip helper / shared dirs that don't have an entrypoint.
+      continue
     fi
     printf "  ${BOLD}->${RESET} %s ... " "${FUNCTION}"
     supabase functions deploy "${FUNCTION}" --no-verify-jwt >/dev/null 2>&1 \
@@ -213,8 +227,8 @@ ${BOLD}Next manual steps (not automatable from the CLI):${RESET}
        Expression: realtime.check_plan_access(channel_name, realtime.jstools.extract_metadata('claims'))
 
   3. ${YELLOW}Verify migrations${RESET} in the SQL editor:
-       SELECT name FROM _xivmitplan_migrations ORDER BY id;
-     Expected: 4 rows (initial, acl, rpcs, seed).
+       SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;
+     Expected: 8 rows (0001..0008).
 
   4. ${YELLOW}Copy .env.example to .env.local${RESET} at the repo root
      and fill in:
