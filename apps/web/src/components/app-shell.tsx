@@ -99,6 +99,45 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         </div>
       </header>
       <main className="flex-1">{children}</main>
+      <footer className="border-t bg-card/40 px-6 py-4">
+        <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <a
+              href="https://discord.gg/xivmitplan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Discord
+            </a>
+            <span aria-hidden>·</span>
+            <a
+              href="https://ko-fi.com/xivmitplan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Ko-fi
+            </a>
+            <span aria-hidden>·</span>
+            <a
+              href="https://github.com/MarbleSodas/MitPlan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              GitHub
+            </a>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link to="/data-policy" className="hover:text-foreground transition-colors">
+              Data policy
+            </Link>
+            <span aria-hidden>·</span>
+            <span>Built for FFXIV raiders. Not affiliated with Square Enix.</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

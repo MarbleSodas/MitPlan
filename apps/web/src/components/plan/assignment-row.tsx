@@ -7,12 +7,13 @@
  * data-source caches and passes them as props. This keeps the row
  * pure (no fetches in the list) and makes it trivial to memo.
  */
-import { Trash2 } from 'lucide-react';
+import { AlertTriangle, Trash2 } from 'lucide-react';
 import type { Assignment } from '@xivmitplan/validation/plan';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { AbilityInfo, TimelineEventInfo } from '@/lib/data-source';
 import { cn, formatMs } from '@/lib/utils';
+import { AbilityIcon } from './ability-icon';
 
 const TARGET_TYPE_LABEL: Record<Assignment['targetType'], string> = {
   MAIN_TANK: 'MT',
@@ -22,29 +23,24 @@ const TARGET_TYPE_LABEL: Record<Assignment['targetType'], string> = {
   COVER: 'Cover',
 };
 
-const CATEGORY_TINT: Record<AbilityInfo['category'], string> = {
-  'tank-cd': 'bg-chart-1/15 text-chart-1',
-  'healer-cd': 'bg-chart-2/15 text-chart-2',
-  'party-mit': 'bg-primary/15 text-primary',
-  invuln: 'bg-destructive/15 text-destructive',
-  shield: 'bg-chart-4/15 text-chart-4',
-};
-
 export const AssignmentRow = ({
   assignment,
   ability,
   event,
+  isConflicting,
   onRemove,
 }: {
   assignment: Assignment;
   ability: AbilityInfo | null;
   event: TimelineEventInfo | null;
+  /** True when this assignment double-books the same ability within its recast window. */
+  isConflicting?: boolean;
   onRemove: (id: string) => void;
 }) => {
   // The parent passed nulls while the data-source is still loading.
   // Render a skeleton row in that case so the rail doesn't pop.
   if (!ability || !event) {
-    return (
+return (
       <div className="bg-card/40 flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5">
         <div className="bg-muted size-9 shrink-0 animate-pulse rounded-md" />
         <div className="flex-1 space-y-1">
@@ -55,27 +51,25 @@ export const AssignmentRow = ({
     );
   }
 
-  const tint = CATEGORY_TINT[ability.category];
-
   return (
     <div
       className={cn(
         'group flex items-start gap-3 rounded-lg border border-transparent bg-card px-3 py-2.5',
         'hover:border-border transition-colors',
+        isConflicting && 'border-yellow-500/40 bg-yellow-500/5',
       )}
     >
-      <div
-        className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-md font-mono text-[11px] font-semibold tracking-tight',
-          tint,
-        )}
-        aria-hidden
-      >
-        {ability.jobAbbrev}
-      </div>
+      <AbilityIcon abilityId={ability.abilityId} jobAbbrev={ability.jobAbbrev} size="md" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-medium">{ability.name}</p>
+          <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+            {ability.name}
+            {isConflicting && (
+              <span className="text-yellow-600 dark:text-yellow-400" title="Double-booking detected: same ability used within recast window">
+                <AlertTriangle className="size-3.5" />
+              </span>
+            )}
+          </p>
           <Button
             variant="ghost"
             size="icon"

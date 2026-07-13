@@ -9,6 +9,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { AbilityInfo } from '@/lib/data-source';
+import { AbilityIcon } from './ability-icon';
 
 // Quick-mit list. Names must match `SAMPLE_ABILITIES` entries so the
 // strip renders even in fallback mode (no live catalog). Order roughly
@@ -81,12 +82,13 @@ const DraggableAbilityChip = ({ ability }: { ability: AbilityInfo }) => {
       variant="outline"
       style={style}
       className={cn(
-        'shrink-0 cursor-grab touch-none select-none font-mono text-[10px] active:cursor-grabbing',
+        'shrink-0 cursor-grab touch-none select-none gap-1.5 py-1 font-mono text-[10px] active:cursor-grabbing',
         isDragging && 'opacity-40 ring-primary/40 ring-2',
       )}
       title={`${ability.name} (${ability.jobAbbrev}) — drag onto a timeline event`}
     >
-      {ability.jobAbbrev} {ability.name}
+      <AbilityIcon abilityId={ability.abilityId} jobAbbrev={ability.jobAbbrev} size="xs" />
+      {ability.name}
     </Badge>
   );
 };
