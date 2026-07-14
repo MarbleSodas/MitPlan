@@ -14,15 +14,8 @@ import type { PlanTimelineAction } from '@xivmitplan/validation/plan';
 import type { TimelineEventInfo } from './data-source';
 
 /** Effective timeline event shape exposed to the UI layer. */
-export interface EffectiveTimelineEvent {
-  id: string;
-  position: number;
-  timestampMs: number;
-  type: 'MECHANIC' | 'BUSTER' | 'RAIDWIDE' | 'MECHANIC_START' | 'MECHANIC_END' | 'CUSTOM';
-  name: string;
-  durationMs: number | null;
-  hitTimesMs: number[];
-  targetKind: 'MAIN_TANK' | 'OFF_TANK' | 'PARTY' | 'HEALER' | 'TARGETED' | 'ALL';
+export interface EffectiveTimelineEvent extends Omit<TimelineEventInfo, 'type'> {
+  type: TimelineEventInfo['type'];
   /** True when this event is sourced from plan-local actions (not canonical). */
   isCustom: boolean;
   /** The original canonical event id, or null for custom actions. */
@@ -44,6 +37,7 @@ export function canonicalToEffective(e: TimelineEventInfo): EffectiveTimelineEve
     durationMs: e.durationMs,
     hitTimesMs: e.hitTimesMs,
     targetKind: e.targetKind,
+    confidence: e.confidence,
     isCustom: false,
     sourceEventId: e.id,
     notes: e.notes ?? null,
@@ -64,6 +58,11 @@ export function actionToEffective(a: PlanTimelineAction): EffectiveTimelineEvent
     durationMs: a.durationMs,
     hitTimesMs: a.hitTimesMs,
     targetKind: a.targetKind,
+    confidence: 1,
+    normalizedNames: [a.name.toLowerCase().replace(/\s+/g, '-')],
+    mechanicId: null,
+    patchVersion: '',
+    mergedFromSources: { cactbot: false, triggernometry: false, fflogs: false },
     isCustom: a.isCustom,
     sourceEventId: a.sourceEventId,
     notes: a.notes,
@@ -106,9 +105,7 @@ export function buildEffectiveTimeline(
   for (const a of [...actions].sort((x, y) => x.position - y.position)) {
     if (a.sourceEventId && canonicalMap.has(a.sourceEventId)) {
       // Replace the canonical event at the matching index.
-      const idx = result.findIndex(
-        (r) => r.sourceEventId === a.sourceEventId && !r.isCustom,
-      );
+      const idx = result.findIndex((r) => r.sourceEventId === a.sourceEventId && !r.isCustom);
       if (idx !== -1) {
         result[idx] = actionToEffective(a);
         seenSourceIds.add(a.sourceEventId);
@@ -194,6 +191,7 @@ export function materializeCanonicalToActions(
     damageType: null,
     hitCount: null,
     isDot: false,
-    targetsTank: e.targetKind === 'MAIN_TANK' ? 'MAIN' : e.targetKind === 'OFF_TANK' ? 'OFF' : 'NONE',
+    targetsTank:
+      e.targetKind === 'MAIN_TANK' ? 'MAIN' : e.targetKind === 'OFF_TANK' ? 'OFF' : 'NONE',
   }));
 }

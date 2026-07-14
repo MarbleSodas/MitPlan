@@ -19,15 +19,15 @@
  * Both layers run Zod validation on the response so the rest of the app
  * gets end-to-end type safety via `z.infer<typeof schema>`.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
-import { byteaHexToBytes } from "./bytes.js";
-import { TimelineGraph } from "@xivmitplan/validation/timeline";
-import { CactbotIngestRequest } from "@xivmitplan/validation/cactbot";
-import { TriggernometryIngestRequest } from "@xivmitplan/validation/triggernometry";
-import { FFLogsIngestRequest } from "@xivmitplan/validation/fflogs";
-import { AbilityMode } from "@xivmitplan/validation/ability";
+import { byteaHexToBytes } from './bytes.js';
+import { TimelineGraph } from '@xivmitplan/validation/timeline';
+import { CactbotIngestRequest } from '@xivmitplan/validation/cactbot';
+import { TriggernometryIngestRequest } from '@xivmitplan/validation/triggernometry';
+import { FFLogsIngestRequest } from '@xivmitplan/validation/fflogs';
+import { AbilityMode } from '@xivmitplan/validation/ability';
 
 // ---------------------------------------------------------------------------
 // Local minimal Zod schemas for response shapes that mirror the SQL
@@ -81,6 +81,16 @@ export const AbilityRow = z.object({
 });
 export type AbilityRow = z.infer<typeof AbilityRow>;
 
+export const AbilityEquivalenceRow = z.object({
+  src_ability_id: z.string().uuid(),
+  dst_ability_id: z.string().uuid(),
+  relation: z.enum(['EQUIVALENT', 'CONSOLIDATED', 'REMOVED', 'ADDED']),
+  note: z.string().nullable(),
+  src_mode: AbilityMode,
+  dst_mode: AbilityMode,
+});
+export type AbilityEquivalenceRow = z.infer<typeof AbilityEquivalenceRow>;
+
 export const AuthMeResult = z.object({
   user_id: z.string().uuid().nullable(),
   email: z.string().email().nullable(),
@@ -102,15 +112,34 @@ export const PlanRow = z.object({
   source_timeline_id: z.string().uuid().nullable().optional(),
   source_timeline_version: z.string().nullable().optional(),
   source_timeline_hash: z.string().nullable().optional(),
+  access_role: z.enum(['OWNER', 'EDITOR', 'VIEWER']).nullable().optional(),
 });
 export type PlanRow = z.infer<typeof PlanRow>;
+
+export const CommunityTimelineRow = z.object({
+  id: z.string().uuid(),
+  owner_id: z.string().uuid(),
+  name: z.string(),
+  description: z.string(),
+  encounter_id: z.string().uuid().nullable(),
+  mode: AbilityMode,
+  actions: z.array(z.unknown()),
+  is_public: z.boolean(),
+  source_timeline_id: z.string().uuid().nullable(),
+  version: z.number().int().positive(),
+  created_at: Timestamp,
+  updated_at: Timestamp,
+  like_count: z.number().int().nonnegative(),
+  collection_count: z.number().int().nonnegative(),
+});
+export type CommunityTimelineRow = z.infer<typeof CommunityTimelineRow>;
 
 export const TimelineRow = z.object({
   id: z.string().uuid(),
   encounter_id: z.string().uuid(),
   version: z.string(),
   content_hash: z.string(),
-  source: z.enum(["CACTBOT", "TRIGGERNOMETRY", "FFLOGS", "MERGED", "MANUAL"]),
+  source: z.enum(['CACTBOT', 'TRIGGERNOMETRY', 'FFLOGS', 'MERGED', 'MANUAL']),
   mode: AbilityMode,
   events: z.array(z.unknown()),
   branches: z.array(z.unknown()),
@@ -150,10 +179,13 @@ export const RawTimelineEvent = z.object({
   normalizedNames: z.array(z.string()).optional().default([]),
   durationMs: z.number().int().positive().nullable().optional().default(null),
   hitTimesMs: z.array(z.number().int().nonnegative()).optional().default([]),
-  targets: z.object({
-    kind: z.enum(['MAIN_TANK', 'OFF_TANK', 'PARTY', 'HEALER', 'TARGETED', 'ALL']),
-    jobIds: z.array(z.string()).optional(),
-  }).optional().default({ kind: 'ALL' }),
+  targets: z
+    .object({
+      kind: z.enum(['MAIN_TANK', 'OFF_TANK', 'PARTY', 'HEALER', 'TARGETED', 'ALL']),
+      jobIds: z.array(z.string()).optional(),
+    })
+    .optional()
+    .default({ kind: 'ALL' }),
   mechanicId: z.string().nullable().optional().default(null),
   patchVersion: z.string().optional().default(''),
   confidence: z.number().min(0).max(1).optional().default(1),
@@ -170,7 +202,7 @@ export type RawTimelineEvent = z.infer<typeof RawTimelineEvent>;
 export const PlanAccessRow = z.object({
   plan_id: z.string().uuid(),
   user_id: z.string().uuid(),
-  role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
+  role: z.enum(['OWNER', 'EDITOR', 'VIEWER']),
   via_share_token: z.boolean(),
   granted_at: Timestamp,
   display_name: z.string().nullable(),
@@ -237,7 +269,7 @@ const DuplicatePlanResult = z.object({
 type DuplicatePlanResult = z.infer<typeof DuplicatePlanResult>;
 
 const RedeemShareTokenResult = z.object({
-  role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
+  role: z.enum(['OWNER', 'EDITOR', 'VIEWER']),
   expiresAt: Timestamp.nullable(),
 });
 type RedeemShareTokenResult = z.infer<typeof RedeemShareTokenResult>;
@@ -249,7 +281,7 @@ const RedeemShareTokenArgs = z.object({
 type RedeemShareTokenArgs = z.infer<typeof RedeemShareTokenArgs>;
 
 const PlanRoleArgs = z.object({ p_plan_id: z.string().uuid() });
-const PlanRoleResult = z.enum(["OWNER", "EDITOR", "VIEWER"]).nullable();
+const PlanRoleResult = z.enum(['OWNER', 'EDITOR', 'VIEWER']).nullable();
 const LegacyClaimablePlan = z.object({ id: z.string().uuid(), name: z.string() });
 
 // ---------------------------------------------------------------------------
@@ -285,6 +317,17 @@ const TimelinesByEncounterArgs = z.object({
 });
 type TimelinesByEncounterArgs = z.infer<typeof TimelinesByEncounterArgs>;
 
+const TimelinesByEncounterModeArgs = z.object({
+  p_encounter_id: z.string().uuid(),
+  p_mode: AbilityMode.optional(),
+});
+type TimelinesByEncounterModeArgs = z.infer<typeof TimelinesByEncounterModeArgs>;
+
+const AbilityEquivalenceListArgs = z.object({
+  p_mode: AbilityMode.optional(),
+});
+type AbilityEquivalenceListArgs = z.infer<typeof AbilityEquivalenceListArgs>;
+
 const SelectCanonicalTimelineArgs = z.object({
   p_encounter_id: z.string().uuid(),
   p_mode: z.string().optional(),
@@ -312,7 +355,7 @@ type CreatePlanArgs = z.infer<typeof CreatePlanArgs>;
 
 const SnapshotPlanArgs = z.object({
   planId: z.string().uuid(),
-  reason: z.enum(["IDLE", "USER_SAVE", "ASSIGNMENT_DELETE", "REBUILD"]).default("USER_SAVE"),
+  reason: z.enum(['IDLE', 'USER_SAVE', 'ASSIGNMENT_DELETE', 'REBUILD']).default('USER_SAVE'),
 });
 type SnapshotPlanArgs = z.infer<typeof SnapshotPlanArgs>;
 
@@ -335,7 +378,7 @@ type DuplicatePlanArgs = z.infer<typeof DuplicatePlanArgs>;
 
 const SharePlanArgs = z.object({
   planId: z.string().uuid(),
-  role: z.enum(["read", "edit"]),
+  role: z.enum(['read', 'edit']),
   expiresInDays: z.number().int().min(1).max(90),
 });
 type SharePlanArgs = z.infer<typeof SharePlanArgs>;
@@ -344,6 +387,40 @@ const ClaimLegacyPlansArgs = z.object({
   planIds: z.array(z.string().uuid()).min(1).max(500),
 });
 type ClaimLegacyPlansArgs = z.infer<typeof ClaimLegacyPlansArgs>;
+
+const CommunityTimelinesListArgs = z.object({
+  p_public_only: z.boolean().optional(),
+  p_mode: AbilityMode.optional(),
+  p_query: z.string().optional(),
+  p_limit: z.number().int().min(1).max(200).optional(),
+});
+type CommunityTimelinesListArgs = z.infer<typeof CommunityTimelinesListArgs>;
+
+const CommunityTimelineByIdArgs = z.object({ p_id: z.string().uuid() });
+type CommunityTimelineByIdArgs = z.infer<typeof CommunityTimelineByIdArgs>;
+
+const CommunityTimelineCreateArgs = z.object({
+  p_name: z.string().min(1).max(128),
+  p_description: z.string().max(5000).optional(),
+  p_encounter_id: z.string().uuid().nullable().optional(),
+  p_mode: AbilityMode.optional(),
+  p_actions: z.array(z.unknown()).default([]),
+  p_is_public: z.boolean().optional(),
+  p_source_timeline_id: z.string().uuid().nullable().optional(),
+});
+type CommunityTimelineCreateArgs = z.infer<typeof CommunityTimelineCreateArgs>;
+
+const CommunityTimelineUpdateArgs = CommunityTimelineCreateArgs.extend({
+  p_id: z.string().uuid(),
+});
+type CommunityTimelineUpdateArgs = z.infer<typeof CommunityTimelineUpdateArgs>;
+
+const CommunityTimelineDeleteArgs = z.object({ p_id: z.string().uuid() });
+const CommunityTimelineLikeArgs = z.object({ p_id: z.string().uuid() });
+const CommunityTimelineCollectionArgs = z.object({
+  p_id: z.string().uuid(),
+  p_add: z.boolean(),
+});
 
 // ---------------------------------------------------------------------------
 // Generic helpers
@@ -412,7 +489,7 @@ export class RpcError extends Error {
   public override readonly cause: unknown;
   constructor(fn: string, message: string, cause: unknown) {
     super(`[rpc:${fn}] ${message}`);
-    this.name = "RpcError";
+    this.name = 'RpcError';
     this.fn = fn;
     this.cause = cause;
   }
@@ -423,7 +500,7 @@ export class EdgeFunctionError extends Error {
   public override readonly cause: unknown;
   constructor(fn: string, message: string, cause: unknown) {
     super(`[edge:${fn}] ${message}`);
-    this.name = "EdgeFunctionError";
+    this.name = 'EdgeFunctionError';
     this.fn = fn;
     this.cause = cause;
   }
@@ -437,7 +514,7 @@ export const encountersList = (
   client: SupabaseClient,
   args: EncountersListArgs,
 ): Promise<Encounter[]> =>
-  rpc(client, "encounters_list", args, EncountersListArgs, z.array(Encounter));
+  rpc(client, 'encounters_list', args, EncountersListArgs, z.array(Encounter));
 
 export const encountersById = (
   client: SupabaseClient,
@@ -445,37 +522,37 @@ export const encountersById = (
 ): Promise<Encounter | null> =>
   rpc(
     client,
-    "encounters_by_id",
+    'encounters_by_id',
     args,
     EncountersByIdArgs,
-    z.array(Encounter).max(1).transform(([row]) => row ?? null),
+    z
+      .array(Encounter)
+      .max(1)
+      .transform(([row]) => row ?? null),
   );
 
 export const abilitiesList = (
   client: SupabaseClient,
   args: AbilitiesListArgs = {},
 ): Promise<AbilityRow[]> =>
-  rpc(client, "abilities_list", args, AbilitiesListArgs, z.array(AbilityRow));
+  rpc(client, 'abilities_list', args, AbilitiesListArgs, z.array(AbilityRow));
 
 export const authMe = (client: SupabaseClient): Promise<AuthMeResult> =>
-  rpc(client, "auth_me", {}, z.object({}), AuthMeResult);
+  rpc(client, 'auth_me', {}, z.object({}), AuthMeResult);
 
-export const plansList = (
-  client: SupabaseClient,
-  args: PlansListArgs = {},
-): Promise<PlanRow[]> =>
-  rpc(client, "plans_list", args, PlansListArgs, z.array(PlanRow));
+export const plansList = (client: SupabaseClient, args: PlansListArgs = {}): Promise<PlanRow[]> =>
+  rpc(client, 'plans_list', args, PlansListArgs, z.array(PlanRow));
 
-export const plansById = (
-  client: SupabaseClient,
-  args: PlansByIdArgs,
-): Promise<PlanRow | null> =>
+export const plansById = (client: SupabaseClient, args: PlansByIdArgs): Promise<PlanRow | null> =>
   rpc(
     client,
-    "plans_by_id",
+    'plans_by_id',
     args,
     PlansByIdArgs,
-    z.array(PlanRow).max(1).transform(([row]) => row ?? null),
+    z
+      .array(PlanRow)
+      .max(1)
+      .transform(([row]) => row ?? null),
   );
 
 /**
@@ -488,7 +565,31 @@ export const timelinesByEncounter = (
   client: SupabaseClient,
   args: TimelinesByEncounterArgs,
 ): Promise<TimelineRow[]> =>
-  rpc(client, "timelines_by_encounter", args, TimelinesByEncounterArgs, z.array(TimelineRow));
+  rpc(client, 'timelines_by_encounter', args, TimelinesByEncounterArgs, z.array(TimelineRow));
+
+export const timelinesByEncounterMode = (
+  client: SupabaseClient,
+  args: TimelinesByEncounterModeArgs,
+): Promise<TimelineRow[]> =>
+  rpc(
+    client,
+    'timelines_by_encounter_mode',
+    args,
+    TimelinesByEncounterModeArgs,
+    z.array(TimelineRow),
+  );
+
+export const abilityEquivalenceList = (
+  client: SupabaseClient,
+  args: AbilityEquivalenceListArgs = {},
+): Promise<AbilityEquivalenceRow[]> =>
+  rpc(
+    client,
+    'ability_equivalence_list',
+    args,
+    AbilityEquivalenceListArgs,
+    z.array(AbilityEquivalenceRow),
+  );
 
 /** Alias consumers can use when they want a TimelineGraph-shaped array. */
 export const timelineGraphsByEncounter = async (
@@ -519,13 +620,7 @@ export const planAccessListForPlan = (
   client: SupabaseClient,
   args: PlanAccessListForPlanArgs,
 ): Promise<PlanAccessRow[]> =>
-  rpc(
-    client,
-    "plan_access_list_for_plan",
-    args,
-    PlanAccessListForPlanArgs,
-    z.array(PlanAccessRow),
-  );
+  rpc(client, 'plan_access_list_for_plan', args, PlanAccessListForPlanArgs, z.array(PlanAccessRow));
 
 /** Select the best canonical timeline for an encounter deterministically. */
 export const selectCanonicalTimelineForEncounter = (
@@ -534,10 +629,111 @@ export const selectCanonicalTimelineForEncounter = (
 ): Promise<TimelineRow | null> =>
   rpc(
     client,
-    "select_canonical_timeline_for_encounter",
+    'select_canonical_timeline_for_encounter',
     args,
     SelectCanonicalTimelineArgs,
-    z.array(TimelineRow).max(1).transform(([row]) => row ?? null),
+    z
+      .array(TimelineRow)
+      .max(1)
+      .transform(([row]) => row ?? null),
+  );
+
+export const communityTimelinesList = (
+  client: SupabaseClient,
+  args: CommunityTimelinesListArgs = {},
+): Promise<CommunityTimelineRow[]> =>
+  rpc(
+    client,
+    'community_timelines_list',
+    args,
+    CommunityTimelinesListArgs,
+    z.array(CommunityTimelineRow),
+  );
+
+export const communityTimelineById = (
+  client: SupabaseClient,
+  args: CommunityTimelineByIdArgs,
+): Promise<CommunityTimelineRow | null> =>
+  rpc(
+    client,
+    'community_timeline_by_id',
+    args,
+    CommunityTimelineByIdArgs,
+    z
+      .array(CommunityTimelineRow)
+      .max(1)
+      .transform(([row]) => row ?? null),
+  );
+
+export const communityTimelineCreate = (
+  client: SupabaseClient,
+  args: CommunityTimelineCreateArgs,
+): Promise<{ id: string; created_at: string }> =>
+  rpc(
+    client,
+    'community_timeline_create',
+    args,
+    CommunityTimelineCreateArgs,
+    z
+      .array(z.object({ id: z.string().uuid(), created_at: Timestamp }))
+      .max(1)
+      .transform(([row]) => {
+        if (!row) throw new Error('community_timeline_create returned no row');
+        return row;
+      }),
+  );
+
+export const communityTimelineUpdate = (
+  client: SupabaseClient,
+  args: CommunityTimelineUpdateArgs,
+): Promise<boolean> =>
+  rpc(client, 'community_timeline_update', args, CommunityTimelineUpdateArgs, z.boolean());
+
+export const communityTimelineDelete = (
+  client: SupabaseClient,
+  args: z.input<typeof CommunityTimelineDeleteArgs>,
+): Promise<boolean> =>
+  rpc(client, 'community_timeline_delete', args, CommunityTimelineDeleteArgs, z.boolean());
+
+export const communityTimelineLikeToggle = (
+  client: SupabaseClient,
+  args: z.input<typeof CommunityTimelineLikeArgs>,
+): Promise<{ liked: boolean; like_count: number }> =>
+  rpc(
+    client,
+    'community_timeline_like_toggle',
+    args,
+    CommunityTimelineLikeArgs,
+    z
+      .array(z.object({ liked: z.boolean(), like_count: z.number().int().nonnegative() }))
+      .max(1)
+      .transform(([row]) => {
+        if (!row) throw new Error('community_timeline_like_toggle returned no row');
+        return row;
+      }),
+  );
+
+export const communityTimelineCollectionToggle = (
+  client: SupabaseClient,
+  args: z.input<typeof CommunityTimelineCollectionArgs>,
+): Promise<boolean> =>
+  rpc(
+    client,
+    'community_timeline_collection_toggle',
+    args,
+    CommunityTimelineCollectionArgs,
+    z.boolean(),
+  );
+
+export const communityTimelineCollectionIds = (
+  client: SupabaseClient,
+): Promise<Array<{ timeline_id: string }>> =>
+  rpc(
+    client,
+    'community_timeline_collection_ids',
+    {},
+    z.object({}),
+    z.array(z.object({ timeline_id: z.string().uuid() })),
   );
 
 /** Upsert the source timeline provenance on a plan. */
@@ -601,50 +797,44 @@ export const loadYDocSnapshot = async (
 export const ingestCactbotTimeline = (
   client: SupabaseClient,
   args: z.infer<typeof CactbotIngestRequest>,
-): Promise<IngestAck> =>
-  callEdgeFunction(client, "timelines-ingest-cactbot", args, IngestAck);
+): Promise<IngestAck> => callEdgeFunction(client, 'timelines-ingest-cactbot', args, IngestAck);
 
 export const ingestTriggernometryTimeline = (
   client: SupabaseClient,
   args: z.infer<typeof TriggernometryIngestRequest>,
 ): Promise<IngestAck> =>
-  callEdgeFunction(client, "timelines-ingest-triggernometry", args, IngestAck);
+  callEdgeFunction(client, 'timelines-ingest-triggernometry', args, IngestAck);
 
 export const ingestFFLogsTimeline = (
   client: SupabaseClient,
   args: z.infer<typeof FFLogsIngestRequest>,
-): Promise<IngestAck> =>
-  callEdgeFunction(client, "timelines-ingest-fflogs", args, IngestAck);
+): Promise<IngestAck> => callEdgeFunction(client, 'timelines-ingest-fflogs', args, IngestAck);
 
 export const createPlan = (
   client: SupabaseClient,
   args: CreatePlanArgs,
-): Promise<CreatePlanResult> =>
-  callEdgeFunction(client, "plans-create", args, CreatePlanResult);
+): Promise<CreatePlanResult> => callEdgeFunction(client, 'plans-create', args, CreatePlanResult);
 
 export const snapshotPlan = (
   client: SupabaseClient,
   args: SnapshotPlanArgs,
 ): Promise<SnapshotPlanResult> =>
-  callEdgeFunction(client, "plans-snapshot", args, SnapshotPlanResult);
+  callEdgeFunction(client, 'plans-snapshot', args, SnapshotPlanResult);
 
-export const sharePlan = (
-  client: SupabaseClient,
-  args: SharePlanArgs,
-): Promise<SharePlanResult> =>
-  callEdgeFunction(client, "plans-share", args, SharePlanResult);
+export const sharePlan = (client: SupabaseClient, args: SharePlanArgs): Promise<SharePlanResult> =>
+  callEdgeFunction(client, 'plans-share', args, SharePlanResult);
 
 export const claimLegacyPlans = (
   client: SupabaseClient,
   args: ClaimLegacyPlansArgs,
 ): Promise<ClaimLegacyPlansResult> =>
-  callEdgeFunction(client, "auth-claim-legacy-plans", args, ClaimLegacyPlansResult);
+  callEdgeFunction(client, 'auth-claim-legacy-plans', args, ClaimLegacyPlansResult);
 
 export const redeemShareToken = (
   client: SupabaseClient,
   args: RedeemShareTokenArgs,
 ): Promise<RedeemShareTokenResult> =>
-  callEdgeFunction(client, "plans-share-redeem", args, RedeemShareTokenResult);
+  callEdgeFunction(client, 'plans-share-redeem', args, RedeemShareTokenResult);
 
 /** Returns the caller's server-derived role for a plan, or null without access. */
 export const planRoleForCurrentUser = async (
@@ -707,14 +897,12 @@ export const planExportSnapshot = async (
 export const updatePlan = (
   client: SupabaseClient,
   args: UpdatePlanArgs,
-): Promise<UpdatePlanResult> =>
-  callEdgeFunction(client, 'plans-update', args, UpdatePlanResult);
+): Promise<UpdatePlanResult> => callEdgeFunction(client, 'plans-update', args, UpdatePlanResult);
 
 export const deletePlan = (
   client: SupabaseClient,
   args: DeletePlanArgs,
-): Promise<DeletePlanResult> =>
-  callEdgeFunction(client, 'plans-delete', args, DeletePlanResult);
+): Promise<DeletePlanResult> => callEdgeFunction(client, 'plans-delete', args, DeletePlanResult);
 
 export const duplicatePlan = (
   client: SupabaseClient,

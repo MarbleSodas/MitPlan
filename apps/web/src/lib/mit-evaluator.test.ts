@@ -6,24 +6,19 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { AbilityInfo } from './data-source';
-import {
-  computeResidualMultiplier,
-  detectDoubleBookings,
-  evaluateEventMit,
-} from './mit-evaluator';
+import { computeResidualMultiplier, detectDoubleBookings, evaluateEventMit } from './mit-evaluator';
 import type { WebAssignment } from './mit-evaluator';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const makeAbility = (
-  overrides: Partial<AbilityInfo> & { id: string },
-): AbilityInfo => ({
+const makeAbility = (overrides: Partial<AbilityInfo> & { id: string }): AbilityInfo => ({
   id: overrides.id,
   jobId: '50000000-0000-0000-0000-000000000001',
   jobAbbrev: 'PLD',
   abilityId: overrides.id,
+  mode: 'CURRENT',
   name: overrides.name ?? 'Test Ability',
   description: null,
   effectPct: overrides.effectPct ?? null,
@@ -36,13 +31,16 @@ const makeAbility = (
   damageType: overrides.damageType ?? null,
   target: overrides.target ?? null,
   charges: overrides.charges ?? null,
+  effectiveFrom: '7.0',
+  effectiveTo: null,
 });
 
-const assign = (
-  id: string,
-  abilityId: string,
-  eventId: string,
-): WebAssignment => ({ id, abilityId, eventId, targetUserId: null });
+const assign = (id: string, abilityId: string, eventId: string): WebAssignment => ({
+  id,
+  abilityId,
+  eventId,
+  targetUserId: null,
+});
 
 // ---------------------------------------------------------------------------
 // computeResidualMultiplier
@@ -90,10 +88,7 @@ describe('evaluateEventMit (legacy path, no context)', () => {
   it('filters assignments by eventId', () => {
     const ramp = makeAbility({ id: 'ramp', effectPct: 20 });
     const abilities = new Map([['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'ramp', 'evt-2'),
-    ];
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'ramp', 'evt-2')];
     const result = evaluateEventMit('evt-1', assignments, abilities);
     expect(result.entries).toHaveLength(1);
     expect(result.residualMultiplier).toBeCloseTo(0.8);
@@ -107,11 +102,11 @@ describe('evaluateEventMit (legacy path, no context)', () => {
       jobAbbrev: 'PLD',
       name: 'Sentinel',
     });
-    const abilities = new Map([['ramp', ramp], ['sentinel', sentinel]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'sentinel', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['ramp', ramp],
+      ['sentinel', sentinel],
+    ]);
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'sentinel', 'evt-1')];
     const result = evaluateEventMit('evt-1', assignments, abilities);
     expect(result.residualMultiplier).toBeCloseTo(0.8 * 0.7); // 0.56
     expect(result.hasOverlap).toBe(true);
@@ -124,11 +119,11 @@ describe('evaluateEventMit (legacy path, no context)', () => {
       isInvuln: true,
     });
     const ramp = makeAbility({ id: 'ramp', effectPct: 20 });
-    const abilities = new Map([['hallowed', hg], ['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'hallowed', 'evt-1'),
-      assign('a2', 'ramp', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['hallowed', hg],
+      ['ramp', ramp],
+    ]);
+    const assignments = [assign('a1', 'hallowed', 'evt-1'), assign('a2', 'ramp', 'evt-1')];
     const result = evaluateEventMit('evt-1', assignments, abilities);
     expect(result.residualMultiplier).toBe(0);
     expect(result.residualPct).toBe(0);
@@ -137,11 +132,11 @@ describe('evaluateEventMit (legacy path, no context)', () => {
   it('skips abilities with null/zero effectPct', () => {
     const noMit = makeAbility({ id: 'no-mit', effectPct: null });
     const zeroMit = makeAbility({ id: 'zero-mit', effectPct: 0 });
-    const abilities = new Map([['no-mit', noMit], ['zero-mit', zeroMit]]);
-    const assignments = [
-      assign('a1', 'no-mit', 'evt-1'),
-      assign('a2', 'zero-mit', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['no-mit', noMit],
+      ['zero-mit', zeroMit],
+    ]);
+    const assignments = [assign('a1', 'no-mit', 'evt-1'), assign('a2', 'zero-mit', 'evt-1')];
     const result = evaluateEventMit('evt-1', assignments, abilities);
     expect(result.entries).toHaveLength(0);
     expect(result.residualMultiplier).toBe(1);
@@ -172,11 +167,11 @@ describe('evaluateEventMit (extended path, with context)', () => {
       effectPct: 30,
       durationS: 60,
     });
-    const abilities = new Map([['short', shortMit], ['long', longMit]]);
-    const assignments = [
-      assign('a1', 'short', 'evt-1'),
-      assign('a2', 'long', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['short', shortMit],
+      ['long', longMit],
+    ]);
+    const assignments = [assign('a1', 'short', 'evt-1'), assign('a2', 'long', 'evt-1')];
 
     // Hit at +5s — both active
     const r1 = evaluateEventMit('evt-1', assignments, abilities, {
@@ -207,11 +202,11 @@ describe('evaluateEventMit (extended path, with context)', () => {
       effectPct: 10,
       target: 'party',
     });
-    const abilities = new Map([['self-mit', selfMit], ['party-mit', partyMit]]);
-    const assignments = [
-      assign('a1', 'self-mit', 'evt-1'),
-      assign('a2', 'party-mit', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['self-mit', selfMit],
+      ['party-mit', partyMit],
+    ]);
+    const assignments = [assign('a1', 'self-mit', 'evt-1'), assign('a2', 'party-mit', 'evt-1')];
 
     // PARTY target — only party-mit applies
     const r1 = evaluateEventMit('evt-1', assignments, abilities, {
@@ -241,11 +236,11 @@ describe('evaluateEventMit (extended path, with context)', () => {
       effectPct: 10,
       damageType: 'magical',
     });
-    const abilities = new Map([['phys', physMit], ['mag', magMit]]);
-    const assignments = [
-      assign('a1', 'phys', 'evt-1'),
-      assign('a2', 'mag', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['phys', physMit],
+      ['mag', magMit],
+    ]);
+    const assignments = [assign('a1', 'phys', 'evt-1'), assign('a2', 'mag', 'evt-1')];
 
     // Magical damage — only mag-mit applies
     const r1 = evaluateEventMit('evt-1', assignments, abilities, {
@@ -302,11 +297,11 @@ describe('evaluateEventMit (extended path, with context)', () => {
       effectPct: 20,
       durationS: 20,
     });
-    const abilities = new Map([['holy-sheltron', shieldWithMit], ['ramp', pureMit]]);
-    const assignments = [
-      assign('a1', 'holy-sheltron', 'evt-1'),
-      assign('a2', 'ramp', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['holy-sheltron', shieldWithMit],
+      ['ramp', pureMit],
+    ]);
+    const assignments = [assign('a1', 'holy-sheltron', 'evt-1'), assign('a2', 'ramp', 'evt-1')];
 
     const result = evaluateEventMit('evt-1', assignments, abilities, {
       eventTimestampMs: 0,
@@ -331,11 +326,11 @@ describe('evaluateEventMit (extended path, with context)', () => {
       effectPct: 20,
       durationS: 20,
     });
-    const abilities = new Map([['hallowed', hg], ['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'hallowed', 'evt-1'),
-      assign('a2', 'ramp', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['hallowed', hg],
+      ['ramp', ramp],
+    ]);
+    const assignments = [assign('a1', 'hallowed', 'evt-1'), assign('a2', 'ramp', 'evt-1')];
 
     // Within invuln window — zero damage
     const r1 = evaluateEventMit('evt-1', assignments, abilities, {
@@ -462,10 +457,7 @@ describe('detectDoubleBookings', () => {
       effectPct: 20,
     });
     const abilities = new Map([['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'ramp', 'evt-1'),
-    ];
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'ramp', 'evt-1')];
     const conflicts = detectDoubleBookings(assignments, abilities);
     expect(conflicts.size).toBe(1);
     const list = conflicts.values().next().value as WebAssignment[];
@@ -485,11 +477,11 @@ describe('detectDoubleBookings', () => {
       jobAbbrev: 'PLD',
       effectPct: 30,
     });
-    const abilities = new Map([['ramp', ramp], ['sentinel', sentinel]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'sentinel', 'evt-1'),
-    ];
+    const abilities = new Map([
+      ['ramp', ramp],
+      ['sentinel', sentinel],
+    ]);
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'sentinel', 'evt-1')];
     const conflicts = detectDoubleBookings(assignments, abilities);
     expect(conflicts.size).toBe(0);
   });
@@ -502,10 +494,7 @@ describe('detectDoubleBookings', () => {
       effectPct: 20,
     });
     const abilities = new Map([['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'ramp', 'evt-2'),
-    ];
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'ramp', 'evt-2')];
     const conflicts = detectDoubleBookings(assignments, abilities);
     expect(conflicts.size).toBe(0);
   });
@@ -519,10 +508,7 @@ describe('detectDoubleBookings', () => {
       recastS: 90,
     });
     const abilities = new Map([['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'ramp', 'evt-2'),
-    ];
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'ramp', 'evt-2')];
 
     // 60s apart — inside 90s recast → conflict
     const timestampsClose = new Map<string, number>([
@@ -542,21 +528,14 @@ describe('detectDoubleBookings', () => {
       recastS: 90,
     });
     const abilities = new Map([['ramp', ramp]]);
-    const assignments = [
-      assign('a1', 'ramp', 'evt-1'),
-      assign('a2', 'ramp', 'evt-2'),
-    ];
+    const assignments = [assign('a1', 'ramp', 'evt-1'), assign('a2', 'ramp', 'evt-2')];
 
     // 120s apart — outside 90s recast → no conflict
     const timestampsFar = new Map<string, number>([
       ['evt-1', 10_000],
       ['evt-2', 130_000],
     ]);
-    const conflicts = detectDoubleBookings(
-      assignments,
-      abilities,
-      timestampsFar,
-    );
+    const conflicts = detectDoubleBookings(assignments, abilities, timestampsFar);
     expect(conflicts.size).toBe(0);
   });
 
@@ -569,10 +548,7 @@ describe('detectDoubleBookings', () => {
       recastS: null,
     });
     const abilities = new Map([['no-recast', noRecast]]);
-    const assignments = [
-      assign('a1', 'no-recast', 'evt-1'),
-      assign('a2', 'no-recast', 'evt-2'),
-    ];
+    const assignments = [assign('a1', 'no-recast', 'evt-1'), assign('a2', 'no-recast', 'evt-2')];
 
     const timestamps = new Map<string, number>([
       ['evt-1', 10_000],
@@ -585,10 +561,7 @@ describe('detectDoubleBookings', () => {
 
   it('handles missing ability references', () => {
     const abilities = new Map<string, AbilityInfo>();
-    const assignments = [
-      assign('a1', 'unknown', 'evt-1'),
-      assign('a2', 'unknown', 'evt-2'),
-    ];
+    const assignments = [assign('a1', 'unknown', 'evt-1'), assign('a2', 'unknown', 'evt-2')];
     const conflicts = detectDoubleBookings(assignments, abilities);
     expect(conflicts.size).toBe(0);
   });

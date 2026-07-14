@@ -20,6 +20,7 @@ import { PlanTimelineEditor } from './routes/plan.$planId.timeline.js';
 import { AuthCallback } from './routes/auth.callback.js';
 import { LoginPage } from './routes/login.js';
 import { DataPolicyPage } from './routes/data-policy.js';
+import { TimelineIndex } from './routes/timeline.index.js';
 import { RequireAuth } from './components/require-auth.js';
 
 export const App = () => (
@@ -37,6 +38,22 @@ export const App = () => (
               element={
                 <RequireAuth>
                   <PlanIndex />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/timeline"
+              element={
+                <RequireAuth>
+                  <TimelineIndex />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/timeline/browse"
+              element={
+                <RequireAuth>
+                  <TimelineIndex />
                 </RequireAuth>
               }
             />

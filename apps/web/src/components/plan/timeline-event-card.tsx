@@ -25,6 +25,7 @@ const TYPE_ICON: Record<TimelineEventType, typeof Sparkles> = {
   MECHANIC_END: Sparkles,
   BUSTER: Skull,
   RAIDWIDE: Users,
+  CUSTOM: Sparkles,
 };
 
 const TONE_TINT: Record<EventClass['tone'], string> = {

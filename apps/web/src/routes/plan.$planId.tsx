@@ -33,7 +33,7 @@
  * (`planRow.encounterId` from `getPlan()`), or (c) the FRU P1 default
  * for the cold-open demo.
  */
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router';
 import {
   AlertCircle,
@@ -52,32 +52,18 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
-import * as Y from 'yjs';
-import { PlanDoc, createPlanDoc } from '@xivmitplan/crdt';
-import {
-  realtimeProvider,
-  type RealtimeProviderWithReconnect,
-  type RealtimeStatus,
-} from '../lib/realtime-provider.js';
-import { useSession } from '../lib/supabase.js';
+import type { RealtimeStatus } from '@xivmitplan/crdt';
 import { usePlanDoc } from '@/lib/use-plan-doc';
+import { usePlanSession } from '@/lib/use-plan-session';
 import { usePresence } from '@/lib/use-presence';
+import { useSession } from '@/lib/supabase';
 import {
-  getEncounter,
-  getPlan,
-  getTimelineForEncounter,
-  getYDocSnapshot,
-  getPlanRole,
-  listAbilities,
-  redeemShare,
   saveSnapshot,
   updatePlan,
   duplicatePlan,
   deletePlan,
   exportPlanSnapshot,
   type AbilityInfo,
-  type EncounterInfo,
-  type PlanInfo,
   type TimelineEventInfo,
 } from '@/lib/data-source';
 import {
@@ -87,7 +73,6 @@ import {
 } from '@/lib/mit-evaluator';
 import { bytesToBase64 } from '@/lib/bytes';
 import { formatMs } from '@/lib/utils';
-import { FRU_P1_ID } from '@/lib/sample-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -96,9 +81,16 @@ import { TimelineRail } from '@/components/plan/timeline-rail';
 import { DraggableAbilityStrip } from '@/components/plan/draggable-ability-strip';
 import { MitigationLibrary } from '@/components/plan/mitigation-library';
 import { PresenceBar } from '@/components/plan/presence-bar';
+import { PartyPanel } from '@/components/plan/party-panel';
 import { ShareDialog } from '@/components/plan/share-dialog';
 import { Logo } from '@/components/logo';
 import { buildLegacyTimeline } from '@/lib/legacy-timeline';
+import {
+  buildEffectiveTimeline,
+  canonicalToEffective,
+  detectCanonicalDrift,
+  type EffectiveTimelineEvent,
+} from '@/lib/plan-timeline-adapter';
 import {
   Dialog,
   DialogContent,
@@ -138,31 +130,31 @@ export const PlanEditor = () => {
   const { planId } = useParams<{ planId: string }>();
   const [search] = useSearchParams();
   const navigate = useNavigate();
-  const session = useSession();
-  const [planDoc, setPlanDoc] = useState<PlanDoc | null>(null);
-  const [encounter, setEncounter] = useState<EncounterInfo | null>(null);
-  const [events, setEvents] = useState<TimelineEventInfo[] | null>(null);
-  const [eventsError, setEventsError] = useState<string | null>(null);
-  const [abilities, setAbilities] = useState<AbilityInfo[] | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-  const providerRef = useRef<RealtimeProviderWithReconnect | null>(null);
-  const [status, setStatus] = useState<RealtimeStatus>('connecting');
-  // Share-link capability token (from /plan/:id?token=...). When present
-  // and the viewer is signed in, it is redeemed for a plan_access row.
+  const initialName = search.get('name') ?? '';
   const shareToken = search.get('token') ?? null;
+  const session = usePlanSession(planId, { initialName, shareToken });
+  const authSession = useSession();
+  const {
+    planDoc,
+    planRow,
+    planRole,
+    canEdit,
+    isOwner,
+    encounter,
+    events,
+    eventsError,
+    abilities,
+    status,
+    ready,
+    canonicalTimeline,
+    mode,
+    providerRef,
+  } = session;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  // null = no token to redeem; false = pending; true = redeemed (or skipped).
-  const [shareRedeemed, setShareRedeemed] = useState<boolean | null>(shareToken ? false : null);
-  // Only the picked id is needed — AbilityPicker resolves the full
-  // event from the timeline events it already has.
+  // Only the picked id is needed — the library resolves the full event
+  // from the timeline events it already has.
   const [pickedEventId, setPickedEventId] = useState<string | null>(null);
-  // Plan-row metadata loaded from data-source.getPlan(). Once loaded,
-  // its `encounterId` overrides the URL query param + FRU P1 fallback.
-  const [planRow, setPlanRow] = useState<PlanInfo | null>(null);
-  const [planRole, setPlanRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER' | null | undefined>(
-    undefined,
-  );
   // Whether this plan was imported from MitPlan v1 (Firebase). Drives the
   // synthetic-timeline reconstruction so its mitigation renders on a canvas.
   const isLegacyPlan = planRow?.isLegacy ?? false;
@@ -171,265 +163,41 @@ export const PlanEditor = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [planAction, setPlanAction] = useState<'duplicate' | 'delete' | 'export' | null>(null);
 
-  // The encounter is determined by (a) the URL query param set by the
-  // "New plan" CTA, (b) the encounter stored in the plan row (loaded
-  // below), or (c) the FRU P1 default for the cold-open demo.
-  const urlEncounterId = search.get('encounterId');
-  const initialName = search.get('name') ?? '';
-
-  // Presence: track who's currently viewing this plan.
-  // Derived early so usePlanDoc can guard mutations against read-only roles.
-  const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
-  const isOwner = planRole === 'OWNER';
-
-  const { assignments, addAssignment, removeAssignment, planName, setPlanName, ready } = usePlanDoc(
-    planDoc,
-    planId ?? '00000000-0000-0000-0000-000000000000',
-    initialName,
-    canEdit,
-  );
+  const {
+    assignments,
+    addAssignment,
+    removeAssignment,
+    planName,
+    setPlanName,
+    timelineActions,
+    partyState,
+    setSelectedJob,
+    setTankPosition,
+    addClaim,
+  } = usePlanDoc(planDoc, planId ?? '00000000-0000-0000-0000-000000000000', initialName, canEdit);
   const presenceUsers = usePresence(planId ?? null, canEdit);
 
-  // Create the Y.Doc on planId, destroy on planId change or unmount.
-  // Also resets hydration, role, and status so downstream effects re-fire.
-  useEffect(() => {
-    if (!planId) return;
-    setPlanDoc(null);
-    setHydrated(false);
-    setPlanRole(undefined);
-    setStatus('connecting');
-    const doc = createPlanDoc();
-    setPlanDoc(doc);
-    return () => {
-      doc.doc.destroy();
-      setPlanDoc(null);
-    };
-  }, [planId]);
+  // The shared session owns the Y.Doc, metadata, snapshot, role, catalog,
+  // and realtime lifecycle for both plan routes.
 
-  // Load the plan-row metadata so the editor can render the right
-  // encounter + name when opened from a PlanCard (no `?encounterId=`
-  // URL param). Runs once per plan mount; failure is non-fatal — the
-  // editor falls back to the URL param, then FRU P1.
-  useEffect(() => {
-    if (!planId) return;
-    let mounted = true;
-    getPlan(planId)
-      .then((row) => {
-        if (!mounted) return;
-        setPlanRow(row);
-      })
-      .catch((err: unknown) => {
-        // eslint-disable-next-line no-console
-        console.warn('[plan-editor] getPlan failed', err);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [planId]);
-
-  // Hydrate the doc's plan name from plan-row metadata when both are
-  // available and the current name is still the auto-generated placeholder.
-  useEffect(() => {
-    if (!planRow || !planDoc || !planId) return;
-    const currentName = planDoc.meta.get('name');
-    if (!currentName || currentName === `Plan ${planId.slice(0, 8)}`) {
-      planDoc.meta.set('name', planRow.name);
-    }
-  }, [planId, planRow, planDoc]);
-
-  // Effective encounter id: URL query param > plan row > FRU P1 default.
-  const encounterId = urlEncounterId ?? planRow?.encounterId ?? FRU_P1_ID;
-
-  // Load the encounter + timeline + ability catalog when the
-  // encounter changes. Runs in parallel; the timeline rail renders as
-  // soon as `events` lands. Doesn't gate the realtime provider — the
-  // snapshot effect below owns hydration.
-  useEffect(() => {
-    let mounted = true;
-    setEvents(null);
-    setEncounter(null);
-    setEventsError(null);
-
-    Promise.all([getEncounter(encounterId), getTimelineForEncounter(encounterId), listAbilities()])
-      .then(([enc, evts, abs]) => {
-        if (!mounted) return;
-        setEncounter(enc);
-        setEvents(evts);
-        setAbilities(abs);
-      })
-      .catch((err: unknown) => {
-        if (!mounted) return;
-        // eslint-disable-next-line no-console
-        console.error('[plan-editor] encounter load failed', err);
-        setEventsError(err instanceof Error ? err.message : 'Failed to load timeline');
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [encounterId]);
-
-  // Redeem a share-link token (account-grant model). Runs once when the
-  // viewer is signed in and a ?token= is present. Grants a plan_access
-  // row so the snapshot load + realtime connect below succeed. Errors
-  // are non-fatal: the editor still proceeds (the snapshot simply won't
-  // load, and the user can retry by reopening the link).
-  useEffect(() => {
-    if (!shareToken || !session.user || shareRedeemed !== false || !planId) return;
-    let mounted = true;
-    redeemShare(planId, shareToken)
-      .then(() => {
-        if (mounted) setShareRedeemed(true);
-      })
-      .catch((err: unknown) => {
-        // eslint-disable-next-line no-console
-        console.warn('[plan-editor] share token redeem failed', err);
-        if (mounted) setShareRedeemed(true);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [shareToken, session.user, shareRedeemed, planId]);
-
-  // Role is derived by the database after share redemption completes. Do not
-  // infer write access from URL state or from a client-side share token.
-  useEffect(() => {
-    if (!planId || !session.user || (shareToken && shareRedeemed !== true)) return;
-    let mounted = true;
-    getPlanRole(planId)
-      .then((role) => {
-        if (mounted) setPlanRole(role);
-      })
-      .catch(() => {
-        if (mounted) setPlanRole(null);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [planId, session.user?.id, shareToken, shareRedeemed]);
-
-  // Snapshot restore. When the Y.Doc mounts, fetch the latest
-  // snapshot for the plan (if any) and apply it before the realtime
-  // provider connects. Runs ONCE per plan mount — the snapshot is
-  // per-plan, not per-encounter, so encounter changes don't re-fire
-  // this effect. Waits for any share-token redeem to finish first.
-  //
-  // NOTE: `shareRedeemed` is intentionally in the dep list. Without it
-  // a share-link recipient would mount the doc + bail out of this
-  // effect while redemption is pending, then never re-run when
-  // redemption completes — leaving `hydrated` stuck at `false` and the
-  // realtime provider unconnected.
-  useEffect(() => {
-    if (!planDoc || !planId) return;
-    if (shareToken && shareRedeemed !== true) return;
-    let mounted = true;
-    void (async () => {
-      try {
-        const snap = await getYDocSnapshot(planId);
-        if (!mounted) return;
-        if (snap && snap.byteSize > 1) {
-          // byteSize > 1 skips the single-byte placeholder row that
-          // plans-create inserts (prevents applying an empty update).
-          Y.applyUpdate(planDoc.doc, snap.update);
-        }
-      } catch (err: unknown) {
-        // Snapshot load failure is non-fatal: the realtime provider
-        // will still sync the live doc, and the next debounced save
-        // (2s of idle) will repair the snapshot.
-        // eslint-disable-next-line no-console
-        console.warn('[plan-editor] snapshot load failed', err);
-      } finally {
-        if (mounted) setHydrated(true);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [planDoc, planId, shareToken, shareRedeemed]);
-
-  // Wire the realtime provider to the same Y.Doc. Re-runs only when
-  // auth state changes; the Y.Doc itself is stable across renders.
-  // Gated on `hydrated` so we don't broadcast before the snapshot is
-  // applied (which would race with the cold-load).
-  useEffect(() => {
-    if (!planDoc || !planId || !hydrated || !planRole) return;
-    if (session.loading || !session.session) return;
-    const accessToken = session.session.access_token;
-    if (!accessToken) return;
-    const provider = realtimeProvider({
-      planId,
-      ydoc: planDoc.doc,
-      accessToken,
-      onStatus: setStatus,
-      readOnly: !canEdit,
-    });
-    providerRef.current = provider;
-    provider.connect();
-
-    // Late-join sync. After SUBSCRIBED, another debounced fetch picks
-    // up any edits that were committed between our initial snapshot
-    // read and the channel handshake — the 2s debounce in the
-    // broadcast provider means the snapshot is briefly behind any
-    // active editors. The 1500ms delay lands before the next debounce
-    // fires. Origin 'remote' prevents echoing back as a local update.
-    const lateJoinTimers: ReturnType<typeof setTimeout>[] = [];
-    const wasStatus = (s: RealtimeStatus) => provider.status === s;
-    const checkLateJoin = () => {
-      if (wasStatus('connected')) {
-        getYDocSnapshot(planId)
-          .then((snap) => {
-            if (snap && snap.byteSize > 1) {
-              Y.applyUpdate(planDoc.doc, snap.update, 'remote');
-            }
-          })
-          .catch(() => {
-            /* non-fatal — broadcast will catch up on next edit */
-          });
-      }
-    };
-    const intervalId = setInterval(() => {
-      if (wasStatus('connected')) {
-        clearInterval(intervalId);
-        // Two re-fetches spaced 1500ms apart cover the 2s snapshot
-        // debounce window so we converge on any in-flight edits.
-        lateJoinTimers.push(setTimeout(checkLateJoin, 1500), setTimeout(checkLateJoin, 3000));
-      }
-    }, 200);
-    // Bound the late-join window at 30s in case connection never lands.
-    const boundTimer = setTimeout(() => clearInterval(intervalId), 30_000);
-
-    return () => {
-      provider.disconnect();
-      providerRef.current = null;
-      clearInterval(intervalId);
-      clearTimeout(boundTimer);
-      for (const timer of lateJoinTimers) clearTimeout(timer);
-    };
-  }, [planDoc, planId, hydrated, planRole, canEdit, session.loading, session.user?.id]);
-
-  // Auto-reconnect on transient errors. Clears the retry timer on
-  // planId change so a stale timer doesn't reconnect to the old plan.
-  useEffect(() => {
-    if (status !== 'error') return;
-    if (!providerRef.current) return;
-    const timer = setTimeout(() => {
-      providerRef.current?.reconnect();
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [status, planId]);
-
-  // For imported plans without a matching catalog timeline, rebuild a
-  // synthetic timeline from the assignments' original bossActionIds so
-  // every mitigation renders on the canvas. Catalog events are kept and
-  // synthetic events are appended, ordered by their original occurrence.
+  // Merge canonical events with plan-local timeline actions. Imported plans
+  // also get synthetic events for assignments that have no catalog match.
   const displayEvents = useMemo(() => {
     if (!events) return null;
-    if (!isLegacyPlan) return events;
+    const effective = buildEffectiveTimeline(events, timelineActions);
+    if (!isLegacyPlan) return effective;
     const catalogById = new Map(events.map((e) => [e.id, e]));
     const synthetic = buildLegacyTimeline(assignments, catalogById);
-    if (synthetic.length === 0) return events;
-    return [...events, ...synthetic].sort((a, b) => a.timestampMs - b.timestampMs);
-  }, [events, assignments, isLegacyPlan]);
+    if (synthetic.length === 0) return effective;
+    return [
+      ...effective,
+      ...synthetic.map((event) => ({
+        ...canonicalToEffective(event),
+        isCustom: true,
+        sourceEventId: null,
+      })),
+    ].sort((a, b) => a.timestampMs - b.timestampMs);
+  }, [events, timelineActions, assignments, isLegacyPlan]);
 
   // Resolve the event id the AbilityPicker will pre-anchor new mits to:
   // user-picked id → first event of the loaded timeline.
@@ -445,7 +213,7 @@ export const PlanEditor = () => {
   }, [abilities]);
 
   const eventById = useMemo(() => {
-    const m = new Map<string, TimelineEventInfo>();
+    const m = new Map<string, EffectiveTimelineEvent>();
     for (const e of displayEvents ?? []) m.set(e.id, e);
     return m;
   }, [displayEvents]);
@@ -484,6 +252,16 @@ export const PlanEditor = () => {
     }
     return ids;
   }, [assignments, abilityById, eventTimestampsById]);
+
+  const timelineDrift = useMemo(
+    () =>
+      detectCanonicalDrift(
+        planRow?.sourceTimelineHash,
+        planRow?.sourceTimelineVersion,
+        canonicalTimeline ? [canonicalTimeline] : [],
+      ),
+    [canonicalTimeline, planRow?.sourceTimelineHash, planRow?.sourceTimelineVersion],
+  );
 
   // All useCallback / useState hooks must be declared above the early
   // returns below — the React Rules of Hooks forbid changing the
@@ -569,14 +347,13 @@ export const PlanEditor = () => {
       toast.error('Plan name cannot be empty');
       return;
     }
-    if (!planId || !planRow || nextName === planRow.name || !canEdit) return;
+    if (!planId || !canEdit || nextName === planRow?.name) return;
 
     try {
       await updatePlan({ planId, name: nextName });
-      setPlanRow((current) => (current ? { ...current, name: nextName } : current));
       toast.success('Plan renamed');
     } catch (error: unknown) {
-      setPlanName(planRow.name);
+      if (planRow) setPlanName(planRow.name);
       toast.error(error instanceof Error ? error.message : 'Could not rename plan');
     }
   }, [canEdit, planId, planName, planRow, setPlanName]);
@@ -623,7 +400,7 @@ export const PlanEditor = () => {
         planId,
         name: planName,
         encounter,
-        timeline: events,
+        timeline: displayEvents,
         ydocB64: bytesToBase64(planDoc.encodeStateAsUpdate()),
         document: planDoc.toJSON(),
         serverSnapshot: remoteSnapshot,
@@ -646,7 +423,7 @@ export const PlanEditor = () => {
     } finally {
       setPlanAction(null);
     }
-  }, [encounter, events, planAction, planDoc, planId, planName]);
+  }, [displayEvents, encounter, planAction, planDoc, planId, planName]);
 
   if (planRole === undefined) {
     return (
@@ -703,6 +480,14 @@ export const PlanEditor = () => {
             {encounter.raidSlug.toUpperCase()} · {encounter.name}
           </Badge>
         )}
+        <Badge
+          variant={timelineDrift.hasDrifted ? 'destructive' : 'outline'}
+          className="font-mono text-[10px]"
+          title={timelineDrift.message ?? `Catalog mode: ${mode}`}
+        >
+          {mode}
+          {canonicalTimeline?.version ? ` · ${canonicalTimeline.version}` : ''}
+        </Badge>
         <Badge
           variant={statusInfo.variant}
           className={`shrink-0 gap-1.5 ${status === 'error' || status === 'disconnected' ? 'cursor-pointer' : ''}`}
@@ -763,7 +548,10 @@ export const PlanEditor = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Plan actions</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => navigate(`/plan/${planId}/timeline`)} disabled={!ready}>
+              <DropdownMenuItem
+                onSelect={() => navigate(`/plan/${planId}/timeline`)}
+                disabled={!ready}
+              >
                 <TimelineIcon /> Edit timeline
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={handleExportPlan} disabled={!ready}>
@@ -819,6 +607,22 @@ export const PlanEditor = () => {
                 </div>
               </div>
             )}
+
+            <PartyPanel
+              abilities={abilities}
+              partyState={partyState}
+              currentUserId={authSession.user?.id ?? null}
+              canEdit={canEdit}
+              onSelectJob={(jobId) => {
+                if (authSession.user?.id) setSelectedJob(authSession.user.id, jobId);
+              }}
+              onSetTankPosition={(position) => {
+                if (authSession.user?.id) setTankPosition(authSession.user.id, position);
+              }}
+              onClaim={(jobId, displayName) => {
+                if (authSession.user?.id) addClaim(authSession.user.id, jobId, displayName);
+              }}
+            />
 
             {/* Mitigation Library — searchable ability panel */}
             {canEdit && (
@@ -881,6 +685,11 @@ export const PlanEditor = () => {
           </aside>
 
           <main className="bg-background/40 min-h-0 flex-1 overflow-y-auto p-3 sm:p-6">
+            {timelineDrift.hasDrifted && timelineDrift.message && (
+              <div className="border-destructive/30 bg-destructive/5 text-destructive mb-4 rounded-lg border px-3 py-2 text-xs">
+                {timelineDrift.message}
+              </div>
+            )}
             {canEdit && <DraggableAbilityStrip abilities={abilities} />}
             {eventsError ? (
               <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">

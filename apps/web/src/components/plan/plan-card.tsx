@@ -35,6 +35,8 @@ export interface PlanCardData {
   encounterName: string;
   updatedAt: string;
   partySize: 8 | 16;
+  mode: 'REBORN' | 'EVOLVED' | 'CURRENT' | 'ALL';
+  accessRole: 'OWNER' | 'EDITOR' | 'VIEWER' | null;
 }
 
 export const PlanCard = ({ plan }: { plan: PlanCardData }) => (
@@ -53,6 +55,14 @@ export const PlanCard = ({ plan }: { plan: PlanCardData }) => (
           {plan.raid && (
             <Badge variant="secondary" className="font-mono text-[10px]">
               {plan.raid}
+            </Badge>
+          )}
+          <Badge variant="outline" className="font-mono text-[10px]">
+            {plan.mode}
+          </Badge>
+          {plan.accessRole && plan.accessRole !== 'OWNER' && (
+            <Badge variant="outline" className="text-[10px]">
+              Shared · {plan.accessRole.toLowerCase()}
             </Badge>
           )}
         </div>

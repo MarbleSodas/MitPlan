@@ -40,6 +40,16 @@ import {
   plansList,
   plansById,
   timelinesByEncounter,
+  timelinesByEncounterMode,
+  abilityEquivalenceList,
+  communityTimelinesList,
+  communityTimelineById,
+  communityTimelineCreate,
+  communityTimelineUpdate,
+  communityTimelineDelete,
+  communityTimelineLikeToggle,
+  communityTimelineCollectionToggle,
+  communityTimelineCollectionIds,
   createPlan as rpcCreatePlan,
   loadYDocSnapshot,
   snapshotPlan as rpcSnapshotPlan,
@@ -54,15 +64,19 @@ import {
   duplicatePlan as rpcDuplicatePlan,
   planExportSnapshot as rpcPlanExportSnapshot,
 } from './supabase-rpc.js';
-import type { Encounter, AbilityRow, PlanRow, TimelineRow, PlanAccessRow } from './supabase-rpc.js';
+import type {
+  Encounter,
+  AbilityRow,
+  PlanRow,
+  TimelineRow,
+  PlanAccessRow,
+  AbilityEquivalenceRow,
+  CommunityTimelineRow,
+} from './supabase-rpc.js';
 import { RawTimelineEvent } from './supabase-rpc.js';
-import {
-  SAMPLE_PLANS,
-  SAMPLE_ABILITIES,
-  SAMPLE_EVENTS,
-  SAMPLE_ENCOUNTERS,
-} from './sample-data.js';
+import { SAMPLE_PLANS, SAMPLE_ABILITIES, SAMPLE_EVENTS, SAMPLE_ENCOUNTERS } from './sample-data.js';
 import { capitalize } from './utils.js';
+import type { AbilityMode } from '@xivmitplan/validation/ability';
 
 // ---------------------------------------------------------------------------
 // Local TypeScript shapes — the public interface of this module.
@@ -94,6 +108,7 @@ export interface AbilityInfo {
   jobId: string;
   jobAbbrev: string;
   abilityId: string;
+  mode: AbilityMode;
   name: string;
   description: string | null;
   effectPct: number | null;
@@ -106,6 +121,34 @@ export interface AbilityInfo {
   damageType: 'physical' | 'magical' | 'both' | null;
   target: 'self' | 'single' | 'party' | 'area' | null;
   charges: number | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface AbilityEquivalenceInfo {
+  srcAbilityId: string;
+  dstAbilityId: string;
+  relation: 'EQUIVALENT' | 'CONSOLIDATED' | 'REMOVED' | 'ADDED';
+  note: string | null;
+  srcMode: AbilityMode;
+  dstMode: AbilityMode;
+}
+
+export interface CommunityTimelineInfo {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  encounterId: string | null;
+  mode: AbilityMode;
+  actions: unknown[];
+  isPublic: boolean;
+  sourceTimelineId: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  likeCount: number;
+  collectionCount: number;
 }
 
 /** Plan row as the UI consumes it. */
@@ -121,6 +164,7 @@ export interface PlanInfo {
   sourceTimelineId: string | null | undefined;
   sourceTimelineVersion: string | null | undefined;
   sourceTimelineHash: string | null | undefined;
+  accessRole: 'OWNER' | 'EDITOR' | 'VIEWER' | null;
 }
 
 /** Single timeline event as the UI consumes it. camelCase + UI tags. */
@@ -129,7 +173,7 @@ export interface TimelineEventInfo {
   position: number;
   /** Milliseconds from t=0 (encounter start). */
   timestampMs: number;
-  type: 'MECHANIC' | 'BUSTER' | 'RAIDWIDE' | 'MECHANIC_START' | 'MECHANIC_END';
+  type: 'MECHANIC' | 'BUSTER' | 'RAIDWIDE' | 'MECHANIC_START' | 'MECHANIC_END' | 'CUSTOM';
   name: string;
   durationMs: number | null;
   hitTimesMs: number[];
@@ -243,8 +287,18 @@ const SAMPLE_ENCOUNTERS_UI: EncounterInfo[] = SAMPLE_ENCOUNTERS.map((e) => ({
   patchVersion: e.patchVersion,
   raidSlug: e.raid.toLowerCase().replace(/\s+/g, '-'),
   raidName: `${e.raid} (${e.tier})`,
-  expansionSlug: parseInt(e.patchVersion) >= 7 ? 'dawntrail' : parseInt(e.patchVersion) >= 6 ? 'endwalker' : 'shadowbringers',
-  expansionName: parseInt(e.patchVersion) >= 7 ? 'Dawntrail' : parseInt(e.patchVersion) >= 6 ? 'Endwalker' : 'Shadowbringers',
+  expansionSlug:
+    parseInt(e.patchVersion) >= 7
+      ? 'dawntrail'
+      : parseInt(e.patchVersion) >= 6
+        ? 'endwalker'
+        : 'shadowbringers',
+  expansionName:
+    parseInt(e.patchVersion) >= 7
+      ? 'Dawntrail'
+      : parseInt(e.patchVersion) >= 6
+        ? 'Endwalker'
+        : 'Shadowbringers',
   effectiveFrom: e.patchVersion,
   effectiveTo: null,
   raidTier: null,
@@ -270,6 +324,7 @@ const SAMPLE_ABILITY_ROWS: AbilityInfo[] = SAMPLE_ABILITIES.map((s) => {
     jobId,
     jobAbbrev: s.jobAbbrev,
     abilityId: s.id.replace('a-', ''),
+    mode: 'CURRENT',
     name: s.name,
     description: s.description,
     effectPct: s.effectPct > 0 ? s.effectPct : null,
@@ -282,6 +337,8 @@ const SAMPLE_ABILITY_ROWS: AbilityInfo[] = SAMPLE_ABILITIES.map((s) => {
     damageType: s.damageType ?? null,
     target: s.target ?? null,
     charges: s.charges ?? null,
+    effectiveFrom: '7.0',
+    effectiveTo: null,
   };
 });
 
@@ -297,6 +354,7 @@ const SAMPLE_PLANS_CAMEL: PlanInfo[] = SAMPLE_PLANS.map((p) => ({
   sourceTimelineId: undefined,
   sourceTimelineVersion: undefined,
   sourceTimelineHash: undefined,
+  accessRole: 'OWNER',
 }));
 
 // ---------------------------------------------------------------------------
@@ -320,8 +378,9 @@ const toEncounterInfo = (row: Encounter): EncounterInfo => ({
 const toAbilityInfo = (row: AbilityRow): AbilityInfo => ({
   id: row.id,
   jobId: row.job_id,
-  jobAbbrev: row.job_abbrev ?? (JOB_ABBREV[row.job_id] ?? '???'),
+  jobAbbrev: row.job_abbrev ?? JOB_ABBREV[row.job_id] ?? '???',
   abilityId: row.ability_id,
+  mode: row.mode,
   name: row.name,
   description: row.description,
   effectPct: row.effect_pct,
@@ -334,6 +393,8 @@ const toAbilityInfo = (row: AbilityRow): AbilityInfo => ({
   damageType: row.damage_type ?? null,
   target: row.target ?? null,
   charges: row.charges ?? null,
+  effectiveFrom: row.effective_from,
+  effectiveTo: row.effective_to,
 });
 
 const toPlanInfo = (row: PlanRow): PlanInfo => ({
@@ -348,6 +409,24 @@ const toPlanInfo = (row: PlanRow): PlanInfo => ({
   sourceTimelineId: row.source_timeline_id,
   sourceTimelineVersion: row.source_timeline_version,
   sourceTimelineHash: row.source_timeline_hash,
+  accessRole: row.access_role ?? null,
+});
+
+const toCommunityTimelineInfo = (row: CommunityTimelineRow): CommunityTimelineInfo => ({
+  id: row.id,
+  ownerId: row.owner_id,
+  name: row.name,
+  description: row.description,
+  encounterId: row.encounter_id,
+  mode: row.mode,
+  actions: row.actions,
+  isPublic: row.is_public,
+  sourceTimelineId: row.source_timeline_id,
+  version: row.version,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  likeCount: row.like_count,
+  collectionCount: row.collection_count,
 });
 
 const toTimelineEvent = (e: unknown): TimelineEventInfo => {
@@ -432,24 +511,145 @@ export const getEncounter = async (id: string): Promise<EncounterInfo | null> =>
  * Cached at the module level — multiple components share a single RPC.
  * Tests can call `_invalidateCatalogCache()` to force a refetch.
  */
-async function listAbilitiesImpl(): Promise<AbilityInfo[]> {
-  if (!isSupabaseConfigured()) return SAMPLE_ABILITY_ROWS;
-  const rows = await abilitiesList(defaultSupabase, {});
+async function listAbilitiesImpl(mode?: AbilityMode): Promise<AbilityInfo[]> {
+  if (!isSupabaseConfigured()) {
+    if (!mode || mode === 'CURRENT' || mode === 'ALL') return SAMPLE_ABILITY_ROWS;
+    return SAMPLE_ABILITY_ROWS.filter((ability) => ability.mode === mode);
+  }
+  const rows = await abilitiesList(defaultSupabase, mode ? { p_mode: mode } : {});
   return rows.map(toAbilityInfo);
 }
 
-let abilitiesCache: Promise<AbilityInfo[]> | null = null;
+const abilitiesCache = new Map<string, Promise<AbilityInfo[]>>();
 const timelineCache = new Map<string, Promise<TimelineEventInfo[]>>();
 
 /** Test-only: drop the catalog cache so the next fetch hits the network. */
 export const _invalidateCatalogCache = (): void => {
-  abilitiesCache = null;
+  abilitiesCache.clear();
   encountersCache = null;
   timelineCache.clear();
+  canonicalTimelineCache.clear();
 };
 
-export const listAbilities = (): Promise<AbilityInfo[]> =>
-  abilitiesCache ?? (abilitiesCache = listAbilitiesImpl());
+export const listAbilities = (mode?: AbilityMode): Promise<AbilityInfo[]> => {
+  const key = mode ?? 'DEFAULT';
+  const cached = abilitiesCache.get(key);
+  if (cached) return cached;
+  const request = listAbilitiesImpl(mode);
+  abilitiesCache.set(key, request);
+  return request;
+};
+
+export const listAbilityEquivalence = async (
+  mode?: AbilityMode,
+): Promise<AbilityEquivalenceInfo[]> => {
+  if (!isSupabaseConfigured()) return [];
+  const rows = await abilityEquivalenceList(defaultSupabase, mode ? { p_mode: mode } : {});
+  return rows.map((row: AbilityEquivalenceRow) => ({
+    srcAbilityId: row.src_ability_id,
+    dstAbilityId: row.dst_ability_id,
+    relation: row.relation,
+    note: row.note,
+    srcMode: row.src_mode,
+    dstMode: row.dst_mode,
+  }));
+};
+
+export const listCommunityTimelines = async (
+  input: {
+    publicOnly?: boolean;
+    mode?: AbilityMode;
+    query?: string;
+    limit?: number;
+  } = {},
+): Promise<CommunityTimelineInfo[]> => {
+  if (!isSupabaseConfigured()) return [];
+  const rows = await communityTimelinesList(defaultSupabase, {
+    p_public_only: input.publicOnly ?? true,
+    ...(input.mode ? { p_mode: input.mode } : {}),
+    ...(input.query ? { p_query: input.query } : {}),
+    ...(input.limit ? { p_limit: input.limit } : {}),
+  });
+  return rows.map(toCommunityTimelineInfo);
+};
+
+export const getCommunityTimeline = async (id: string): Promise<CommunityTimelineInfo | null> => {
+  if (!isSupabaseConfigured()) return null;
+  const row = await communityTimelineById(defaultSupabase, { p_id: id });
+  return row ? toCommunityTimelineInfo(row) : null;
+};
+
+export const createCommunityTimeline = async (input: {
+  name: string;
+  description?: string;
+  encounterId?: string | null;
+  mode: AbilityMode;
+  actions: unknown[];
+  isPublic: boolean;
+  sourceTimelineId?: string | null;
+}): Promise<{ id: string; createdAt: string }> => {
+  if (!isSupabaseConfigured()) throw new Error('Community timelines require Supabase');
+  const row = await communityTimelineCreate(defaultSupabase, {
+    p_name: input.name,
+    p_description: input.description,
+    p_encounter_id: input.encounterId,
+    p_mode: input.mode,
+    p_actions: input.actions,
+    p_is_public: input.isPublic,
+    p_source_timeline_id: input.sourceTimelineId,
+  });
+  return { id: row.id, createdAt: row.created_at };
+};
+
+export const updateCommunityTimeline = async (input: {
+  id: string;
+  name: string;
+  description?: string;
+  encounterId?: string | null;
+  mode: AbilityMode;
+  actions: unknown[];
+  isPublic: boolean;
+  sourceTimelineId?: string | null;
+}): Promise<void> => {
+  if (!isSupabaseConfigured()) throw new Error('Community timelines require Supabase');
+  await communityTimelineUpdate(defaultSupabase, {
+    p_id: input.id,
+    p_name: input.name,
+    p_description: input.description,
+    p_encounter_id: input.encounterId,
+    p_mode: input.mode,
+    p_actions: input.actions,
+    p_is_public: input.isPublic,
+    p_source_timeline_id: input.sourceTimelineId,
+  });
+};
+
+export const deleteCommunityTimeline = async (id: string): Promise<void> => {
+  if (!isSupabaseConfigured()) throw new Error('Community timelines require Supabase');
+  await communityTimelineDelete(defaultSupabase, { p_id: id });
+};
+
+export const toggleCommunityTimelineLike = async (
+  id: string,
+): Promise<{ liked: boolean; likeCount: number }> => {
+  if (!isSupabaseConfigured()) throw new Error('Community timelines require Supabase');
+  const result = await communityTimelineLikeToggle(defaultSupabase, { p_id: id });
+  return { liked: result.liked, likeCount: result.like_count };
+};
+
+export const toggleCommunityTimelineCollection = async (
+  id: string,
+  add: boolean,
+): Promise<boolean> => {
+  if (!isSupabaseConfigured()) throw new Error('Community timelines require Supabase');
+  return communityTimelineCollectionToggle(defaultSupabase, { p_id: id, p_add: add });
+};
+
+export const listCommunityTimelineCollectionIds = async (): Promise<string[]> => {
+  if (!isSupabaseConfigured()) return [];
+  const rows = await communityTimelineCollectionIds(defaultSupabase);
+  return rows.map((row) => row.timeline_id);
+};
 
 /**
  * List the current user's plans (newest first). Returns the 3 sample
@@ -487,6 +687,7 @@ export const getPlan = async (id: string): Promise<PlanInfo | null> => {
  */
 async function getTimelineForEncounterImpl(
   encounterId: string,
+  mode?: AbilityMode,
 ): Promise<TimelineEventInfo[]> {
   if (!isSupabaseConfigured()) {
     return (SAMPLE_EVENTS[encounterId] ?? []).map((e) => ({
@@ -506,35 +707,57 @@ async function getTimelineForEncounterImpl(
       mergedFromSources: { cactbot: false, triggernometry: false, fflogs: false },
     }));
   }
-  const rows: TimelineRow[] = await timelinesByEncounter(defaultSupabase, {
-    p_encounter_id: encounterId,
-  });
+  const rows: TimelineRow[] = mode
+    ? await timelinesByEncounterMode(defaultSupabase, {
+        p_encounter_id: encounterId,
+        p_mode: mode,
+      })
+    : await timelinesByEncounter(defaultSupabase, { p_encounter_id: encounterId });
   if (rows.length === 0) return [];
 
-  // Canonical selection: prefer CURRENT mode, then MANUAL source, newest version.
-  const byMode = (mode: string) => rows.filter((r) => r.mode === mode);
-  const bySource = (source: string) =>
-    rows.filter((r) => r.source === source);
-
+  // Select the requested mode. CURRENT preserves the historical fallback to
+  // any available row so older catalogs remain readable while they migrate.
+  const requested = mode && mode !== 'ALL' ? rows.filter((r) => r.mode === mode) : rows;
+  const current = rows.filter((r) => r.mode === 'CURRENT');
   const candidates =
-    byMode('CURRENT').length > 0 ? byMode('CURRENT') : rows;
+    requested.length > 0
+      ? requested
+      : mode === 'CURRENT'
+        ? current.length > 0
+          ? current
+          : rows
+        : [];
 
   if (candidates.length === 0) return [];
 
-  const manual = bySource('MANUAL').filter((r) => candidates.includes(r));
-  if (manual.length > 0) return manual[0]!.events.map(toTimelineEvent);
-
-  const cactbot = bySource('CACTBOT').filter((r) => candidates.includes(r));
-  if (cactbot.length > 0) return cactbot[0]!.events.map(toTimelineEvent);
-
-  return candidates[0]!.events.map(toTimelineEvent);
+  const sourceRank: Record<string, number> = {
+    MANUAL: 0,
+    CACTBOT: 1,
+    FFLOGS: 2,
+    TRIGGERNOMETRY: 3,
+    MERGED: 4,
+  };
+  const selected = [...candidates].sort((a, b) => {
+    if (mode === 'ALL' && a.mode !== b.mode) {
+      const modeDiff = (a.mode === 'CURRENT' ? 0 : 1) - (b.mode === 'CURRENT' ? 0 : 1);
+      if (modeDiff !== 0) return modeDiff;
+    }
+    const sourceDiff = (sourceRank[a.source] ?? 99) - (sourceRank[b.source] ?? 99);
+    if (sourceDiff !== 0) return sourceDiff;
+    return b.version.localeCompare(a.version, undefined, { numeric: true });
+  })[0];
+  return selected?.events.map(toTimelineEvent) ?? [];
 }
 
-export const getTimelineForEncounter = (encounterId: string): Promise<TimelineEventInfo[]> => {
-  const cached = timelineCache.get(encounterId);
+export const getTimelineForEncounter = (
+  encounterId: string,
+  mode?: AbilityMode,
+): Promise<TimelineEventInfo[]> => {
+  const key = `${encounterId}:${mode ?? 'DEFAULT'}`;
+  const cached = timelineCache.get(key);
   if (cached) return cached;
-  const p = getTimelineForEncounterImpl(encounterId);
-  timelineCache.set(encounterId, p);
+  const p = getTimelineForEncounterImpl(encounterId, mode);
+  timelineCache.set(key, p);
   return p;
 };
 
@@ -547,7 +770,7 @@ export interface CanonicalTimelineInfo {
   version: string;
   contentHash: string;
   source: string;
-  mode: string;
+  mode: AbilityMode;
   events: TimelineEventInfo[];
 }
 
@@ -558,27 +781,46 @@ export interface CanonicalTimelineInfo {
  */
 async function getCanonicalTimelineForEncounterImpl(
   encounterId: string,
+  mode?: AbilityMode,
 ): Promise<CanonicalTimelineInfo | null> {
   if (!isSupabaseConfigured()) return null;
-  const rows: TimelineRow[] = await timelinesByEncounter(defaultSupabase, {
-    p_encounter_id: encounterId,
-  });
+  const rows: TimelineRow[] = mode
+    ? await timelinesByEncounterMode(defaultSupabase, {
+        p_encounter_id: encounterId,
+        p_mode: mode,
+      })
+    : await timelinesByEncounter(defaultSupabase, { p_encounter_id: encounterId });
   if (rows.length === 0) return null;
 
-  // Same canonical selection logic as getTimelineForEncounterImpl
-  const byMode = (mode: string) => rows.filter((r) => r.mode === mode);
-  const bySource = (source: string) =>
-    rows.filter((r) => r.source === source);
-
+  const requested = mode && mode !== 'ALL' ? rows.filter((r) => r.mode === mode) : rows;
+  const current = rows.filter((r) => r.mode === 'CURRENT');
   const candidates =
-    byMode('CURRENT').length > 0 ? byMode('CURRENT') : rows;
+    requested.length > 0
+      ? requested
+      : mode === 'CURRENT'
+        ? current.length > 0
+          ? current
+          : rows
+        : [];
 
   if (candidates.length === 0) return null;
 
-  const manual = bySource('MANUAL').filter((r) => candidates.includes(r));
-  const selected = manual.length > 0 ? manual[0]!
-    : bySource('CACTBOT').filter((r) => candidates.includes(r))[0]
-    ?? candidates[0]!;
+  const sourceRank: Record<string, number> = {
+    MANUAL: 0,
+    CACTBOT: 1,
+    FFLOGS: 2,
+    TRIGGERNOMETRY: 3,
+    MERGED: 4,
+  };
+  const selected = [...candidates].sort((a, b) => {
+    if (mode === 'ALL' && a.mode !== b.mode) {
+      const modeDiff = (a.mode === 'CURRENT' ? 0 : 1) - (b.mode === 'CURRENT' ? 0 : 1);
+      if (modeDiff !== 0) return modeDiff;
+    }
+    const sourceDiff = (sourceRank[a.source] ?? 99) - (sourceRank[b.source] ?? 99);
+    if (sourceDiff !== 0) return sourceDiff;
+    return b.version.localeCompare(a.version, undefined, { numeric: true });
+  })[0]!;
 
   return {
     id: selected.id,
@@ -594,11 +836,13 @@ const canonicalTimelineCache = new Map<string, Promise<CanonicalTimelineInfo | n
 
 export const getCanonicalTimelineForEncounter = (
   encounterId: string,
+  mode?: AbilityMode,
 ): Promise<CanonicalTimelineInfo | null> => {
-  const cached = canonicalTimelineCache.get(encounterId);
+  const key = `${encounterId}:${mode ?? 'DEFAULT'}`;
+  const cached = canonicalTimelineCache.get(key);
   if (cached) return cached;
-  const p = getCanonicalTimelineForEncounterImpl(encounterId);
-  canonicalTimelineCache.set(encounterId, p);
+  const p = getCanonicalTimelineForEncounterImpl(encounterId, mode);
+  canonicalTimelineCache.set(key, p);
   return p;
 };
 
@@ -775,9 +1019,7 @@ export const exportPlanSnapshot = async (
  * plan owner or have an EDITOR role. In fallback mode this is a no-op
  * (memory-only plans cannot be persisted).
  */
-export const updatePlan = async (
-  input: { planId: string; name: string },
-): Promise<void> => {
+export const updatePlan = async (input: { planId: string; name: string }): Promise<void> => {
   if (!isSupabaseConfigured()) return;
   await rpcUpdatePlan(defaultSupabase, input);
 };

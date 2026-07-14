@@ -11,23 +11,23 @@
 // (`\x00`). Without this row, y-supabase's first UPDATE is a silent
 // no-op until someone explicitly INSERTs the row — and the Yjs doc
 // would appear empty across reconnects. See architecture §14.6.3.
-import { z } from "zod";
-import { withCors, errorResponse, json } from "../../_shared/cors.ts";
-import { createSupabaseClient, requireUser } from "../../_shared/supabase-client.ts";
+import { z } from 'zod';
+import { withCors, errorResponse, json } from '../../_shared/cors.ts';
+import { createSupabaseClient, requireUser } from '../../_shared/supabase-client.ts';
 
 const RequestBody = z.object({
   name: z.string().min(1).max(128),
   encounterId: z.string().uuid(),
   partyId: z.string().uuid().optional(),
-  mode: z.enum(["REBORN", "EVOLVED", "CURRENT", "ALL"]),
+  mode: z.enum(['REBORN', 'EVOLVED', 'CURRENT', 'ALL']),
 });
 type RequestBody = z.infer<typeof RequestBody>;
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method !== "POST") return errorResponse(405, "METHOD_NOT_ALLOWED", "Use POST");
+  if (req.method !== 'POST') return errorResponse(405, 'METHOD_NOT_ALLOWED', 'Use POST');
 
   const ctx = await createSupabaseClient(req);
-  const unauth = requireUser(ctx, "*");
+  const unauth = requireUser(ctx, '*');
   if (unauth) return unauth;
   const userId = ctx.userId!;
 
@@ -35,7 +35,12 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     body = RequestBody.parse(await req.json());
   } catch {
-    return errorResponse(400, "INVALID_BODY", "Body must match { name, encounterId, mode, partyId? }", "*");
+    return errorResponse(
+      400,
+      'INVALID_BODY',
+      'Body must match { name, encounterId, mode, partyId? }',
+      '*',
+    );
   }
 
   const planId = crypto.randomUUID();
@@ -47,8 +52,10 @@ const handler = async (req: Request): Promise<Response> => {
   let sourceHash: string | null = null;
   try {
     const { data: timeline, error: tlErr } = await ctx.supabaseAdmin.rpc(
-      "select_canonical_timeline_for_encounter",
-      { p_encounter_id: body.encounterId, p_mode: "CURRENT" },
+      'select_canonical_timeline_for_encounter',
+      // ALL is a catalog view rather than a canonical timeline variant;
+      // pin it to the current encounter timeline for provenance.
+      { p_encounter_id: body.encounterId, p_mode: body.mode === 'ALL' ? 'CURRENT' : body.mode },
     );
     if (!tlErr && timeline && timeline.length > 0) {
       sourceTimelineId = timeline[0].id;
@@ -62,7 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
   // Insert the plan row using the admin client (we deterministically
   // set owner_id from the verified JWT). The admin client bypasses RLS
   // but is safe here because we explicitly assign the caller.
-  const { error: planErr } = await ctx.supabaseAdmin.from("plans").insert({
+  const { error: planErr } = await ctx.supabaseAdmin.from('plans').insert({
     id: planId,
     owner_id: userId,
     name: body.name,
@@ -76,10 +83,10 @@ const handler = async (req: Request): Promise<Response> => {
     source_timeline_hash: sourceHash,
   });
   if (planErr) {
-    if (planErr.code === "23503") {
-      return errorResponse(404, "ENCOUNTER_NOT_FOUND", "encounterId does not exist", "*");
+    if (planErr.code === '23503') {
+      return errorResponse(404, 'ENCOUNTER_NOT_FOUND', 'encounterId does not exist', '*');
     }
-    return errorResponse(500, "INSERT_FAILED", planErr.message, "*");
+    return errorResponse(500, 'INSERT_FAILED', planErr.message, '*');
   }
 
   // Pre-create the ydoc_snapshots row with a single-byte placeholder
@@ -88,17 +95,17 @@ const handler = async (req: Request): Promise<Response> => {
   // literal rather than a JSON-serialized Uint8Array (`{"0":0}`) or a
   // literal base64 string — both of which would corrupt the snapshot.
   // The caller is the plan owner, so the RPC's internal ACL check passes.
-  const { error: ydocErr } = await ctx.supabase.rpc("upsert_ydoc_snapshot", {
+  const { error: ydocErr } = await ctx.supabase.rpc('upsert_ydoc_snapshot', {
     p_plan_id: planId,
-    p_update: "\\x00",
+    p_update: '\\x00',
     p_byte_size: 1,
   });
   if (ydocErr) {
     try {
       const { error: rollbackErr } = await ctx.supabaseAdmin
-        .from("plans")
+        .from('plans')
         .delete()
-        .eq("id", planId);
+        .eq('id', planId);
       if (rollbackErr) {
         console.error(`plans-create: rollback failed for ${planId}: ${rollbackErr.message}`);
       }
@@ -107,9 +114,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
     return errorResponse(
       500,
-      "YDOC_INIT_FAILED",
+      'YDOC_INIT_FAILED',
       `plan created but ydoc init failed: ${ydocErr.message}`,
-      "*",
+      '*',
     );
   }
 

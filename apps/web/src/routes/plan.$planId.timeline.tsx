@@ -31,7 +31,11 @@ import { toast } from 'sonner';
 import type { PlanTimelineAction } from '@xivmitplan/validation/plan';
 import { usePlanDoc } from '@/lib/use-plan-doc';
 import { usePlanSession } from '@/lib/use-plan-session';
-import { buildEffectiveTimeline, type EffectiveTimelineEvent } from '@/lib/plan-timeline-adapter';
+import {
+  buildEffectiveTimeline,
+  detectCanonicalDrift,
+  type EffectiveTimelineEvent,
+} from '@/lib/plan-timeline-adapter';
 import { formatMs } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,8 +59,11 @@ export const PlanTimelineEditor = () => {
     planDoc,
     planRole,
     canEdit,
+    planRow,
     encounter,
     events,
+    canonicalTimeline,
+    mode,
     ready: sessionReady,
   } = session;
 
@@ -81,6 +88,15 @@ export const PlanTimelineEditor = () => {
   }, [events, timelineActions]);
 
   const ready = sessionReady && docReady;
+  const timelineDrift = useMemo(
+    () =>
+      detectCanonicalDrift(
+        planRow?.sourceTimelineHash,
+        planRow?.sourceTimelineVersion,
+        canonicalTimeline ? [canonicalTimeline] : [],
+      ),
+    [canonicalTimeline, planRow?.sourceTimelineHash, planRow?.sourceTimelineVersion],
+  );
 
   // Sync settings draft when dialog opens.
   useEffect(() => {
@@ -194,6 +210,14 @@ export const PlanTimelineEditor = () => {
             </p>
           )}
         </div>
+        <Badge
+          variant={timelineDrift.hasDrifted ? 'destructive' : 'outline'}
+          className="font-mono text-[10px]"
+          title={timelineDrift.message ?? `Catalog mode: ${mode}`}
+        >
+          {mode}
+          {canonicalTimeline?.version ? ` · ${canonicalTimeline.version}` : ''}
+        </Badge>
         <Button
           variant="outline"
           size="sm"
@@ -224,6 +248,11 @@ export const PlanTimelineEditor = () => {
 
       {/* Timeline list */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        {timelineDrift.hasDrifted && timelineDrift.message && (
+          <div className="border-destructive/30 bg-destructive/5 text-destructive mx-auto mb-4 max-w-2xl rounded-lg border px-3 py-2 text-xs">
+            {timelineDrift.message}
+          </div>
+        )}
         {!events && (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="text-muted-foreground size-5 animate-spin" />
@@ -233,7 +262,9 @@ export const PlanTimelineEditor = () => {
         {events && events.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <AlertCircle className="text-muted-foreground size-8" />
-            <p className="text-muted-foreground text-sm">No timeline events available for this encounter.</p>
+            <p className="text-muted-foreground text-sm">
+              No timeline events available for this encounter.
+            </p>
           </div>
         )}
 
@@ -281,9 +312,7 @@ export const PlanTimelineEditor = () => {
                   <div
                     className={cn(
                       'flex flex-1 items-start gap-3 rounded-lg border p-3 transition-colors',
-                      isCustom
-                        ? 'border-primary/30 bg-primary/5'
-                        : 'border-border bg-card',
+                      isCustom ? 'border-primary/30 bg-primary/5' : 'border-border bg-card',
                     )}
                   >
                     {/* Time column */}
@@ -335,7 +364,9 @@ export const PlanTimelineEditor = () => {
                       <div className="text-muted-foreground mt-1 flex flex-wrap gap-2 text-[10px]">
                         <span className="capitalize">{event.type.toLowerCase()}</span>
                         <span>Target: {event.targetKind}</span>
-                        {event.durationMs != null && <span>Duration: {formatMs(event.durationMs)}</span>}
+                        {event.durationMs != null && (
+                          <span>Duration: {formatMs(event.durationMs)}</span>
+                        )}
                         {event.hitTimesMs.length > 0 && (
                           <span>Hits: {event.hitTimesMs.length}</span>
                         )}
@@ -415,7 +446,10 @@ export const PlanTimelineEditor = () => {
                   type="number"
                   value={settingsDraft.tankHp ?? ''}
                   onChange={(e) =>
-                    setSettingsDraft({ ...settingsDraft, tankHp: e.target.value ? Number(e.target.value) : null })
+                    setSettingsDraft({
+                      ...settingsDraft,
+                      tankHp: e.target.value ? Number(e.target.value) : null,
+                    })
                   }
                   placeholder="Auto"
                 />
@@ -427,7 +461,10 @@ export const PlanTimelineEditor = () => {
                   type="number"
                   value={settingsDraft.partyHp ?? ''}
                   onChange={(e) =>
-                    setSettingsDraft({ ...settingsDraft, partyHp: e.target.value ? Number(e.target.value) : null })
+                    setSettingsDraft({
+                      ...settingsDraft,
+                      partyHp: e.target.value ? Number(e.target.value) : null,
+                    })
                   }
                   placeholder="Auto"
                 />

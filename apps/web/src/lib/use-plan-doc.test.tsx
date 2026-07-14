@@ -31,6 +31,7 @@ const toAbilityInfo = (s: (typeof SAMPLE_ABILITIES)[number]): AbilityInfo => ({
   jobId: '50000000-0000-0000-0000-000000000001',
   jobAbbrev: s.jobAbbrev,
   abilityId: s.id.replace('a-', ''),
+  mode: 'CURRENT',
   name: s.name,
   description: s.description,
   effectPct: s.effectPct > 0 ? s.effectPct : null,
@@ -43,6 +44,8 @@ const toAbilityInfo = (s: (typeof SAMPLE_ABILITIES)[number]): AbilityInfo => ({
   damageType: s.damageType,
   target: s.target,
   charges: s.charges,
+  effectiveFrom: '7.0',
+  effectiveTo: null,
 });
 
 const toEventInfo = (s: (typeof SAMPLE_EVENTS)[string][number]): TimelineEventInfo => ({

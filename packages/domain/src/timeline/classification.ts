@@ -14,15 +14,10 @@ export type TimelineEventType =
   | 'BUSTER'
   | 'RAIDWIDE'
   | 'MECHANIC_START'
-  | 'MECHANIC_END';
+  | 'MECHANIC_END'
+  | 'CUSTOM';
 
-export type TimelineTargetKind =
-  | 'MAIN_TANK'
-  | 'OFF_TANK'
-  | 'PARTY'
-  | 'HEALER'
-  | 'TARGETED'
-  | 'ALL';
+export type TimelineTargetKind = 'MAIN_TANK' | 'OFF_TANK' | 'PARTY' | 'HEALER' | 'TARGETED' | 'ALL';
 
 export interface EventClass {
   /** Human-readable label for the event type. */
@@ -39,6 +34,7 @@ export const EVENT_CLASS: Record<TimelineEventType, EventClass> = {
   MECHANIC: { label: 'Mechanic', tone: 'info', mitigatable: false },
   MECHANIC_START: { label: 'Mechanic Start', tone: 'neutral', mitigatable: false },
   MECHANIC_END: { label: 'Mechanic End', tone: 'neutral', mitigatable: false },
+  CUSTOM: { label: 'Custom action', tone: 'info', mitigatable: true },
 };
 
 export const TARGET_LABEL: Record<TimelineTargetKind, string> = {

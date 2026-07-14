@@ -17,10 +17,7 @@ import * as Y from 'yjs';
 import { PlanDoc, createPlanDoc } from '@xivmitplan/crdt';
 import type { RealtimeStatus } from '@xivmitplan/crdt';
 import { useSession } from './supabase';
-import {
-  realtimeProvider,
-  type RealtimeProviderWithReconnect,
-} from './realtime-provider';
+import { realtimeProvider, type RealtimeProviderWithReconnect } from './realtime-provider';
 import {
   getEncounter,
   getPlan,
@@ -37,12 +34,15 @@ import {
   type CanonicalTimelineInfo,
 } from './data-source';
 import { FRU_P1_ID } from './sample-data';
+import { AbilityMode, type AbilityMode as AbilityModeType } from '@xivmitplan/validation/ability';
 
 export interface PlanSessionOptions {
   /** Initial plan name (from URL query param). */
   initialName?: string;
   /** Share-link token (from ?token= URL param). */
   shareToken?: string | null;
+  /** Catalog mode override for local/demo plans without a server row. */
+  mode?: AbilityModeType;
 }
 
 export interface PlanSessionResult {
@@ -78,17 +78,22 @@ export interface PlanSessionResult {
   reconnect: () => void;
   /** The resolved encounter id. */
   encounterId: string;
+  /** The plan's catalog/timeline mode. */
+  mode: AbilityModeType;
 }
 
 export const usePlanSession = (
   planId: string | undefined,
   options: PlanSessionOptions = {},
 ): PlanSessionResult => {
-  const { shareToken: externalShareToken } = options;
+  const { shareToken: externalShareToken, mode: externalMode } = options;
   const [search] = useSearchParams();
   const session = useSession();
   const urlShareToken = search.get('token') ?? null;
   const shareToken = externalShareToken ?? urlShareToken;
+  const urlMode = AbilityMode.safeParse(search.get('mode')).success
+    ? AbilityMode.parse(search.get('mode'))
+    : undefined;
 
   // Core state
   const [planDoc, setPlanDoc] = useState<PlanDoc | null>(null);
@@ -104,9 +109,7 @@ export const usePlanSession = (
   const [hydrated, setHydrated] = useState(false);
   const providerRef = useRef<RealtimeProviderWithReconnect | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>('connecting');
-  const [shareRedeemed, setShareRedeemed] = useState<boolean | null>(
-    shareToken ? false : null,
-  );
+  const [shareRedeemed, setShareRedeemed] = useState<boolean | null>(shareToken ? false : null);
 
   const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
   const isOwner = planRole === 'OWNER';
@@ -135,8 +138,12 @@ export const usePlanSession = (
       .then((row) => {
         if (mounted) setPlanRow(row);
       })
-      .catch(() => { /* non-fatal */ });
-    return () => { mounted = false; };
+      .catch(() => {
+        /* non-fatal */
+      });
+    return () => {
+      mounted = false;
+    };
   }, [planId]);
 
   // Seed the doc's plan name from plan-row metadata.
@@ -150,6 +157,7 @@ export const usePlanSession = (
 
   // Resolve encounter id.
   const encounterId = urlEncounterId ?? planRow?.encounterId ?? FRU_P1_ID;
+  const mode = planRow?.mode ?? externalMode ?? urlMode ?? 'CURRENT';
 
   // Load encounter + timeline + ability catalog.
   useEffect(() => {
@@ -161,9 +169,9 @@ export const usePlanSession = (
 
     Promise.all([
       getEncounter(encounterId),
-      getTimelineForEncounter(encounterId),
-      listAbilities(),
-      getCanonicalTimelineForEncounter(encounterId),
+      getTimelineForEncounter(encounterId, mode),
+      listAbilities(mode),
+      getCanonicalTimelineForEncounter(encounterId, mode),
     ])
       .then(([enc, evts, abs, canonical]) => {
         if (!mounted) return;
@@ -177,17 +185,25 @@ export const usePlanSession = (
         setEventsError(err instanceof Error ? err.message : 'Failed to load timeline');
       });
 
-    return () => { mounted = false; };
-  }, [encounterId]);
+    return () => {
+      mounted = false;
+    };
+  }, [encounterId, mode]);
 
   // Redeem share-link token.
   useEffect(() => {
     if (!shareToken || !session.user || shareRedeemed !== false || !planId) return;
     let mounted = true;
     redeemShare(planId, shareToken)
-      .then(() => { if (mounted) setShareRedeemed(true); })
-      .catch(() => { if (mounted) setShareRedeemed(true); });
-    return () => { mounted = false; };
+      .then(() => {
+        if (mounted) setShareRedeemed(true);
+      })
+      .catch(() => {
+        if (mounted) setShareRedeemed(true);
+      });
+    return () => {
+      mounted = false;
+    };
   }, [shareToken, session.user, shareRedeemed, planId]);
 
   // Load plan role.
@@ -195,9 +211,15 @@ export const usePlanSession = (
     if (!planId || !session.user || (shareToken && shareRedeemed !== true)) return;
     let mounted = true;
     getPlanRole(planId)
-      .then((role) => { if (mounted) setPlanRole(role); })
-      .catch(() => { if (mounted) setPlanRole(null); });
-    return () => { mounted = false; };
+      .then((role) => {
+        if (mounted) setPlanRole(role);
+      })
+      .catch(() => {
+        if (mounted) setPlanRole(null);
+      });
+    return () => {
+      mounted = false;
+    };
   }, [planId, session.user?.id, shareToken, shareRedeemed]);
 
   // Hydrate Y.Doc from server snapshot.
@@ -218,7 +240,9 @@ export const usePlanSession = (
         if (mounted) setHydrated(true);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [planDoc, planId, shareToken, shareRedeemed]);
 
   // Wire realtime provider.
@@ -246,11 +270,15 @@ export const usePlanSession = (
         clearInterval(intervalId);
         const check = () => {
           if (provider.status !== 'connected') return;
-          getYDocSnapshot(planId).then((snap) => {
-            if (snap && snap.byteSize > 1) {
-              Y.applyUpdate(planDoc.doc, snap.update, 'remote');
-            }
-          }).catch(() => { /* non-fatal */ });
+          getYDocSnapshot(planId)
+            .then((snap) => {
+              if (snap && snap.byteSize > 1) {
+                Y.applyUpdate(planDoc.doc, snap.update, 'remote');
+              }
+            })
+            .catch(() => {
+              /* non-fatal */
+            });
         };
         lateJoinTimers.push(setTimeout(check, 1500), setTimeout(check, 3000));
       }
@@ -295,5 +323,6 @@ export const usePlanSession = (
     providerRef,
     reconnect: () => providerRef.current?.reconnect(),
     encounterId,
+    mode,
   };
 };

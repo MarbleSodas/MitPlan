@@ -39,6 +39,9 @@ type SourcePlanRow = {
   party_id: string | null;
   mode: string;
   conflicts: unknown;
+  source_timeline_id: string | null;
+  source_timeline_version: string | null;
+  source_timeline_hash: string | null;
 };
 type PlanAccessRoleRow = { role: 'OWNER' | 'EDITOR' | 'VIEWER' };
 type YDocSnapshotRow = { update: unknown; byte_size: number };
@@ -62,7 +65,9 @@ const handler = async (req: Request): Promise<Response> => {
   // must have at least READ access).
   const { data: rawSrc, error: srcErr } = await ctx.supabase
     .from('plans')
-    .select('id, owner_id, name, encounter_id, party_id, mode, conflicts')
+    .select(
+      'id, owner_id, name, encounter_id, party_id, mode, conflicts, source_timeline_id, source_timeline_version, source_timeline_hash',
+    )
     .eq('id', body.planId)
     .maybeSingle();
   const src = rawSrc as unknown as SourcePlanRow | null;
@@ -103,6 +108,9 @@ const handler = async (req: Request): Promise<Response> => {
     mode: src.mode,
     is_legacy: false,
     conflicts: src.conflicts,
+    source_timeline_id: src.source_timeline_id,
+    source_timeline_version: src.source_timeline_version,
+    source_timeline_hash: src.source_timeline_hash,
   });
   if (insErr) {
     if (insErr.code === '23503') {

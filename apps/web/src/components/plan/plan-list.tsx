@@ -26,9 +26,7 @@ export const PlanList = () => {
     Promise.all([listMyPlans(), listEncounters()])
       .then(([myPlans, encounters]) => {
         if (!mounted) return;
-        const encById = new Map<string, EncounterInfo>(
-          encounters.map((e) => [e.id, e] as const),
-        );
+        const encById = new Map<string, EncounterInfo>(encounters.map((e) => [e.id, e] as const));
         const cards: PlanCardData[] = myPlans.map((p: PlanInfo) => {
           const enc = encById.get(p.encounterId);
           return {
@@ -38,6 +36,8 @@ export const PlanList = () => {
             encounterName: enc?.name ?? 'Unknown encounter',
             updatedAt: p.updatedAt,
             partySize: 8,
+            mode: p.mode,
+            accessRole: p.accessRole,
           };
         });
         setPlans(cards);

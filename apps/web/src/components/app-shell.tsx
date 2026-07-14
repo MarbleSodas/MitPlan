@@ -53,7 +53,11 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-card/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/60 sm:gap-6 sm:px-6">
-        <Link to={session.user ? '/plan' : '/'} className="flex items-center gap-2 font-semibold tracking-tight" aria-label="XIVMitPlan home">
+        <Link
+          to={session.user ? '/plan' : '/'}
+          className="flex items-center gap-2 font-semibold tracking-tight"
+          aria-label="XIVMitPlan home"
+        >
           <Logo className="text-primary" aria-hidden />
           <span className="hidden sm:inline text-base">XIVMitPlan</span>
         </Link>
@@ -67,6 +71,15 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
               )}
             >
               Plans
+            </Link>
+            <Link
+              to="/timeline"
+              className={cn(
+                'rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
+                location.pathname.startsWith('/timeline') && 'bg-muted text-foreground',
+              )}
+            >
+              Timelines
             </Link>
           </nav>
         )}
@@ -197,7 +210,10 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             </a>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Link to="/data-policy" className="hover:text-foreground transition-colors focus-visible:ring-primary/50 rounded-sm focus-visible:outline-none focus-visible:ring-2">
+            <Link
+              to="/data-policy"
+              className="hover:text-foreground transition-colors focus-visible:ring-primary/50 rounded-sm focus-visible:outline-none focus-visible:ring-2"
+            >
               Data policy
             </Link>
             <span aria-hidden>·</span>
