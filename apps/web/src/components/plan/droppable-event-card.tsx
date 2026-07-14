@@ -7,12 +7,12 @@ import { useDroppable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
 import { TimelineEventCard } from './timeline-event-card';
 import type { TimelineEventInfo } from '@/lib/data-source';
-import type { MitStackResult } from '@/lib/mit-evaluator';
+import type { ExtendedMitStackResult } from '@/lib/mit-evaluator';
 
 export const DroppableEventCard = (props: {
   event: TimelineEventInfo;
   assignmentCount: number;
-  mitStack: MitStackResult | null;
+  mitStack: ExtendedMitStackResult | null;
   isSelected?: boolean;
   onPick: (event: TimelineEventInfo) => void;
 }) => {
@@ -28,6 +28,9 @@ export const DroppableEventCard = (props: {
         'rounded-lg transition-all',
         isOver && 'ring-primary/50 ring-2 ring-offset-1 ring-offset-background',
       )}
+      role="region"
+      aria-label={`Drop target for event: ${props.event.name}`}
+      aria-dropeffect="move"
     >
       <TimelineEventCard {...props} />
     </div>

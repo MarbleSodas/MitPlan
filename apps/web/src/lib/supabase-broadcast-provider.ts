@@ -250,6 +250,16 @@ export class SupabaseBroadcastProvider implements RealtimeProvider {
   }
 
   /**
+   * Close then reopen the Supabase Realtime channel. Trivially delegates
+   * to {disconnect, connect} so consumers don't need to orchestrate the
+   * lifecycle themselves for reconnection / retry.
+   */
+  reconnect(): void {
+    this.disconnect();
+    this.connect();
+  }
+
+  /**
    * Close the Supabase Realtime channel and flush any pending snapshot.
    *
    * Idempotent. The pending snapshot (if any) is flushed via a

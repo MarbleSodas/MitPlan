@@ -11,6 +11,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import postgres from 'postgres';
+import { convertLegacyPlanToYDoc } from './lib/legacy-convert.mjs';
 
 const [preparedDir, serviceFile] = process.argv.slice(2);
 if (!preparedDir || !serviceFile) {
@@ -24,6 +25,22 @@ const config = await readJson(serviceFile);
 const sql = postgres(config, { max: 1, idle_timeout: 10 });
 const BATCH_SIZE = 100;
 const INSTANCE_ID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * Build the re-anchoring catalog from the live database. We map abilities by
+ * their `ability_id`, encounters by slug/name, and timeline events by their
+ * `normalizedNames` so v1 assignments can resolve to real catalog entities.
+ */
+const fetchCatalog = async () => {
+  const abilities = await sql`select id, ability_id, name from public.abilities`;
+  const encounters = await sql`select id, slug, name from public.encounters`;
+  const timelineRows = await sql`select encounter_id, events from public.timelines`;
+  const timelines = timelineRows.map((row) => ({
+    encounterId: row.encounter_id,
+    events: Array.isArray(row.events) ? row.events : [],
+  }));
+  return { abilities, encounters, timelines };
+};
 
 const providerFor = (user) => {
   const google = user.providerData?.find((provider) => provider.providerId === 'google.com');
@@ -60,6 +77,7 @@ const countRows = async () => {
 
 try {
   const before = await countRows();
+  const catalog = await fetchCatalog();
   const existingUserRows = await sql`select lower(email) as email from auth.users where email is not null`;
   const existingEmails = new Set(existingUserRows.map((row) => row.email));
   const usersToImport = users.filter((user) => !existingEmails.has(user.email.toLowerCase()));
@@ -98,12 +116,19 @@ try {
     const inserted = await sql.begin(async (transaction) => {
       let count = 0;
       for (const plan of batch) {
+        // Re-anchor against the live catalog so the stored Yjs doc references
+        // real ability/event ids wherever a match exists (faithful display).
+        const { ydocB64, encounterId } = convertLegacyPlanToYDoc(
+          plan.payload,
+          catalog,
+          { planId: plan.id },
+        );
         const result = await transaction`
           insert into public.legacy_local_plans (
             id, owner_email, payload, captured_at, encounter_id, ydoc_b64
           ) values (
             ${plan.id}, ${plan.owner_email}, ${transaction.json(plan.payload)},
-            ${plan.captured_at}, ${plan.encounter_id}, ${plan.ydoc_b64}
+            ${plan.captured_at}, ${encounterId}, ${ydocB64}
           ) on conflict (id) do nothing
           returning id
         `;

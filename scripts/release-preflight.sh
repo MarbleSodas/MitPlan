@@ -19,7 +19,11 @@ for migration in \
   0006_xivmitplan_v1_legacy_sentinel.sql \
   0007_xivmitplan_v1_rls_recursion_fix.sql \
   0008_xivmitplan_v1_realtime_viewer.sql \
-  0009_xivmitplan_v1_core_release_hardening.sql; do
+  0009_xivmitplan_v1_core_release_hardening.sql \
+  0010_xivmitplan_v1_auth_gotrue_null_fix.sql \
+  0011_xivmitplan_v1_auth_gotrue_null_fix_remaining.sql \
+  0012_xivmitplan_v1_planner_catalog.sql \
+  0013_xivmitplan_v1_plan_management.sql; do
   test -f "packages/persistence/migrations/$migration" || fail "missing migration $migration"
 done
 
@@ -38,6 +42,9 @@ for function_name in \
   plans-snapshot \
   plans-share \
   plans-share-redeem \
+  plans-update \
+  plans-delete \
+  plans-duplicate \
   auth-claim-legacy-plans; do
   test -f "apps/edge/functions/$function_name/index.ts" || fail "missing Edge Function $function_name"
 done

@@ -36,6 +36,9 @@ import { AbilityMode } from "@xivmitplan/validation/ability";
 // migration 0003 is finalized.
 // ---------------------------------------------------------------------------
 
+// PostgREST serializes TIMESTAMPTZ with an explicit UTC offset (`+00:00`).
+const Timestamp = z.string().datetime({ offset: true });
+
 export const Encounter = z.object({
   id: z.string().uuid(),
   raid_id: z.string().uuid(),
@@ -45,9 +48,11 @@ export const Encounter = z.object({
   boss_npc_source_id: z.number().int(),
   effective_from: z.string().nullable(),
   effective_to: z.string().nullable(),
-  created_at: z.string().datetime(),
+  created_at: Timestamp,
   raid_slug: z.string(),
   expansion_slug: z.string(),
+  raid_name: z.string().optional(),
+  raid_tier: z.number().int().optional(),
 });
 export type Encounter = z.infer<typeof Encounter>;
 
@@ -65,10 +70,14 @@ export const AbilityRow = z.object({
   is_invuln: z.boolean(),
   is_heal: z.boolean(),
   is_shield: z.boolean(),
+  damage_type: z.enum(['physical', 'magical', 'both']).nullable().optional(),
+  target: z.enum(['self', 'single', 'party', 'area']).nullable().optional(),
+  charges: z.number().int().nonnegative().nullable().optional(),
+  job_abbrev: z.string().optional(),
   effective_from: z.string(),
   effective_to: z.string().nullable(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: Timestamp,
+  updated_at: Timestamp,
 });
 export type AbilityRow = z.infer<typeof AbilityRow>;
 
@@ -87,9 +96,12 @@ export const PlanRow = z.object({
   party_id: z.string().uuid().nullable(),
   mode: AbilityMode,
   is_legacy: z.boolean(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: Timestamp,
+  updated_at: Timestamp,
   conflicts: z.array(z.unknown()),
+  source_timeline_id: z.string().uuid().nullable().optional(),
+  source_timeline_version: z.string().nullable().optional(),
+  source_timeline_hash: z.string().nullable().optional(),
 });
 export type PlanRow = z.infer<typeof PlanRow>;
 
@@ -110,21 +122,70 @@ export const TimelineRow = z.object({
   }),
   per_event_confidence: z.record(z.string(), z.number()),
   byte_size: z.number().int().nonnegative(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: Timestamp,
+  updated_at: Timestamp,
 });
 export type TimelineRow = z.infer<typeof TimelineRow>;
+
+/** Source provenance for raw timeline events. */
+const RawTimelineEventSources = z.object({
+  cactbot: z.boolean(),
+  triggernometry: z.boolean(),
+  fflogs: z.boolean(),
+});
+
+/**
+ * Validates a single raw timeline event from the JSONB payload.
+ * The DB event matches the TimelineEvent Zod shape in
+ * `@xivmitplan/validation/timeline`; this is a slightly looser
+ * parser that tolerates missing optional fields so malformed rows
+ * don't crash the encounter picker.
+ */
+export const RawTimelineEvent = z.object({
+  id: z.string(),
+  position: z.number().int().nonnegative(),
+  timestampMs: z.number().int().nonnegative(),
+  type: z.enum(['MECHANIC', 'BUSTER', 'RAIDWIDE', 'MECHANIC_START', 'MECHANIC_END']),
+  name: z.string().min(1),
+  normalizedNames: z.array(z.string()).optional().default([]),
+  durationMs: z.number().int().positive().nullable().optional().default(null),
+  hitTimesMs: z.array(z.number().int().nonnegative()).optional().default([]),
+  targets: z.object({
+    kind: z.enum(['MAIN_TANK', 'OFF_TANK', 'PARTY', 'HEALER', 'TARGETED', 'ALL']),
+    jobIds: z.array(z.string()).optional(),
+  }).optional().default({ kind: 'ALL' }),
+  mechanicId: z.string().nullable().optional().default(null),
+  patchVersion: z.string().optional().default(''),
+  confidence: z.number().min(0).max(1).optional().default(1),
+  varianceMs: z.number().int().nonnegative().optional(),
+  mergedFromSources: RawTimelineEventSources.optional().default({
+    cactbot: false,
+    triggernometry: false,
+    fflogs: false,
+  }),
+  notes: z.string().nullable().optional().default(null),
+});
+export type RawTimelineEvent = z.infer<typeof RawTimelineEvent>;
 
 export const PlanAccessRow = z.object({
   plan_id: z.string().uuid(),
   user_id: z.string().uuid(),
   role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
   via_share_token: z.boolean(),
-  granted_at: z.string().datetime(),
+  granted_at: Timestamp,
   display_name: z.string().nullable(),
   email: z.string().email().nullable(),
 });
 export type PlanAccessRow = z.infer<typeof PlanAccessRow>;
+
+export const PlanExportSnapshotRow = z.object({
+  snapshot_id: z.string().uuid(),
+  ydoc_b64: z.string(),
+  byte_size: z.number().int().nonnegative(),
+  reason: z.string(),
+  created_at: Timestamp,
+});
+export type PlanExportSnapshotRow = z.infer<typeof PlanExportSnapshotRow>;
 
 // Edge Function response envelopes.
 const IngestAck = z.object({
@@ -137,20 +198,20 @@ type IngestAck = z.infer<typeof IngestAck>;
 
 const CreatePlanResult = z.object({
   planId: z.string().uuid(),
-  createdAt: z.string().datetime(),
+  createdAt: Timestamp,
 });
 type CreatePlanResult = z.infer<typeof CreatePlanResult>;
 
 const SnapshotPlanResult = z.object({
   snapshotId: z.string().uuid(),
   byteSize: z.number().int().nonnegative(),
-  createdAt: z.string().datetime(),
+  createdAt: Timestamp,
 });
 type SnapshotPlanResult = z.infer<typeof SnapshotPlanResult>;
 
 const SharePlanResult = z.object({
   token: z.string(),
-  expiresAt: z.string().datetime(),
+  expiresAt: Timestamp,
 });
 type SharePlanResult = z.infer<typeof SharePlanResult>;
 
@@ -159,9 +220,25 @@ const ClaimLegacyPlansResult = z.object({
 });
 type ClaimLegacyPlansResult = z.infer<typeof ClaimLegacyPlansResult>;
 
+const UpdatePlanResult = z.object({
+  planId: z.string().uuid(),
+});
+type UpdatePlanResult = z.infer<typeof UpdatePlanResult>;
+
+const DeletePlanResult = z.object({
+  deleted: z.literal(true),
+});
+type DeletePlanResult = z.infer<typeof DeletePlanResult>;
+
+const DuplicatePlanResult = z.object({
+  planId: z.string().uuid(),
+  createdAt: Timestamp,
+});
+type DuplicatePlanResult = z.infer<typeof DuplicatePlanResult>;
+
 const RedeemShareTokenResult = z.object({
   role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
-  expiresAt: z.string().datetime().nullable(),
+  expiresAt: Timestamp.nullable(),
 });
 type RedeemShareTokenResult = z.infer<typeof RedeemShareTokenResult>;
 
@@ -208,6 +285,20 @@ const TimelinesByEncounterArgs = z.object({
 });
 type TimelinesByEncounterArgs = z.infer<typeof TimelinesByEncounterArgs>;
 
+const SelectCanonicalTimelineArgs = z.object({
+  p_encounter_id: z.string().uuid(),
+  p_mode: z.string().optional(),
+});
+type SelectCanonicalTimelineArgs = z.infer<typeof SelectCanonicalTimelineArgs>;
+
+const UpsertPlanProvenanceArgs = z.object({
+  p_plan_id: z.string().uuid(),
+  p_source_timeline_id: z.string().uuid(),
+  p_source_version: z.string(),
+  p_source_hash: z.string(),
+});
+type UpsertPlanProvenanceArgs = z.infer<typeof UpsertPlanProvenanceArgs>;
+
 const PlanAccessListForPlanArgs = z.object({ p_plan_id: z.string().uuid() });
 type PlanAccessListForPlanArgs = z.infer<typeof PlanAccessListForPlanArgs>;
 
@@ -224,6 +315,23 @@ const SnapshotPlanArgs = z.object({
   reason: z.enum(["IDLE", "USER_SAVE", "ASSIGNMENT_DELETE", "REBUILD"]).default("USER_SAVE"),
 });
 type SnapshotPlanArgs = z.infer<typeof SnapshotPlanArgs>;
+
+const UpdatePlanArgs = z.object({
+  planId: z.string().uuid(),
+  name: z.string().min(1).max(128),
+});
+type UpdatePlanArgs = z.infer<typeof UpdatePlanArgs>;
+
+const DeletePlanArgs = z.object({
+  planId: z.string().uuid(),
+});
+type DeletePlanArgs = z.infer<typeof DeletePlanArgs>;
+
+const DuplicatePlanArgs = z.object({
+  planId: z.string().uuid(),
+  name: z.string().min(1).max(128).optional(),
+});
+type DuplicatePlanArgs = z.infer<typeof DuplicatePlanArgs>;
 
 const SharePlanArgs = z.object({
   planId: z.string().uuid(),
@@ -335,7 +443,13 @@ export const encountersById = (
   client: SupabaseClient,
   args: EncountersByIdArgs,
 ): Promise<Encounter | null> =>
-  rpc(client, "encounters_by_id", args, EncountersByIdArgs, Encounter.nullable());
+  rpc(
+    client,
+    "encounters_by_id",
+    args,
+    EncountersByIdArgs,
+    z.array(Encounter).max(1).transform(([row]) => row ?? null),
+  );
 
 export const abilitiesList = (
   client: SupabaseClient,
@@ -356,7 +470,13 @@ export const plansById = (
   client: SupabaseClient,
   args: PlansByIdArgs,
 ): Promise<PlanRow | null> =>
-  rpc(client, "plans_by_id", args, PlansByIdArgs, PlanRow.nullable());
+  rpc(
+    client,
+    "plans_by_id",
+    args,
+    PlansByIdArgs,
+    z.array(PlanRow).max(1).transform(([row]) => row ?? null),
+  );
 
 /**
  * Returns the raw `timelines` rows. The web app converts these into
@@ -407,6 +527,29 @@ export const planAccessListForPlan = (
     z.array(PlanAccessRow),
   );
 
+/** Select the best canonical timeline for an encounter deterministically. */
+export const selectCanonicalTimelineForEncounter = (
+  client: SupabaseClient,
+  args: SelectCanonicalTimelineArgs,
+): Promise<TimelineRow | null> =>
+  rpc(
+    client,
+    "select_canonical_timeline_for_encounter",
+    args,
+    SelectCanonicalTimelineArgs,
+    z.array(TimelineRow).max(1).transform(([row]) => row ?? null),
+  );
+
+/** Upsert the source timeline provenance on a plan. */
+export const upsertPlanProvenance = async (
+  client: SupabaseClient,
+  args: UpsertPlanProvenanceArgs,
+): Promise<void> => {
+  const parsed = UpsertPlanProvenanceArgs.parse(args);
+  const { error } = await client.rpc('upsert_plan_provenance', parsed);
+  if (error) throw new RpcError('upsert_plan_provenance', error.message, error);
+};
+
 // ---------------------------------------------------------------------------
 // load_ydoc_snapshot
 // ---------------------------------------------------------------------------
@@ -423,7 +566,7 @@ const LoadYDocSnapshotRow = z.object({
   /** BYTEA serialized by PostgREST as `\x...` hex (default). */
   update: z.string(),
   byte_size: z.number().int().nonnegative(),
-  updated_at: z.string().datetime(),
+  updated_at: Timestamp,
 });
 type LoadYDocSnapshotRow = z.infer<typeof LoadYDocSnapshotRow>;
 
@@ -530,3 +673,51 @@ export const legacyClaimablePlanIds = async (
   }
   return result.data;
 };
+
+// ---------------------------------------------------------------------------
+// Plan management — migration 0013 + apps/edge/plans-{update,delete,duplicate}
+// ---------------------------------------------------------------------------
+
+const PlanExportSnapshotArgs = z.object({ p_plan_id: z.string().uuid() });
+type PlanExportSnapshotArgs = z.infer<typeof PlanExportSnapshotArgs>;
+
+/**
+ * Export a plan snapshot in safe base64 form. Returns the latest
+ * versioned plan_snapshot (preferred) or the current ydoc_snapshot.
+ * Returns null when no snapshot data exists for the plan.
+ */
+export const planExportSnapshot = async (
+  client: SupabaseClient,
+  args: PlanExportSnapshotArgs,
+): Promise<PlanExportSnapshotRow | null> => {
+  const parsed = PlanExportSnapshotArgs.parse(args);
+  const { data, error } = await client.rpc('plan_export_snapshot', parsed);
+  if (error) throw new RpcError('plan_export_snapshot', error.message, error);
+  const result = z.array(PlanExportSnapshotRow).safeParse(data);
+  if (!result.success) {
+    throw new RpcError(
+      'plan_export_snapshot',
+      `RPC "plan_export_snapshot" returned a payload that failed validation: ${result.error.message}`,
+      result.error,
+    );
+  }
+  return result.data[0] ?? null;
+};
+
+export const updatePlan = (
+  client: SupabaseClient,
+  args: UpdatePlanArgs,
+): Promise<UpdatePlanResult> =>
+  callEdgeFunction(client, 'plans-update', args, UpdatePlanResult);
+
+export const deletePlan = (
+  client: SupabaseClient,
+  args: DeletePlanArgs,
+): Promise<DeletePlanResult> =>
+  callEdgeFunction(client, 'plans-delete', args, DeletePlanResult);
+
+export const duplicatePlan = (
+  client: SupabaseClient,
+  args: DuplicatePlanArgs,
+): Promise<DuplicatePlanResult> =>
+  callEdgeFunction(client, 'plans-duplicate', args, DuplicatePlanResult);

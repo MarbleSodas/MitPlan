@@ -48,11 +48,16 @@ export const DraggableAbilityStrip = ({
   if (quickMits.length === 0) return null;
 
   return (
-    <div className="border-border flex items-center gap-1.5 overflow-x-auto rounded-lg border border-dashed bg-muted/30 px-3 py-2">
+    <div
+      className="border-border flex items-center gap-1.5 overflow-x-auto rounded-lg border border-dashed bg-muted/30 px-3 py-2.5"
+      style={{ touchAction: 'pan-x' }}
+      role="list"
+      aria-label="Quick mitigation abilities — drag onto a timeline event"
+    >
       <span className="text-muted-foreground shrink-0 text-[10px] font-semibold tracking-widest uppercase">
         Quick mits
       </span>
-      <span className="bg-border/40 mx-1 h-4 w-px shrink-0" />
+      <span className="bg-border/40 mx-1 h-4 w-px shrink-0" aria-hidden="true" />
       {quickMits.map((ability) => (
         <DraggableAbilityChip key={ability.id} ability={ability} />
       ))}
@@ -82,9 +87,13 @@ const DraggableAbilityChip = ({ ability }: { ability: AbilityInfo }) => {
       variant="outline"
       style={style}
       className={cn(
-        'shrink-0 cursor-grab touch-none select-none gap-1.5 py-1 font-mono text-[10px] active:cursor-grabbing',
+        'shrink-0 cursor-grab touch-none select-none gap-1.5 py-1.5 font-mono text-[10px] active:cursor-grabbing',
+        'focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
         isDragging && 'opacity-40 ring-primary/40 ring-2',
       )}
+      role="button"
+      aria-label={`${ability.name} (${ability.jobAbbrev}) — drag onto a timeline event`}
+      aria-roledescription="draggable ability"
       title={`${ability.name} (${ability.jobAbbrev}) — drag onto a timeline event`}
     >
       <AbilityIcon abilityId={ability.abilityId} jobAbbrev={ability.jobAbbrev} size="xs" />

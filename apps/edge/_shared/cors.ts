@@ -34,12 +34,14 @@ export const corsHeaders = (origin: string): HeadersInit => ({
  * callers like the Supabase Realtime gateway).
  */
 const resolveOrigin = (req: Request): string => {
-  const allowed = (Deno.env.get("CORS_ORIGINS") ?? "http://localhost:5173")
+  const configured = Deno.env.get("CORS_ORIGINS")?.trim();
+  const allowed = (configured || "http://localhost:5173")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
   const requestOrigin = req.headers.get("Origin") ?? "";
-  return allowed.includes(requestOrigin) ? requestOrigin : (allowed[0] ?? "*");
+  const fallbackOrigin = allowed[0] ?? "http://localhost:5173";
+  return allowed.includes(requestOrigin) ? requestOrigin : fallbackOrigin;
 };
 
 /** Standard JSON response. */
@@ -76,7 +78,7 @@ export const withCors = (handler: Handler): Handler => async (req: Request) => {
     const res = await handler(req);
     const headers = new Headers(res.headers);
     for (const [k, v] of Object.entries(corsHeaders(origin))) {
-      if (!headers.has(k)) headers.set(k, String(v));
+      headers.set(k, String(v));
     }
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   } catch (cause) {

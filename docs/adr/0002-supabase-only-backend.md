@@ -149,7 +149,7 @@ Builds are compliant with this ADR when:
    - Re-introduces an `apps/realtime`, `apps/server`, or `apps/act-ingester` directory.
    - Adds a `live_sessions`, `act_events`, or `is_anonymous` reference.
    - Adds a `wrangler.toml` or `wrangler.jsonc` outside of any future approved Cloudflare app.
-7. The Phase 0-5 migrations (`0001_xivmitplan_v1_initial.sql`, `0002_xivmitplan_v1_acl.sql`, `0003_xivmitplan_v1_rpcs.sql`) are applied in order on every Supabase project (staging + prod).
+7. The repository migration set (`0001` through `0013`) is applied in order on every Supabase project (staging + prod).
 8. The `realtime.check_plan_access()` function and the `crdt_validate_plan_doc()` trigger are deployed on staging and prod.
 
 ## References

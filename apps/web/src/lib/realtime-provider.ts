@@ -23,6 +23,14 @@ import type { RealtimeProvider, RealtimeProviderOptions } from '@xivmitplan/crdt
 export type { RealtimeProvider, RealtimeProviderOptions, RealtimeStatus } from '@xivmitplan/crdt';
 
 /**
+ * Extended provider interface that includes an explicit reconnect
+ * method for error/offline recovery.
+ */
+export interface RealtimeProviderWithReconnect extends RealtimeProvider {
+  reconnect(): void;
+}
+
+/**
  * Construct a {@link SupabaseBroadcastProvider} for the given plan.
  *
  * The Supabase client is the singleton from `lib/supabase.ts` (the same
@@ -35,7 +43,7 @@ export type { RealtimeProvider, RealtimeProviderOptions, RealtimeStatus } from '
  */
 export const realtimeProvider = (
   opts: RealtimeProviderOptions & { supabase?: SupabaseLike },
-): RealtimeProvider => {
+): RealtimeProviderWithReconnect => {
   // Build the provider options without forwarding `shareToken` if it's
   // undefined — `exactOptionalPropertyTypes` in tsconfig.base.json
   // rejects explicit `undefined` for optional fields.

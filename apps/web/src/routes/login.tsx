@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo.js';
 
+const getSafeNext = (next: string | null) =>
+  next?.startsWith('/') && !next.startsWith('//') ? next : '/plan';
+
 const GoogleMark = () => (
   <svg className="size-4" viewBox="0 0 48 48" aria-hidden>
     <path
@@ -45,19 +48,22 @@ export const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [search] = useSearchParams();
   const navigate = useNavigate();
-  const next = search.get('next') ?? '/plan';
+  const next = getSafeNext(search.get('next'));
 
   const oauth = async (provider: 'discord' | 'google') => {
     setError(null);
     setLoading(true);
-    const { error: e } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    if (e) {
-      setError(e.message);
+    try {
+      const { error: e } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (e) setError(e.message);
+    } catch {
+      setError('Unable to start sign-in. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -67,13 +73,18 @@ export const LoginPage = () => {
     setError(null);
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const { error: e2 } = await supabase.auth.signInWithPassword({
-      email: String(form.get('email') ?? ''),
-      password: String(form.get('password') ?? ''),
-    });
-    setLoading(false);
-    if (e2) setError(e2.message);
-    else navigate(next, { replace: true });
+    try {
+      const { error: e2 } = await supabase.auth.signInWithPassword({
+        email: String(form.get('email') ?? ''),
+        password: String(form.get('password') ?? ''),
+      });
+      if (e2) setError(e2.message);
+      else navigate(next, { replace: true });
+    } catch {
+      setError('Unable to sign in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

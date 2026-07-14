@@ -23,19 +23,31 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  type AbilityInfo,
-  type TimelineEventInfo,
-} from '@/lib/data-source';
+import { type AbilityInfo, type TimelineEventInfo } from '@/lib/data-source';
 import { ABILITY_CATEGORY_LABEL, ABILITY_CATEGORY_ORDER } from '@/lib/sample-data';
 import { cn, formatMs } from '@/lib/utils';
 
 const ALL_JOBS = [
-  'PLD', 'WAR', 'DRK', 'GNB',
-  'WHM', 'SCH', 'AST', 'SGE',
-  'MNK', 'DRG', 'SAM', 'RPR', 'VPR',
-  'BLM', 'RDM', 'SMN', 'PCT',
-  'BRD', 'MCH', 'DNC',
+  'PLD',
+  'WAR',
+  'DRK',
+  'GNB',
+  'WHM',
+  'SCH',
+  'AST',
+  'SGE',
+  'MNK',
+  'DRG',
+  'SAM',
+  'RPR',
+  'VPR',
+  'BLM',
+  'RDM',
+  'SMN',
+  'PCT',
+  'BRD',
+  'MCH',
+  'DNC',
 ];
 
 const DAMAGE_TYPES = [
@@ -105,7 +117,11 @@ export const AbilityPicker = ({
 
     // Damage type filter
     if (damageFilter !== 'both') {
-      filtered = filtered.filter((a) => a.damageType === damageFilter || a.damageType === 'both');
+      // Keep unclassified catalog rows visible. Hiding them would make a
+      // partial backend catalog look like it has fewer available abilities.
+      filtered = filtered.filter(
+        (a) => a.damageType == null || a.damageType === damageFilter || a.damageType === 'both',
+      );
     }
 
     const map = new Map<AbilityInfo['category'], AbilityInfo[]>();
@@ -144,6 +160,13 @@ export const AbilityPicker = ({
   };
 
   const hasActiveFilters = jobFilter !== null || damageFilter !== 'both' || query.length > 0;
+
+  // Derive whether the *filtered* result set is empty (vs. whether the
+  // raw catalog is empty). Used to show a helpful empty-state message.
+  const hasAnyResults = useMemo(
+    () => Array.from(grouped.values()).some((list) => list.length > 0),
+    [grouped],
+  );
 
   // Cooldown detection: for the anchor event, check if any ability is
   // already assigned to another event within its recast window.
@@ -187,6 +210,7 @@ export const AbilityPicker = ({
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-9"
                 autoFocus
+                aria-label="Search abilities"
               />
             </div>
 
@@ -200,8 +224,9 @@ export const AbilityPicker = ({
                   key={dt.value}
                   type="button"
                   onClick={() => setDamageFilter(dt.value)}
+                  aria-pressed={damageFilter === dt.value}
                   className={cn(
-                    'rounded-md border px-2 py-0.5 text-[10px] font-medium transition-colors',
+                    'rounded-md border px-3 py-1 text-[10px] font-medium transition-colors focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
                     damageFilter === dt.value
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-transparent text-muted-foreground hover:bg-muted',
@@ -213,12 +238,17 @@ export const AbilityPicker = ({
             </div>
 
             {/* Job filter chips — horizontally scrollable */}
-            <div className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 scrollbar-none">
+            <div
+              className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 scrollbar-none"
+              role="group"
+              aria-label="Filter by job"
+            >
               <button
                 type="button"
                 onClick={() => setJobFilter(null)}
+                aria-pressed={jobFilter === null}
                 className={cn(
-                  'shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors',
+                  'shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-medium transition-colors focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
                   jobFilter === null
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border text-muted-foreground hover:bg-muted',
@@ -231,8 +261,9 @@ export const AbilityPicker = ({
                   key={job}
                   type="button"
                   onClick={() => setJobFilter(jobFilter === job ? null : job)}
+                  aria-pressed={jobFilter === job}
                   className={cn(
-                    'shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors',
+                    'shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition-colors focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
                     jobFilter === job
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border text-muted-foreground hover:bg-muted',
@@ -252,7 +283,8 @@ export const AbilityPicker = ({
                   setJobFilter(null);
                   setDamageFilter('both');
                 }}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1 self-start text-[10px] transition-colors"
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1 self-start rounded px-1 py-0.5 text-[10px] transition-colors focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2"
+                aria-label="Clear all filters"
               >
                 <X className="size-3" />
                 Clear all filters
@@ -278,14 +310,15 @@ export const AbilityPicker = ({
                             disabled={!anchorEvent}
                             onClick={() => setPending({ ability: a, event: anchorEvent! })}
                             className={cn(
-                              'flex items-center gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors disabled:opacity-50',
-                              'hover:bg-muted',
+                              'flex items-center gap-3 rounded-md border border-transparent px-2 py-2.5 text-left transition-colors disabled:opacity-50',
+                              'hover:bg-muted focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
                               isOnCooldown && 'opacity-50',
                             )}
+                            aria-label={`${a.name} (${a.jobAbbrev})${isOnCooldown ? ' — on cooldown' : ''}`}
                           >
                             <Badge
                               variant="outline"
-                              className="w-12 justify-center font-mono text-[10px]"
+                              className="w-12 shrink-0 justify-center font-mono text-[10px]"
                             >
                               {a.jobAbbrev}
                             </Badge>
@@ -293,7 +326,9 @@ export const AbilityPicker = ({
                               <p className="truncate text-sm font-medium">
                                 {a.name}
                                 {isOnCooldown && (
-                                  <span className="text-muted-foreground ml-1.5 text-[10px]">(on CD)</span>
+                                  <span className="text-muted-foreground ml-1.5 text-[10px]">
+                                    (on CD)
+                                  </span>
                                 )}
                               </p>
                               <p className="text-muted-foreground truncate text-xs">
@@ -305,7 +340,7 @@ export const AbilityPicker = ({
                               {a.effectPct != null && a.effectPct > 0 && (
                                 <span className="text-chart-1">{a.effectPct}%</span>
                               )}
-                              {a.charges > 1 && (
+                              {a.charges != null && a.charges > 1 && (
                                 <span className="text-chart-2">{a.charges}× charge</span>
                               )}
                             </div>
@@ -316,9 +351,16 @@ export const AbilityPicker = ({
                   </div>
                 ),
               )}
+              {!hasAnyResults && abilities && abilities.length > 0 && (
+                <p className="text-muted-foreground px-1 text-sm">
+                  {hasActiveFilters
+                    ? 'No abilities match your current filters. Try adjusting the search or job filter above.'
+                    : 'No abilities found for this encounter.'}
+                </p>
+              )}
               {abilities && abilities.length === 0 && (
-                <p className="text-muted-foreground text-sm">
-                  No abilities match. Try a different search.
+                <p className="text-muted-foreground px-1 text-sm">
+                  No abilities catalogued for this encounter yet.
                 </p>
               )}
             </div>
@@ -332,18 +374,18 @@ export const AbilityPicker = ({
                 </Badge>
                 <p className="text-sm font-medium">{pending.ability.name}</p>
               </div>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {pending.ability.description}
-              </p>
+              <p className="text-muted-foreground mt-1 text-xs">{pending.ability.description}</p>
               <div className="text-muted-foreground mt-2 flex gap-3 text-[10px] font-mono">
                 {pending.ability.effectPct != null && pending.ability.effectPct > 0 && (
                   <span>{pending.ability.effectPct}% mit</span>
                 )}
-                <span>{pending.ability.recastS}s recast</span>
+                <span>
+                  {pending.ability.recastS != null ? `${pending.ability.recastS}s` : '–'} recast
+                </span>
                 {pending.ability.durationS != null && pending.ability.durationS > 0 && (
                   <span>{pending.ability.durationS}s duration</span>
                 )}
-                {pending.ability.damageType !== 'both' && (
+                {pending.ability.damageType != null && pending.ability.damageType !== 'both' && (
                   <span className="capitalize">{pending.ability.damageType}</span>
                 )}
               </div>
@@ -356,11 +398,10 @@ export const AbilityPicker = ({
                     key={e.id}
                     type="button"
                     onClick={() => setPending({ ...pending, event: e })}
+                    aria-current={pending.event.id === e.id ? 'true' : undefined}
                     className={cn(
-                      'flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors',
-                      pending.event.id === e.id
-                        ? 'border-primary bg-primary/10'
-                        : 'hover:bg-muted',
+                      'flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
+                      pending.event.id === e.id ? 'border-primary bg-primary/10' : 'hover:bg-muted',
                     )}
                   >
                     <span className="font-medium">{e.name}</span>
@@ -372,11 +413,7 @@ export const AbilityPicker = ({
               </div>
             </div>
             <div className="mt-auto flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setPending(null)}
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setPending(null)}>
                 Back
               </Button>
               <Button className="flex-1" onClick={handleConfirm}>

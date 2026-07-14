@@ -43,10 +43,14 @@ export const ShareDialog = ({
 }) => {
   const [copied, setCopied] = useState<'view' | 'edit' | null>(null);
   const [access, setAccess] = useState<PlanAccessInfo[] | null>(null);
+  const [shareSupported, setShareSupported] = useState(true);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     let mounted = true;
+    setShareSupported(true);
+    setLinkError(null);
     listPlanAccess(planId)
       .then((rows) => {
         if (mounted) setAccess(rows);
@@ -68,6 +72,8 @@ export const ShareDialog = ({
       await navigator.clipboard.writeText(url);
       const kind = role === 'edit' ? 'edit' : 'view';
       setCopied(kind);
+      setShareSupported(true);
+      setLinkError(null);
       toast.success('Link copied', {
         description:
           role === 'edit'
@@ -75,8 +81,15 @@ export const ShareDialog = ({
             : 'Anyone with this link can view (after signing in)',
       });
       setTimeout(() => setCopied(null), 2000);
-    } catch {
-      toast.error('Failed to create share link');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create share link';
+      if (message.includes('Supabase') || message.includes('requires Supabase')) {
+        setShareSupported(false);
+        setLinkError('Sharing requires a database connection. Sign in for full sharing features.');
+      } else {
+        setLinkError(message);
+      }
+      toast.error(message);
     }
   };
 
@@ -100,31 +113,48 @@ export const ShareDialog = ({
             <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
               Plan link
             </p>
-            <div className="flex items-center gap-2">
-              <div className="bg-muted flex-1 truncate rounded-md px-3 py-2 font-mono text-xs">
-                {baseUrl}/plan/{planId}
+            {!shareSupported ? (
+              <div className="border-border bg-muted/40 flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                <LinkIcon className="size-3.5 shrink-0" aria-hidden />
+                <span>
+                  Sharing requires a database connection.{' '}
+                  <span className="text-foreground">Sign in</span> to generate share links.
+                </span>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={copied === 'view' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleCopyLink('read')}
-                className="flex-1"
-              >
-                {copied === 'view' ? <Check className="size-3" /> : <Copy className="size-3" />}
-                Copy view link
-              </Button>
-              <Button
-                variant={copied === 'edit' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleCopyLink('edit')}
-                className="flex-1"
-              >
-                {copied === 'edit' ? <Check className="size-3" /> : <Copy className="size-3" />}
-                Copy edit link
-              </Button>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="bg-muted flex-1 truncate rounded-md px-3 py-2 font-mono text-xs">
+                    {baseUrl}/plan/{planId}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={copied === 'view' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleCopyLink('read')}
+                    className="flex-1"
+                    aria-label="Copy view-only share link"
+                  >
+                    {copied === 'view' ? <Check className="size-3" /> : <Copy className="size-3" />}
+                    Copy view link
+                  </Button>
+                  <Button
+                    variant={copied === 'edit' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleCopyLink('edit')}
+                    className="flex-1"
+                    aria-label="Copy edit share link"
+                  >
+                    {copied === 'edit' ? <Check className="size-3" /> : <Copy className="size-3" />}
+                    Copy edit link
+                  </Button>
+                </div>
+                {linkError && !linkError.includes('Supabase') && (
+                  <p className="text-destructive text-xs" role="alert">{linkError}</p>
+                )}
+              </>
+            )}
           </div>
 
           {/* Current access */}
@@ -133,7 +163,10 @@ export const ShareDialog = ({
               Has access
             </p>
             {access === null ? (
-              <p className="text-muted-foreground text-xs">Loading…</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
+                <span className="bg-muted size-3 animate-pulse rounded-full" aria-hidden />
+                Loading access list…
+              </div>
             ) : access.length === 0 ? (
               <p className="text-muted-foreground text-xs">Only you can see this plan.</p>
             ) : (
@@ -187,9 +220,9 @@ export const ShareDialog = ({
           )}
 
           {viewers.length === 0 && (access === null || access.length <= 1) && (
-            <div className="border-border flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-center">
-              <Users className="text-muted-foreground size-4" />
-              <p className="text-muted-foreground text-xs">No one else is here right now</p>
+            <div className="border-border flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">
+              <Users className="size-4 shrink-0" aria-hidden />
+              <span>No one else is here right now</span>
             </div>
           )}
         </div>

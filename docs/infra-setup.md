@@ -83,12 +83,9 @@ pnpm install
 supabase start
 # Take note of the printed `API URL` and `anon key` + `service_role key`.
 
-# Apply the migrations (0001, 0002, 0003, 0004).
+# Apply all repository migrations (0001 through 0013).
 DATABASE_URL=$(supabase status --output env | grep DB_URL | cut -d= -f2-)
-psql "$DATABASE_URL" -f packages/persistence/migrations/0001_xivmitplan_v1_initial.sql
-psql "$DATABASE_URL" -f packages/persistence/migrations/0002_xivmitplan_v1_acl.sql
-psql "$DATABASE_URL" -f packages/persistence/migrations/0003_xivmitplan_v1_rpcs.sql
-psql "$DATABASE_URL" -f packages/persistence/migrations/0004_xivmitplan_v1_seed.sql
+supabase db push --include-all
 
 # Copy .env.example to .env.local and fill in the values.
 cp .env.example .env.local
@@ -96,7 +93,8 @@ cp .env.example .env.local
 # Serve the Edge Functions (separate terminal).
 cd apps/edge
 for f in timelines-ingest-cactbot timelines-ingest-triggernometry timelines-ingest-fflogs \
-         plans-create plans-snapshot plans-share auth-claim-legacy-plans; do
+          plans-create plans-snapshot plans-share plans-update plans-delete plans-duplicate \
+          auth-claim-legacy-plans; do
   supabase functions serve "$f" --no-verify-jwt --env-file supabase/.env.local &
 done
 
@@ -136,7 +134,7 @@ architecture is the same; the env values differ.
     # migration file.
     supabase db push
     ```
-     The migration set is currently **0001–0009**:
+     The migration set is currently **0001–0013**:
       - `0001` — 14 tables (catalog, plans, snapshots, etc.)
       - `0002` — RLS, realtime ACL gate, snapshot RPCs, Yjs validator
       - `0003` — PostgREST RPCs (encounters_list, plans_list, etc.)
@@ -146,6 +144,10 @@ architecture is the same; the env values differ.
       - `0007` — RLS recursion fix on `plan_access`
        - `0008` — allow VIEWER role in `realtime.check_plan_access`
        - `0009` — core-release access and legacy-claim hardening
+       - `0010` — Auth/GoTrue null handling fix
+       - `0011` — remaining Auth/GoTrue null handling fix
+       - `0012` — planner catalog fields and expanded catalog RPCs
+       - `0013` — plan snapshot export support
     Copy `Project URL`, `anon` key, `service_role` key, and `JWT Secret`
     from Project Settings → API for the env vars below.
 6. **Enable Auth providers**:
@@ -157,7 +159,7 @@ architecture is the same; the env values differ.
 
 ```sh
 psql "$DATABASE_URL" -c "SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;"
-# Should list 0001 .. 0009 (see the migration set above).
+# Should list 0001 .. 0013 (see the migration set above).
 ```
 
 ---
@@ -390,17 +392,21 @@ The Playwright test should:
 
 ---
 
-## v1 acceptance checklist (ADR-0002 + §1.3 + §1.5)
+## v1 acceptance checklist (ADR-0002 + ADR-0004)
 
-- [x] Supabase staging + prod projects have the full migration set (0001–0008).
-- [x] RLS policies are in place on all `plan_*`, `ydoc_snapshots`, `profiles`, and `legacy_local_plans` tables.
-- [x] The five auth providers (Discord, Google, email/password, magic link, FFLogs OAuth) are enabled.
-- [x] The `merge_auth_users`, `claim_legacy_plans`, and `flip_expired_legacy_plans` RPCs are deployed.
-- [x] The `realtime.check_plan_access()` function exists (migration 0002) and accepts OWNER/EDITOR/VIEWER (migration 0008) on the default path.
-- [x] The `crdt_validate_plan_doc()` trigger is active on `ydoc_snapshots`.
-- [x] All 8 Edge Functions are deployed and respond to smoke calls.
-- [x] Cloudflare R2 bucket provisioned for Yjs snapshot backups.
-- [x] The Playwright smoke test passes in CI.
-- [x] Cloudflare Workers Tail → Logpush → ClickHouse is wired (skip if no observability need at v1).
-- [x] Sentry is wired on the web client.
-- [x] Honeycomb OTel is wired.
+These are release gates, not claims that the current workspace has completed
+them. Track the current status in [`docs/project-status.md`](project-status.md).
+
+- [ ] Supabase staging and production have migrations `0001-0013` applied.
+- [ ] RLS and private Realtime behavior are verified for owner, editor, viewer,
+      and unauthenticated sessions.
+- [ ] Discord, Google, and email Auth flows are enabled and tested in staging.
+- [ ] Legacy Auth import and identity-matched plan claims are reconciled.
+- [ ] All required Edge Functions, including plan CRUD, are deployed and smoke
+      tested.
+- [ ] Snapshot restore, debounced persistence, and duplicate rollback are
+      verified against live Postgres.
+- [ ] Two-user Playwright collaboration smoke passes, including a viewer write
+      rejection and a late-joining client.
+- [ ] R2 backup scheduling is implemented and verified, or explicitly removed
+      from the release scope by a follow-up decision.

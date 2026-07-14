@@ -28,7 +28,16 @@ export const supabase = createClient(
   SUPABASE_URL || 'http://localhost.invalid',
   SUPABASE_ANON_KEY || 'invalid-anon-key',
   {
-    auth: { persistSession: true, autoRefreshToken: true, flowType: 'pkce' },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      flowType: 'pkce',
+      // The /auth/callback route manually calls exchangeCodeForSession,
+      // so disable Supabase's automatic URL-session detection. Otherwise
+      // the client consumes the PKCE code verifier on init and the
+      // callback's exchange fails with "PKCE code verifier not found".
+      detectSessionInUrl: false,
+    },
   },
 );
 
@@ -52,20 +61,21 @@ export const useSession = (): SessionState => {
 
   useEffect(() => {
     let mounted = true;
-    void supabase.auth.getSession().then(({ data }) => {
+    const applySession = (session: Session | null) => {
       if (!mounted) return;
-      setState({
-        loading: false,
-        user: (data.session?.user as SessionUser | undefined) ?? null,
-        session: data.session,
-      });
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setState({
         loading: false,
         user: (session?.user as SessionUser | undefined) ?? null,
         session,
       });
+    };
+
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data.session))
+      .catch(() => applySession(null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
     });
     return () => {
       mounted = false;

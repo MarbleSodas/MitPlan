@@ -13,7 +13,7 @@ import { Skull } from 'lucide-react';
 import { DroppableEventCard } from './droppable-event-card';
 import type { TimelineEventInfo } from '@/lib/data-source';
 import type { Assignment } from '@xivmitplan/validation/plan';
-import type { MitStackResult } from '@/lib/mit-evaluator';
+import type { ExtendedMitStackResult } from '@/lib/mit-evaluator';
 
 const BUCKET_MIN_MS = 60_000;
 
@@ -52,7 +52,7 @@ export const TimelineRail = ({
 }: {
   events: TimelineEventInfo[] | null;
   assignments: Assignment[];
-  mitStacks?: Map<string, MitStackResult>;
+  mitStacks?: Map<string, ExtendedMitStackResult>;
   selectedEventId?: string | null;
   onPick: (event: TimelineEventInfo) => void;
 }) => {
@@ -67,14 +67,14 @@ export const TimelineRail = ({
 
   if (!events) {
     return (
-      <div className="text-muted-foreground mx-auto flex h-full max-w-2xl items-center justify-center gap-2">
-        <Skull className="size-4 animate-pulse" /> Loading base timeline…
+      <div className="text-muted-foreground mx-auto flex h-full w-full max-w-2xl items-center justify-center gap-2 px-4">
+        <Skull className="size-4 animate-pulse" aria-hidden /> Loading base timeline…
       </div>
     );
   }
   if (events.length === 0) {
     return (
-      <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border border-dashed p-10 text-center text-sm">
+      <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full w-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border border-dashed p-8 text-center text-sm sm:p-10">
         <p>No base timeline for this encounter yet.</p>
         <p className="text-xs">Add events from a cactbot / triggernometry / fflogs source.</p>
       </div>
@@ -82,29 +82,29 @@ export const TimelineRail = ({
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      {buckets.map((bucket) => (
-        <section key={bucket.label} className="flex flex-col gap-2">
-          <header className="text-muted-foreground sticky top-0 z-10 -mx-1 flex items-center gap-2 bg-background/80 px-1 py-1 font-mono text-[11px] tracking-widest uppercase backdrop-blur">
-            <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
-              {bucket.label}
-            </span>
-            <span className="bg-border/40 h-px flex-1" />
-          </header>
-          <div className="flex flex-col gap-1.5">
-            {bucket.events.map(({ event, count }) => (
-              <DroppableEventCard
-                key={event.id}
-                event={event}
-                assignmentCount={count}
-                mitStack={mitStacks?.get(event.id) ?? null}
-                isSelected={event.id === selectedEventId}
-                onPick={onPick}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-1">
+        {buckets.map((bucket) => (
+          <section key={bucket.label} className="flex flex-col gap-2">
+            <header className="text-muted-foreground sticky top-0 z-10 -mx-1 flex items-center gap-2 bg-background/80 px-1 py-1 font-mono text-[11px] tracking-widest uppercase backdrop-blur">
+              <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
+                {bucket.label}
+              </span>
+              <span className="bg-border/40 h-px flex-1" />
+            </header>
+            <div className="flex flex-col gap-1.5">
+              {bucket.events.map(({ event, count }) => (
+                <DroppableEventCard
+                  key={event.id}
+                  event={event}
+                  assignmentCount={count}
+                  mitStack={mitStacks?.get(event.id) ?? null}
+                  isSelected={event.id === selectedEventId}
+                  onPick={onPick}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
   );
 };

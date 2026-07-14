@@ -36,7 +36,6 @@ export const PlanList = () => {
             name: p.name,
             raid: raidBadge(enc),
             encounterName: enc?.name ?? 'Unknown encounter',
-            isLegacy: p.isLegacy,
             updatedAt: p.updatedAt,
             partySize: 8,
           };
@@ -58,8 +57,11 @@ export const PlanList = () => {
 
   if (loadError) {
     return (
-      <div className="border-border bg-card/40 text-muted-foreground flex items-center gap-2 rounded-lg border p-6 text-sm">
-        <AlertCircle className="text-destructive size-4" />
+      <div
+        className="border-border bg-card/40 text-muted-foreground flex items-center gap-2 rounded-lg border p-6 text-sm"
+        role="alert"
+      >
+        <AlertCircle className="text-destructive size-4 shrink-0" aria-hidden />
         <span>Could not load plans: {loadError}</span>
       </div>
     );
@@ -67,15 +69,15 @@ export const PlanList = () => {
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-36 w-full rounded-xl" aria-label="Loading plan card" />
         ))}
       </div>
     );
   }
   if (plans.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-muted-foreground px-1 text-sm">
         No plans yet. Click <strong>New plan</strong> to start your first.
       </p>
     );

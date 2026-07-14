@@ -9,21 +9,33 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import * as Y from 'yjs';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { convertLegacyPlanToYDoc } from './lib/legacy-convert.mjs';
 
-const [inputDir, outputDir] = process.argv.slice(2);
+const [inputDir, outputDir, ...rest] = process.argv.slice(2);
 if (!inputDir || !outputDir) {
-  throw new Error('Usage: node scripts/prepare-firebase-migration.mjs <input-dir> <output-dir>');
+  throw new Error('Usage: node scripts/prepare-firebase-migration.mjs <input-dir> <output-dir> [--catalog <catalog.json>]');
 }
 
-const readJson = async (name) => JSON.parse(await readFile(join(inputDir, name), 'utf8'));
+// Optional re-anchoring catalog (abilities/encounters/timelines). Without it
+// the converter still preserves every assignment as a faithful placeholder row.
+let catalogPath = rest[rest.indexOf('--catalog') + 1];
+if (!catalogPath) {
+  const defaultCatalog = join(inputDir, 'catalog.json');
+  if (existsSync(defaultCatalog)) catalogPath = defaultCatalog;
+}
+const catalog = catalogPath ? JSON.parse(await readFile(resolve(catalogPath), 'utf8')) : {};
+
+const readJson = async (name) => {
+  const path = join(inputDir, name);
+  if (!existsSync(path)) return null;
+  return JSON.parse(await readFile(path, 'utf8'));
+};
 const usersExport = await readJson('firebase-users.json');
 const plans = await readJson('firebase-plans.json');
-const profiles = await readJson('firebase-user-profiles.json');
-const users = Array.isArray(usersExport) ? usersExport : usersExport.users ?? [];
-
-const LEGACY_SENTINEL_ENCOUNTER_ID = '00000000-0000-0000-0000-000000000003';
+const profiles = await readJson('firebase-user-profiles.json') ?? {};
+const users = Array.isArray(usersExport) ? usersExport : (usersExport?.users ?? []);
 
 const deterministicUuid = (namespace) => {
   const bytes = createHash('sha256').update(`xivmitplan:firebase-plan:${namespace}`).digest().subarray(0, 16);
@@ -97,28 +109,39 @@ for (const [firebasePlanId, plan] of Object.entries(plans ?? {})) {
       ? plan.selectedBoss.id
       : null;
 
-  // Keep the Yjs document small enough for the database constraint. The full
-  // Firebase payload remains in JSONB for future assignment/timeline mapping.
-  const doc = new Y.Doc();
-  const meta = doc.getMap('meta');
-  meta.set('id', id);
-  meta.set('name', name);
-  meta.set('legacyPlanId', firebasePlanId);
-  meta.set('legacyBossId', boss);
-  meta.set('legacyPayloadAvailable', true);
-  meta.set('importedAt', new Date().toISOString());
-  const ydocB64 = Buffer.from(Y.encodeStateAsUpdate(doc)).toString('base64');
-  doc.destroy();
+  // Convert the v1 plan into a real, re-anchored Yjs PlanDoc. The converter
+  // preserves every assignment (placeholder rows when no ability/event match)
+  // and keeps the full Firebase payload in meta for later mapping. The plan id
+  // is forced to our deterministic UUID so it matches the auth/plan mapping.
+  const { ydocB64, encounterId, report } = convertLegacyPlanToYDoc(
+    { ...plan, id: firebasePlanId, firebasePlanId, firebaseOwnerId: ownerUid },
+    catalog,
+    { planId: id },
+  );
 
   legacyPlans.push({
     id,
     owner_email: ownerEmail,
     payload: { ...plan, firebasePlanId, firebaseOwnerId: ownerUid },
     captured_at: normalizeTimestamp(plan.createdAt),
-    encounter_id: LEGACY_SENTINEL_ENCOUNTER_ID,
+    encounter_id: encounterId,
     ydoc_b64: ydocB64,
+    legacy_report: report,
   });
 }
+
+const reanchorTotals = legacyPlans.reduce(
+  (acc, plan) => {
+    const r = plan.legacy_report ?? {};
+    acc.total += r.total ?? 0;
+    acc.matchedAbility += r.matchedAbility ?? 0;
+    acc.matchedEvent += r.matchedEvent ?? 0;
+    acc.unmatchedAbility += r.unmatchedAbility ?? 0;
+    acc.unmatchedEvent += r.unmatchedEvent ?? 0;
+    return acc;
+  },
+  { total: 0, matchedAbility: 0, matchedEvent: 0, unmatchedAbility: 0, unmatchedEvent: 0 },
+);
 
 await mkdir(outputDir, { recursive: true });
 await writeFile(join(outputDir, 'supabase-auth-users.json'), `${JSON.stringify(authUsers)}\n`);
@@ -132,11 +155,15 @@ await writeFile(join(outputDir, 'migration-report.json'), `${JSON.stringify({
   legacyPlansPrepared: legacyPlans.length,
   skippedUnowned,
   skippedUnmappedOwner,
+  reanchoredWithCatalog: Boolean(catalogPath),
+  reanchorTotals,
 }, null, 2)}\n`);
 
 console.log(JSON.stringify({
   authUsersPrepared: authUsers.length,
   legacyPlansPrepared: legacyPlans.length,
+  reanchoredWithCatalog: Boolean(catalogPath),
+  reanchorTotals,
   skippedUnowned,
   skippedUnmappedOwner,
 }));

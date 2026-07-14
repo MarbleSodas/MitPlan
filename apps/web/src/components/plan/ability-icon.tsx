@@ -92,8 +92,8 @@ export const abilityIconKey = (
 ): AbilityIconKey | null => {
   if (!abilityId) return null;
   const slug = abilityId.toLowerCase().replace(/^a-/, '').replace(/-partymit$/, '');
-  const map = ICON_MAP as unknown as Record<string, AbilityIconKey>;
-  return map[slug] ?? null;
+  if (slug in ICON_MAP) return slug as AbilityIconKey;
+  return null;
 };
 
 export const AbilityIcon = ({

@@ -49,8 +49,13 @@ import {
   planRoleForCurrentUser,
   legacyClaimablePlanIds,
   claimLegacyPlans as rpcClaimLegacyPlans,
+  updatePlan as rpcUpdatePlan,
+  deletePlan as rpcDeletePlan,
+  duplicatePlan as rpcDuplicatePlan,
+  planExportSnapshot as rpcPlanExportSnapshot,
 } from './supabase-rpc.js';
 import type { Encounter, AbilityRow, PlanRow, TimelineRow, PlanAccessRow } from './supabase-rpc.js';
+import { RawTimelineEvent } from './supabase-rpc.js';
 import {
   SAMPLE_PLANS,
   SAMPLE_ABILITIES,
@@ -80,6 +85,7 @@ export interface EncounterInfo {
   expansionName: string;
   effectiveFrom: string | null;
   effectiveTo: string | null;
+  raidTier: number | null;
 }
 
 /** Ability as the UI consumes it. camelCase + job abbreviation. */
@@ -97,9 +103,9 @@ export interface AbilityInfo {
   isHeal: boolean;
   isShield: boolean;
   category: 'tank-cd' | 'healer-cd' | 'party-mit' | 'invuln' | 'shield' | 'utility';
-  damageType: 'physical' | 'magical' | 'both';
-  target: 'self' | 'single' | 'party' | 'area';
-  charges: number;
+  damageType: 'physical' | 'magical' | 'both' | null;
+  target: 'self' | 'single' | 'party' | 'area' | null;
+  charges: number | null;
 }
 
 /** Plan row as the UI consumes it. */
@@ -112,6 +118,9 @@ export interface PlanInfo {
   isLegacy: boolean;
   createdAt: string;
   updatedAt: string;
+  sourceTimelineId: string | null | undefined;
+  sourceTimelineVersion: string | null | undefined;
+  sourceTimelineHash: string | null | undefined;
 }
 
 /** Single timeline event as the UI consumes it. camelCase + UI tags. */
@@ -128,6 +137,16 @@ export interface TimelineEventInfo {
   targetKind: 'MAIN_TANK' | 'OFF_TANK' | 'PARTY' | 'HEALER' | 'TARGETED' | 'ALL';
   confidence: number;
   notes?: string | null;
+  /** Original planner-relevant fields exposed from the backend event. */
+  normalizedNames?: string[];
+  mechanicId?: string | null;
+  patchVersion?: string;
+  varianceMs?: number;
+  mergedFromSources?: {
+    cactbot: boolean;
+    triggernometry: boolean;
+    fflogs: boolean;
+  };
 }
 
 /** Yjs snapshot payload — the raw Yjs update bytes ready for Y.applyUpdate. */
@@ -228,6 +247,7 @@ const SAMPLE_ENCOUNTERS_UI: EncounterInfo[] = SAMPLE_ENCOUNTERS.map((e) => ({
   expansionName: parseInt(e.patchVersion) >= 7 ? 'Dawntrail' : parseInt(e.patchVersion) >= 6 ? 'Endwalker' : 'Shadowbringers',
   effectiveFrom: e.patchVersion,
   effectiveTo: null,
+  raidTier: null,
 }));
 
 /**
@@ -259,9 +279,9 @@ const SAMPLE_ABILITY_ROWS: AbilityInfo[] = SAMPLE_ABILITIES.map((s) => {
     isHeal: s.category === 'healer-cd',
     isShield: s.category === 'shield',
     category: s.category,
-    damageType: s.damageType,
-    target: s.target,
-    charges: s.charges,
+    damageType: s.damageType ?? null,
+    target: s.target ?? null,
+    charges: s.charges ?? null,
   };
 });
 
@@ -274,6 +294,9 @@ const SAMPLE_PLANS_CAMEL: PlanInfo[] = SAMPLE_PLANS.map((p) => ({
   isLegacy: p.meta.isLegacy,
   createdAt: '2026-06-01T00:00:00Z',
   updatedAt: p.updatedAt,
+  sourceTimelineId: undefined,
+  sourceTimelineVersion: undefined,
+  sourceTimelineHash: undefined,
 }));
 
 // ---------------------------------------------------------------------------
@@ -286,17 +309,18 @@ const toEncounterInfo = (row: Encounter): EncounterInfo => ({
   slug: row.slug,
   patchVersion: row.patch_version,
   raidSlug: row.raid_slug,
-  raidName: row.raid_slug.toUpperCase(), // Best-effort; expand if needed
+  raidName: row.raid_name ?? row.raid_slug.toUpperCase(),
   expansionSlug: row.expansion_slug,
   expansionName: capitalize(row.expansion_slug),
   effectiveFrom: row.effective_from,
   effectiveTo: row.effective_to,
+  raidTier: row.raid_tier ?? null,
 });
 
 const toAbilityInfo = (row: AbilityRow): AbilityInfo => ({
   id: row.id,
   jobId: row.job_id,
-  jobAbbrev: JOB_ABBREV[row.job_id] ?? '???',
+  jobAbbrev: row.job_abbrev ?? (JOB_ABBREV[row.job_id] ?? '???'),
   abilityId: row.ability_id,
   name: row.name,
   description: row.description,
@@ -307,9 +331,9 @@ const toAbilityInfo = (row: AbilityRow): AbilityInfo => ({
   isHeal: row.is_heal,
   isShield: row.is_shield,
   category: inferAbilityCategory(row),
-  damageType: 'both',
-  target: row.is_invuln ? 'self' : 'party',
-  charges: 1,
+  damageType: row.damage_type ?? null,
+  target: row.target ?? null,
+  charges: row.charges ?? null,
 });
 
 const toPlanInfo = (row: PlanRow): PlanInfo => ({
@@ -321,37 +345,48 @@ const toPlanInfo = (row: PlanRow): PlanInfo => ({
   isLegacy: row.is_legacy,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  sourceTimelineId: row.source_timeline_id,
+  sourceTimelineVersion: row.source_timeline_version,
+  sourceTimelineHash: row.source_timeline_hash,
 });
 
-/** Shape of a single `events` array element as the timeline RPC returns it.
- * The RPC schema declares `events: z.array(z.unknown())` because the
- * payload is a complex nested graph; we narrow on each map step. */
-interface RawTimelineEvent {
-  id: string;
-  position: number;
-  timestampMs: number;
-  type: TimelineEventInfo['type'];
-  name: string;
-  durationMs?: number | null;
-  hitTimesMs?: number[];
-  targets?: { kind: TimelineEventInfo['targetKind'] };
-  confidence?: number;
-  notes?: string | null;
-}
-
 const toTimelineEvent = (e: unknown): TimelineEventInfo => {
-  const r = e as RawTimelineEvent;
+  const parsed = RawTimelineEvent.safeParse(e);
+  if (!parsed.success) {
+    return {
+      id: 'malformed',
+      position: 0,
+      timestampMs: 0,
+      type: 'MECHANIC',
+      name: 'Malformed event',
+      durationMs: null,
+      hitTimesMs: [],
+      targetKind: 'ALL',
+      confidence: 0,
+      notes: `Parse error: ${parsed.error.message}`,
+      normalizedNames: [],
+      mechanicId: null,
+      patchVersion: '',
+      mergedFromSources: { cactbot: false, triggernometry: false, fflogs: false },
+    };
+  }
+  const r = parsed.data;
   return {
     id: r.id,
     position: r.position,
     timestampMs: r.timestampMs,
     type: r.type,
     name: r.name,
-    durationMs: r.durationMs ?? null,
-    hitTimesMs: r.hitTimesMs ?? [],
-    targetKind: r.targets?.kind ?? 'ALL',
-    confidence: r.confidence ?? 1,
-    notes: r.notes ?? null,
+    durationMs: r.durationMs,
+    hitTimesMs: r.hitTimesMs,
+    targetKind: r.targets.kind,
+    confidence: r.confidence,
+    notes: r.notes,
+    normalizedNames: r.normalizedNames,
+    mechanicId: r.mechanicId,
+    patchVersion: r.patchVersion,
+    mergedFromSources: r.mergedFromSources,
+    ...(r.varianceMs !== undefined ? { varianceMs: r.varianceMs } : {}),
   };
 };
 
@@ -444,6 +479,11 @@ export const getPlan = async (id: string): Promise<PlanInfo | null> => {
  *
  * Cached at the module level keyed by encounterId — multiple
  * components share a single RPC per encounter.
+ *
+ * Canonical selection (RPC path):
+ *   1. Prefer CURRENT mode timelines over other modes.
+ *   2. Within same mode, prefer MANUAL source, then CACTBOT/FFLOGS.
+ *   3. Pick the newest version within the preferred group.
  */
 async function getTimelineForEncounterImpl(
   encounterId: string,
@@ -460,15 +500,34 @@ async function getTimelineForEncounterImpl(
       targetKind: e.type === 'BUSTER' ? 'MAIN_TANK' : e.type === 'RAIDWIDE' ? 'ALL' : 'PARTY',
       confidence: 0.85,
       notes: null,
+      normalizedNames: [e.name.toLowerCase().replace(/\s+/g, '-')],
+      mechanicId: null,
+      patchVersion: '7.21',
+      mergedFromSources: { cactbot: false, triggernometry: false, fflogs: false },
     }));
   }
   const rows: TimelineRow[] = await timelinesByEncounter(defaultSupabase, {
     p_encounter_id: encounterId,
   });
-  // Pick the newest version per encounter (RPC returns DESC).
-  const latest = rows[0];
-  if (!latest) return [];
-  return latest.events.map(toTimelineEvent);
+  if (rows.length === 0) return [];
+
+  // Canonical selection: prefer CURRENT mode, then MANUAL source, newest version.
+  const byMode = (mode: string) => rows.filter((r) => r.mode === mode);
+  const bySource = (source: string) =>
+    rows.filter((r) => r.source === source);
+
+  const candidates =
+    byMode('CURRENT').length > 0 ? byMode('CURRENT') : rows;
+
+  if (candidates.length === 0) return [];
+
+  const manual = bySource('MANUAL').filter((r) => candidates.includes(r));
+  if (manual.length > 0) return manual[0]!.events.map(toTimelineEvent);
+
+  const cactbot = bySource('CACTBOT').filter((r) => candidates.includes(r));
+  if (cactbot.length > 0) return cactbot[0]!.events.map(toTimelineEvent);
+
+  return candidates[0]!.events.map(toTimelineEvent);
 }
 
 export const getTimelineForEncounter = (encounterId: string): Promise<TimelineEventInfo[]> => {
@@ -476,6 +535,70 @@ export const getTimelineForEncounter = (encounterId: string): Promise<TimelineEv
   if (cached) return cached;
   const p = getTimelineForEncounterImpl(encounterId);
   timelineCache.set(encounterId, p);
+  return p;
+};
+
+/**
+ * Full canonical timeline info including provenance metadata.
+ * Returns the best-match timeline row with its events, hash, version, etc.
+ */
+export interface CanonicalTimelineInfo {
+  id: string;
+  version: string;
+  contentHash: string;
+  source: string;
+  mode: string;
+  events: TimelineEventInfo[];
+}
+
+/**
+ * Fetch the best canonical timeline for an encounter, including
+ * provenance metadata (id, version, contentHash). Returns null when
+ * no timeline exists for the encounter.
+ */
+async function getCanonicalTimelineForEncounterImpl(
+  encounterId: string,
+): Promise<CanonicalTimelineInfo | null> {
+  if (!isSupabaseConfigured()) return null;
+  const rows: TimelineRow[] = await timelinesByEncounter(defaultSupabase, {
+    p_encounter_id: encounterId,
+  });
+  if (rows.length === 0) return null;
+
+  // Same canonical selection logic as getTimelineForEncounterImpl
+  const byMode = (mode: string) => rows.filter((r) => r.mode === mode);
+  const bySource = (source: string) =>
+    rows.filter((r) => r.source === source);
+
+  const candidates =
+    byMode('CURRENT').length > 0 ? byMode('CURRENT') : rows;
+
+  if (candidates.length === 0) return null;
+
+  const manual = bySource('MANUAL').filter((r) => candidates.includes(r));
+  const selected = manual.length > 0 ? manual[0]!
+    : bySource('CACTBOT').filter((r) => candidates.includes(r))[0]
+    ?? candidates[0]!;
+
+  return {
+    id: selected.id,
+    version: selected.version,
+    contentHash: selected.content_hash,
+    source: selected.source,
+    mode: selected.mode,
+    events: selected.events.map(toTimelineEvent),
+  };
+}
+
+const canonicalTimelineCache = new Map<string, Promise<CanonicalTimelineInfo | null>>();
+
+export const getCanonicalTimelineForEncounter = (
+  encounterId: string,
+): Promise<CanonicalTimelineInfo | null> => {
+  const cached = canonicalTimelineCache.get(encounterId);
+  if (cached) return cached;
+  const p = getCanonicalTimelineForEncounterImpl(encounterId);
+  canonicalTimelineCache.set(encounterId, p);
   return p;
 };
 
@@ -610,4 +733,83 @@ export const saveSnapshot = async (
 ): Promise<{ snapshotId: string; byteSize: number; createdAt: string }> => {
   if (!isSupabaseConfigured()) throw new Error('saveSnapshot requires Supabase');
   return rpcSnapshotPlan(defaultSupabase, { planId, reason });
+};
+
+// ---------------------------------------------------------------------------
+// Plan management — migration 0013 + apps/edge/plans-{update,delete,duplicate}
+// ---------------------------------------------------------------------------
+
+/** Plan snapshot in safe base64 form for export/download. */
+export interface PlanExportSnapshotInfo {
+  snapshotId: string;
+  ydocB64: string;
+  byteSize: number;
+  reason: string;
+  createdAt: string;
+}
+
+/**
+ * Export the current plan snapshot as a safe base64 payload. Prefers
+ * the latest versioned plan_snapshot; falls back to the debounced
+ * ydoc_snapshot. Returns null when no snapshot data exists.
+ *
+ * In fallback mode (no Supabase configured), returns null.
+ */
+export const exportPlanSnapshot = async (
+  planId: string,
+): Promise<PlanExportSnapshotInfo | null> => {
+  if (!isSupabaseConfigured()) return null;
+  const row = await rpcPlanExportSnapshot(defaultSupabase, { p_plan_id: planId });
+  if (!row) return null;
+  return {
+    snapshotId: row.snapshot_id,
+    ydocB64: row.ydoc_b64,
+    byteSize: row.byte_size,
+    reason: row.reason,
+    createdAt: row.created_at,
+  };
+};
+
+/**
+ * Update plan metadata (at minimum the name). The caller must be the
+ * plan owner or have an EDITOR role. In fallback mode this is a no-op
+ * (memory-only plans cannot be persisted).
+ */
+export const updatePlan = async (
+  input: { planId: string; name: string },
+): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+  await rpcUpdatePlan(defaultSupabase, input);
+};
+
+/**
+ * Delete a plan permanently. Only the plan owner may do this. The
+ * CASCADE rules remove associated ydoc_snapshots, plan_snapshots,
+ * plan_access, and share_tokens rows.
+ *
+ * In fallback mode this is a no-op (memory-only plans have no storage).
+ */
+export const deletePlan = async (planId: string): Promise<void> => {
+  if (!isSupabaseConfigured()) return;
+  await rpcDeletePlan(defaultSupabase, { planId });
+};
+
+/**
+ * Duplicate a plan. The caller must be the owner or an editor of the
+ * source plan. The copy always assigns the duplicator as owner. Optionally
+ * specify a new name; defaults to `<original name> (Copy)`.
+ *
+ * Returns the new plan id and creation timestamp.
+ *
+ * In fallback mode, returns a local UUID without persisting anything
+ * (the plan editor starts fresh against a new Y.Doc).
+ */
+export const duplicatePlan = async (input: {
+  planId: string;
+  name?: string;
+}): Promise<{ planId: string; createdAt: string }> => {
+  if (!isSupabaseConfigured()) {
+    return { planId: crypto.randomUUID(), createdAt: new Date().toISOString() };
+  }
+  return rpcDuplicatePlan(defaultSupabase, input);
 };

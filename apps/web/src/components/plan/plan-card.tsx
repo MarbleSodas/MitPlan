@@ -33,26 +33,23 @@ export interface PlanCardData {
   raid: string;
   /** Display name of the encounter this plan is for. */
   encounterName: string;
-  isLegacy: boolean;
   updatedAt: string;
   partySize: 8 | 16;
 }
 
 export const PlanCard = ({ plan }: { plan: PlanCardData }) => (
-  <Card className="group transition-colors hover:border-primary/40">
+  <Card className="group transition-colors hover:border-primary/40 focus-within:border-primary/40">
     <CardHeader>
       <div className="flex items-start justify-between gap-2">
         <CardTitle className="text-base leading-tight">
-          <Link to={`/plan/${plan.id}`} className="hover:underline">
+          <Link
+            to={`/plan/${plan.id}`}
+            className="hover:underline focus-visible:ring-primary/50 rounded-sm focus-visible:outline-none focus-visible:ring-2"
+          >
             {plan.name}
           </Link>
         </CardTitle>
         <div className="flex shrink-0 items-center gap-1">
-          {plan.isLegacy && (
-            <Badge variant="outline" className="font-mono text-[10px]">
-              legacy
-            </Badge>
-          )}
           {plan.raid && (
             <Badge variant="secondary" className="font-mono text-[10px]">
               {plan.raid}
@@ -67,13 +64,14 @@ export const PlanCard = ({ plan }: { plan: PlanCardData }) => (
         <span className="flex items-center gap-1.5">
           <Users className="size-3" /> {plan.partySize}-person · updated {RELATIVE(plan.updatedAt)}
         </span>
+        <Link
+          to={`/plan/${plan.id}`}
+          className="text-primary mt-1 flex items-center gap-1 text-sm font-medium sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:focus-within:opacity-100"
+          aria-label={`Open plan: ${plan.name}`}
+        >
+          Open <ChevronRight className="size-4" />
+        </Link>
       </div>
-      <Link
-        to={`/plan/${plan.id}`}
-        className="text-primary flex items-center gap-1 text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100"
-      >
-        Open <ChevronRight className="size-4" />
-      </Link>
     </CardContent>
   </Card>
 );

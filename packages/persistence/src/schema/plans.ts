@@ -8,6 +8,7 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core';
 import { encounters } from './encounters.js';
+import { timelines } from './timelines.js';
 import { abilityModeEnum } from './enums.js';
 
 /**
@@ -31,6 +32,12 @@ export const plans = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     /** Per-event assignment conflicts surfaced by the validator. */
     conflicts: jsonb('conflicts').$type<unknown[]>().default([]),
+    /** Canonical timeline provenance — the source timeline this plan is pinned to. */
+    sourceTimelineId: uuid('source_timeline_id').references(() => timelines.id, {
+      onDelete: 'set null',
+    }),
+    sourceTimelineVersion: text('source_timeline_version'),
+    sourceTimelineHash: text('source_timeline_hash'),
   },
   (t) => ({
     ownerIdx: index('plans_owner_idx').on(t.ownerId),

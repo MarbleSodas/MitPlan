@@ -11,7 +11,7 @@
 #      run; cached in .supabase/ for subsequent runs).
 #   3. Apply all SQL migrations in order.
 #   4. Set the Edge Function secrets required by the runtime.
-#   5. Deploy all Edge Functions (3 timeline ingests, 4 plan flows, and
+#   5. Deploy all Edge Functions (3 timeline ingests, 7 plan flows, and
 #      1 legacy claim flow).
 #   6. Print a checklist for the manual OAuth and Realtime settings.
 #
@@ -223,7 +223,7 @@ ${BOLD}Next manual steps (not automatable from the CLI):${RESET}
 
   3. ${YELLOW}Verify migrations${RESET} in the SQL editor:
        SELECT version FROM supabase_migrations.schema_migrations ORDER BY version;
-     Expected: every migration in supabase/migrations, including 0009.
+      Expected: every migration in supabase/migrations, including 0013.
 
   4. ${YELLOW}Copy .env.example to .env.local${RESET} at the repo root
      and fill in:

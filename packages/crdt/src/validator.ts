@@ -4,7 +4,14 @@
  * conforms to the Zod schemas for the plan structure.
  */
 import { z } from 'zod';
-import { PlanMeta, Assignment, TankState } from '@xivmitplan/validation/plan';
+import {
+  PlanMeta,
+  Assignment,
+  TankState,
+  PlanTimelineAction,
+  PlanPartyState,
+  TimelineSettings,
+} from '@xivmitplan/validation/plan';
 import type { PlanDoc } from './schema.js';
 
 export const PlanSnapshotShape = z.object({
@@ -12,7 +19,6 @@ export const PlanSnapshotShape = z.object({
     (m) => {
       const r = PlanMeta.safeParse({
         ...m,
-        // Coerce date strings to satisfy z.string().datetime()
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
       });
@@ -42,6 +48,30 @@ export const PlanSnapshotShape = z.object({
     { message: 'every tank state must conform to TankState' },
   ),
   locks: z.record(z.string(), z.string()),
+  timelineActions: z.array(z.unknown()).refine(
+    (ta) => {
+      for (const v of ta) {
+        const r = PlanTimelineAction.safeParse(v);
+        if (!r.success) return false;
+      }
+      return true;
+    },
+    { message: 'every timeline action must conform to PlanTimelineAction' },
+  ),
+  party: z.record(z.string(), z.unknown()).refine(
+    (p) => {
+      const r = PlanPartyState.safeParse(p);
+      return r.success;
+    },
+    { message: 'party must conform to PlanPartyState' },
+  ),
+  timelineSettings: z.record(z.string(), z.unknown()).refine(
+    (ts) => {
+      const r = TimelineSettings.safeParse(ts);
+      return r.success;
+    },
+    { message: 'timelineSettings must conform to TimelineSettings' },
+  ),
 });
 export type PlanSnapshotShape = z.infer<typeof PlanSnapshotShape>;
 

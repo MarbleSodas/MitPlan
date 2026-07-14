@@ -41,6 +41,24 @@ const handler = async (req: Request): Promise<Response> => {
   const planId = crypto.randomUUID();
   const now = new Date().toISOString();
 
+  // Select the canonical timeline for this encounter deterministically.
+  let sourceTimelineId: string | null = null;
+  let sourceVersion: string | null = null;
+  let sourceHash: string | null = null;
+  try {
+    const { data: timeline, error: tlErr } = await ctx.supabaseAdmin.rpc(
+      "select_canonical_timeline_for_encounter",
+      { p_encounter_id: body.encounterId, p_mode: "CURRENT" },
+    );
+    if (!tlErr && timeline && timeline.length > 0) {
+      sourceTimelineId = timeline[0].id;
+      sourceVersion = timeline[0].version;
+      sourceHash = timeline[0].content_hash;
+    }
+  } catch {
+    // Non-fatal: plan creation proceeds without provenance.
+  }
+
   // Insert the plan row using the admin client (we deterministically
   // set owner_id from the verified JWT). The admin client bypasses RLS
   // but is safe here because we explicitly assign the caller.
@@ -53,6 +71,9 @@ const handler = async (req: Request): Promise<Response> => {
     mode: body.mode,
     is_legacy: false,
     conflicts: [],
+    source_timeline_id: sourceTimelineId,
+    source_timeline_version: sourceVersion,
+    source_timeline_hash: sourceHash,
   });
   if (planErr) {
     if (planErr.code === "23503") {
@@ -61,12 +82,6 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse(500, "INSERT_FAILED", planErr.message, "*");
   }
 
-  // Pre-create the ydoc_snapshots row with a single-byte placeholder
-  // (`\x00`). Use the same SECURITY DEFINER RPC the web client uses
-  // (upsert_ydoc_snapshot) so the BYTEA arrives as a canonical hex
-  // literal rather than a JSON-serialized Uint8Array (`{"0":0}`), which
-  // would corrupt the snapshot. The caller is the plan owner, so the
-  // RPC's internal ACL check passes.
   // Pre-create the ydoc_snapshots row with a single-byte placeholder
   // (`\x00`). Use the same SECURITY DEFINER RPC the web client uses
   // (upsert_ydoc_snapshot) so the BYTEA arrives as a canonical hex
@@ -79,6 +94,17 @@ const handler = async (req: Request): Promise<Response> => {
     p_byte_size: 1,
   });
   if (ydocErr) {
+    try {
+      const { error: rollbackErr } = await ctx.supabaseAdmin
+        .from("plans")
+        .delete()
+        .eq("id", planId);
+      if (rollbackErr) {
+        console.error(`plans-create: rollback failed for ${planId}: ${rollbackErr.message}`);
+      }
+    } catch (rollbackCause) {
+      console.error(`plans-create: rollback failed for ${planId}`, rollbackCause);
+    }
     return errorResponse(
       500,
       "YDOC_INIT_FAILED",

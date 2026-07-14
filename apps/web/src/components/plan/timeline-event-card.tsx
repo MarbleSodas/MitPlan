@@ -11,7 +11,7 @@ import { Clock, Shield, Skull, Sparkles, Swords, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatMs } from '@/lib/utils';
 import type { TimelineEventInfo } from '@/lib/data-source';
-import type { MitStackResult } from '@/lib/mit-evaluator';
+import type { ExtendedMitStackResult } from '@/lib/mit-evaluator';
 import {
   EVENT_CLASS,
   TARGET_LABEL,
@@ -35,12 +35,18 @@ const TONE_TINT: Record<EventClass['tone'], string> = {
 };
 
 const RESIDUAL_STYLES = (pct: number) => {
-  if (pct <= 0) return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
-  if (pct <= 25) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25';
-  if (pct <= 50) return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/25';
-  if (pct <= 75) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/25';
+  if (pct <= 0)
+    return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+  if (pct <= 25)
+    return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25';
+  if (pct <= 50)
+    return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/25';
+  if (pct <= 75)
+    return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/25';
   return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25';
 };
+
+const formatCompactMs = (ms: number): string => (ms < 1000 ? `${ms}ms` : formatMs(ms));
 
 export const TimelineEventCard = ({
   event,
@@ -54,7 +60,7 @@ export const TimelineEventCard = ({
    * the small badge on the right edge. */
   assignmentCount: number;
   /** Pre-computed mit stack result for this event, or null if none. */
-  mitStack: MitStackResult | null;
+  mitStack: ExtendedMitStackResult | null;
   /** True when this event is the currently selected anchor for new assignments. */
   isSelected?: boolean;
   onPick: (event: TimelineEventInfo) => void;
@@ -62,16 +68,29 @@ export const TimelineEventCard = ({
   const klass = EVENT_CLASS[event.type];
   const Icon = TYPE_ICON[event.type];
   const hasMit = mitStack && mitStack.entries.length > 0;
+  const sourceLabels = event.mergedFromSources
+    ? Object.entries(event.mergedFromSources)
+        .filter(([, included]) => included)
+        .map(([source]) =>
+          source === 'fflogs' ? 'FFLogs' : source[0]!.toUpperCase() + source.slice(1),
+        )
+    : [];
+  const eventDetails = [
+    event.durationMs != null ? `duration ${formatCompactMs(event.durationMs)}` : null,
+    event.hitTimesMs.length > 1 ? `${event.hitTimesMs.length} hits` : null,
+    event.varianceMs != null ? `±${formatCompactMs(event.varianceMs)}` : null,
+    sourceLabels.length > 0 ? sourceLabels.join(' + ') : null,
+  ].filter(Boolean);
 
   return (
     <button
       type="button"
       onClick={() => onPick(event)}
+      aria-label={`${event.name} at ${formatMs(event.timestampMs)}${event.notes ? ` — ${event.notes}` : ''}`}
       className={cn(
         'group bg-card hover:border-primary/40 flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-all',
-        isSelected
-          ? 'border-primary/60 bg-primary/5 ring-primary/20 ring-1'
-          : 'border-transparent',
+        'focus-visible:ring-primary/50 focus-visible:outline-none focus-visible:ring-2',
+        isSelected ? 'border-primary/60 bg-primary/5 ring-primary/20 ring-1' : 'border-transparent',
       )}
     >
       <span
@@ -123,12 +142,31 @@ export const TimelineEventCard = ({
           {hasMit && mitStack!.entries.length > 1 && (
             <>
               <span>·</span>
-              <span className="text-chart-1 font-mono">
-                ×{mitStack!.entries.length} stack
-              </span>
+              <span className="text-chart-1 font-mono">×{mitStack!.entries.length} stack</span>
             </>
           )}
         </div>
+        {eventDetails.length > 0 && (
+          <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5 font-mono text-[10px]">
+            {eventDetails.map((detail) => (
+              <span key={detail}>{detail}</span>
+            ))}
+          </div>
+        )}
+        {event.notes && (
+          <p className="text-muted-foreground mt-1 truncate text-xs" title={event.notes}>
+            {event.notes}
+          </p>
+        )}
+        {mitStack && mitStack.perHit.length > 1 && (
+          <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px]">
+            {mitStack.perHit.map((hit) => (
+              <span key={hit.hitTimeMs}>
+                {formatMs(hit.hitTimeMs)} {Math.round(hit.residualPct)}% remaining
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </button>
   );

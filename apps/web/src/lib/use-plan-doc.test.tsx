@@ -94,6 +94,21 @@ describe('usePlanDoc', () => {
     expect(persisted).toBeInstanceOf(Y.Map);
   });
 
+  it('derives the assignment target from the event when no target is selected', () => {
+    const { result } = renderHook(() => usePlanDoc(doc, 'plan-targets'));
+    const ability = toAbilityInfo(SAMPLE_ABILITIES[0]!);
+    const event = {
+      ...toEventInfo(SAMPLE_EVENTS[FRU_P1_ID]![2]!),
+      targetKind: 'MAIN_TANK' as const,
+    };
+
+    act(() => {
+      result.current.addAssignment({ ability, event });
+    });
+
+    expect(result.current.assignments[0]?.targetType).toBe('MAIN_TANK');
+  });
+
   it('removeAssignment deletes the row from both state and Y.Map', () => {
     const { result } = renderHook(() => usePlanDoc(doc, 'plan-3'));
     const ability = toAbilityInfo(SAMPLE_ABILITIES[0]!);

@@ -1,39 +1,39 @@
 # XIVMitPlan v1.0
 
-> **FFXIV raid mitigation planner.** Learn + Plan modes, real-time
-> collaborative editing via Yjs, three-source timeline ingestion, free at
-> the 1K-user tier.
+> **FFXIV raid mitigation planner.** Authenticated Plan core with Yjs
+> collaboration, Supabase persistence, legacy-plan migration, and a sample-data
+> fallback for local development. Learn, full ingestion, and Live/ACT surfaces
+> remain staged work.
 
 ## What works today
 
-The Phase 0 + Path A Hardened + Phase 1 build is a runnable, type-safe,
-test-green monorepo. You can boot the dev server in ~150 ms, click
-through every route, and exercise the realtime bridge against mock
-Supabase clients via Vitest. With `VITE_SUPABASE_URL` +
-`VITE_SUPABASE_ANON_KEY` set, the same code hits a live Supabase
-project and the demo flow (create plan from FRU → anchor mitigations
-→ realtime broadcast) works end-to-end.
+The current build is a runnable, type-safe monorepo with an authenticated Plan
+core. The dev server and sample-data fallback work without cloud credentials;
+the realtime bridge, catalog adapters, legacy conversion, plan management, and
+mitigation evaluator are covered by automated tests. A live Supabase project is
+still required for authentication, persistence, sharing, and cross-client
+realtime verification.
 
 The **working demo**: sign in, click **New plan**, pick **FRU P1**
 (Light Rampant) as the base timeline, click any event on the timeline
-to anchor a mitigation, and see it broadcast in real time to any other
-browser tab joined to the same plan URL.
+to anchor a mitigation, and use the plan actions menu to rename, duplicate,
+export, or delete the plan according to the current role. With Supabase
+configured, the same plan can be opened in another authenticated browser
+session for realtime collaboration.
 
 | Surface | State | Needs Supabase? |
 |---|---|---|
-| Web SPA shell + nav | ✅ Functional | No |
-| Plan list (`/plan`) | ✅ Renders your plans via `rpc('plans_list')` | Yes (for live data) |
-| "New plan" dialog | ✅ Encounter picker with FRU P1/P2 + M1S/M2S/P1S/P4S | No (falls back to seed) |
-| Plan editor (`/plan/:planId`) | ✅ Timeline rail + mit assignment + realtime | Yes (for realtime to connect) |
-| Login (`/login`) | ✅ Discord / Google / email CTAs render | Yes (to actually sign in) |
-| OAuth callback (`/auth/callback`) | ✅ Handles the code-for-session exchange | Yes |
-| Realtime bridge (`SupabaseBroadcastProvider`) | ✅ 36 unit/integration/contract tests pass | Mocked in tests |
-| Snapshot persistence (`upsert_ydoc_snapshot`) | ✅ RPC + trigger installed | Yes (live Postgres) |
-| Snapshot restore (`load_ydoc_snapshot`) | ✅ Wired into plan editor cold-load | Yes |
-| Catalog API (`/v1/encounters` etc.) | ✅ 8 PostgREST RPCs in migration 0003 | Yes |
-| FRU base timeline seed | ✅ Migration 0004 (~18 P1 + ~20 P2 events) | Yes |
-| Edge Functions (timeline ingest, share, plan CRUD) | ✅ Deno source under `apps/edge/functions/` | Yes |
-| Data-source facade | ✅ 16 unit tests (fallback + RPC mock) | Either |
+| Web SPA shell + nav | Functional | No |
+| Plan list and creation (`/plan`) | Functional with sample fallback and live RPC path | Live data needs it |
+| Plan editor (`/plan/:planId`) | Timeline, picker, assignments, responsive UI, role-aware editing | Realtime and persistence need it |
+| Plan management | Rename, duplicate, owner-only delete, recovery export | Live mutations need it |
+| Login and OAuth callback | UI and callback exchange are implemented | Yes, for sign-in |
+| Realtime bridge | Custom `SupabaseBroadcastProvider`, unit/integration/contract covered | Live Supabase for browser sync |
+| Snapshot restore and persistence | Cold-load restore plus debounced Yjs snapshots | Live Postgres |
+| Catalog and timeline adapters | Planner metadata, canonical selection, malformed-row handling | Live RPCs for production data |
+| Legacy migration | Conversion, provenance display, and claim path | Live Auth/DB for claims |
+| Edge Functions | Timeline ingest, sharing, legacy claim, and plan CRUD source | Deploy required |
+| Data-source facade | Sample fallback plus typed RPC adapters | Either |
 
 ## Quick links
 
@@ -42,6 +42,7 @@ browser tab joined to the same plan URL.
 - [ADR-0002](docs/adr/0002-supabase-only-backend.md) — Path A (Supabase-only backend) collapse.
 - [ADR-0003](docs/adr/0003-path-a-hardened-supabase-broadcast.md) — y-supabase replaced with our own `SupabaseBroadcastProvider`. **The current authoritative realtime decision** (2026-06-29).
 - [ADR-0004](docs/adr/0004-core-release-scope.md) — the migration-focused core release boundary.
+- [Project status](docs/project-status.md) — current implementation state, decisions in force, verification, and release gaps.
 - [Infrastructure setup](docs/infra-setup.md) — one-time Supabase + OAuth walkthrough.
 - [Firebase migration](docs/firebase-migration.md) — Supabase-supported Auth import plus legacy-plan cutover.
 
@@ -84,7 +85,8 @@ xivmitplan/
 │   └── shared/              # i18n, time, Result, branded IDs
 ├── data/                    # Versioned game data (added in Phase 1+)
 ├── docs/
-│   ├── adr/                 # 0001 + 0002 + 0003
+│   ├── adr/                 # Architecture and scope decisions
+│   ├── project-status.md    # Current implementation state and release gaps
 │   ├── infra-setup.md       # Deploy walkthrough
 │   └── archive/             # Historical records
 ├── package.json             # pnpm workspace root
@@ -194,7 +196,7 @@ but aren't synced to other tabs (no realtime).
 
 ```sh
 pnpm --filter @xivmitplan/web test
-# Expected: 31 pass (3 test files)
+# Expected: 106 pass (7 test files)
 ```
 
 The test harness drives the Supabase Realtime client with hand-rolled
@@ -235,22 +237,21 @@ Once you have a live Supabase project + Discord OAuth app per
 ### Build + typecheck
 
 ```sh
-pnpm -r typecheck         # all 6 packages typecheck clean
+pnpm typecheck             # all 6 packages typecheck clean
 pnpm --filter @xivmitplan/web build   # production bundle
 ```
 
-The build emits 458 kB main + 79 kB yjs + 49 kB react vendor chunks
-(gzip: 128 kB + 24 kB + 17 kB). No Hocuspocus / Hono / Upstash /
-wrangler / Cloudflare DO code in the bundle (CI compliance gate
-enforces this — see `.github/workflows/ci.yml`).
+The production build passes. Vite currently reports non-blocking sourcemap,
+circular-chunk, and large-chunk warnings. No Hocuspocus / Hono / Upstash /
+wrangler / Cloudflare DO code is included in the bundle (CI compliance gate
+enforces this - see `.github/workflows/ci.yml`).
 
-## Next steps (Phase 2+)
+## Roadmap And Release Work
 
-Phase 1 is complete: the plan editor renders the encounter's base
-timeline, the encounter picker ships FRU P1/P2 as default options,
-and every Supabase RPC + Edge Function has a live code path with a
-sample-data fallback for offline dev. The product work to get to a
-usable v1 beta continues into Phase 2.
+The authenticated Plan core is implemented, but the project is not yet a
+production release. See [Project status](docs/project-status.md) for the
+current implementation state, decisions, verification baseline, and release
+gaps. The following roadmap remains open.
 
 ### Phase 2 — Learn mode (read-only encounter browser)
 
@@ -298,7 +299,7 @@ The bootstrap script automates migrations + Edge Function deploy.
 The OAuth apps + Realtime policy binding are still manual GUI steps.
 
 - [ ] Run `./scripts/supabase-bootstrap.sh dev` (creates the project
-      link, applies migrations 0001-0004, deploys Edge Functions,
+      link, applies migrations 0001-0013, deploys Edge Functions,
       prints a manual checklist).
 - [ ] Create a Discord OAuth app, point the Supabase project's
       "Discord" provider at it.
@@ -319,57 +320,26 @@ Full walkthrough: [docs/infra-setup.md](docs/infra-setup.md).
 
 No Cloudflare account required. No Hocuspocus / Hono / Upstash / Durable Objects. R2 is used only for backups.
 
-## Verification (final green)
+## Verification (2026-07-14)
 
 ```
-pnpm -r typecheck                                  → 6 packages, all pass
-pnpm --filter @xivmitplan/web test                 → 52 pass (5 test files)
-pnpm --filter @xivmitplan/persistence test         → 0 (no tests yet; runs vitest in no-files mode)
-pnpm --filter @xivmitplan/shared test              → 16 pass
-pnpm --filter @xivmitplan/validation test          → 16 pass
-pnpm --filter @xivmitplan/domain test              → 21 pass
-pnpm --filter @xivmitplan/crdt test                → 2 pass
-pnpm --filter @xivmitplan/web build                → 690 kB main + 79 kB yjs + 50 kB react vendor
-pnpm --filter @xivmitplan/web dev                  → boots in ~150 ms; all 4 routes return 200
+pnpm typecheck                                      → 6 packages, all pass
+pnpm test                                           → all workspace tests pass
+pnpm --filter @xivmitplan/web test                  → 106 pass (7 test files)
+pnpm --filter @xivmitplan/web build                 → production bundle passes with Vite warnings
+deno check --no-lock --import-map=supabase/functions/import_map.json \
+  apps/edge/functions/plans-update/index.ts             → pass
+deno check --no-lock --import-map=supabase/functions/import_map.json \
+  apps/edge/functions/plans-delete/index.ts             → pass
+deno check --no-lock --import-map=supabase/functions/import_map.json \
+  apps/edge/functions/plans-duplicate/index.ts         → pass
 ```
 
-Test breakdown for the realtime + data path:
-- 19 unit tests (`supabase-broadcast-provider.test.ts`)
-- 4 cross-client integration tests (`supabase-broadcast-provider.integration.test.ts`)
-- 8 contract tests enforcing the `RealtimeProvider` interface (`provider-contract.test.ts`)
-- 16 data-source tests (8 fallback + 5 RPC + 1 internal, in `data-source.test.ts`)
-- 5 usePlanDoc tests (Y.Doc binding + add/remove + reactive observe)
-
-Note: `pnpm -r test` currently fails on `persistence` (no test files
-yet) — filter with `--filter=!@xivmitplan/persistence` or run per-package
-as shown above until persistence tests land in Phase 2.
-
-## Phase 1 status (complete as of 2026-06-30)
-
-- [x] Monorepo scaffolded (pnpm + Turborepo + catalog:)
-- [x] Architecture locks recorded (ADR-0001 + ADR-0002 + ADR-0003)
-- [x] Drizzle schema + 4 migrations (initial + ACL/RPC/validator + 8 PostgREST RPCs + reference seed)
-- [x] Yjs CRDT package (`PlanDoc`, `ThrottledAwareness`, `PlanSnapshotShape`, `RealtimeProvider` interface)
-- [x] Domain package (entities, ports, math, parsers, merger)
-- [x] Realtime: custom `SupabaseBroadcastProvider` (~390 LOC) on Supabase Realtime Broadcast, debounced `upsert_ydoc_snapshot` + `crdt_validate_plan_doc` trigger
-- [x] Web SPA scaffolded (React 19 + Vite + React Router 7) with the realtime bridge wired
-- [x] **Data-source facade** (`apps/web/src/lib/data-source.ts`) — unified read/write API with sample-data fallback when no Supabase env vars are set
-- [x] **Plan editor** renders the encounter's base timeline as a clickable rail of event cards; click an event → opens the ability picker pre-anchored
-- [x] **Snapshot restore** via `load_ydoc_snapshot` RPC on cold load, before the realtime provider connects
-- [x] **Encounter picker** in the "New plan" dialog — FRU P1, FRU P2, M1S, M2S, P1S, P4S are default options
-- [x] **FRU seed migration** (`0004_xivmitplan_v1_seed.sql`) — 18 FRU P1 events + 20 FRU P2 events + 8 jobs + 23 abilities + 5 roles + 2 expansions
-- [x] **Bootstrap script** (`scripts/supabase-bootstrap.sh`) — one-shot migrations + Edge Function deploy
-- [x] 52 tests pass (19 realtime unit + 4 integration + 8 contract + 16 data-source + 5 usePlanDoc)
-- [x] Production build passes (`vite build` produces a valid bundle)
-- [x] Dev server boots in ~150 ms; all 4 routes return 200
-- [x] Deno compat verified for the Edge Functions path
-- [x] CI compliance gate enforces Path A (blocks re-introduction of y-supabase / Hocuspocus / Hono / Upstash / wrangler)
-- [ ] Live Supabase + R2 + Discord OAuth accounts (out-of-band; follow `docs/infra-setup.md`)
-
-Next: run `scripts/supabase-bootstrap.sh dev` against a live Supabase
-project, configure the Realtime authorization policy in the Dashboard,
-and demo the create-plan-from-FRU flow end-to-end with a second
-browser tab joined to the same plan URL.
+The web lint script is currently blocked because ESLint 9 expects an
+`eslint.config.*` file that is not present. Full-repository Prettier also has
+existing failures; the files changed in the current slice are formatted.
+Live Supabase, Edge Function deployment, and Playwright staging verification
+remain outstanding.
 
 ## License
 

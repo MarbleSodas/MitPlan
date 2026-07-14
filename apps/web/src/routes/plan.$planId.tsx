@@ -34,15 +34,29 @@
  * for the cold-open demo.
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router';
-import { ArrowLeft, Plus, Share2, Sparkles, Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Copy,
+  Download,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  Share2,
+  Sparkles,
+  Trash2,
+  Timeline as TimelineIcon,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import * as Y from 'yjs';
 import { PlanDoc, createPlanDoc } from '@xivmitplan/crdt';
 import {
   realtimeProvider,
-  type RealtimeProvider,
+  type RealtimeProviderWithReconnect,
   type RealtimeStatus,
 } from '../lib/realtime-provider.js';
 import { useSession } from '../lib/supabase.js';
@@ -57,30 +71,64 @@ import {
   listAbilities,
   redeemShare,
   saveSnapshot,
+  updatePlan,
+  duplicatePlan,
+  deletePlan,
+  exportPlanSnapshot,
   type AbilityInfo,
   type EncounterInfo,
   type PlanInfo,
   type TimelineEventInfo,
 } from '@/lib/data-source';
-import { evaluateEventMit, detectDoubleBookings, type MitStackResult } from '@/lib/mit-evaluator';
+import {
+  evaluateEventMit,
+  detectDoubleBookings,
+  type ExtendedMitStackResult,
+} from '@/lib/mit-evaluator';
+import { bytesToBase64 } from '@/lib/bytes';
 import { formatMs } from '@/lib/utils';
 import { FRU_P1_ID } from '@/lib/sample-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AssignmentRow } from '@/components/plan/assignment-row';
-import { AbilityPicker } from '@/components/plan/ability-picker';
 import { TimelineRail } from '@/components/plan/timeline-rail';
 import { DraggableAbilityStrip } from '@/components/plan/draggable-ability-strip';
+import { MitigationLibrary } from '@/components/plan/mitigation-library';
 import { PresenceBar } from '@/components/plan/presence-bar';
 import { ShareDialog } from '@/components/plan/share-dialog';
 import { Logo } from '@/components/logo';
+import { buildLegacyTimeline } from '@/lib/legacy-timeline';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const STATUS_BADGE: Record<
   RealtimeStatus,
-  { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode; label: string }
+  {
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    icon: React.ReactNode;
+    label: string;
+  }
 > = {
-  connecting: { variant: 'secondary', icon: <Loader2 className="size-3 animate-spin" />, label: 'Connecting' },
+  connecting: {
+    variant: 'secondary',
+    icon: <Loader2 className="size-3 animate-spin" />,
+    label: 'Connecting',
+  },
   connected: { variant: 'default', icon: <Wifi className="size-3" />, label: 'Live' },
   disconnected: { variant: 'outline', icon: <WifiOff className="size-3" />, label: 'Offline' },
   error: { variant: 'destructive', icon: <AlertCircle className="size-3" />, label: 'Error' },
@@ -89,6 +137,7 @@ const STATUS_BADGE: Record<
 export const PlanEditor = () => {
   const { planId } = useParams<{ planId: string }>();
   const [search] = useSearchParams();
+  const navigate = useNavigate();
   const session = useSession();
   const [planDoc, setPlanDoc] = useState<PlanDoc | null>(null);
   const [encounter, setEncounter] = useState<EncounterInfo | null>(null);
@@ -96,7 +145,7 @@ export const PlanEditor = () => {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [abilities, setAbilities] = useState<AbilityInfo[] | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const providerRef = useRef<RealtimeProvider | null>(null);
+  const providerRef = useRef<RealtimeProviderWithReconnect | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>('connecting');
   // Share-link capability token (from /plan/:id?token=...). When present
   // and the viewer is signed in, it is redeemed for a plan_access row.
@@ -111,9 +160,16 @@ export const PlanEditor = () => {
   // Plan-row metadata loaded from data-source.getPlan(). Once loaded,
   // its `encounterId` overrides the URL query param + FRU P1 fallback.
   const [planRow, setPlanRow] = useState<PlanInfo | null>(null);
-  const [planRole, setPlanRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER' | null | undefined>(undefined);
+  const [planRole, setPlanRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER' | null | undefined>(
+    undefined,
+  );
+  // Whether this plan was imported from MitPlan v1 (Firebase). Drives the
+  // synthetic-timeline reconstruction so its mitigation renders on a canvas.
+  const isLegacyPlan = planRow?.isLegacy ?? false;
   // DnD: dragged ability chip for the overlay.
   const [activeDragAbility, setActiveDragAbility] = useState<AbilityInfo | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [planAction, setPlanAction] = useState<'duplicate' | 'delete' | 'export' | null>(null);
 
   // The encounter is determined by (a) the URL query param set by the
   // "New plan" CTA, (b) the encounter stored in the plan row (loaded
@@ -121,26 +177,34 @@ export const PlanEditor = () => {
   const urlEncounterId = search.get('encounterId');
   const initialName = search.get('name') ?? '';
 
+  // Presence: track who's currently viewing this plan.
+  // Derived early so usePlanDoc can guard mutations against read-only roles.
+  const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
+  const isOwner = planRole === 'OWNER';
+
   const { assignments, addAssignment, removeAssignment, planName, setPlanName, ready } = usePlanDoc(
     planDoc,
     planId ?? '00000000-0000-0000-0000-000000000000',
     initialName,
+    canEdit,
   );
-
-  // Presence: track who's currently viewing this plan.
-  const canEdit = planRole === 'OWNER' || planRole === 'EDITOR';
-  const isOwner = planRole === 'OWNER';
   const presenceUsers = usePresence(planId ?? null, canEdit);
 
-  // Create the Y.Doc once on mount, destroy on unmount.
+  // Create the Y.Doc on planId, destroy on planId change or unmount.
+  // Also resets hydration, role, and status so downstream effects re-fire.
   useEffect(() => {
+    if (!planId) return;
+    setPlanDoc(null);
+    setHydrated(false);
+    setPlanRole(undefined);
+    setStatus('connecting');
     const doc = createPlanDoc();
     setPlanDoc(doc);
     return () => {
       doc.doc.destroy();
       setPlanDoc(null);
     };
-  }, []);
+  }, [planId]);
 
   // Load the plan-row metadata so the editor can render the right
   // encounter + name when opened from a PlanCard (no `?encounterId=`
@@ -163,6 +227,16 @@ export const PlanEditor = () => {
     };
   }, [planId]);
 
+  // Hydrate the doc's plan name from plan-row metadata when both are
+  // available and the current name is still the auto-generated placeholder.
+  useEffect(() => {
+    if (!planRow || !planDoc || !planId) return;
+    const currentName = planDoc.meta.get('name');
+    if (!currentName || currentName === `Plan ${planId.slice(0, 8)}`) {
+      planDoc.meta.set('name', planRow.name);
+    }
+  }, [planId, planRow, planDoc]);
+
   // Effective encounter id: URL query param > plan row > FRU P1 default.
   const encounterId = urlEncounterId ?? planRow?.encounterId ?? FRU_P1_ID;
 
@@ -176,11 +250,7 @@ export const PlanEditor = () => {
     setEncounter(null);
     setEventsError(null);
 
-    Promise.all([
-      getEncounter(encounterId),
-      getTimelineForEncounter(encounterId),
-      listAbilities(),
-    ])
+    Promise.all([getEncounter(encounterId), getTimelineForEncounter(encounterId), listAbilities()])
       .then(([enc, evts, abs]) => {
         if (!mounted) return;
         setEncounter(enc);
@@ -302,7 +372,7 @@ export const PlanEditor = () => {
     // broadcast provider means the snapshot is briefly behind any
     // active editors. The 1500ms delay lands before the next debounce
     // fires. Origin 'remote' prevents echoing back as a local update.
-    let lateJoinTimer: ReturnType<typeof setTimeout> | null = null;
+    const lateJoinTimers: ReturnType<typeof setTimeout>[] = [];
     const wasStatus = (s: RealtimeStatus) => provider.status === s;
     const checkLateJoin = () => {
       if (wasStatus('connected')) {
@@ -319,12 +389,10 @@ export const PlanEditor = () => {
     };
     const intervalId = setInterval(() => {
       if (wasStatus('connected')) {
-        lateJoinTimer = null;
         clearInterval(intervalId);
         // Two re-fetches spaced 1500ms apart cover the 2s snapshot
         // debounce window so we converge on any in-flight edits.
-        lateJoinTimer = setTimeout(checkLateJoin, 1500);
-        setTimeout(checkLateJoin, 3000);
+        lateJoinTimers.push(setTimeout(checkLateJoin, 1500), setTimeout(checkLateJoin, 3000));
       }
     }, 200);
     // Bound the late-join window at 30s in case connection never lands.
@@ -335,13 +403,37 @@ export const PlanEditor = () => {
       providerRef.current = null;
       clearInterval(intervalId);
       clearTimeout(boundTimer);
-      if (lateJoinTimer) clearTimeout(lateJoinTimer);
+      for (const timer of lateJoinTimers) clearTimeout(timer);
     };
   }, [planDoc, planId, hydrated, planRole, canEdit, session.loading, session.user?.id]);
 
+  // Auto-reconnect on transient errors. Clears the retry timer on
+  // planId change so a stale timer doesn't reconnect to the old plan.
+  useEffect(() => {
+    if (status !== 'error') return;
+    if (!providerRef.current) return;
+    const timer = setTimeout(() => {
+      providerRef.current?.reconnect();
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [status, planId]);
+
+  // For imported plans without a matching catalog timeline, rebuild a
+  // synthetic timeline from the assignments' original bossActionIds so
+  // every mitigation renders on the canvas. Catalog events are kept and
+  // synthetic events are appended, ordered by their original occurrence.
+  const displayEvents = useMemo(() => {
+    if (!events) return null;
+    if (!isLegacyPlan) return events;
+    const catalogById = new Map(events.map((e) => [e.id, e]));
+    const synthetic = buildLegacyTimeline(assignments, catalogById);
+    if (synthetic.length === 0) return events;
+    return [...events, ...synthetic].sort((a, b) => a.timestampMs - b.timestampMs);
+  }, [events, assignments, isLegacyPlan]);
+
   // Resolve the event id the AbilityPicker will pre-anchor new mits to:
   // user-picked id → first event of the loaded timeline.
-  const defaultEventId = pickedEventId ?? events?.[0]?.id ?? null;
+  const defaultEventId = pickedEventId ?? displayEvents?.[0]?.id ?? null;
 
   // Lookup maps for the assignment row. Built lazily from the
   // data-source results; the row handles `null` entries gracefully
@@ -351,33 +443,47 @@ export const PlanEditor = () => {
     for (const a of abilities ?? []) m.set(a.id, a);
     return m;
   }, [abilities]);
+
   const eventById = useMemo(() => {
     const m = new Map<string, TimelineEventInfo>();
-    for (const e of events ?? []) m.set(e.id, e);
+    for (const e of displayEvents ?? []) m.set(e.id, e);
     return m;
-  }, [events]);
+  }, [displayEvents]);
 
-  // Compute mit stacks for every event. Used by TimelineRail to show
-  // residual % badges. Recomputes when assignments or abilities change.
+  const eventTimestampsById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of displayEvents ?? []) m.set(e.id, e.timestampMs);
+    return m;
+  }, [displayEvents]);
+
+  // Compute mit stacks for every event. The extended path accounts for
+  // multi-hit timing, ability duration, target kind, and damage type.
   const mitStacks = useMemo(() => {
-    if (!events) return new Map<string, MitStackResult>();
-    const m = new Map<string, MitStackResult>();
-    for (const e of events) {
-      m.set(e.id, evaluateEventMit(e.id, assignments, abilityById));
+    if (!displayEvents) return new Map<string, ExtendedMitStackResult>();
+    const m = new Map<string, ExtendedMitStackResult>();
+    for (const e of displayEvents) {
+      m.set(
+        e.id,
+        evaluateEventMit(e.id, assignments, abilityById, {
+          eventTimestampMs: e.timestampMs,
+          hitTimesMs: e.hitTimesMs,
+          targetKind: e.targetKind,
+        }),
+      );
     }
     return m;
-  }, [events, assignments, abilityById]);
+  }, [displayEvents, assignments, abilityById]);
 
   // Detect double-bookings: same ability + job on the same event or
   // within the recast window of another event.
   const conflictingAssignmentIds = useMemo(() => {
-    const conflicts = detectDoubleBookings(assignments, abilityById);
+    const conflicts = detectDoubleBookings(assignments, abilityById, eventTimestampsById);
     const ids = new Set<string>();
     for (const [, list] of conflicts) {
       for (const a of list) ids.add(a.id);
     }
     return ids;
-  }, [assignments, abilityById]);
+  }, [assignments, abilityById, eventTimestampsById]);
 
   // All useCallback / useState hooks must be declared above the early
   // returns below — the React Rules of Hooks forbid changing the
@@ -456,28 +562,91 @@ export const PlanEditor = () => {
     }
   }, [planId]);
 
-  if (session.loading) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <Loader2 className="text-muted-foreground size-6 animate-spin" />
-      </div>
-    );
-  }
-  if (!session.user) {
-    // Preserve any `?token=` share-link through the auth redirect so
-    // the recipient doesn't lose their share context after sign-in.
-    const next = shareToken
-      ? `/plan/${planId}?token=${encodeURIComponent(shareToken)}`
-      : `/plan/${planId}`;
-    return (
-      <div className="mx-auto max-w-md px-6 py-20 text-center">
-        <p className="text-muted-foreground text-sm">Please sign in to view this plan.</p>
-        <Button asChild className="mt-4">
-          <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link>
-        </Button>
-      </div>
-    );
-  }
+  const handlePlanNameBlur = useCallback(async () => {
+    const nextName = planName.trim();
+    if (!nextName) {
+      if (planRow) setPlanName(planRow.name);
+      toast.error('Plan name cannot be empty');
+      return;
+    }
+    if (!planId || !planRow || nextName === planRow.name || !canEdit) return;
+
+    try {
+      await updatePlan({ planId, name: nextName });
+      setPlanRow((current) => (current ? { ...current, name: nextName } : current));
+      toast.success('Plan renamed');
+    } catch (error: unknown) {
+      setPlanName(planRow.name);
+      toast.error(error instanceof Error ? error.message : 'Could not rename plan');
+    }
+  }, [canEdit, planId, planName, planRow, setPlanName]);
+
+  const handleDuplicatePlan = useCallback(async () => {
+    if (!planId || !canEdit || planAction) return;
+    setPlanAction('duplicate');
+    try {
+      const copy = await duplicatePlan({ planId });
+      toast.success('Plan duplicated');
+      navigate(`/plan/${copy.planId}`);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Could not duplicate plan');
+    } finally {
+      setPlanAction(null);
+    }
+  }, [canEdit, navigate, planAction, planId]);
+
+  const handleDeletePlan = useCallback(async () => {
+    if (!planId || !isOwner || planAction) return;
+    setPlanAction('delete');
+    try {
+      await deletePlan(planId);
+      toast.success('Plan deleted');
+      navigate('/plan', { replace: true });
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Could not delete plan');
+    } finally {
+      setPlanAction(null);
+      setDeleteDialogOpen(false);
+    }
+  }, [isOwner, navigate, planAction, planId]);
+
+  const handleExportPlan = useCallback(async () => {
+    if (!planDoc || planAction) return;
+    setPlanAction('export');
+    try {
+      // Keep the local Y.Doc as the source for the current download, but
+      // include the server snapshot when available for recovery/audit.
+      const remoteSnapshot = planId ? await exportPlanSnapshot(planId).catch(() => null) : null;
+      const exportPayload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        planId,
+        name: planName,
+        encounter,
+        timeline: events,
+        ydocB64: bytesToBase64(planDoc.encodeStateAsUpdate()),
+        document: planDoc.toJSON(),
+        serverSnapshot: remoteSnapshot,
+      };
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeName = (planName || 'xivmitplan')
+        .replace(/[^a-z0-9-_]+/gi, '-')
+        .replace(/^-|-$/g, '');
+      anchor.href = url;
+      anchor.download = `${safeName || 'xivmitplan'}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success('Plan exported');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Could not export plan');
+    } finally {
+      setPlanAction(null);
+    }
+  }, [encounter, events, planAction, planDoc, planId, planName]);
 
   if (planRole === undefined) {
     return (
@@ -499,15 +668,18 @@ export const PlanEditor = () => {
   }
 
   const statusInfo = STATUS_BADGE[status];
+  const isSupabaseConfigured = !!(
+    import.meta.env['VITE_SUPABASE_URL'] && import.meta.env['VITE_SUPABASE_ANON_KEY']
+  );
   const pickEvent = (e: TimelineEventInfo) => {
     setPickedEventId(e.id);
     setPickerOpen(true);
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col">
       {/* Top bar */}
-      <div className="flex items-center gap-3 border-b bg-card/40 px-6 py-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-card/40 px-3 py-3 sm:gap-3 sm:px-6">
         <Button asChild variant="ghost" size="icon" className="size-8">
           <Link to="/plan" aria-label="Back to plans">
             <ArrowLeft />
@@ -517,8 +689,13 @@ export const PlanEditor = () => {
         <Input
           value={planName}
           onChange={(e) => setPlanName(e.target.value)}
+          onBlur={() => void handlePlanNameBlur()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
           readOnly={!canEdit}
-          className="h-8 max-w-md border-transparent bg-transparent px-2 text-sm font-semibold shadow-none focus-visible:border-input"
+          maxLength={128}
+          className="h-8 min-w-0 flex-1 border-transparent bg-transparent px-2 text-sm font-semibold shadow-none focus-visible:border-input sm:max-w-md"
           aria-label="Plan name"
         />
         {encounter && (
@@ -526,28 +703,41 @@ export const PlanEditor = () => {
             {encounter.raidSlug.toUpperCase()} · {encounter.name}
           </Badge>
         )}
-        <Badge variant={statusInfo.variant} className="gap-1.5">
+        <Badge
+          variant={statusInfo.variant}
+          className={`shrink-0 gap-1.5 ${status === 'error' || status === 'disconnected' ? 'cursor-pointer' : ''}`}
+          onClick={
+            status === 'error' || status === 'disconnected'
+              ? () => providerRef.current?.reconnect()
+              : undefined
+          }
+        >
           {statusInfo.icon}
-          {statusInfo.label}
+          <span className="hidden sm:inline">{statusInfo.label}</span>
+          {(status === 'error' || status === 'disconnected') && (
+            <span className="ml-1 text-[10px] underline">Retry</span>
+          )}
         </Badge>
-          <PresenceBar users={presenceUsers} />
-        <div className="ml-auto flex items-center gap-2">
+        <PresenceBar users={presenceUsers} />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleSaveVersion}
-            disabled={!ready || !canEdit}
-            title="Save a versioned snapshot"
+            disabled={!ready || !canEdit || !isSupabaseConfigured}
+            title={
+              isSupabaseConfigured
+                ? 'Save a versioned snapshot'
+                : 'Version snapshots require Supabase'
+            }
           >
             Save version
           </Button>
-          {isOwner && <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShareOpen(true)}
-          >
-            <Share2 /> Share
-          </Button>}
+          {isOwner && (
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+              <Share2 /> Share
+            </Button>
+          )}
           <Button
             onClick={() => {
               setPickedEventId(null);
@@ -559,13 +749,102 @@ export const PlanEditor = () => {
           >
             <Plus /> Add mitigation
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Plan actions"
+                disabled={planAction !== null}
+              >
+                {planAction ? <Loader2 className="animate-spin" /> : <MoreHorizontal />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Plan actions</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => navigate(`/plan/${planId}/timeline`)} disabled={!ready}>
+                <TimelineIcon /> Edit timeline
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleExportPlan} disabled={!ready}>
+                <Download /> Export current plan
+              </DropdownMenuItem>
+              {canEdit && (
+                <DropdownMenuItem onSelect={() => void handleDuplicatePlan()}>
+                  <Copy /> Duplicate plan
+                </DropdownMenuItem>
+              )}
+              {isOwner && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 /> Delete plan
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* Body: left rail + main canvas */}
       <DndContext {...(canEdit ? { onDragStart: handleDragStart, onDragEnd: handleDragEnd } : {})}>
-        <div className="flex flex-1 overflow-hidden">
-          <aside className="bg-sidebar text-sidebar-foreground flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r p-4">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+          <aside className="bg-sidebar text-sidebar-foreground flex max-h-[38vh] w-full shrink-0 flex-col gap-3 overflow-y-auto border-b p-3 sm:p-4 lg:max-h-none lg:w-96 lg:border-r lg:border-b-0">
+            {encounter && (
+              <div className="border-border/70 bg-card/30 rounded-lg border p-3">
+                <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
+                  Plan overview
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <span className="text-muted-foreground">Encounter</span>
+                  <span className="truncate text-right font-medium" title={encounter.name}>
+                    {encounter.name}
+                  </span>
+                  <span className="text-muted-foreground">Timeline</span>
+                  <span className="text-right font-mono">
+                    {displayEvents ? `${displayEvents.length} events` : 'Loading…'}
+                  </span>
+                  <span className="text-muted-foreground">Assignments</span>
+                  <span className="text-right font-mono">{assignments.length}</span>
+                </div>
+                <div className="text-muted-foreground mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                  <Badge variant="outline" className="font-mono text-[10px]">
+                    {encounter.patchVersion}
+                  </Badge>
+                  {encounter.raidName && <span className="truncate">{encounter.raidName}</span>}
+                </div>
+              </div>
+            )}
+
+            {/* Mitigation Library — searchable ability panel */}
+            {canEdit && (
+              <div className="flex max-h-72 flex-col overflow-hidden rounded-lg border">
+                <MitigationLibrary
+                  abilities={abilities}
+                  events={displayEvents}
+                  existingAssignments={assignments}
+                  anchorEventId={pickedEventId ?? displayEvents?.[0]?.id ?? null}
+                  onAssign={(abilityId, eventId) => {
+                    const ability = abilityById.get(abilityId);
+                    const event = eventById.get(eventId);
+                    if (ability && event) {
+                      handleAddAssignment({ ability, event });
+                    }
+                  }}
+                  onPickAbility={() => {
+                    setPickedEventId(null);
+                    setPickerOpen(true);
+                  }}
+                  standalone
+                />
+              </div>
+            )}
+
+            {/* Assignments list */}
             <header className="flex items-center justify-between px-1">
               <h2 className="text-xs font-semibold tracking-widest uppercase">Mitigations</h2>
               <span className="text-muted-foreground font-mono text-[10px]">
@@ -586,21 +865,22 @@ export const PlanEditor = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-1">
-              {assignments.map((a) => (
-                <AssignmentRow
-                  key={a.id}
-                  assignment={a}
-                  ability={abilityById.get(a.abilityId) ?? null}
-                  event={eventById.get(a.eventId) ?? null}
-                  isConflicting={conflictingAssignmentIds.has(a.id)}
-                  onRemove={removeAssignment}
-                />
-              ))}
+                {assignments.map((a) => (
+                  <AssignmentRow
+                    key={a.id}
+                    assignment={a}
+                    ability={abilityById.get(a.abilityId) ?? null}
+                    event={eventById.get(a.eventId) ?? null}
+                    isConflicting={conflictingAssignmentIds.has(a.id)}
+                    canEdit={canEdit}
+                    onRemove={removeAssignment}
+                  />
+                ))}
               </div>
             )}
           </aside>
 
-          <main className="bg-background/40 flex-1 overflow-y-auto p-6">
+          <main className="bg-background/40 min-h-0 flex-1 overflow-y-auto p-3 sm:p-6">
             {canEdit && <DraggableAbilityStrip abilities={abilities} />}
             {eventsError ? (
               <div className="border-border bg-card/40 text-muted-foreground mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-2 rounded-2xl border p-10 text-center">
@@ -610,7 +890,7 @@ export const PlanEditor = () => {
             ) : (
               <div className="mt-4">
                 <TimelineRail
-                  events={events}
+                  events={displayEvents}
                   assignments={assignments}
                   mitStacks={mitStacks}
                   selectedEventId={pickedEventId}
@@ -630,22 +910,66 @@ export const PlanEditor = () => {
         </DragOverlay>
       </DndContext>
 
-      {canEdit && <AbilityPicker
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        eventId={defaultEventId}
-        abilities={abilities}
-        events={events}
-        assignments={assignments}
-        onPick={handleAddAssignment}
-      />}
+      {canEdit && abilities && displayEvents && (
+        <MitigationLibrary
+          abilities={abilities}
+          events={displayEvents}
+          existingAssignments={assignments}
+          anchorEventId={defaultEventId}
+          onAssign={(abilityId, eventId) => {
+            const ability = abilityById.get(abilityId);
+            const event = eventById.get(eventId);
+            if (ability && event) {
+              handleAddAssignment({ ability, event });
+            }
+          }}
+          onPickAbility={() => {
+            setPickedEventId(null);
+            setPickerOpen(true);
+          }}
+          standalone={false}
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+        />
+      )}
 
-      {isOwner && <ShareDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        planId={planId ?? ''}
-        viewers={presenceUsers}
-      />}
+      {isOwner && (
+        <ShareDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          planId={planId ?? ''}
+          viewers={presenceUsers}
+        />
+      )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete this plan?</DialogTitle>
+            <DialogDescription>
+              This permanently removes the plan, its assignments, snapshots, and share links. This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={planAction === 'delete'}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeletePlan()}
+              disabled={planAction === 'delete'}
+            >
+              {planAction === 'delete' && <Loader2 className="animate-spin" />}
+              Delete plan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

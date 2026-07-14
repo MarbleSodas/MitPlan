@@ -28,6 +28,7 @@ export const AssignmentRow = ({
   ability,
   event,
   isConflicting,
+  canEdit = true,
   onRemove,
 }: {
   assignment: Assignment;
@@ -35,17 +36,44 @@ export const AssignmentRow = ({
   event: TimelineEventInfo | null;
   /** True when this assignment double-books the same ability within its recast window. */
   isConflicting?: boolean;
+  /** When false, the remove button is hidden (viewer mode). */
+  canEdit?: boolean;
   onRemove: (id: string) => void;
 }) => {
-  // The parent passed nulls while the data-source is still loading.
-  // Render a skeleton row in that case so the rail doesn't pop.
+  // The parent passed nulls while the data-source is still loading, OR an
+  // imported assignment whose ability/event couldn't be re-anchored to a
+  // catalog entity. In both cases we still render a readable row so the
+  // configuration is visible (using the original names when present).
+  const mitigationName =
+    ability?.name ?? assignment.legacyMitigationName ?? 'Unknown mitigation';
+  const eventName = event?.name ?? assignment.legacyBossActionId ?? 'Unknown event';
+
   if (!ability || !event) {
-return (
-      <div className="bg-card/40 flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5">
-        <div className="bg-muted size-9 shrink-0 animate-pulse rounded-md" />
-        <div className="flex-1 space-y-1">
-          <div className="bg-muted h-3.5 w-2/3 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-1/2 animate-pulse rounded" />
+    return (
+      <div className="group flex items-start gap-3 rounded-lg border border-transparent bg-card px-3 py-2.5">
+        <AbilityIcon abilityId={assignment.legacyMitigationId} size="md" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-medium">{mitigationName}</p>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:text-destructive group-hover:opacity-100"
+                onClick={() => onRemove(assignment.id)}
+                aria-label={`Remove ${mitigationName}`}
+              >
+                <Trash2 />
+              </Button>
+            )}
+          </div>
+          <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+            <Badge variant="outline" className="px-1 py-0 text-[10px] font-normal">
+              {TARGET_TYPE_LABEL[assignment.targetType]}
+            </Badge>
+            <span>·</span>
+            <span>{eventName}</span>
+          </div>
         </div>
       </div>
     );
@@ -65,20 +93,25 @@ return (
           <p className="flex items-center gap-1.5 truncate text-sm font-medium">
             {ability.name}
             {isConflicting && (
-              <span className="text-yellow-600 dark:text-yellow-400" title="Double-booking detected: same ability used within recast window">
+              <span
+                className="text-yellow-600 dark:text-yellow-400"
+                title="Double-booking detected: same ability used within recast window"
+              >
                 <AlertTriangle className="size-3.5" />
               </span>
             )}
           </p>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-            onClick={() => onRemove(assignment.id)}
-            aria-label={`Remove ${ability.name}`}
-          >
-            <Trash2 />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:text-destructive group-hover:opacity-100"
+              onClick={() => onRemove(assignment.id)}
+              aria-label={`Remove ${ability.name}`}
+            >
+              <Trash2 />
+            </Button>
+          )}
         </div>
         <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-xs">
           <Badge variant="outline" className="px-1 py-0 text-[10px] font-normal">

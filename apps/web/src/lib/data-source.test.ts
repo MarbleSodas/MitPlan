@@ -133,7 +133,7 @@ describe('data-source — RPC mode (Supabase configured)', () => {
           boss_npc_source_id: 1,
           effective_from: '7.21',
           effective_to: null,
-          created_at: '2026-06-30T00:00:00Z',
+          created_at: '2026-06-30T00:00:00+00:00',
           raid_slug: 'fru',
           expansion_slug: 'dawntrail',
         },
@@ -148,10 +148,36 @@ describe('data-source — RPC mode (Supabase configured)', () => {
   });
 
   it('getEncounter returns null when the RPC returns no rows', async () => {
-    rpcMock.mockResolvedValueOnce({ data: null, error: null });
+    rpcMock.mockResolvedValueOnce({ data: [], error: null });
     const enc = await getEncounter(FRU_P1_ID);
     expect(enc).toBeNull();
     expect(rpcMock).toHaveBeenCalledWith('encounters_by_id', { p_id: FRU_P1_ID });
+  });
+
+  it('getEncounter unwraps the single row returned by the table RPC', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: FRU_P1_ID,
+          raid_id: '30000000-0000-0000-0000-000000000001',
+          name: 'Light Rampant',
+          slug: 'fru-p1-light-rampant',
+          patch_version: '7.21',
+          boss_npc_source_id: 1,
+          effective_from: '7.21',
+          effective_to: null,
+          created_at: '2026-06-30T00:00:00+00:00',
+          raid_slug: 'fru',
+          expansion_slug: 'dawntrail',
+        },
+      ],
+      error: null,
+    });
+
+    const enc = await getEncounter(FRU_P1_ID);
+
+    expect(enc?.id).toBe(FRU_P1_ID);
+    expect(enc?.name).toBe('Light Rampant');
   });
 
   it('listMyPlans calls plans_list RPC and maps the response', async () => {
@@ -202,6 +228,338 @@ describe('data-source — RPC mode (Supabase configured)', () => {
     expect(snap).not.toBeNull();
     expect(Array.from(snap!.update)).toEqual([0x01, 0x02]);
     expect(snap?.byteSize).toBe(2);
+  });
+});
+
+describe('data-source — RPC adapter behavior (catalog fields)', () => {
+  beforeEach(() => {
+    setSupabaseConfigured(true);
+    _invalidateCatalogCache();
+    rpcMock.mockReset();
+    functionsInvokeMock.mockReset();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('listAbilities maps damage_type/target/charges from RPC row', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: '60000000-0000-0000-0000-000000000013',
+          job_id: '50000000-0000-0000-0000-000000000001',
+          ability_id: 'reprisal',
+          mode: 'CURRENT',
+          name: 'Reprisal',
+          description: 'Party-wide 10% mit.',
+          effect_pct: 10,
+          recast_s: 60,
+          range_m: 0,
+          duration_s: 15,
+          is_invuln: false,
+          is_heal: false,
+          is_shield: false,
+          damage_type: 'both',
+          target: 'party',
+          charges: 1,
+          job_abbrev: 'PLD',
+          effective_from: '7.0',
+          effective_to: null,
+          created_at: '2026-06-30T00:00:00+00:00',
+          updated_at: '2026-06-30T00:00:00+00:00',
+        },
+      ],
+      error: null,
+    });
+    const abs = await listAbilities();
+    expect(abs).toHaveLength(1);
+    expect(abs[0]?.jobAbbrev).toBe('PLD');
+    expect(abs[0]?.damageType).toBe('both');
+    expect(abs[0]?.target).toBe('party');
+    expect(abs[0]?.charges).toBe(1);
+  });
+
+  it('listAbilities falls back to JOB_ABBREV when job_abbrev is absent', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: '60000000-0000-0000-0000-000000000013',
+          job_id: '50000000-0000-0000-0000-000000000001',
+          ability_id: 'reprisal',
+          mode: 'CURRENT',
+          name: 'Reprisal',
+          description: null,
+          effect_pct: 10,
+          recast_s: 60,
+          range_m: 0,
+          duration_s: 15,
+          is_invuln: false,
+          is_heal: false,
+          is_shield: false,
+          damage_type: null,
+          target: null,
+          charges: null,
+          effective_from: '7.0',
+          effective_to: null,
+          created_at: '2026-06-30T00:00:00+00:00',
+          updated_at: '2026-06-30T00:00:00+00:00',
+        },
+      ],
+      error: null,
+    });
+    const abs = await listAbilities();
+    expect(abs[0]?.jobAbbrev).toBe('PLD');
+    expect(abs[0]?.damageType).toBeNull();
+    expect(abs[0]?.target).toBeNull();
+    expect(abs[0]?.charges).toBeNull();
+  });
+
+  it('listEncounters maps raid_name and raid_tier from RPC', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: FRU_P1_ID,
+          raid_id: '30000000-0000-0000-0000-000000000001',
+          name: 'Light Rampant',
+          slug: 'fru-p1-light-rampant',
+          patch_version: '7.21',
+          boss_npc_source_id: 1,
+          effective_from: '7.21',
+          effective_to: null,
+          created_at: '2026-06-30T00:00:00+00:00',
+          raid_slug: 'fru',
+          expansion_slug: 'dawntrail',
+          raid_name: 'Futures Rewritten (Ultimate)',
+          raid_tier: 1,
+        },
+      ],
+      error: null,
+    });
+    const list = await listEncounters();
+    expect(list[0]?.raidName).toBe('Futures Rewritten (Ultimate)');
+    expect(list[0]?.raidTier).toBe(1);
+  });
+
+  it('getEncounter maps raid_name and raid_tier', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: FRU_P1_ID,
+          raid_id: '30000000-0000-0000-0000-000000000001',
+          name: 'Light Rampant',
+          slug: 'fru-p1-light-rampant',
+          patch_version: '7.21',
+          boss_npc_source_id: 1,
+          effective_from: '7.21',
+          effective_to: null,
+          created_at: '2026-06-30T00:00:00+00:00',
+          raid_slug: 'fru',
+          expansion_slug: 'dawntrail',
+          raid_name: 'Futures Rewritten (Ultimate)',
+          raid_tier: 1,
+        },
+      ],
+      error: null,
+    });
+    const enc = await getEncounter(FRU_P1_ID);
+    expect(enc?.raidName).toBe('Futures Rewritten (Ultimate)');
+    expect(enc?.raidTier).toBe(1);
+  });
+});
+
+describe('data-source — malformed/partial row handling', () => {
+  beforeEach(() => {
+    setSupabaseConfigured(true);
+    _invalidateCatalogCache();
+    rpcMock.mockReset();
+    functionsInvokeMock.mockReset();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('getTimelineForEncounter does not crash on malformed event rows', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: '70000000-0000-0000-0000-000000000001',
+          encounter_id: FRU_P1_ID,
+          version: '7.21',
+          content_hash: 'abc',
+          source: 'MANUAL',
+          mode: 'CURRENT',
+          events: [
+            // Well-formed event
+            {
+              id: 'evt-1',
+              position: 0,
+              timestampMs: 0,
+              type: 'MECHANIC',
+              name: 'Pull',
+            },
+            // Malformed — missing required fields
+            { id: 'evt-2' },
+            // Malformed — null where string expected
+            null,
+          ],
+          branches: [],
+          joins: [],
+          merged_from_sources: { cactbot: false, triggernometry: false, fflogs: false },
+          per_event_confidence: {},
+          byte_size: 100,
+          created_at: '2026-06-30T00:00:00+00:00',
+          updated_at: '2026-06-30T00:00:00+00:00',
+        },
+      ],
+      error: null,
+    });
+    const events = await getTimelineForEncounter(FRU_P1_ID);
+    expect(events.length).toBe(3);
+    // Well-formed event should have defaults filled
+    expect(events[0]?.name).toBe('Pull');
+    expect(events[0]?.hitTimesMs).toEqual([]);
+    expect(events[0]?.normalizedNames).toEqual([]);
+    expect(events[0]?.patchVersion).toBe('');
+    // Malformed events get a placeholder with the parse error in notes
+    expect(events[1]?.id).toBe('malformed');
+    expect(events[1]?.confidence).toBe(0);
+    expect(events[1]?.notes).toContain('Parse error');
+    expect(events[2]?.id).toBe('malformed');
+  });
+
+  it('listAbilities does not crash on partial rows without optional catalog fields', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: '60000000-0000-0000-0000-000000000013',
+          job_id: '50000000-0000-0000-0000-000000000001',
+          ability_id: 'reprisal',
+          mode: 'CURRENT',
+          name: 'Reprisal',
+          description: null,
+          effect_pct: 10,
+          recast_s: 60,
+          range_m: 0,
+          duration_s: 15,
+          is_invuln: false,
+          is_heal: false,
+          is_shield: false,
+          effective_from: '7.0',
+          effective_to: null,
+          created_at: '2026-06-30T00:00:00+00:00',
+          updated_at: '2026-06-30T00:00:00+00:00',
+        },
+      ],
+      error: null,
+    });
+    const abs = await listAbilities();
+    expect(abs).toHaveLength(1);
+    expect(abs[0]?.jobAbbrev).toBe('PLD'); // falls back to JOB_ABBREV
+    expect(abs[0]?.damageType).toBeNull();
+    expect(abs[0]?.target).toBeNull();
+    expect(abs[0]?.charges).toBeNull();
+  });
+
+  it('getTimelineForEncounter returns empty array for missing timeline (no rows)', async () => {
+    rpcMock.mockResolvedValueOnce({ data: [], error: null });
+    const events = await getTimelineForEncounter('10000000-0000-0000-0000-000000000099');
+    expect(events).toEqual([]);
+  });
+});
+
+describe('data-source — canonical timeline selection', () => {
+  beforeEach(() => {
+    setSupabaseConfigured(true);
+    _invalidateCatalogCache();
+    rpcMock.mockReset();
+    functionsInvokeMock.mockReset();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const makeTimelineRow = (
+    overrides: Partial<Record<string, unknown>> = {},
+  ): Record<string, unknown> => ({
+    id: '70000000-0000-0000-0000-000000000101',
+    encounter_id: FRU_P1_ID,
+    version: '7.21',
+    content_hash: 'abc',
+    source: 'MANUAL',
+    mode: 'CURRENT',
+    events: [
+      {
+        id: 'evt-1',
+        position: 0,
+        timestampMs: 0,
+        type: 'MECHANIC',
+        name: 'Pull',
+      },
+    ],
+    branches: [],
+    joins: [],
+    merged_from_sources: { cactbot: false, triggernometry: false, fflogs: false },
+    per_event_confidence: {},
+    byte_size: 100,
+    created_at: '2026-06-30T00:00:00+00:00',
+    updated_at: '2026-06-30T00:00:00+00:00',
+    ...overrides,
+  });
+
+  it('prefers CURRENT mode over REBORN/EVOLVED', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000201', mode: 'REBORN', source: 'CACTBOT' }),
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000202', mode: 'CURRENT', source: 'CACTBOT' }),
+      ],
+      error: null,
+    });
+    const events = await getTimelineForEncounter(FRU_P1_ID);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.name).toBe('Pull');
+  });
+
+  it('prefers MANUAL source over CACTBOT within CURRENT mode', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000203', mode: 'CURRENT', source: 'CACTBOT' }),
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000204', mode: 'CURRENT', source: 'MANUAL', version: '7.20' }),
+      ],
+      error: null,
+    });
+    const events = await getTimelineForEncounter(FRU_P1_ID);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.name).toBe('Pull');
+  });
+
+  it('falls back to CACTBOT when no MANUAL timeline exists', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000205', mode: 'CURRENT', source: 'FFLOGS' }),
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000206', mode: 'CURRENT', source: 'CACTBOT' }),
+      ],
+      error: null,
+    });
+    const events = await getTimelineForEncounter(FRU_P1_ID);
+    expect(events).toHaveLength(1);
+  });
+
+  it('returns first available row when no CURRENT mode exists', async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: [
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000207', mode: 'REBORN', source: 'CACTBOT' }),
+        makeTimelineRow({ id: '70000000-0000-0000-0000-000000000208', mode: 'ALL', source: 'MANUAL' }),
+      ],
+      error: null,
+    });
+    const events = await getTimelineForEncounter(FRU_P1_ID);
+    expect(events).toHaveLength(1);
+  });
+
+  it('returns empty array for no timeline rows', async () => {
+    rpcMock.mockResolvedValueOnce({ data: [], error: null });
+    const events = await getTimelineForEncounter(FRU_P1_ID);
+    expect(events).toEqual([]);
   });
 });
 

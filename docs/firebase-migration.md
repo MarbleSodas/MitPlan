@@ -18,7 +18,7 @@ application read-only until the reconciliation and claim window are complete.
 
 ## Prerequisites
 
-- The target Supabase project has migrations `0001` through `0009` applied.
+- The target Supabase project has migrations `0001` through `0013` applied.
 - A Firebase Admin SDK service-account JSON exists outside this repository.
 - A restricted Supabase database connection file exists outside this
   repository. Use the session pooler connection details specified by the

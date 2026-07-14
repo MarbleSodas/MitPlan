@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/logo.js';
 
+const getSafeNext = (next: string | null) =>
+  next?.startsWith('/') && !next.startsWith('//') ? next : '/plan';
+
 export const AuthCallback = () => {
   const [search] = useSearchParams();
   const navigate = useNavigate();
@@ -18,24 +21,44 @@ export const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     const code = search.get('code');
-    const next = search.get('next') ?? '/plan';
+    const next = getSafeNext(search.get('next'));
+    const oauthError = search.get('error_description') ?? search.get('error');
+    if (oauthError) {
+      setError(oauthError);
+      setStatus('error');
+      return;
+    }
     if (!code) {
       setError('Missing OAuth code');
       setStatus('error');
       return;
     }
-    (async () => {
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError || !data.session) {
-        setError(exchangeError?.message ?? 'Session exchange failed');
+    void (async () => {
+      try {
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError || !data.session) {
+          throw new Error(exchangeError?.message ?? 'Session exchange failed');
+        }
+
+        try {
+          await linkIfPossible(data.session);
+        } catch {
+          // Account linking is optional and must not prevent a successful sign-in.
+        }
+        if (!mounted) return;
+        setStatus('ok');
+        navigate(next, { replace: true });
+      } catch (cause: unknown) {
+        if (!mounted) return;
+        setError(cause instanceof Error ? cause.message : 'Session exchange failed');
         setStatus('error');
-        return;
       }
-      await linkIfPossible(data.session);
-      setStatus('ok');
-      navigate(next, { replace: true });
     })();
+    return () => {
+      mounted = false;
+    };
   }, [search, navigate]);
 
   if (status === 'error') {

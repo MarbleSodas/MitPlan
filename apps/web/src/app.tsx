@@ -16,9 +16,11 @@ import { AppShell } from './components/app-shell.js';
 import { LandingPage } from './routes/landing.js';
 import { PlanIndex } from './routes/plan.index.js';
 import { PlanEditor } from './routes/plan.$planId.js';
+import { PlanTimelineEditor } from './routes/plan.$planId.timeline.js';
 import { AuthCallback } from './routes/auth.callback.js';
 import { LoginPage } from './routes/login.js';
 import { DataPolicyPage } from './routes/data-policy.js';
+import { RequireAuth } from './components/require-auth.js';
 
 export const App = () => (
   <ThemeProvider>
@@ -30,8 +32,30 @@ export const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/plan" element={<PlanIndex />} />
-            <Route path="/plan/:planId" element={<PlanEditor />} />
+            <Route
+              path="/plan"
+              element={
+                <RequireAuth>
+                  <PlanIndex />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/plan/:planId"
+              element={
+                <RequireAuth>
+                  <PlanEditor />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/plan/:planId/timeline"
+              element={
+                <RequireAuth>
+                  <PlanTimelineEditor />
+                </RequireAuth>
+              }
+            />
             <Route path="/data-policy" element={<DataPolicyPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
