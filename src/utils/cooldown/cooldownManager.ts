@@ -5,18 +5,19 @@
  * charges, and instances across the entire application.
  */
 
-import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
+import { mitigationAbilities } from '../../data/abilities/mitigationAbilities';
 import {
   getAbilityCooldownForLevel,
   getAbilityChargeCount,
   getRoleSharedAbilityCount,
-  getAbilityDurationForLevel
-} from '../abilities/abilityUtils.js';
-import { ChargesTracker, getChargesTracker, updateChargesTracker } from './chargesTracker.js';
-import { InstancesTracker, getInstancesTracker, updateInstancesTracker } from './instancesTracker.js';
-import { AetherflowTracker, getAetherflowTracker, updateAetherflowTracker } from './aetherflowTracker.js';
-import { AddersgallTracker, getAddersgallTracker, updateAddersgallTracker } from './addersgallTracker.js';
-import { LilyTracker, getLilyTracker, updateLilyTracker } from './lilyTracker.js';
+  getAbilityDurationForLevel,
+  isAbilityAssignable
+} from '../abilities/abilityUtils';
+import { ChargesTracker, getChargesTracker, updateChargesTracker } from './chargesTracker';
+import { InstancesTracker, getInstancesTracker, updateInstancesTracker } from './instancesTracker';
+import { AetherflowTracker, getAetherflowTracker, updateAetherflowTracker } from './aetherflowTracker';
+import { AddersgallTracker, getAddersgallTracker, updateAddersgallTracker } from './addersgallTracker';
+import { LilyTracker, getLilyTracker, updateLilyTracker } from './lilyTracker';
 
 /**
  * Represents the availability status of a mitigation ability
@@ -288,6 +289,19 @@ export class CooldownManager {
         isAvailable: false,
         reason: 'ability_not_found',
         sharedCooldownGroup: null
+      });
+    }
+
+    if (isBeingAssigned && !isAbilityAssignable(ability)) {
+      return new AbilityAvailability({
+        abilityId,
+        isAvailable: false,
+        reason: ability.availability === 'retired' ? 'ability_retired' : 'ability_unavailable',
+        availableCharges: 0,
+        totalCharges: 1,
+        availableInstances: 0,
+        totalInstances: 1,
+        sharedCooldownGroup: ability.sharedCooldownGroup || null
       });
     }
 
@@ -719,7 +733,13 @@ export class CooldownManager {
     const availableAbilities = [];
 
     for (const ability of mitigationAbilities) {
-      const availability = this.checkAbilityAvailability(ability.id, targetTime, targetBossActionId, options);
+      if (!isAbilityAssignable(ability)) continue;
+      const availability = this.checkAbilityAvailability(
+        ability.id,
+        targetTime,
+        targetBossActionId,
+        { ...options, isBeingAssigned: true }
+      );
 
       if (availability.canAssign()) {
         availableAbilities.push({

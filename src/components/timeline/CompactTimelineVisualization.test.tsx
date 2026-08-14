@@ -34,12 +34,12 @@ describe('CompactTimelineVisualization', () => {
     expect(screen.getByText('2 actions')).toBeInTheDocument();
 
     const selectedMarker = screen.getByRole('button', {
-      name: 'Jump to Heavy Tank Buster at 0:22',
+      name: 'Jump to Heavy Tank Buster at 0:22.000',
     });
     expect(selectedMarker).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(screen.getByRole('button', {
-      name: 'Jump to Opening Raidwide at 0:10',
+      name: 'Jump to Opening Raidwide at 0:10.000',
     }));
     expect(onActionClick).toHaveBeenCalledWith('action-1');
   });

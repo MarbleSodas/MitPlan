@@ -259,7 +259,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
       const importObj = JSON.parse(importData);
 
       // Import migration utilities
-      import('../../../utils/version/versionUtils.js').then(({ migratePlanData, validatePlanData }) => {
+      import('../../../utils/version/versionUtils').then(({ migratePlanData, validatePlanData }) => {
         try {
           console.log('%c[IMPORT] Starting plan import process',
             'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', importObj);
@@ -372,7 +372,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   const handleLoadPlan = (plan) => {
     try {
       // Import migration utilities and migrate the plan data
-      import('../../../utils/version/versionUtils.js').then(({ migratePlanData, validatePlanData }) => {
+      import('../../../utils/version/versionUtils').then(({ migratePlanData, validatePlanData }) => {
         try {
           console.log('%c[LOAD] Loading saved plan',
             'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', plan);
@@ -510,11 +510,11 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
   };
 
   return (
-    <div className="bg-white dark:bg-neutral-900 rounded-lg p-4 md:p-6 shadow-md" data-export-section>
+    <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm" data-export-section>
       <div className="grid gap-5 md:grid-cols-2">
         {/* Left Column - Save & Export */}
         <div className="flex flex-col">
-          <h3 className="mt-0 mb-4 pb-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">Save Plan</h3>
+          <h3 className="mt-0 mb-4 pb-2 border-b border-border text-foreground">Save Plan</h3>
 
           <div className="mb-5">
             <div className="mb-4">
@@ -561,11 +561,11 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
             {savedPlans.length === 0 ? (
               <p>No saved plans yet.</p>
             ) : (
-              <div className="mt-2 max-h-[200px] overflow-y-auto border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-neutral-900">
+              <div className="mt-2 max-h-[200px] overflow-y-auto border border-border rounded bg-card">
                 {savedPlans.map(plan => (
-                  <div key={plan.id} className="px-3 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-800">
-                    <div className="flex-1 text-gray-900 dark:text-gray-100">{plan.name}</div>
-                    <div className="text-xs text-gray-500 mr-2">{new Date(plan.date).toLocaleDateString()}</div>
+                  <div key={plan.id} className="px-3 py-2 border-b border-border flex items-center justify-between hover:bg-muted">
+                    <div className="flex-1 text-foreground">{plan.name}</div>
+                    <div className="text-xs text-muted-foreground mr-2">{new Date(plan.date).toLocaleDateString()}</div>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm" onClick={() => handleLoadPlan(plan)} title="Load Plan">
                         📂
@@ -586,7 +586,7 @@ function ImportExport({ assignments, bossId, selectedJobs, onImport }) {
 
         {/* Right Column - Import */}
         <div className="flex flex-col">
-          <h3 className="mt-0 mb-4 pb-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">Import Plan</h3>
+          <h3 className="mt-0 mb-4 pb-2 border-b border-border text-foreground">Import Plan</h3>
 
           <div className="mb-5">
             <div className="mb-4">

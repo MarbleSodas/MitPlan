@@ -1,11 +1,11 @@
 /**
  * Timeline Service
- * Handles CRUD operations for Boss Action Timelines in Firebase
+ * Handles CRUD operations for Boss Action Timelines in Supabase
  * Similar to realtimePlanService but without real-time collaboration features
  */
 
-import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from 'firebase/database';
-import { database } from '../config/firebase';
+import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from '../lib/supabaseRealtimeDatabase';
+import { database, supabase } from '../config/supabase';
 import {
   getOfficialLocalTimelineByBossId,
   getOfficialLocalTimelineById,
@@ -18,7 +18,7 @@ import {
   prepareTimelineForStorage,
 } from '../utils/timeline/adaptiveTimelineUtils';
 import { syncTimelineBossActionsWithClassification } from '../utils/boss/bossActionUtils';
-import { isPermissionDeniedError } from './firebaseErrorUtils';
+import { isPermissionDeniedError } from './backendErrorUtils';
 
 const TIMELINES_PATH = 'timelines';
 const USER_COLLECTIONS_PATH = 'userCollections';
@@ -96,20 +96,20 @@ const getPublicCommunityTimelineSnapshot = async () => {
   return await get(publicTimelinesQuery);
 };
 
-const sanitizeFirebaseValue = (value) => {
+const sanitizeDatabaseValue = (value) => {
   if (value === undefined) {
     return undefined;
   }
 
   if (Array.isArray(value)) {
     return value
-      .map((entry) => sanitizeFirebaseValue(entry))
+      .map((entry) => sanitizeDatabaseValue(entry))
       .filter((entry) => entry !== undefined);
   }
 
   if (value && typeof value === 'object') {
     return Object.entries(value).reduce((accumulator, [key, entryValue]) => {
-      const sanitizedEntryValue = sanitizeFirebaseValue(entryValue);
+      const sanitizedEntryValue = sanitizeDatabaseValue(entryValue);
       if (sanitizedEntryValue !== undefined) {
         accumulator[key] = sanitizedEntryValue;
       }
@@ -195,7 +195,7 @@ export const createTimeline = async (userId, timelineData) => {
     const preparedTimeline = prepareTimelineForStorage(timelineData);
 
     // Prepare timeline document with adaptive-compatible structure
-    const timelineDoc = sanitizeFirebaseValue({
+    const timelineDoc = sanitizeDatabaseValue({
       name: timelineData.name || 'Untitled Timeline',
       bossTags: preparedTimeline.bossTags || [],
       bossId: preparedTimeline.bossId || null,
@@ -220,7 +220,7 @@ export const createTimeline = async (userId, timelineData) => {
       guideSources: timelineData.guideSources || preparedTimeline.guideSources || []
     });
 
-    // Create timeline in Firebase
+    // Create timeline in Supabase
     const timelinesRef = ref(database, TIMELINES_PATH);
     const newTimelineRef = push(timelinesRef);
     await set(newTimelineRef, timelineDoc);
@@ -335,7 +335,7 @@ export const updateTimeline = async (timelineId, updates) => {
     }
 
     const timelineRef = ref(database, `${TIMELINES_PATH}/${timelineId}`);
-    await update(timelineRef, sanitizeFirebaseValue(updateData));
+    await update(timelineRef, sanitizeDatabaseValue(updateData));
 
     console.log('[TimelineService] Timeline updated successfully');
   } catch (error) {
@@ -865,50 +865,18 @@ export const toggleLike = async (timelineId, userId) => {
       throw new Error('Timeline ID and User ID are required');
     }
 
-    const timelineRef = ref(database, `${TIMELINES_PATH}/${timelineId}`);
-    const likedByRef = ref(database, `${TIMELINES_PATH}/${timelineId}/likedBy/${userId}`);
-
-    // Check if user already liked
-    const likedSnapshot = await get(likedByRef);
-    const hasLiked = likedSnapshot.exists();
-
-    // Get current timeline data
-    const timelineSnapshot = await get(timelineRef);
-    if (!timelineSnapshot.exists()) {
-      throw new Error('Timeline not found');
-    }
-
-    const timeline = timelineSnapshot.val();
-    const currentLikeCount = timeline.likeCount || 0;
-
-    // Update like status
-    const updates = {};
-    if (hasLiked) {
-      // Unlike
-      updates[`${TIMELINES_PATH}/${timelineId}/likedBy/${userId}`] = null;
-      updates[`${TIMELINES_PATH}/${timelineId}/likeCount`] = Math.max(0, currentLikeCount - 1);
-    } else {
-      // Like
-      updates[`${TIMELINES_PATH}/${timelineId}/likedBy/${userId}`] = {
-        timestamp: Date.now(),
-        userId: userId
-      };
-      updates[`${TIMELINES_PATH}/${timelineId}/likeCount`] = currentLikeCount + 1;
-    }
-
-    await update(ref(database), updates);
-
-    const newLikeCount = hasLiked ? Math.max(0, currentLikeCount - 1) : currentLikeCount + 1;
+    const { data, error } = await supabase.rpc('toggle_timeline_like', {
+      p_timeline_key: timelineId,
+    });
+    if (error) throw error;
+    const result = data as { liked: boolean; likeCount: number };
 
     console.log('[TimelineService] Like toggled successfully:', {
-      liked: !hasLiked,
-      likeCount: newLikeCount
+      liked: result.liked,
+      likeCount: result.likeCount
     });
 
-    return {
-      liked: !hasLiked,
-      likeCount: newLikeCount
-    };
+    return result;
   } catch (error) {
     console.error('[TimelineService] Error toggling like:', error);
     throw new Error('Failed to toggle like');

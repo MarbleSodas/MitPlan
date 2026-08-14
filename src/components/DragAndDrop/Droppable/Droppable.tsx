@@ -15,19 +15,19 @@ const Droppable = forwardRef(({ id, children, data, disableDrop = false, isSelec
     if (isOver && !disableDrop && isSelected) {
       return (
         <div className="absolute inset-0 pointer-events-none z-[1] rounded-[inherit] border-2 border-dashed"
-             style={{ backgroundColor: 'rgba(51, 153, 255, 0.2)', borderColor: '#3399ff' }} />
+             style={{ backgroundColor: 'color-mix(in srgb, var(--color-info) 20%, transparent)', borderColor: 'var(--color-info)' }} />
       );
     }
     if (isOver && !disableDrop && !isSelected) {
       return (
         <div className="absolute inset-0 pointer-events-none z-[1] rounded-[inherit] border-2 border-dashed"
-             style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)', borderColor: '#ff4444' }} />
+             style={{ backgroundColor: 'color-mix(in srgb, var(--color-destructive) 10%, transparent)', borderColor: 'var(--color-destructive)' }} />
       );
     }
     if (isDragActive && isSelected) {
       return (
         <div className="absolute inset-0 pointer-events-none z-0 rounded-[inherit] border"
-             style={{ backgroundColor: 'rgba(51, 153, 255, 0.05)', borderColor: 'rgba(51, 153, 255, 0.3)' }} />
+             style={{ backgroundColor: 'color-mix(in srgb, var(--color-info) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--color-info) 30%, transparent)' }} />
       );
     }
     if (isDragActive && !isSelected) {
@@ -45,7 +45,7 @@ const Droppable = forwardRef(({ id, children, data, disableDrop = false, isSelec
       className="relative transition-colors"
       role="region"
       aria-live={isOver ? 'assertive' : 'off'}
-      aria-disabled={disableDrop}
+      data-drop-disabled={disableDrop || undefined}
       style={{ opacity: isDragActive && !isSelected ? 0.5 : 1 }}
       {...props}
     >

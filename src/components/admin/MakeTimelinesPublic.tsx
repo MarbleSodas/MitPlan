@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { makeAllTimelinesPublic } from '../../services/timelineService';
 import { useToast } from '../common/Toast';
+import { Button } from '../ui/button';
 
 /**
  * Admin utility component to make all timelines public
@@ -56,31 +57,31 @@ const MakeTimelinesPublic = () => {
   return (
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-card border border-border rounded-xl p-6">
           <h1 className="text-2xl font-bold mb-4">Admin Utility: Make All Timelines Public</h1>
           
-          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <p className="text-sm text-yellow-200">
+          <div className="mb-6 p-4 bg-warning/10 border border-warning/30 rounded-xl">
+            <p className="text-sm text-warning">
               ⚠️ <strong>Warning:</strong> This will update ALL timelines in the database to be public.
               This action cannot be easily undone.
             </p>
           </div>
 
-          <button
+          <Button
             onClick={handleMakePublic}
             disabled={loading}
-            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full"
           >
             {loading ? 'Processing...' : 'Make All Timelines Public'}
-          </button>
+          </Button>
 
           {result && (
             <div className={`mt-6 p-4 rounded-lg border ${
               result.success 
-                ? 'bg-green-500/10 border-green-500/30' 
-                : 'bg-red-500/10 border-red-500/30'
+                ? 'bg-success/10 border-success/30' 
+                : 'bg-destructive/10 border-destructive/30'
             }`}>
-              <p className={result.success ? 'text-green-200' : 'text-red-200'}>
+              <p className={result.success ? 'text-success' : 'text-destructive'}>
                 {result.message}
               </p>
               {result.success && result.count > 0 && (

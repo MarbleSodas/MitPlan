@@ -1,13 +1,23 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import App from './App';
+import { AppRouter, RootRoute } from './App';
 
 const authState = vi.hoisted(() => ({
   isAuthenticated: false,
   loading: false,
+}));
+
+const locationState = vi.hoisted(() => ({
+  pathname: '/',
+  search: '',
+}));
+
+vi.mock('./lib/navigation', () => ({
+  Navigate: ({ to }: { to: string }) => <div data-testid="redirect">{to}</div>,
+  useLocation: () => locationState,
 }));
 
 vi.mock('./contexts/AuthContext', () => ({
@@ -83,7 +93,7 @@ vi.mock('./components/consolidated', () => ({
   default: () => <div>Consolidated View</div>,
 }));
 
-vi.mock('./pages/DataPolicy', () => ({
+vi.mock('./components/pages/DataPolicy', () => ({
   default: () => <div>Privacy Policy</div>,
 }));
 
@@ -91,6 +101,8 @@ describe('App routing', () => {
   beforeEach(() => {
     authState.isAuthenticated = false;
     authState.loading = false;
+    locationState.pathname = '/';
+    locationState.search = '';
   });
 
   afterEach(() => {
@@ -99,60 +111,51 @@ describe('App routing', () => {
   });
 
   it('redirects guests away from edit routes and preserves a return target', async () => {
-    window.history.pushState({}, '', '/plan/edit/plan-123');
-    render(<App />);
+    locationState.pathname = '/plan/edit/plan-123';
+    render(<AppRouter segments={['plan', 'edit', 'plan-123']} />);
 
-    await screen.findByText('Landing Page');
-
-    expect(window.location.pathname).toBe('/');
-    expect(window.location.search).toContain(encodeURIComponent('/plan/edit/plan-123'));
+    expect(screen.getByTestId('redirect').textContent).toBe(
+      '/?next=%2Fplan%2Fedit%2Fplan-123'
+    );
   });
 
   it('redirects guests away from the collaborator edit route and preserves a return target', async () => {
-    window.history.pushState({}, '', '/plan/shared/plan-123');
-    render(<App />);
+    locationState.pathname = '/plan/shared/plan-123';
+    render(<AppRouter segments={['plan', 'shared', 'plan-123']} />);
 
-    await screen.findByText('Landing Page');
-
-    expect(window.location.pathname).toBe('/');
-    expect(window.location.search).toContain(encodeURIComponent('/plan/shared/plan-123'));
+    expect(screen.getByTestId('redirect').textContent).toBe(
+      '/?next=%2Fplan%2Fshared%2Fplan-123'
+    );
   });
 
   it('allows guests to open the public view-only plan route', async () => {
-    window.history.pushState({}, '', '/plan/view/view-token-123');
-    render(<App />);
+    locationState.pathname = '/plan/view/view-token-123';
+    render(<AppRouter segments={['plan', 'view', 'view-token-123']} />);
 
     await screen.findByText('Consolidated View');
-    expect(window.location.pathname).toBe('/plan/view/view-token-123');
   });
 
   it('returns authenticated users to their requested route after sign-in', async () => {
     authState.isAuthenticated = true;
-    window.history.pushState({}, '', '/?next=%2Ftimeline%2Fbrowse');
-    render(<App />);
+    locationState.search = '?next=%2Ftimeline%2Fbrowse';
+    render(<RootRoute />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Timeline Browser')).toBeTruthy();
-    });
+    expect(screen.getByTestId('redirect').textContent).toBe('/timeline/browse');
   });
 
   it('routes authenticated users to the timeline hub', async () => {
     authState.isAuthenticated = true;
-    window.history.pushState({}, '', '/timeline/create');
-    render(<App />);
+    locationState.pathname = '/timeline/create';
+    render(<AppRouter segments={['timeline', 'create']} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Timeline Create Hub')).toBeTruthy();
-    });
+    await screen.findByText('Timeline Create Hub');
   });
 
   it('routes authenticated users to the plan timeline editor', async () => {
     authState.isAuthenticated = true;
-    window.history.pushState({}, '', '/plan/plan-123/timeline');
-    render(<App />);
+    locationState.pathname = '/plan/plan-123/timeline';
+    render(<AppRouter segments={['plan', 'plan-123', 'timeline']} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Plan Timeline Editor')).toBeTruthy();
-    });
+    await screen.findByText('Plan Timeline Editor');
   });
 });

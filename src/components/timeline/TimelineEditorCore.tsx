@@ -44,6 +44,7 @@ import BossActionsLibrary from './BossActionsLibrary';
 import CompactTimelineVisualization from './CompactTimelineVisualization';
 import TimelineSettingsDrawer from './TimelineSettingsDrawer';
 import TimelineActionCard from './TimelineActionCard';
+import ActionMenu from '../ui/action-menu';
 
 export type TimelineEditorMode = 'plan' | 'community';
 
@@ -671,6 +672,7 @@ const TimelineEditorCore = ({
                 variant="outline"
                 size="icon"
                 title={backLabel}
+                aria-label={backLabel}
               >
                 <ArrowLeft size={20} />
               </Button>
@@ -723,7 +725,7 @@ const TimelineEditorCore = ({
                   >
                     <button
                       onClick={startNameEdit}
-                      className="text-xl font-bold truncate hover:text-primary transition-colors text-left"
+                      className="text-xl font-bold truncate hover:text-primary transition-colors text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       title={readOnly ? timelineName || 'Timeline name' : 'Click to edit name'}
                     >
                       {timelineName || 'Untitled Timeline'}
@@ -746,16 +748,34 @@ const TimelineEditorCore = ({
                 onClick={() => setShowSettingsDrawer(true)}
                 title="Timeline settings"
                 disabled={readOnly}
+                className="hidden lg:inline-flex"
               >
                 <Settings size={20} />
                 <span className="hidden sm:inline">Settings</span>
               </Button>
               {onPublish && !readOnly && (
-                <Button variant="outline" onClick={openPublishDialog}>
+                <Button variant="outline" onClick={openPublishDialog} className="hidden lg:inline-flex">
                   <Share2 size={18} />
                   <span className="hidden sm:inline">Save as Community Timeline</span>
                 </Button>
               )}
+              <ActionMenu
+                className="lg:hidden"
+                label="Timeline options"
+                items={[
+                  {
+                    label: 'Timeline settings',
+                    icon: Settings,
+                    onSelect: () => setShowSettingsDrawer(true),
+                    disabled: readOnly,
+                  },
+                  ...(onPublish && !readOnly ? [{
+                    label: 'Save as community timeline',
+                    icon: Share2,
+                    onSelect: openPublishDialog,
+                  }] : []),
+                ]}
+              />
               <Button
                 onClick={() => void handleSave()}
                 disabled={saving || readOnly}
@@ -772,7 +792,7 @@ const TimelineEditorCore = ({
 
       <div className="px-4 py-4 md:px-6 lg:px-8 space-y-3">
         {readOnly && readOnlyMessage && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-warning">
             {readOnlyMessage}
           </div>
         )}
@@ -853,7 +873,6 @@ const TimelineEditorCore = ({
 
                 {sortedActions.length === 0 ? (
                   <div className="py-16 text-center text-muted-foreground">
-                    <div className="mb-4 text-4xl">📋</div>
                     <p className="mb-2 text-lg font-medium">No actions yet</p>
                     <p className="text-sm">
                       Add boss actions from the library or create custom actions to build your timeline.

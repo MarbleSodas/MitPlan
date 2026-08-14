@@ -99,7 +99,7 @@ export const MAX_USERS_PER_PLAN = 24;
 
 export const PRESENCE_THROTTLE = {
   activity: 0,
-  cursor: 75,
+  cursor: 100,
   viewport: 300,
 } as const;
 

@@ -2,14 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getMock = vi.fn();
 const refMock = vi.fn();
+const rpcMock = vi.fn();
 const setMock = vi.fn();
 const updateMock = vi.fn();
 
-vi.mock('../config/firebase', () => ({
+vi.mock('../config/supabase', () => ({
   database: {},
+  supabase: { rpc: (...args: unknown[]) => rpcMock(...args) },
 }));
 
-vi.mock('firebase/database', () => ({
+vi.mock('../lib/supabaseRealtimeDatabase', () => ({
   ref: (...args: unknown[]) => refMock(...args),
   push: vi.fn(),
   set: (...args: unknown[]) => setMock(...args),
@@ -51,6 +53,7 @@ vi.mock('./userService', () => ({
 import {
   enablePlanShareView,
   rotatePlanShareViewToken,
+  trackPlanShareViewAccess,
   updatePlanFieldsWithOrigin,
 } from './realtimePlanService';
 
@@ -80,8 +83,13 @@ describe('realtimePlanService sharing snapshots', () => {
   beforeEach(() => {
     getMock.mockReset();
     refMock.mockReset();
+    rpcMock.mockReset();
     setMock.mockReset();
     updateMock.mockReset();
+    rpcMock.mockResolvedValue({
+      data: { planId: 'plan-1', accessCount: 2, lastViewedAt: 500 },
+      error: null,
+    });
 
     storedPlan = {
       id: 'plan-1',
@@ -269,6 +277,28 @@ describe('realtimePlanService sharing snapshots', () => {
         snapshotCreatedAt: expect.any(Number),
         sourcePlanUpdatedAt: 300,
       })
+    );
+  });
+
+  it('records a viewer through the field-safe RPC and updates only their profile history', async () => {
+    await trackPlanShareViewAccess('snapshot-1', 'viewer-1');
+
+    expect(rpcMock).toHaveBeenCalledWith('track_plan_share_view_access', {
+      p_view_token: 'snapshot-1',
+    });
+    expect(refMock).toHaveBeenCalledWith(
+      {},
+      'userProfiles/viewer-1/accessedPlans/plan-1'
+    );
+    expect(updateMock).toHaveBeenCalledWith(
+      { path: 'userProfiles/viewer-1/accessedPlans/plan-1' },
+      {
+        planId: 'plan-1',
+        viewToken: 'snapshot-1',
+        accessType: 'view',
+        lastAccess: 500,
+        accessCount: 2,
+      }
     );
   });
 });

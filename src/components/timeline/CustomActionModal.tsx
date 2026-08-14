@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -190,6 +191,9 @@ const CustomActionModal = ({
                 : 'Edit Timeline Action'
               : 'Create Custom Action'}
           </DialogTitle>
+          <DialogDescription>
+            Set the action timing, damage classification, and planning details.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">

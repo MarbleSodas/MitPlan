@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '@/lib/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
 import { useToast } from '../common/Toast';
 import { getTimeline } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { createPlanTimelineLayoutFromTimeline } from '../../utils/timeline/planTimelineLayoutUtils';
+import { formatTimelineTime } from '../../utils/timeline/timeFormat';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '../ui/button';
+import AbilityModeSelect from '../common/AbilityModeSelect';
+import type { PlanAbilityMode } from '../../types';
+import { PLAN_ABILITY_MODE_OPTIONS } from '../../utils/abilities/abilityModeUtils';
 
 const CreatePlanFromTimeline = () => {
   const { timelineId } = useParams();
@@ -20,6 +25,7 @@ const CreatePlanFromTimeline = () => {
   const [timeline, setTimeline] = useState(null);
   const [planName, setPlanName] = useState('');
   const [planDescription, setPlanDescription] = useState('');
+  const [abilityMode, setAbilityMode] = useState<PlanAbilityMode>('CURRENT');
 
   useEffect(() => {
     loadTimeline();
@@ -75,8 +81,9 @@ const CreatePlanFromTimeline = () => {
         name: planName.trim(),
         description: planDescription.trim(),
         bossId: timeline.bossId,
+        mode: abilityMode,
         assignments: {},
-        selectedJobs: {},
+        selectedJobs: { tank: [], healer: [], melee: [], ranged: [], caster: [] },
         tankPositions: {
           mainTank: null,
           offTank: null
@@ -115,10 +122,10 @@ const CreatePlanFromTimeline = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-[var(--color-textSecondary)]">Loading timeline...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading timeline...</p>
         </div>
       </div>
     );
@@ -132,27 +139,26 @@ const CreatePlanFromTimeline = () => {
   const sortedActions = timeline.actions ? [...timeline.actions].sort((a, b) => a.time - b.time) : [];
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="bg-[var(--color-cardBackground)] border-b border-[var(--color-border)] sticky top-0 z-10">
+      <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="p-2 rounded-lg hover:bg-[var(--select-bg)] transition-colors"
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
               <h1 className="text-2xl font-bold m-0">Create Mitplan from Timeline</h1>
             </div>
-            <button
+            <Button
               onClick={handleCreatePlan}
               disabled={creating}
-              className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg font-semibold hover:bg-[#2563eb] transition-colors disabled:opacity-50"
             >
               {creating ? 'Creating...' : 'Create Mitplan'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -162,28 +168,38 @@ const CreatePlanFromTimeline = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Panel - Plan Settings */}
           <div className="space-y-6">
-            <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6">
+            <div className="bg-card border border-border rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4">Mitplan Settings</h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Plan Name <span className="text-red-500">*</span>
+                    Plan Name <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="text"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
                     placeholder="Enter plan name"
-                    className="w-full px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Boss</label>
-                  <div className="px-3 py-2 bg-[var(--select-bg)] border border-[var(--color-border)] rounded-lg text-[var(--color-textSecondary)]">
+                  <div className="px-3 py-2 bg-muted border border-border rounded-lg text-muted-foreground">
                     {bossInfo ? `${bossInfo.icon} ${bossInfo.name}` : timeline.bossId}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" htmlFor="abilityMode">
+                    Job action mode
+                  </label>
+                  <AbilityModeSelect value={abilityMode} onValueChange={setAbilityMode} />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {PLAN_ABILITY_MODE_OPTIONS.find((option) => option.value === abilityMode)?.description}
+                  </p>
                 </div>
 
                 <div>
@@ -193,15 +209,15 @@ const CreatePlanFromTimeline = () => {
                     onChange={(e) => setPlanDescription(e.target.value)}
                     placeholder="Enter plan description"
                     rows={3}
-                    className="w-full px-3 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-blue-400 mb-2">ℹ️ What happens next?</h3>
-              <ul className="text-sm text-[var(--color-textSecondary)] space-y-1 m-0 pl-5">
+            <div className="bg-info/10 border border-info/30 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-info mb-2">ℹ️ What happens next?</h3>
+              <ul className="text-sm text-muted-foreground space-y-1 m-0 pl-5">
                 <li>A new mitigation plan will be created with the selected boss</li>
                 <li>The boss actions from the timeline will be available in the planner</li>
                 <li>You can then assign jobs and mitigation abilities to each action</li>
@@ -211,21 +227,21 @@ const CreatePlanFromTimeline = () => {
           </div>
 
           {/* Right Panel - Timeline Preview */}
-          <div className="bg-[var(--color-cardBackground)] border border-[var(--color-border)] rounded-xl p-6">
+          <div className="bg-card border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-4">Timeline Preview</h2>
             
-            <div className="mb-4 pb-4 border-b border-[var(--color-border)]">
-              <div className="text-sm text-[var(--color-textSecondary)] mb-1">Source Timeline</div>
+            <div className="mb-4 pb-4 border-b border-border">
+              <div className="text-sm text-muted-foreground mb-1">Source Timeline</div>
               <div className="font-semibold">{timeline.name}</div>
               {timeline.description && (
-                <p className="text-sm text-[var(--color-textSecondary)] mt-2 m-0">
+                <p className="text-sm text-muted-foreground mt-2 m-0">
                   {timeline.description}
                 </p>
               )}
             </div>
 
             <div className="mb-3">
-              <div className="text-sm font-semibold text-[var(--color-textSecondary)]">
+              <div className="text-sm font-semibold text-muted-foreground">
                 Boss Actions ({sortedActions.length})
               </div>
             </div>
@@ -234,7 +250,7 @@ const CreatePlanFromTimeline = () => {
               {sortedActions.map((action, index) => (
                 <div
                   key={action.id}
-                  className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-3"
+                  className="bg-background border border-border rounded-lg p-3"
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-shrink-0 text-xl">{action.icon}</div>
@@ -247,8 +263,8 @@ const CreatePlanFromTimeline = () => {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-[var(--color-textSecondary)]">
-                        ⏱️ {Math.floor(action.time / 60)}:{(action.time % 60).toString().padStart(2, '0')}
+                      <div className="text-xs text-muted-foreground">
+                        Time {formatTimelineTime(action.time)}
                       </div>
                     </div>
                   </div>

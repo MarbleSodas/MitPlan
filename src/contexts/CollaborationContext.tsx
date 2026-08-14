@@ -2,12 +2,16 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import { useAuth } from './AuthContext';
 import sessionManager from '../services/sessionManager';
 import { storeUserProfile } from '../services/userService';
-import { batchUpdatePlanRealtime } from '../services/realtimePlanService';
+import {
+  applyPlanOperation,
+  createOperationId,
+  loadPlanWorkspace,
+} from '../services/normalizedPlanService';
 import {
   COLLABORATION_UNAVAILABLE_MESSAGE,
   getErrorMessage,
   isPermissionDeniedError,
-} from '../services/firebaseErrorUtils';
+} from '../services/backendErrorUtils';
 import type { CollaborationContextValue, Collaborator } from '../types/contexts';
 
 const CollaborationContext = createContext<CollaborationContextValue | null>(null);
@@ -221,7 +225,6 @@ export const CollaborationProvider = ({ children, enabled = true }: Collaboratio
         await sessionManager.startSession(planId, sessionId, {
           userId: user.uid,
           displayName: finalDisplayName,
-          email: user.email || ''
         });
 
         sessionStartedRef.current = true;
@@ -303,7 +306,7 @@ export const CollaborationProvider = ({ children, enabled = true }: Collaboratio
     debounceTimersRef.current.set(key, timer);
   }, []);
 
-  const batchUpdate = useCallback<CollaborationContextValue['batchUpdate']>((planId, updates, userId, currentSessionId) => {
+  const batchUpdate = useCallback<CollaborationContextValue['batchUpdate']>((planId, updates, _userId, _currentSessionId) => {
     if (!enabled) return;
 
     if (!batchedUpdates.current.has(planId)) {
@@ -321,7 +324,23 @@ export const CollaborationProvider = ({ children, enabled = true }: Collaboratio
       const allUpdates = batchedUpdates.current.get(planId);
       if (allUpdates && Object.keys(allUpdates).length > 0) {
         try {
-          await batchUpdatePlanRealtime(planId, allUpdates, userId, currentSessionId);
+          const workspace = await loadPlanWorkspace(planId);
+          await applyPlanOperation(
+            planId,
+            {
+              kind: 'patch_plan',
+              targetType: 'plan',
+              payload: {
+                name: typeof allUpdates.name === 'string' ? allUpdates.name : undefined,
+                description: typeof allUpdates.description === 'string'
+                  ? allUpdates.description
+                  : undefined,
+                metadata: allUpdates,
+              },
+            },
+            workspace.revision,
+            createOperationId()
+          );
         } catch (error) {
           console.error('Error in batch update:', error);
         }
@@ -389,7 +408,12 @@ export const CollaborationProvider = ({ children, enabled = true }: Collaboratio
     if (user?.uid) {
       await storeUserProfile(user.uid, nextDisplayName, user.email);
     }
-  }, [user?.email, user?.uid]);
+    if (sessionStartedRef.current) {
+      await sessionManager.updateSessionPresence(sessionId, {
+        displayName: nextDisplayName,
+      });
+    }
+  }, [sessionId, user?.email, user?.uid]);
 
   const getCollaboratorDisplayName = useCallback((userId: string) => {
     return collaborators.find((collaborator) => collaborator.userId === userId)?.displayName || 'Collaborator';

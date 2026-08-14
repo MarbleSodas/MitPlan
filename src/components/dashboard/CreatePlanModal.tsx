@@ -17,6 +17,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { Plan, PlanAbilityMode } from '../../types';
+import AbilityModeSelect from '../common/AbilityModeSelect';
+import { PLAN_ABILITY_MODE_OPTIONS } from '../../utils/abilities/abilityModeUtils';
 import {
   Select,
   SelectContent,
@@ -75,11 +78,15 @@ const BOSS_TIERS = [
 
 const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedBossId = null }) => {
   const { createNewPlan } = usePlan();
+  const preSelectedBoss = bosses.find(boss => boss.id === preSelectedBossId) || null;
   const [formData, setFormData] = useState({
-    name: '',
+    name: preSelectedBoss ? `${preSelectedBoss.name} Plan` : '',
     description: '',
     bossId: preSelectedBossId || '',
-    timelineId: ''
+    timelineId: '',
+    routeId: 'default',
+    mode: 'CURRENT' as PlanAbilityMode,
+    composition: 'empty'
   });
   const [loading, setLoading] = useState(false);
   const [loadingTimelines, setLoadingTimelines] = useState(false);
@@ -128,7 +135,11 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       if (officialTimeline) {
         setFormData(prev => ({
           ...prev,
-          timelineId: officialTimeline.id
+          timelineId: officialTimeline.id,
+          routeId:
+            officialTimeline.resolution?.defaultBranchId ||
+            officialTimeline.adaptiveModel?.branches?.[0]?.id ||
+            'default'
         }));
       }
     } catch (err) {
@@ -154,22 +165,37 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
       setError('Plan name is required');
       return;
     }
+    if (!formData.timelineId) {
+      setError('Choose an official or custom timeline version.');
+      return;
+    }
 
     setLoading(true);
     setError('');
 
     try {
-      const planData = {
+      const standardComposition = {
+        tank: ['PLD', 'WAR'],
+        healer: ['WHM', 'SCH'],
+        melee: ['VPR', 'DRG'],
+        ranged: ['DNC'],
+        caster: ['PCT']
+      } as Plan['selectedJobs'];
+      const planData: Partial<Plan> = {
         name: formData.name.trim(),
         description: formData.description.trim(),
         bossId: formData.bossId || null,
         bossTags: formData.bossId ? [formData.bossId] : [],
         assignments: {},
-        selectedJobs: {},
+        selectedJobs: formData.composition === 'standard'
+          ? standardComposition
+          : { tank: [], healer: [], melee: [], ranged: [], caster: [] },
         tankPositions: {
           mainTank: null,
           offTank: null
-        }
+        },
+        routeId: formData.routeId,
+        mode: formData.mode
       };
 
       if (formData.timelineId) {
@@ -205,12 +231,12 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
         <DialogHeader>
           <DialogTitle className="text-2xl">
             {preSelectedBossId
-              ? `Create Plan for ${bosses.find(b => b.id === preSelectedBossId)?.name}`
-              : 'Create New Plan'
+              ? `Review ${preSelectedBoss?.name} plan`
+              : 'Review new plan'
             }
           </DialogTitle>
           <DialogDescription>
-            Create a new mitigation plan for your raid team.
+            Confirm the plan name and timeline before creating it.
           </DialogDescription>
         </DialogHeader>
 
@@ -221,7 +247,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               id="name"
               name="name"
               type="text"
-              placeholder="Enter plan name"
+              placeholder="e.g. Week 1 progression"
               value={formData.name}
               onChange={handleInputChange}
               required
@@ -232,7 +258,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
             <Label>Boss Encounter</Label>
             {preSelectedBossId ? (
               <div className="text-sm text-muted-foreground py-2 px-3 bg-muted rounded-md">
-                Boss pre-selected: {bosses.find(b => b.id === preSelectedBossId)?.name}
+                {preSelectedBoss?.name}
               </div>
             ) : (
               <div className="border border-border rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
@@ -246,7 +272,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                       <button
                         type="button"
                         onClick={() => toggleTier(tier.id)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 bg-secondary hover:bg-accent transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2.5 bg-secondary hover:bg-accent transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <span className="font-medium text-sm text-foreground">{tier.name}</span>
                         {expandedTiers[tier.id] ? (
@@ -268,7 +294,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                                 onClick={() => handleBossSelect(boss.id)}
                                 disabled={!enabled}
                                 className={cn(
-                                  'w-full flex items-center justify-between px-4 py-2 text-left transition-colors text-sm',
+                                  'w-full flex items-center justify-between px-4 py-2 text-left transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                                   enabled && !isSelected && 'hover:bg-accent cursor-pointer',
                                   enabled && isSelected && 'bg-primary/10 border-l-2 border-primary',
                                   !enabled && 'opacity-50 cursor-not-allowed'
@@ -282,7 +308,7 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
                                   <span>{boss.name}</span>
                                 </span>
                                 {!enabled && (
-                                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                  <span className="text-xs text-warning font-medium">
                                     Coming Soon
                                   </span>
                                 )}
@@ -305,14 +331,24 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
 
           {formData.bossId && (
             <div className="flex flex-col gap-2">
-              <Label htmlFor="timelineId">Timeline (Optional)</Label>
+              <Label htmlFor="timelineId">Timeline version *</Label>
               {loadingTimelines ? (
                 <div className="text-sm text-muted-foreground py-2">Loading timelines...</div>
               ) : (
                 <>
                   <Select
                     value={formData.timelineId}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, timelineId: value }))}
+                    onValueChange={(value) => {
+                      const timeline = availableTimelines.find((item) => item.id === value);
+                      setFormData(prev => ({
+                        ...prev,
+                        timelineId: value,
+                        routeId:
+                          timeline?.resolution?.defaultBranchId ||
+                          timeline?.adaptiveModel?.branches?.[0]?.id ||
+                          'default'
+                      }));
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a timeline" />
@@ -343,6 +379,68 @@ const CreatePlanModal = ({ onClose, onSuccess, onNavigateToPlanner, preSelectedB
               )}
             </div>
           )}
+
+          {formData.timelineId && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="routeId">Fight route</Label>
+                <Select
+                  value={formData.routeId}
+                  onValueChange={(value) => setFormData((previous) => ({
+                    ...previous,
+                    routeId: value
+                  }))}
+                >
+                  <SelectTrigger id="routeId">
+                    <SelectValue placeholder="Select route" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(
+                      availableTimelines.find((timeline) => timeline.id === formData.timelineId)
+                        ?.adaptiveModel?.branches || []
+                    ).map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.label || branch.id}
+                      </SelectItem>
+                    ))}
+                    {!availableTimelines.find((timeline) => timeline.id === formData.timelineId)
+                      ?.adaptiveModel?.branches?.length && (
+                      <SelectItem value="default">Default route</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="composition">Party composition</Label>
+                <Select
+                  value={formData.composition}
+                  onValueChange={(value) => setFormData((previous) => ({
+                    ...previous,
+                    composition: value
+                  }))}
+                >
+                  <SelectTrigger id="composition">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="empty">Build in workspace</SelectItem>
+                    <SelectItem value="standard">Standard 2/2/4 party</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="abilityMode">Job action mode</Label>
+            <AbilityModeSelect
+              value={formData.mode}
+              onValueChange={(mode) => setFormData((previous) => ({ ...previous, mode }))}
+            />
+            <p className="text-sm text-muted-foreground">
+              {PLAN_ABILITY_MODE_OPTIONS.find((option) => option.value === formData.mode)?.description}
+            </p>
+          </div>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="description">Description</Label>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/navigation';
 
 import { APP_VERSION_LABEL } from '@/config/version';
 

@@ -19,7 +19,6 @@ const ThemeToggle = ({ className, showLabel = false }: ThemeToggleProps) => {
       className={cn("relative overflow-hidden", className)}
       title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
-      style={{ border: '2px solid var(--primary)' }}
     >
       <div
         className={cn(

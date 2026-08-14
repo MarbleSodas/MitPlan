@@ -1,6 +1,6 @@
 import { memo, useState, useCallback, useMemo } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, X, XCircle } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Search, UsersRound, X, XCircle } from 'lucide-react';
 import { mitigationAbilities, ffxivJobs } from '../../data';
 import { determineMitigationAssignment } from '../../utils/mitigation/autoAssignmentUtils';
 import { getAvailableAbilities } from '../../utils';
@@ -10,6 +10,9 @@ import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentCo
 import MitigationItem from '../MitigationItem/MitigationItem';
 import { cn } from '@/lib/utils';
 import { getBossActionTypeLabel } from '../../utils/boss/bossActionUtils';
+import { Button } from '@/components/ui/button';
+import { formatTimelineTime } from '../../utils/timeline/timeFormat';
+import type { PlanAbilityMode } from '../../types';
 
 interface MitigationBottomSheetProps {
   isOpen: boolean;
@@ -17,6 +20,7 @@ interface MitigationBottomSheetProps {
   selectedBossAction: any;
   selectedJobs: any;
   currentBossLevel: number;
+  abilityMode: PlanAbilityMode;
   assignments: any;
   addMitigation: any;
   removeMitigation: any;
@@ -24,6 +28,7 @@ interface MitigationBottomSheetProps {
   pendingAssignments: any;
   getActiveMitigations: any;
   sortedBossActions: any[];
+  onOpenPartySetup: () => void;
 }
 
 const MitigationBottomSheet = memo(({
@@ -32,12 +37,14 @@ const MitigationBottomSheet = memo(({
   selectedBossAction,
   selectedJobs,
   currentBossLevel,
+  abilityMode,
   assignments,
   addMitigation,
   removeMitigation,
   checkAbilityAvailability,
   pendingAssignments,
   getActiveMitigations,
+  onOpenPartySetup,
 }: MitigationBottomSheetProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJobFilter, setSelectedJobFilter] = useState<string | null>(null);
@@ -64,8 +71,8 @@ const MitigationBottomSheet = memo(({
   }, [myAssignedJob, myUserId, myDisplayName, myColor]);
 
   const availableMitigations = useMemo(() => {
-    return getAvailableAbilities(mitigationAbilities, selectedJobs, currentBossLevel);
-  }, [selectedJobs, currentBossLevel]);
+    return getAvailableAbilities(mitigationAbilities, selectedJobs, currentBossLevel, abilityMode);
+  }, [selectedJobs, currentBossLevel, abilityMode]);
 
   const filteredMitigations = useMemo(() => {
     if (!selectedBossAction) {
@@ -89,6 +96,7 @@ const MitigationBottomSheet = memo(({
     }
     return Array.from(jobs).sort();
   }, [selectedJobs]);
+  const hasSelectedJobs = availableJobs.length > 0;
 
   const fuzzyMatch = (text: string, query: string): boolean => {
     if (!query.trim()) return true;
@@ -215,16 +223,16 @@ const MitigationBottomSheet = memo(({
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent 
         side="bottom" 
-        className="h-[90vh] rounded-t-2xl p-0 gap-0"
+        className="h-[90dvh] rounded-t-2xl p-0 gap-0"
       >
         <SheetHeader className="shrink-0 border-b p-4 pb-3">
           <SheetTitle className="text-base leading-tight">
             {selectedBossAction ? selectedBossAction.name : 'Select Mitigation'}
           </SheetTitle>
           {selectedBossAction && (
-            <p className="text-xs text-muted-foreground">
-              ⏱️ {selectedBossAction.time}s • {getBossActionTypeLabel(selectedBossAction)}
-            </p>
+            <SheetDescription className="text-xs text-muted-foreground">
+              At {formatTimelineTime(selectedBossAction.time)} · {getBossActionTypeLabel(selectedBossAction)}
+            </SheetDescription>
           )}
         </SheetHeader>
 
@@ -250,7 +258,8 @@ const MitigationBottomSheet = memo(({
                   <button
                     type="button"
                     onClick={() => handleRemoveMitigation(mit.id)}
-                    className="ml-1 p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+                    className="-my-2 ml-1 flex h-11 w-11 items-center justify-center rounded text-muted-foreground hover:bg-destructive/20 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`Remove ${mit.name}`}
                   >
                     <XCircle className="w-3.5 h-3.5" />
                   </button>
@@ -260,21 +269,23 @@ const MitigationBottomSheet = memo(({
           </div>
         )}
 
-        <div className="sticky top-0 z-10 shrink-0 space-y-2 border-b bg-card px-4 py-3">
+        {hasSelectedJobs ? <div className="sticky top-0 z-10 shrink-0 space-y-2 border-b bg-card px-4 py-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
+              aria-label="Search mitigations"
               placeholder="Search mitigations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-muted"
+                className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Clear mitigation search"
               >
                 <X className="h-3 w-3 text-muted-foreground" />
               </button>
@@ -316,10 +327,10 @@ const MitigationBottomSheet = memo(({
               );
             })}
           </div>
-        </div>
+        </div> : null}
 
-        <div className="flex-1 space-y-2 overflow-y-auto p-4" style={{ maxHeight: 'calc(90vh - 220px)' }}>
-            {searchedMitigations.map((mitigation: any) => {
+        <div className="flex-1 space-y-2 overflow-y-auto p-4">
+            {hasSelectedJobs && searchedMitigations.map((mitigation: any) => {
               const availability = selectedBossAction ? checkAbilityAvailability(
                 mitigation.id,
                 selectedBossAction.time,
@@ -331,11 +342,14 @@ const MitigationBottomSheet = memo(({
               const cooldownReason = availability.getUnavailabilityReason ? availability.getUnavailabilityReason() : null;
 
               return (
-                <div
+                <button
+                  type="button"
                   key={mitigation.id}
                   onClick={() => !isDisabled && handleMitigationTap(mitigation)}
+                  disabled={isDisabled}
+                  aria-label={`${directAssignments.some((assignment: any) => assignment.id === mitigation.id) ? 'Remove' : 'Assign'} ${mitigation.name}`}
                   className={cn(
-                    "cursor-pointer rounded-lg border border-border bg-card p-3 transition-colors",
+                    "w-full rounded-lg border border-border bg-card p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     isDisabled 
                       ? "opacity-50 cursor-not-allowed" 
                       : "hover:border-primary/50 hover:bg-muted/30"
@@ -351,15 +365,29 @@ const MitigationBottomSheet = memo(({
                     checkAbilityAvailability={checkAbilityAvailability}
                     pendingAssignments={pendingAssignments}
                   />
-                </div>
+                </button>
               );
             })}
-            {searchedMitigations.length === 0 && (
+            {!hasSelectedJobs ? (
+              <div className="mx-auto flex max-w-sm flex-col items-center py-10 text-center">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <UsersRound className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground">Choose your party jobs first</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  MitPlan uses the selected jobs to show the mitigations your group can assign.
+                </p>
+                <Button type="button" onClick={onOpenPartySetup} className="mt-5">
+                  <UsersRound className="h-4 w-4" aria-hidden="true" />
+                  Choose party jobs
+                </Button>
+              </div>
+            ) : searchedMitigations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p className="text-sm">No mitigations found</p>
                 <p className="text-xs mt-1">Try adjusting your search or filters</p>
               </div>
-            )}
+            ) : null}
         </div>
 
         <div className="p-2 border-t shrink-0">

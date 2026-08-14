@@ -16,7 +16,7 @@ const PrecastToggle = () => {
           <span className="mr-2 whitespace-nowrap text-sm font-medium text-foreground sm:hidden">Precast:</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" checked={checked} onChange={togglePrecastOptions} />
-            <div className="w-11 h-6 bg-muted-foreground/30 dark:bg-muted-foreground/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-background after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            <div className="peer h-6 w-11 rounded-full bg-muted-foreground/30 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-background after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 dark:bg-muted-foreground/40"></div>
           </label>
         </div>
       </TooltipTrigger>

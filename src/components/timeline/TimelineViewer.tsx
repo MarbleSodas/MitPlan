@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '@/lib/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { getTimeline, getShareableLink } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
-import { ArrowLeft, Edit2, Share2, FileText } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Edit2, Share2, FileText } from 'lucide-react';
 import { getBossActionTypeLabel } from '../../utils/boss/bossActionUtils';
 import { Button } from '@/components/ui/button';
+import { formatTimelineDamage, formatTimelineTime } from '../../utils/timeline/timeFormat';
 
 const TimelineViewer = ({ isShared = false }) => {
   const { timelineId } = useParams();
@@ -16,6 +17,7 @@ const TimelineViewer = ({ isShared = false }) => {
 
   const [loading, setLoading] = useState(true);
   const [timeline, setTimeline] = useState(null);
+  const [expandedActions, setExpandedActions] = useState(() => new Set());
 
   useEffect(() => {
     loadTimeline();
@@ -102,12 +104,6 @@ const TimelineViewer = ({ isShared = false }) => {
     navigate(nextPath);
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const getSortedActions = () => {
     if (!timeline || !timeline.actions) return [];
     return [...timeline.actions].sort((a, b) => a.time - b.time);
@@ -145,6 +141,7 @@ const TimelineViewer = ({ isShared = false }) => {
                 variant="outline"
                 size="icon"
                 onClick={() => navigate(isShared ? '/' : '/dashboard')}
+                aria-label={isShared ? 'Back to home' : 'Back to dashboard'}
               >
                 <ArrowLeft size={20} />
               </Button>
@@ -209,7 +206,7 @@ const TimelineViewer = ({ isShared = false }) => {
               Boss Actions ({sortedActions.length})
             </h2>
             <div className="text-sm text-muted-foreground">
-              Total Duration: {formatTime(sortedActions[sortedActions.length - 1]?.time || 0)}
+              Total duration: {formatTimelineTime(sortedActions[sortedActions.length - 1]?.time || 0)}
             </div>
           </div>
 
@@ -218,17 +215,30 @@ const TimelineViewer = ({ isShared = false }) => {
               <p>No actions in this timeline.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {sortedActions.map((action) => (
-                <div
-                  key={action.id}
-                  className="rounded-lg border border-border bg-background p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 text-2xl">{action.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">{action.name}</span>
+            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-background">
+              {sortedActions.map((action) => {
+                const isExpanded = expandedActions.has(action.id);
+                const damage = formatTimelineDamage(action.unmitigatedDamage);
+
+                return (
+                <div key={action.id}>
+                  <button
+                    type="button"
+                    className="flex min-h-14 w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset sm:px-4"
+                    aria-expanded={isExpanded}
+                    onClick={() => setExpandedActions((current) => {
+                      const next = new Set(current);
+                      if (next.has(action.id)) next.delete(action.id);
+                      else next.add(action.id);
+                      return next;
+                    })}
+                  >
+                    <span className="w-[5.5rem] flex-shrink-0 font-mono text-sm font-semibold text-primary">
+                      {formatTimelineTime(action.time)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-semibold">{action.name}</span>
                         {action.isCustom && (
                           <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">
                             Custom
@@ -238,43 +248,35 @@ const TimelineViewer = ({ isShared = false }) => {
                           {getBossActionTypeLabel(action)}
                         </span>
                         {action.isMultiHit && (
-                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded">
+                          <span className="px-2 py-0.5 bg-warning/20 text-warning text-xs rounded">
                             {action.hitCount && action.hitCount > 1 ? `${action.hitCount}-Hit` : 'Multi-hit'}
                           </span>
                         )}
                         {action.hasDot && (
-                          <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs rounded">
+                          <span className="px-2 py-0.5 bg-info/20 text-info text-xs rounded">
                             DoT
                           </span>
                         )}
-                      </div>
-                      <div className="mb-2 text-sm text-muted-foreground">
-                        ⏱️ {formatTime(action.time)} ({action.time}s)
-                        {action.damageType && (
-                          <span className="ml-3">
-                            Type: <span className="capitalize">{action.damageType}</span>
-                          </span>
-                        )}
-                        {action.importance && (
-                          <span className="ml-3">
-                            Importance: <span className="capitalize">{action.importance}</span>
-                          </span>
-                        )}
-                      </div>
-                      {action.description && (
-                        <p className="m-0 mb-2 text-sm text-muted-foreground">
-                          {action.description}
-                        </p>
-                      )}
-                      {action.unmitigatedDamage && (
-                        <div className="text-sm text-muted-foreground">
-                          Unmitigated Damage: {action.unmitigatedDamage}
-                        </div>
-                      )}
+                      </span>
+                      <span className="mt-1 block truncate text-xs text-muted-foreground">
+                        {[action.damageType, damage ? `${damage} unmitigated damage` : null].filter(Boolean).join(' · ')}
+                      </span>
+                    </span>
+                    <ChevronDown className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isExpanded && (
+                    <div className="space-y-2 border-t border-border bg-muted/20 px-4 py-3 text-sm">
+                      {action.description && <p className="m-0 text-muted-foreground">{action.description}</p>}
+                      <dl className="flex flex-wrap gap-x-6 gap-y-2">
+                        {action.damageType && <div><dt className="inline text-muted-foreground">Damage type: </dt><dd className="inline capitalize">{action.damageType}</dd></div>}
+                        {action.importance && <div><dt className="inline text-muted-foreground">Importance: </dt><dd className="inline capitalize">{action.importance}</dd></div>}
+                        {damage && <div><dt className="inline text-muted-foreground">Damage: </dt><dd className="inline">{damage} unmitigated damage</dd></div>}
+                      </dl>
                     </div>
-                  </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -1,12 +1,28 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAuth } from './AuthContext';
-import { useCollaboration } from './CollaborationContext';
-import * as planService from '../services/realtimePlanService';
-import { trackPlanAccess } from '../services/planAccessService';
-import { isPermissionDeniedError } from '../services/firebaseErrorUtils';
+import * as normalizedPlanService from '../services/normalizedPlanService';
+import type {
+  MitigationAssignments,
+  Plan,
+  PlanChange,
+  PlanConnectionState,
+  PlanOperation,
+  PlanWorkspacePermissions,
+  PlanTimelineLayout,
+  TankPositions,
+  UserPlanPreference,
+} from '../types';
 
-export const RealtimePlanDataContext = createContext(null);
-export const RealtimePlanActionsContext = createContext(null);
+export const RealtimePlanDataContext = createContext<any>(null);
+export const RealtimePlanActionsContext = createContext<any>(null);
 
 export const useRealtimePlanData = () => {
   const context = useContext(RealtimePlanDataContext);
@@ -32,398 +48,557 @@ export const useRealtimePlan = () => {
     throw new Error('useRealtimePlan must be used within a RealtimePlanProvider');
   }
 
-  return useMemo(() => ({
-    ...data,
-    ...actions
-  }), [data, actions]);
+  return useMemo(() => ({ ...data, ...actions }), [data, actions]);
 };
+
+const isNetworkFailure = (error: unknown): boolean => {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
+  const message = error instanceof Error ? error.message : String(error || '');
+  return /network|fetch|offline|connection|timeout|websocket/i.test(message);
+};
+
+const workspaceWaitTimeout = (milliseconds: number): Promise<void> =>
+  new Promise((_, reject) => {
+    globalThis.setTimeout(
+      () => reject(new Error('Realtime channel connection timed out')),
+      milliseconds
+    );
+  });
 
 export const RealtimePlanProvider = ({ children, planId, readOnly = false }) => {
   const { user } = useAuth();
-  const { sessionId, debouncedUpdate, setChangeOrigin, isOwnChange } = useCollaboration();
 
-  const [realtimePlan, setRealtimePlan] = useState(null);
+  const [realtimePlan, setRealtimePlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [connectionState, setConnectionState] =
+    useState<PlanConnectionState>('loading');
+  const [changes, setChanges] = useState<PlanChange[]>([]);
+  const [preference, setPreference] = useState<UserPlanPreference | null>(null);
+  const [permissions, setPermissions] = useState<PlanWorkspacePermissions>({
+    canRead: true,
+    canEdit: !readOnly,
+    canAdmin: false,
+  });
 
-  const isUpdatingRef = useRef(false);
-  const changeOriginRef = useRef(null);
-  const pendingChangesRef = useRef(new Set());
-  const planListenerRef = useRef(null);
-  const realtimePlanRef = useRef(realtimePlan);
+  const planRef = useRef<Plan | null>(null);
+  const revisionRef = useRef(0);
+  const bufferedChangesRef = useRef<Array<PlanChange & {
+    afterData?: { plan: Plan; revision: number };
+  }>>([]);
+  const initializedRef = useRef(false);
+  const reconnectingRef = useRef(false);
 
-  useEffect(() => {
-    realtimePlanRef.current = realtimePlan;
-  }, [realtimePlan]);
+  const acceptWorkspace = useCallback((workspace) => {
+    const revision = Number(workspace?.revision ?? workspace?.plan?.revision ?? 0);
+    if (revision < revisionRef.current) return;
+
+    const nextPlan = {
+      ...workspace.plan,
+      assignments: workspace.assignments || workspace.plan.assignments || {},
+      revision,
+    };
+    revisionRef.current = revision;
+    planRef.current = nextPlan;
+    setRealtimePlan(nextPlan);
+    setChanges(workspace.changes || []);
+    setPreference(workspace.preference || null);
+    setPermissions(workspace.permissions || {
+      canRead: true,
+      canEdit: !readOnly,
+      canAdmin: false,
+    });
+    setError(null);
+  }, [readOnly]);
+
+  const refreshWorkspace = useCallback(async () => {
+    if (!planId || !user?.uid) return null;
+    const workspace = await normalizedPlanService.loadPlanWorkspace(
+      planId,
+      revisionRef.current || null
+    );
+    acceptWorkspace(workspace);
+    return workspace;
+  }, [acceptWorkspace, planId, user?.uid]);
+
+  const replayOutbox = useCallback(async () => {
+    if (!planId || !user?.uid || readOnly || reconnectingRef.current) return;
+    reconnectingRef.current = true;
+
+    try {
+      const queued = await normalizedPlanService.listQueuedPlanOperations(planId);
+      for (const item of queued) {
+        const workspace = await normalizedPlanService.applyPlanOperation(
+          planId,
+          item.operation,
+          revisionRef.current,
+          item.operationId
+        );
+        acceptWorkspace(workspace);
+        await normalizedPlanService.removeQueuedPlanOperation(item.operationId);
+      }
+      setConnectionState('saved');
+    } finally {
+      reconnectingRef.current = false;
+    }
+  }, [acceptWorkspace, planId, readOnly, user?.uid]);
+
+  const reconcileAfterReconnect = useCallback(async () => {
+    if (!initializedRef.current || reconnectingRef.current) return;
+    setConnectionState('reconnecting');
+    try {
+      await refreshWorkspace();
+      await replayOutbox();
+    } catch (reconnectError) {
+      if (isNetworkFailure(reconnectError)) {
+        setConnectionState('offline-queued');
+      } else {
+        setConnectionState('error');
+        setError(reconnectError instanceof Error
+          ? reconnectError.message
+          : 'Failed to reconnect to this plan');
+      }
+    }
+  }, [refreshWorkspace, replayOutbox]);
 
   useEffect(() => {
     if (!planId) {
       setRealtimePlan(null);
       setLoading(false);
       setError('No plan selected');
+      setConnectionState('error');
       return undefined;
     }
 
+    if (!user?.uid) {
+      setRealtimePlan(null);
+      setLoading(false);
+      setError('Sign in to open the collaborative planning workspace');
+      setConnectionState('error');
+      return undefined;
+    }
+
+    let active = true;
+    initializedRef.current = false;
+    bufferedChangesRef.current = [];
+    revisionRef.current = 0;
     setLoading(true);
     setError(null);
+    setConnectionState('connecting');
 
-    const initializePlan = async () => {
-      try {
-        if (!readOnly && user?.uid) {
-          try {
-            await planService.ensurePlanStructure(planId);
-          } catch (structureError) {
-            if (!structureError.message?.includes('Permission denied')) {
-              throw structureError;
-            }
-          }
-
-          try {
-            await planService.hydratePlanTimelineLayoutIfMissing(planId, user.uid, sessionId);
-          } catch (hydrateError) {
-            // Hydration is a best-effort back-fill for legacy plans. It is
-            // expected to fail for shared recipients who lack read access to
-            // the owner's source timeline (or write access to the plan). The
-            // plan still loads via the subscription below, so never treat a
-            // hydration failure as fatal.
-            console.warn(
-              '[RealtimePlanContext] Skipping timeline layout hydration:',
-              isPermissionDeniedError(hydrateError) ? 'permission denied' : hydrateError
-            );
-          }
-        }
-
-        if (user?.uid) {
-          try {
-            await trackPlanAccess(planId, user.uid);
-          } catch (accessError) {
-            console.error('[RealtimePlanContext] Error tracking plan access:', accessError);
-          }
-        }
-      } catch (initializeError) {
-        console.warn('[RealtimePlanContext] Could not initialize plan:', initializeError);
-        setError(initializeError.message);
-      }
-    };
-
-    initializePlan();
-
-    const unsubscribe = planService.subscribeToPlanWithOrigin(
-      planId,
-      (planData, changeOrigin, subscriptionError) => {
-        if (subscriptionError) {
-          if (
-            subscriptionError.message?.includes('Permission denied') ||
-            subscriptionError.message?.includes('permission_denied')
-          ) {
-            setError('You do not have permission to access this plan');
-          } else {
-            setError(subscriptionError.message);
-          }
-          setLoading(false);
+    const subscription = normalizedPlanService.subscribeToWorkspaceChanges(planId, {
+      onChange: (change) => {
+        if (!active) return;
+        if (!initializedRef.current) {
+          bufferedChangesRef.current.push(change);
           return;
         }
 
-        if (planData) {
-          if (!realtimePlanRef.current || !changeOrigin || !isOwnChange(changeOrigin)) {
-            setRealtimePlan(planData);
+        if (change.revision <= revisionRef.current) return;
+        if (change.revision !== revisionRef.current + 1 || !change.afterData) {
+          void reconcileAfterReconnect();
+          return;
+        }
+        acceptWorkspace(change.afterData);
+        setConnectionState('saved');
+      },
+      onStatus: (status, statusError) => {
+        if (!active) return;
+        if (status === 'connecting') setConnectionState('connecting');
+        if (status === 'connected') {
+          if (initializedRef.current) void reconcileAfterReconnect();
+        }
+        if (status === 'disconnected') setConnectionState('reconnecting');
+        if (status === 'error') {
+          setConnectionState(
+            typeof navigator !== 'undefined' && !navigator.onLine
+              ? 'offline-queued'
+              : 'reconnecting'
+          );
+          if (statusError && !isNetworkFailure(statusError)) {
+            setError(statusError.message);
           }
-          setError(null);
-        } else {
-          setRealtimePlan(null);
+        }
+      },
+    });
+
+    void (async () => {
+      try {
+        // Subscribe before fetching so no committed revision can be missed
+        // between the snapshot request and channel join.
+        await Promise.race([subscription.ready, workspaceWaitTimeout(8_000)]);
+        if (!active) return;
+
+        const workspace = await normalizedPlanService.loadPlanWorkspace(planId);
+        if (!active) return;
+        acceptWorkspace(workspace);
+        const restoredPreference = await normalizedPlanService.savePlanPreferences(planId, {});
+        if (!active) return;
+        setPreference(restoredPreference);
+
+        const buffered = bufferedChangesRef.current
+          .filter((change) => change.revision > revisionRef.current)
+          .sort((left, right) => left.revision - right.revision);
+        bufferedChangesRef.current = [];
+
+        for (const change of buffered) {
+          if (change.revision !== revisionRef.current + 1 || !change.afterData) {
+            const freshWorkspace = await normalizedPlanService.loadPlanWorkspace(planId);
+            if (!active) return;
+            acceptWorkspace(freshWorkspace);
+            break;
+          }
+          acceptWorkspace(change.afterData);
         }
 
-        setLoading(false);
+        initializedRef.current = true;
         setIsInitialized(true);
-      },
-      readOnly ? null : sessionId
-    );
+        setConnectionState('saved');
+        await replayOutbox();
+      } catch (initializeError) {
+        if (!active) return;
+        const message = initializeError instanceof Error
+          ? initializeError.message
+          : 'Failed to load this plan';
+        setError(
+          /forbidden|permission/i.test(message)
+            ? 'You do not have permission to access this plan'
+            : message
+        );
+        setConnectionState(isNetworkFailure(initializeError) ? 'reconnecting' : 'error');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
 
-    planListenerRef.current = unsubscribe;
+    const handleOnline = () => void reconcileAfterReconnect();
+    const handleOffline = () => setConnectionState('offline-queued');
+    globalThis.addEventListener?.('online', handleOnline);
+    globalThis.addEventListener?.('offline', handleOffline);
 
     return () => {
-      if (planListenerRef.current) {
-        planListenerRef.current();
-        planListenerRef.current = null;
-      }
+      active = false;
+      initializedRef.current = false;
+      setIsInitialized(false);
+      void subscription.unsubscribe();
+      globalThis.removeEventListener?.('online', handleOnline);
+      globalThis.removeEventListener?.('offline', handleOffline);
     };
-  }, [planId, readOnly, sessionId, isOwnChange, user?.uid]);
+  }, [
+    acceptWorkspace,
+    planId,
+    reconcileAfterReconnect,
+    replayOutbox,
+    user?.uid,
+  ]);
 
-  const trackChange = useCallback((changeType, changeId) => {
-    const trackingId = `${changeType}-${changeId}-${sessionId}`;
-    changeOriginRef.current = trackingId;
-    pendingChangesRef.current.add(trackingId);
+  const commitOperation = useCallback(async (
+    operation: PlanOperation,
+    optimisticPatch: Partial<Plan> = {}
+  ) => {
+    if (!planId || !user?.uid || readOnly || !permissions.canEdit) return;
+    if (
+      connectionState === 'offline-queued' &&
+      (operation.kind === 'upgrade_timeline' || operation.payload.routeId)
+    ) {
+      setError('Timeline and route changes require a connection.');
+      return;
+    }
 
-    setTimeout(() => {
-      pendingChangesRef.current.delete(trackingId);
-      if (changeOriginRef.current === trackingId) {
-        changeOriginRef.current = null;
+    const operationId = normalizedPlanService.createOperationId();
+    const queuedOperation = {
+      operationId,
+      planId,
+      baseRevision: revisionRef.current,
+      operation,
+      queuedAt: Date.now(),
+    };
+
+    if (Object.keys(optimisticPatch).length > 0) {
+      const optimisticPlan = planRef.current
+        ? { ...planRef.current, ...optimisticPatch }
+        : null;
+      planRef.current = optimisticPlan;
+      setRealtimePlan(optimisticPlan);
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      await normalizedPlanService.queuePlanOperation(queuedOperation);
+      setConnectionState('offline-queued');
+      return;
+    }
+
+    setConnectionState('saving');
+    try {
+      const workspace = await normalizedPlanService.applyPlanOperation(
+        planId,
+        operation,
+        queuedOperation.baseRevision,
+        operationId
+      );
+      acceptWorkspace(workspace);
+      setConnectionState('saved');
+    } catch (updateError) {
+      if (isNetworkFailure(updateError)) {
+        await normalizedPlanService.queuePlanOperation(queuedOperation);
+        setConnectionState('offline-queued');
+        return;
       }
-    }, 2000);
 
-    return trackingId;
-  }, [sessionId]);
-
-  const canMutatePlan = !!planId && !!user?.uid && !readOnly && !isUpdatingRef.current;
-
-  const updateBossRealtime = useCallback((bossId) => {
-    if (!canMutatePlan) return;
-    if (realtimePlanRef.current?.bossId === bossId) return;
-
-    trackChange('boss', bossId);
-    setChangeOrigin(sessionId);
-
-    const previousBossId = realtimePlanRef.current?.bossId;
-    setRealtimePlan(prev => prev ? { ...prev, bossId } : null);
-
-    debouncedUpdate(`boss-${planId}`, async () => {
+      setConnectionState('error');
+      setError(updateError instanceof Error ? updateError.message : 'Failed to update plan');
       try {
-        await planService.updatePlanBossRealtime(planId, bossId, user.uid, sessionId);
-      } catch (updateError) {
-        console.error('Error updating boss realtime:', updateError);
-        setRealtimePlan(prev => prev ? { ...prev, bossId: previousBossId } : null);
+        await refreshWorkspace();
+      } catch {
+        // Keep the optimistic workspace visible while the connection recovers.
       }
-    }, 300);
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
+      throw updateError;
+    }
+  }, [
+    acceptWorkspace,
+    connectionState,
+    planId,
+    permissions.canEdit,
+    readOnly,
+    refreshWorkspace,
+    user?.uid,
+  ]);
+
+  const updateBossRealtime = useCallback((bossId: string) => {
+    if (planRef.current?.bossId === bossId) return;
+    void commitOperation(
+      {
+        kind: 'set_plan_meta',
+        targetType: 'plan',
+        payload: { metadata: { requestedBossId: bossId } },
+      },
+      { bossId }
+    );
+  }, [commitOperation]);
 
   const updateJobsRealtime = useCallback((selectedJobs) => {
-    if (!canMutatePlan) return;
+    const optimizedSelectedJobs = Object.fromEntries(
+      Object.entries(selectedJobs)
+        .map(([roleKey, jobs]: [string, any]) => [
+          roleKey,
+          jobs.filter((job) => job.selected).map((job) => job.id),
+        ])
+        .filter(([, jobIds]: [string, any]) => jobIds.length > 0)
+    );
+    if (
+      JSON.stringify(planRef.current?.selectedJobs || {}) ===
+      JSON.stringify(optimizedSelectedJobs)
+    ) return;
 
-    const optimizedSelectedJobs = {};
-    Object.entries(selectedJobs).forEach(([roleKey, jobs]) => {
-      const selectedJobIds = jobs
-        .filter(job => job.selected)
-        .map(job => job.id);
+    void commitOperation(
+      {
+        kind: 'set_party',
+        targetType: 'party',
+        payload: { selectedJobs: optimizedSelectedJobs },
+      },
+      { selectedJobs: optimizedSelectedJobs }
+    );
+  }, [commitOperation]);
 
-      if (selectedJobIds.length > 0) {
-        optimizedSelectedJobs[roleKey] = selectedJobIds;
-      }
-    });
-
-    const currentJobsString = JSON.stringify(realtimePlanRef.current?.selectedJobs || {});
-    const newJobsString = JSON.stringify(optimizedSelectedJobs);
-    if (currentJobsString === newJobsString) return;
-
-    trackChange('jobs', newJobsString);
-    setChangeOrigin(sessionId);
-
-    const previousJobs = realtimePlanRef.current?.selectedJobs;
-    setRealtimePlan(prev => prev ? { ...prev, selectedJobs: optimizedSelectedJobs } : null);
-
-    debouncedUpdate(`jobs-${planId}`, async () => {
-      try {
-        await planService.updatePlanJobsRealtime(planId, optimizedSelectedJobs, user.uid, sessionId);
-      } catch (updateError) {
-        console.error('Error updating jobs realtime:', updateError);
-        setRealtimePlan(prev => prev ? { ...prev, selectedJobs: previousJobs } : null);
-        setError('Failed to update job selection. Please try again.');
-        setTimeout(() => setError(null), 5000);
-      }
-    }, 150);
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
-
-  const updateAssignmentsRealtime = useCallback((assignments) => {
-    if (!canMutatePlan) {
-      return Promise.resolve();
+  const updateAssignmentsRealtime = useCallback(async (
+    assignments: MitigationAssignments
+  ) => {
+    const changedEvents = normalizedPlanService.diffAssignmentEvents(
+      planRef.current?.assignments || {},
+      assignments
+    );
+    if (Object.keys(changedEvents).length === 0) return;
+    for (const [eventKey, eventAssignments] of Object.entries(changedEvents)) {
+      await commitOperation(
+        {
+          kind: 'set_event_assignments',
+          targetType: 'assignment',
+          targetKey: eventKey,
+          payload: { assignmentEvents: { [eventKey]: eventAssignments } },
+        },
+        { assignments }
+      );
     }
+  }, [commitOperation]);
 
-    const currentAssignmentsString = JSON.stringify(realtimePlanRef.current?.assignments || {});
-    const newAssignmentsString = JSON.stringify(assignments);
-    if (currentAssignmentsString === newAssignmentsString) {
-      return Promise.resolve();
-    }
-
-    trackChange('assignments', newAssignmentsString);
-    setChangeOrigin(sessionId);
-
-    const previousAssignments = realtimePlanRef.current?.assignments;
-    setRealtimePlan(prev => prev ? { ...prev, assignments } : null);
-
-    return new Promise((resolve, reject) => {
-      debouncedUpdate(`assignments-${planId}`, async () => {
-        try {
-          await planService.updatePlanAssignmentsRealtime(planId, assignments, user.uid, sessionId);
-          resolve(true);
-        } catch (updateError) {
-          console.error('Error updating assignments realtime:', updateError);
-          setRealtimePlan(prev => prev ? { ...prev, assignments: previousAssignments } : null);
-          setError('Failed to update mitigation assignments. Please try again.');
-          setTimeout(() => setError(null), 5000);
-          reject(updateError);
-        }
-      }, 300);
-    });
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
-
-  const updateTankPositionsRealtime = useCallback((tankPositions) => {
-    if (!canMutatePlan) return;
-
-    const currentTankPositionsString = JSON.stringify(realtimePlanRef.current?.tankPositions || {});
-    const newTankPositionsString = JSON.stringify(tankPositions);
-    if (currentTankPositionsString === newTankPositionsString) return;
-
-    trackChange('tankPositions', newTankPositionsString);
-    setChangeOrigin(sessionId);
-
-    const previousTankPositions = realtimePlanRef.current?.tankPositions;
-    setRealtimePlan(prev => prev ? { ...prev, tankPositions } : null);
-
-    debouncedUpdate(`tankPositions-${planId}`, async () => {
-      try {
-        await planService.updatePlanTankPositionsRealtime(planId, tankPositions, user.uid, sessionId);
-      } catch (updateError) {
-        console.error('Error updating tank positions realtime:', updateError);
-        setRealtimePlan(prev => prev ? { ...prev, tankPositions: previousTankPositions } : null);
-        setError('Failed to update tank positions. Please try again.');
-        setTimeout(() => setError(null), 5000);
-      }
-    }, 300);
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
+  const updateTankPositionsRealtime = useCallback((tankPositions: TankPositions) => {
+    if (
+      JSON.stringify(planRef.current?.tankPositions || {}) ===
+      JSON.stringify(tankPositions)
+    ) return;
+    void commitOperation(
+      {
+        kind: 'set_party',
+        targetType: 'party',
+        payload: { tankPositions },
+      },
+      { tankPositions }
+    );
+  }, [commitOperation]);
 
   const updatePhaseOverridesRealtime = useCallback((phaseOverrides) => {
-    if (!canMutatePlan) return;
+    if (
+      JSON.stringify(planRef.current?.phaseOverrides || {}) ===
+      JSON.stringify(phaseOverrides || {})
+    ) return;
+    void commitOperation(
+      {
+        kind: 'set_phase_overrides',
+        targetType: 'timeline_overrides',
+        payload: { phaseOverrides },
+      },
+      { phaseOverrides }
+    );
+  }, [commitOperation]);
 
-    const currentPhaseOverridesString = JSON.stringify(realtimePlanRef.current?.phaseOverrides || {});
-    const nextPhaseOverridesString = JSON.stringify(phaseOverrides || {});
-    if (currentPhaseOverridesString === nextPhaseOverridesString) return;
-
-    trackChange('phaseOverrides', nextPhaseOverridesString);
-    setChangeOrigin(sessionId);
-
-    const previousPhaseOverrides = realtimePlanRef.current?.phaseOverrides || {};
-    setRealtimePlan((prev) => prev ? { ...prev, phaseOverrides } : null);
-
-    debouncedUpdate(`phaseOverrides-${planId}`, async () => {
-      try {
-        await planService.batchUpdatePlanRealtime(planId, { phaseOverrides }, user.uid, sessionId);
-      } catch (updateError) {
-        console.error('Error updating phase overrides realtime:', updateError);
-        setRealtimePlan((prev) => prev ? { ...prev, phaseOverrides: previousPhaseOverrides } : null);
-        setError('Failed to update phase timings. Please try again.');
-        setTimeout(() => setError(null), 5000);
-      }
-    }, 250);
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
-
-  const updateTimelineLayoutRealtime = useCallback((timelineLayout) => {
-    if (!canMutatePlan) {
-      return Promise.resolve();
-    }
-
-    const currentTimelineLayoutString = JSON.stringify(realtimePlanRef.current?.timelineLayout || null);
-    const nextTimelineLayoutString = JSON.stringify(timelineLayout || null);
-    const currentPhaseOverridesString = JSON.stringify(realtimePlanRef.current?.phaseOverrides || {});
-    if (currentTimelineLayoutString === nextTimelineLayoutString && currentPhaseOverridesString === '{}') {
-      return Promise.resolve();
-    }
-
-    trackChange('timelineLayout', nextTimelineLayoutString);
-    setChangeOrigin(sessionId);
-
-    const previousTimelineLayout = realtimePlanRef.current?.timelineLayout || null;
-    const previousBossId = realtimePlanRef.current?.bossId || null;
-    const previousBossTags = realtimePlanRef.current?.bossTags || [];
-    const previousBossMetadata = realtimePlanRef.current?.bossMetadata || null;
-    const previousPhaseOverrides = realtimePlanRef.current?.phaseOverrides || {};
-
-    setRealtimePlan((prev) => prev
-      ? {
-          ...prev,
+  const updateTimelineLayoutRealtime = useCallback(async (
+    timelineLayout: PlanTimelineLayout
+  ) => {
+    await commitOperation(
+      {
+        kind: 'set_timeline_layout',
+        targetType: 'timeline_version',
+        payload: {
           timelineLayout,
-          bossId: timelineLayout?.bossId || null,
-          bossTags: timelineLayout?.bossTags || (timelineLayout?.bossId ? [timelineLayout.bossId] : []),
-          bossMetadata: timelineLayout?.bossMetadata || null,
           phaseOverrides: {},
-        }
-      : null);
-
-    return new Promise((resolve, reject) => {
-      debouncedUpdate(`timelineLayout-${planId}`, async () => {
-        try {
-          await planService.updatePlanTimelineLayoutRealtime(planId, timelineLayout, user.uid, sessionId);
-          resolve(true);
-        } catch (updateError) {
-          console.error('Error updating plan timeline layout realtime:', updateError);
-          setRealtimePlan((prev) => prev
-            ? {
-                ...prev,
-                timelineLayout: previousTimelineLayout,
-                bossId: previousBossId,
-                bossTags: previousBossTags,
-                bossMetadata: previousBossMetadata,
-                phaseOverrides: previousPhaseOverrides,
-              }
-            : null);
-          setError('Failed to update the plan timeline. Please try again.');
-          setTimeout(() => setError(null), 5000);
-          reject(updateError);
-        }
-      }, 250);
-    });
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, trackChange, user?.uid]);
-
-  const batchUpdateRealtime = useCallback((updates) => {
-    if (!canMutatePlan) return;
-
-    setChangeOrigin(sessionId);
-
-    const previousState = {};
-    const currentPlan = realtimePlanRef.current;
-    Object.keys(updates).forEach((key) => {
-      if (currentPlan && currentPlan[key] !== undefined) {
-        previousState[key] = currentPlan[key];
+          sourceTimelineId: planRef.current?.sourceTimelineId,
+          sourceTimelineName: planRef.current?.sourceTimelineName,
+        },
+      },
+      {
+        timelineLayout,
+        bossId: timelineLayout?.bossId || null,
+        bossTags: timelineLayout?.bossTags || [],
+        bossMetadata: timelineLayout?.bossMetadata || null,
+        phaseOverrides: {},
       }
+    );
+  }, [commitOperation]);
+
+  const batchUpdateRealtime = useCallback((updates: Partial<Plan>) => {
+    const healthSettings = {
+      maxTankHP: updates.maxTankHP,
+      partyMinHP: updates.partyMinHP,
+      maxPartyHP: updates.maxPartyHP,
+    };
+    Object.keys(healthSettings).forEach((key) => {
+      if (healthSettings[key] === undefined) delete healthSettings[key];
     });
 
-    setRealtimePlan(prev => prev ? { ...prev, ...updates } : null);
+    void commitOperation(
+      {
+        kind: 'patch_plan',
+        targetType: 'plan',
+        payload: {
+          name: updates.name,
+          description: updates.description,
+          routeId: updates.routeId,
+          timelineLayout: updates.timelineLayout,
+          phaseOverrides: updates.phaseOverrides,
+          healthSettings: Object.keys(healthSettings).length > 0
+            ? healthSettings
+            : undefined,
+          metadata: {
+            bossId: updates.bossId,
+            bossTags: updates.bossTags,
+            bossMetadata: updates.bossMetadata,
+          },
+        },
+      },
+      updates
+    );
+  }, [commitOperation]);
 
-    debouncedUpdate(`batch-${planId}`, async () => {
-      try {
-        await planService.batchUpdatePlanRealtime(planId, updates, user.uid, sessionId);
-      } catch (updateError) {
-        console.error('Error batch updating plan realtime:', updateError);
-        setRealtimePlan(prev => prev ? { ...prev, ...previousState } : null);
-        setError('Failed to update settings. Please try again.');
-        setTimeout(() => setError(null), 5000);
+  const undoChange = useCallback(async (changeId: string) => {
+    if (!planId || readOnly) return;
+    setConnectionState('saving');
+    try {
+      const workspace = await normalizedPlanService.undoPlanChange(planId, changeId);
+      acceptWorkspace(workspace);
+      setConnectionState('saved');
+    } catch (undoError) {
+      setConnectionState('error');
+      setError(undoError instanceof Error ? undoError.message : 'Unable to undo that change');
+    }
+  }, [acceptWorkspace, planId, readOnly]);
+
+  const previewTimelineUpgrade = useCallback(async (targetVersionId: string) => {
+    if (!planId) throw new Error('No plan is open');
+    return normalizedPlanService.previewTimelineUpgrade(planId, targetVersionId);
+  }, [planId]);
+
+  const applyTimelineSelection = useCallback(async (
+    targetVersionId: string,
+    routeId: string
+  ) => {
+    const changingVersion = targetVersionId !== planRef.current?.timelineVersionId;
+    await commitOperation(
+      {
+        kind: changingVersion ? 'upgrade_timeline' : 'set_route',
+        targetType: 'timeline_version',
+        targetKey: targetVersionId,
+        payload: {
+          timelineVersionId: targetVersionId,
+          routeId,
+          reviewApproved: true,
+        },
+      },
+      {
+        timelineVersionId: targetVersionId,
+        routeId,
       }
-    }, 500);
-  }, [canMutatePlan, debouncedUpdate, planId, sessionId, setChangeOrigin, user?.uid]);
+    );
+  }, [commitOperation]);
+
+  const savePreferences = useCallback(async (
+    preferences: Partial<UserPlanPreference>
+  ) => {
+    if (!planId || !user?.uid) return;
+    const nextPreference = await normalizedPlanService.savePlanPreferences(planId, preferences);
+    setPreference(nextPreference);
+  }, [planId, user?.uid]);
 
   const recoverPlanData = useCallback(async () => {
-    if (!planId) return;
-
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-
-      const planData = user?.uid
-        ? await planService.getPlanWithAccessTracking(planId, user.uid)
-        : await planService.getPublicPlan(planId);
-
-      setRealtimePlan(planData);
-    } catch (recoverError) {
-      console.error('[RealtimePlanContext] Failed to recover plan data:', recoverError);
-      setError('Failed to recover plan data. Please refresh the page.');
+      await refreshWorkspace();
+      setConnectionState('saved');
     } finally {
       setLoading(false);
     }
-  }, [planId, user?.uid]);
+  }, [refreshWorkspace]);
 
   const dataValue = useMemo(() => ({
     planId,
     realtimePlan,
     loading,
+    isLoading: loading,
     error,
     isInitialized,
     isReadOnly: readOnly,
+    connectionState,
+    changes,
+    preference,
+    permissions,
     bossId: realtimePlan?.bossId,
     selectedJobs: realtimePlan?.selectedJobs || {},
     assignments: realtimePlan?.assignments || {},
     tankPositions: realtimePlan?.tankPositions || {},
     phaseOverrides: realtimePlan?.phaseOverrides || {},
-    planName: realtimePlan?.name
-  }), [planId, realtimePlan, loading, error, isInitialized, readOnly]);
+    planName: realtimePlan?.name,
+  }), [
+    changes,
+    connectionState,
+    error,
+    isInitialized,
+    loading,
+    planId,
+    preference,
+    permissions,
+    readOnly,
+    realtimePlan,
+  ]);
 
   const actionsValue = useMemo(() => ({
     updateBossRealtime,
@@ -433,16 +608,27 @@ export const RealtimePlanProvider = ({ children, planId, readOnly = false }) => 
     updatePhaseOverridesRealtime,
     updateTimelineLayoutRealtime,
     batchUpdateRealtime,
-    recoverPlanData
+    undoChange,
+    previewTimelineUpgrade,
+    applyTimelineSelection,
+    savePreferences,
+    recoverPlanData,
+    loadPlanRealtime: recoverPlanData,
+    updatePlanRealtime: batchUpdateRealtime,
+    clearRealtimePlan: () => setRealtimePlan(null),
   }), [
+    batchUpdateRealtime,
+    recoverPlanData,
+    applyTimelineSelection,
+    savePreferences,
+    previewTimelineUpgrade,
+    undoChange,
+    updateAssignmentsRealtime,
     updateBossRealtime,
     updateJobsRealtime,
-    updateAssignmentsRealtime,
-    updateTankPositionsRealtime,
     updatePhaseOverridesRealtime,
+    updateTankPositionsRealtime,
     updateTimelineLayoutRealtime,
-    batchUpdateRealtime,
-    recoverPlanData
   ]);
 
   return (

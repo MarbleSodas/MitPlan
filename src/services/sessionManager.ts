@@ -1,388 +1,307 @@
-import {
-  ref,
-  set,
-  remove,
-  get,
-  update,
-  onValue,
-  onDisconnect
-} from 'firebase/database';
-import { database } from '../config/firebase';
-import { clearPresence } from './presenceService';
 import { USER_COLORS, MAX_USERS_PER_PLAN } from '../types/presence';
 import {
-  getActiveUserPath,
-  getActiveUsersPath
-} from './collaborationPaths';
+  acquirePlanChannel,
+  type SharedPlanChannel,
+} from './planRealtimeChannel';
 import {
   COLLABORATION_UNAVAILABLE_MESSAGE,
   isPermissionDeniedError,
-} from './firebaseErrorUtils';
+} from './backendErrorUtils';
+
+interface SessionIdentity {
+  userId: string;
+  displayName: string;
+  color?: string;
+}
+
+interface SessionPresence extends SessionIdentity {
+  sessionId: string;
+  color: string;
+  isActive: true;
+  connectedAt: number;
+  activeTarget?: unknown;
+  interaction?: unknown;
+  viewport?: unknown;
+  lastUpdated?: number;
+}
+
+interface ActiveSession {
+  planId: string;
+  sessionId: string;
+  sharedChannel: SharedPlanChannel;
+  presence: SessionPresence;
+  listeners: Set<(sessions: SessionPresence[]) => void>;
+  presenceListeners: Set<(entries: Map<string, Record<string, unknown>>) => void>;
+  cursors: Map<string, unknown>;
+  channelListenerCleanup: Array<() => void>;
+}
+
+const channelError = (error: unknown): Error & { code?: string } => {
+  const source = error as { message?: string; code?: string } | null;
+  const nextError = new Error(source?.message || COLLABORATION_UNAVAILABLE_MESSAGE) as Error & {
+    code?: string;
+  };
+  nextError.code = source?.code || 'REALTIME_ERROR';
+  return nextError;
+};
 
 class SessionManager {
-  constructor() {
-    this.activeSessions = new Map();
-    this.cleanupIntervals = new Map();
-    this.heartbeatIntervals = new Map();
-    this.CLEANUP_INTERVAL = 5 * 60 * 1000;
-    this.SESSION_TIMEOUT = 10 * 60 * 1000;
-    this.HEARTBEAT_INTERVAL = 30 * 1000;
-    this.MAX_USERS = MAX_USERS_PER_PLAN;
-  }
+  private activeSessions = new Map<string, ActiveSession>();
+  private MAX_USERS = MAX_USERS_PER_PLAN;
 
-  async getActiveSessionCount(planId) {
-    try {
-      const sessionsRef = ref(database, getActiveUsersPath(planId));
-      const snapshot = await get(sessionsRef);
-      
-      if (!snapshot.exists()) return 0;
-      
-      let count = 0;
-      snapshot.forEach((childSnapshot) => {
-        const sessionData = childSnapshot.val();
-        if (sessionData && sessionData.isActive) {
-          count++;
-        }
-      });
-      
-      return count;
-    } catch (error) {
-      console.error('Error getting active session count:', error);
-      return 0;
-    }
-  }
-
-  getColorForSession(planId, existingSessionCount) {
+  getColorForSession(planId: string, existingSessionCount: number): string {
     return USER_COLORS[existingSessionCount % USER_COLORS.length] ?? '#3b82f6';
   }
 
-  normalizeSessionForSubscriber(sessionId, sessionData) {
-    return {
-      sessionId,
-      userId: sessionData?.userId || '',
-      displayName: sessionData?.displayName || 'User',
-      email: sessionData?.email || '',
-      color: sessionData?.color || '#3b82f6',
-      isActive: Boolean(sessionData?.isActive),
-    };
+  private getSessionForPlan(planId: string): ActiveSession | null {
+    return Array.from(this.activeSessions.values())
+      .find((session) => session.planId === planId) || null;
   }
 
-  areSessionListsEqual(previousSessions = [], nextSessions = []) {
-    if (previousSessions.length !== nextSessions.length) {
-      return false;
-    }
+  private readPresence(session: ActiveSession): SessionPresence[] {
+    const state = session.sharedChannel.channel.presenceState<Record<string, unknown>>();
+    const entries: SessionPresence[] = [];
 
-    return previousSessions.every((session, index) => {
-      const otherSession = nextSessions[index];
-
-      return (
-        session.sessionId === otherSession?.sessionId &&
-        session.userId === otherSession?.userId &&
-        session.displayName === otherSession?.displayName &&
-        session.email === otherSession?.email &&
-        session.color === otherSession?.color &&
-        session.isActive === otherSession?.isActive
-      );
+    Object.entries(state).forEach(([presenceKey, rawEntries]) => {
+      const latest = rawEntries.at(-1) as Partial<SessionPresence> | undefined;
+      if (!latest) return;
+      entries.push({
+        sessionId: String(latest.sessionId || presenceKey),
+        userId: String(latest.userId || ''),
+        displayName: String(latest.displayName || 'User'),
+        color: String(latest.color || '#3b82f6'),
+        isActive: true,
+        connectedAt: Number(latest.connectedAt || Date.now()),
+        activeTarget: latest.activeTarget,
+        interaction: latest.interaction,
+        viewport: latest.viewport,
+        lastUpdated: Number(latest.lastUpdated || 0),
+      });
     });
+
+    return entries.sort((left, right) =>
+      left.connectedAt - right.connectedAt ||
+      left.sessionId.localeCompare(right.sessionId)
+    );
   }
 
-  async startSession(planId, sessionId, userData) {
+  private notify(session: ActiveSession): void {
+    const sessions = this.readPresence(session);
+    const activeSessionIds = new Set(sessions.map((entry) => entry.sessionId));
+    session.cursors.forEach((_, cursorSessionId) => {
+      if (!activeSessionIds.has(cursorSessionId)) session.cursors.delete(cursorSessionId);
+    });
+    session.listeners.forEach((listener) => listener(sessions));
+
+    const presenceEntries = new Map<string, Record<string, unknown>>();
+    sessions.forEach((entry) => {
+      presenceEntries.set(entry.sessionId, {
+        activeTarget: entry.activeTarget || null,
+        interaction: entry.interaction || null,
+        viewport: entry.viewport || null,
+        cursor: session.cursors.get(entry.sessionId) || null,
+        lastUpdated: entry.lastUpdated || entry.connectedAt,
+      });
+    });
+    session.presenceListeners.forEach((listener) => listener(presenceEntries));
+  }
+
+  async getActiveSessionCount(planId: string): Promise<number> {
+    const session = this.getSessionForPlan(planId);
+    return session ? this.readPresence(session).length : 0;
+  }
+
+  async startSession(
+    planId: string,
+    sessionId: string,
+    userData: SessionIdentity
+  ): Promise<boolean> {
     try {
-      const currentCount = await this.getActiveSessionCount(planId);
-      if (currentCount >= this.MAX_USERS) {
+      const existing = this.activeSessions.get(sessionId);
+      if (existing?.planId === planId) return true;
+      if (existing) await this.endSession(sessionId);
+
+      const color = userData.color || this.getColorForSession(
+        planId,
+        await this.getActiveSessionCount(planId)
+      );
+      const presence: SessionPresence = {
+        sessionId,
+        userId: userData.userId,
+        displayName: userData.displayName,
+        color,
+        isActive: true,
+        connectedAt: Date.now(),
+        activeTarget: null,
+        interaction: null,
+        viewport: null,
+        lastUpdated: Date.now(),
+      };
+
+      const sharedChannel = acquirePlanChannel(planId);
+
+      const activeSession: ActiveSession = {
+        planId,
+        sessionId,
+        sharedChannel,
+        presence,
+        listeners: new Set(),
+        presenceListeners: new Set(),
+        cursors: new Map(),
+        channelListenerCleanup: [],
+      };
+      this.activeSessions.set(sessionId, activeSession);
+      activeSession.channelListenerCleanup.push(sharedChannel.onPresenceSync(() => {
+        const current = this.activeSessions.get(sessionId);
+        if (current) this.notify(current);
+      }));
+      activeSession.channelListenerCleanup.push(sharedChannel.onCursor((payload) => {
+        const current = this.activeSessions.get(sessionId);
+        const cursorSessionId = String(payload?.sessionId || '');
+        if (!current || !cursorSessionId) return;
+        if (payload?.cursor) current.cursors.set(cursorSessionId, payload.cursor);
+        else current.cursors.delete(cursorSessionId);
+        this.notify(current);
+      }));
+      await sharedChannel.ready;
+      await sharedChannel.channel.track(presence);
+
+      if (this.readPresence(activeSession).length > this.MAX_USERS) {
+        await this.endSession(sessionId);
         throw new Error(`Plan has reached maximum collaborator limit (${this.MAX_USERS} users)`);
       }
 
-      const color = this.getColorForSession(planId, currentCount);
-      const sessionRef = ref(database, getActiveUserPath(planId, sessionId));
-
-      const sessionData = {
-        ...userData,
-        sessionId,
-        color,
-        joinedAt: Date.now(),
-        lastActivity: Date.now(),
-        isActive: true
-      };
-
-      // Set session data
-      await set(sessionRef, sessionData);
-
-      // Set up disconnect handler
-      const disconnectRef = onDisconnect(sessionRef);
-      await disconnectRef.remove();
-
-      // Store session info
-      this.activeSessions.set(sessionId, {
-        planId,
-        sessionRef,
-        disconnectRef,
-        userData
-      });
-
-      // Start heartbeat for this session
-      this.startHeartbeat(planId, sessionId);
-
-      // Start cleanup monitoring for this plan
-      this.startCleanupMonitoring(planId);
-
+      this.notify(activeSession);
       return true;
     } catch (error) {
       if (isPermissionDeniedError(error)) {
-        const permissionError = new Error(COLLABORATION_UNAVAILABLE_MESSAGE) as Error & { code?: string };
+        const permissionError = new Error(COLLABORATION_UNAVAILABLE_MESSAGE) as Error & {
+          code?: string;
+        };
         permissionError.code = 'PERMISSION_DENIED';
         throw permissionError;
       }
-
-      console.error('Error starting session:', error);
-      throw new Error('Failed to start collaborative session');
+      console.error('Error starting realtime presence session:', error);
+      throw channelError(error);
     }
   }
 
-  /**
-   * End a collaborative session
-   */
-  async endSession(sessionId) {
+  async updateSessionPresence(
+    sessionId: string,
+    patch: Record<string, unknown>
+  ): Promise<void> {
+    const session = this.activeSessions.get(sessionId);
+    if (!session) return;
+
+    const { cursor, ...presencePatch } = patch;
+    const viewport = presencePatch.viewport as Record<string, unknown> | null | undefined;
+    session.presence = {
+      ...session.presence,
+      sessionId,
+      userId: session.presence.userId,
+      displayName: String(presencePatch.displayName || session.presence.displayName),
+      color: session.presence.color,
+      isActive: true,
+      activeTarget: 'activeTarget' in presencePatch
+        ? presencePatch.activeTarget
+        : session.presence.activeTarget ?? null,
+      interaction: 'interaction' in presencePatch
+        ? presencePatch.interaction
+        : session.presence.interaction ?? null,
+      viewport: viewport === null
+        ? null
+        : viewport
+          ? {
+              surface: viewport.surface || null,
+              panel: viewport.panel || null,
+              section: viewport.section || null,
+            }
+          : session.presence.viewport,
+      lastUpdated: Date.now(),
+    };
+    await session.sharedChannel.channel.track(session.presence);
+
+    if ('cursor' in patch) {
+      await session.sharedChannel.channel.send({
+        type: 'broadcast',
+        event: 'cursor',
+        payload: { sessionId, cursor: cursor || null },
+      });
+    }
+    this.notify(session);
+  }
+
+  async endSession(sessionId: string): Promise<boolean> {
+    const session = this.activeSessions.get(sessionId);
+    if (!session) return false;
+    this.activeSessions.delete(sessionId);
+    session.channelListenerCleanup.forEach((cleanup) => cleanup());
+
     try {
-      const sessionInfo = this.activeSessions.get(sessionId);
-      if (!sessionInfo) return;
-
-      const { planId, sessionRef } = sessionInfo;
-
-      await remove(sessionRef);
-
-      await clearPresence(planId, sessionId);
-
-      this.stopHeartbeat(sessionId);
-
-      this.activeSessions.delete(sessionId);
-
-      const hasOtherSessions = Array.from(this.activeSessions.values())
-        .some(session => session.planId === planId);
-      
-      if (!hasOtherSessions) {
-        this.stopCleanupMonitoring(planId);
-      }
-
+      await session.sharedChannel.channel.untrack();
+      await session.sharedChannel.release();
       return true;
     } catch (error) {
-      if (isPermissionDeniedError(error)) {
-        this.stopHeartbeat(sessionId);
-        this.activeSessions.delete(sessionId);
-        return false;
+      if (!isPermissionDeniedError(error)) {
+        console.error('Error ending realtime presence session:', error);
       }
-
-      console.error('Error ending session:', error);
-      throw new Error('Failed to end collaborative session');
+      return false;
     }
   }
 
-  /**
-   * Start heartbeat for a session
-   */
-  startHeartbeat(planId, sessionId) {
-    // Clear existing heartbeat if any
-    this.stopHeartbeat(sessionId);
-
-    const heartbeatInterval = setInterval(async () => {
-      try {
-        const activityRef = ref(database, `${getActiveUserPath(planId, sessionId)}/lastActivity`);
-        await set(activityRef, Date.now());
-      } catch (error) {
-        console.error('Error updating heartbeat:', error);
-        // If heartbeat fails, the session might be invalid
-        this.endSession(sessionId);
-      }
-    }, this.HEARTBEAT_INTERVAL);
-
-    this.heartbeatIntervals.set(sessionId, heartbeatInterval);
+  async getActiveSessions(planId: string): Promise<SessionPresence[]> {
+    const session = this.getSessionForPlan(planId);
+    return session ? this.readPresence(session) : [];
   }
 
-  /**
-   * Stop heartbeat for a session
-   */
-  stopHeartbeat(sessionId) {
-    const interval = this.heartbeatIntervals.get(sessionId);
-    if (interval) {
-      clearInterval(interval);
-      this.heartbeatIntervals.delete(sessionId);
-    }
-  }
-
-  /**
-   * Start cleanup monitoring for a plan
-   */
-  startCleanupMonitoring(planId) {
-    // Don't start if already monitoring
-    if (this.cleanupIntervals.has(planId)) return;
-
-    const cleanupInterval = setInterval(async () => {
-      try {
-        await this.cleanupInactiveSessions(planId);
-      } catch (error) {
-        console.error('Error during cleanup:', error);
-      }
-    }, this.CLEANUP_INTERVAL);
-
-    this.cleanupIntervals.set(planId, cleanupInterval);
-  }
-
-  /**
-   * Stop cleanup monitoring for a plan
-   */
-  stopCleanupMonitoring(planId) {
-    const interval = this.cleanupIntervals.get(planId);
-    if (interval) {
-      clearInterval(interval);
-      this.cleanupIntervals.delete(planId);
-    }
-  }
-
-  /**
-   * Clean up inactive sessions for a plan
-   */
-  async cleanupInactiveSessions(planId) {
-    try {
-      const sessionsRef = ref(database, getActiveUsersPath(planId));
-      const snapshot = await get(sessionsRef);
-
-      if (!snapshot.exists()) {
-        // No sessions exist, stop monitoring
-        this.stopCleanupMonitoring(planId);
-        return;
-      }
-
-      const now = Date.now();
-      const updates = {};
-      let hasActiveSessions = false;
-
-      snapshot.forEach((childSnapshot) => {
-        const sessionData = childSnapshot.val();
-        const sessionId = childSnapshot.key;
-        const lastActivity = sessionData.lastActivity;
-
-        if (lastActivity && (now - lastActivity) > this.SESSION_TIMEOUT) {
-          // Mark for removal
-          updates[`${getActiveUsersPath(planId)}/${sessionId}`] = null;
-
-          // Also remove from local tracking if it exists
-          if (this.activeSessions.has(sessionId)) {
-            this.stopHeartbeat(sessionId);
-            this.activeSessions.delete(sessionId);
-          }
-        } else {
-          hasActiveSessions = true;
-        }
-      });
-
-      // Apply cleanup updates
-      if (Object.keys(updates).length > 0) {
-        await update(ref(database), updates);
-      }
-
-      // If no active sessions remain, stop monitoring
-      if (!hasActiveSessions) {
-        this.stopCleanupMonitoring(planId);
-      }
-    } catch (error) {
-      console.error('Error cleaning up inactive sessions:', error);
-    }
-  }
-
-  /**
-   * Get active sessions for a plan
-   */
-  async getActiveSessions(planId) {
-    try {
-      const sessionsRef = ref(database, getActiveUsersPath(planId));
-      const snapshot = await get(sessionsRef);
-      
-      const sessions = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((childSnapshot) => {
-          const sessionData = childSnapshot.val();
-          if (sessionData && sessionData.isActive) {
-            sessions.push({
-              sessionId: childSnapshot.key,
-              ...sessionData
-            });
-          }
-        });
-      }
-      
-      return sessions;
-    } catch (error) {
-      console.error('Error getting active sessions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Subscribe to session changes for a plan
-   */
-  subscribeToSessions(planId, callback, options = {}) {
-    const sessionsRef = ref(database, getActiveUsersPath(planId));
-    let lastEmittedSessions = null;
-
-    const unsubscribe = onValue(sessionsRef, (snapshot) => {
-      const sessions = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((childSnapshot) => {
-          const sessionData = childSnapshot.val();
-          if (sessionData && sessionData.isActive) {
-            sessions.push(this.normalizeSessionForSubscriber(childSnapshot.key, sessionData));
-          }
-        });
-      }
-
-      if (lastEmittedSessions && this.areSessionListsEqual(lastEmittedSessions, sessions)) {
-        return;
-      }
-
-      lastEmittedSessions = sessions;
-      callback(sessions);
-    }, (error) => {
+  subscribeToSessions(
+    planId: string,
+    callback: (sessions: SessionPresence[]) => void,
+    options: { onError?: (error: unknown) => void } = {}
+  ): () => void {
+    const session = this.getSessionForPlan(planId);
+    if (!session) {
+      const error = new Error('Presence channel is not connected');
       options.onError?.(error);
-      if (!options.onError || !isPermissionDeniedError(error)) {
-        console.error('Error listening to session changes:', error);
-      }
       callback([]);
-    });
+      return () => {};
+    }
 
-    return unsubscribe;
+    session.listeners.add(callback);
+    callback(this.readPresence(session));
+    return () => session.listeners.delete(callback);
   }
 
-  /**
-   * Cleanup all sessions and intervals
-   */
-  cleanup() {
-    // End all active sessions
+  subscribeToPresence(
+    planId: string,
+    callback: (entries: Map<string, Record<string, unknown>>) => void
+  ): () => void {
+    const session = this.getSessionForPlan(planId);
+    if (!session) {
+      callback(new Map());
+      return () => {};
+    }
+    session.presenceListeners.add(callback);
+    this.notify(session);
+    return () => session.presenceListeners.delete(callback);
+  }
+
+  getSessionPresence(sessionId: string): Record<string, unknown> | null {
+    const presence = this.activeSessions.get(sessionId)?.presence;
+    return presence ? { ...presence } : null;
+  }
+
+  async cleanup(): Promise<void> {
     const sessionIds = Array.from(this.activeSessions.keys());
-    sessionIds.forEach(sessionId => {
-      this.endSession(sessionId);
-    });
-
-    // Clear all cleanup intervals
-    this.cleanupIntervals.forEach((interval, planId) => {
-      clearInterval(interval);
-    });
-    this.cleanupIntervals.clear();
-
-    // Clear all heartbeat intervals
-    this.heartbeatIntervals.forEach((interval, sessionId) => {
-      clearInterval(interval);
-    });
-    this.heartbeatIntervals.clear();
+    await Promise.all(sessionIds.map((sessionId) => this.endSession(sessionId)));
   }
 }
 
-// Create singleton instance
 const sessionManager = new SessionManager();
 
-// Cleanup on page unload
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
-    sessionManager.cleanup();
+    void sessionManager.cleanup();
   });
 }
 

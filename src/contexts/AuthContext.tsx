@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { User } from 'firebase/auth';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { legacyLocalPlanImportService } from '../services/legacyLocalPlanImportService';
 import { storeUserProfile } from '../services/userService';
 import { logger } from '../utils/logger';
 import type { AuthContextValue } from '../types/contexts';
-import { getErrorMessage } from '../services/firebaseErrorUtils';
+import { getErrorMessage } from '../services/backendErrorUtils';
+import { toAppUser, type AppUser } from '../types/auth';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -23,13 +23,13 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasPendingMigration, setHasPendingMigration] = useState(false);
 
   // Check for pending plan migrations when user authenticates
-  const checkForPendingMigration = async (user: User | null) => {
+  const checkForPendingMigration = async (user: User | AppUser | null) => {
     if (user) {
       try {
         setHasPendingMigration(legacyLocalPlanImportService.hasLegacyPlans());
@@ -43,43 +43,57 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    logger.debug('[AuthContext] Setting up Firebase auth listener');
+    logger.debug('[AuthContext] Setting up Supabase auth listener');
+    let active = true;
 
-    const unsubscribe = onAuthStateChanged(auth,
-      async (user) => {
-        logger.debug('[AuthContext] Auth state changed:', user ? 'User logged in' : 'No user');
-        setUser(user);
-        setLoading(false);
-        setError(null);
+    const applyUser = async (nextUser: User | null) => {
+      if (!active) return;
+      const appUser = toAppUser(nextUser);
+      logger.debug('[AuthContext] Auth state changed:', appUser ? 'User logged in' : 'No user');
+      setUser(appUser);
+      setLoading(false);
+      setError(null);
 
-        if (user) {
-          // Store user profile for better display name resolution
-          try {
-            const displayName = user.displayName || user.email?.split('@')[0] || 'User';
-            await storeUserProfile(user.uid, displayName, user.email);
-            logger.debug('[AuthContext] User profile stored for:', user.uid, displayName);
-          } catch (error) {
-            logger.error('[AuthContext] Failed to store user profile:', error);
-          }
-
-          checkForPendingMigration(user).catch(error => {
-            logger.error('[AuthContext] Failed to check pending migration:', error);
-          });
+      if (appUser) {
+        try {
+          const displayName = appUser.displayName || appUser.email?.split('@')[0] || 'User';
+          await storeUserProfile(appUser.uid, displayName, appUser.email);
+          logger.debug('[AuthContext] User profile stored for:', appUser.uid, displayName);
+        } catch (profileError) {
+          logger.error('[AuthContext] Failed to store user profile:', profileError);
         }
-      },
-      (error) => {
-        logger.error('Auth state change error:', error);
-        setError(getErrorMessage(error));
-        setLoading(false);
-      }
-    );
 
-    return unsubscribe;
+        checkForPendingMigration(appUser).catch((migrationError) => {
+          logger.error('[AuthContext] Failed to check pending migration:', migrationError);
+        });
+      } else {
+        setHasPendingMigration(false);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (sessionError) {
+        setError(getErrorMessage(sessionError));
+        setLoading(false);
+        return;
+      }
+      void applyUser(data.session?.user || null);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applyUser(session?.user || null);
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
       logger.debug('[AuthContext] User logged out successfully');
     } catch (error) {
       logger.error('Logout error:', error);

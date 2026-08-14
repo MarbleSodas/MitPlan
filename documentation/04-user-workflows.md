@@ -31,7 +31,7 @@ Plan Creation Workflow
 
 #### Account Creation Flow
 ```
-Email/Password Input → Firebase Authentication → Dashboard Redirect
+Email/Password Input → Supabase Authentication → Dashboard Redirect
 ```
 
 **Features**:
@@ -144,7 +144,7 @@ Plan URL → Display Name Prompt → Anonymous Session → Real-time Collaborati
 
 #### Collaborative Actions
 ```
-User Action → Local Update → Firebase Sync → Broadcast to All Users → UI Update
+User Action → Local Update → Supabase Realtime Sync → Broadcast to All Users → UI Update
 ```
 
 **Synchronized Elements**:

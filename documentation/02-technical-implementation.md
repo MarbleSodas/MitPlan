@@ -17,7 +17,7 @@ This document provides detailed technical information about how each feature in 
 - Route protection and navigation logic
 
 ### Routing System
-**Implementation**: React Router v7
+**Implementation**: Next.js App Router
 **Key Files**:
 - `src/App.tsx` - Main routing configuration
 - `src/components/guards/UnauthenticatedPlanGuard.tsx` - Route protection
@@ -166,7 +166,7 @@ export const ffxivJobs = {
 
 **File**: `src/contexts/RealtimeJobContext.tsx`
 - Job selection state management
-- Real-time synchronization with Firebase
+- Real-time synchronization with Supabase
 
 ### 4. Mitigation Abilities System
 
@@ -249,7 +249,7 @@ batchUpdate(planId, updates, userId, sessionId)
 
 #### Session Management Service
 **File**: `src/services/sessionManager.js`
-- Firebase session lifecycle management
+- Supabase session lifecycle management
 - Heartbeat system for connection monitoring
 - Automatic cleanup of inactive sessions
 
@@ -266,7 +266,7 @@ class SessionManager {
 
 #### Real-Time Plan Service
 **File**: `src/services/realtimePlanService.js`
-- Firebase Realtime Database operations
+- Supabase document adapter operations
 - Plan CRUD operations
 - Batch update optimization
 - Change tracking and conflict resolution
@@ -283,7 +283,7 @@ subscribeToPlan(planId, callback)
 
 #### Authentication Context
 **File**: `src/contexts/AuthContext.tsx`
-- Firebase Authentication integration
+- Supabase Authentication integration
 - Account migration handling for legacy local plans
 
 **Key Functions**:
@@ -296,7 +296,7 @@ checkForPendingMigration()
 
 #### Unified Plan Service
 **File**: `src/services/unifiedPlanService.ts`
-- Firebase-backed facade for plan operations
+- Supabase-backed facade for plan operations
 - Maintains current authenticated user context
 
 **Key Class**: `UnifiedPlanService`
@@ -312,9 +312,9 @@ class UnifiedPlanService {
 }
 ```
 
-#### Firebase Plan Service
+#### Supabase Plan Service
 **File**: `src/services/realtimePlanService.ts`
-- Firebase-specific plan operations
+- Supabase-specific plan operations
 - Real-time subscription management
 - Access control and ownership tracking
 
@@ -380,7 +380,7 @@ const lightTheme = {
 - **Context Optimization**: Selective context subscriptions
 
 ### Database Optimizations
-- **Batched Writes**: Grouped Firebase operations
+- **Batched Writes**: Grouped Supabase operations
 - **Debounced Updates**: Reduced API call frequency
 - **Optimistic Updates**: Immediate UI feedback
 
@@ -400,6 +400,6 @@ const lightTheme = {
 ### Testing Tools
 - **Vitest**: Test runner and framework
 - **React Testing Library**: Component testing
-- **Firebase Emulator**: Backend testing
+- **Supabase local stack**: Backend testing
 
 This technical implementation guide provides developers with the detailed information needed to understand, maintain, and extend the MitPlan application's codebase.

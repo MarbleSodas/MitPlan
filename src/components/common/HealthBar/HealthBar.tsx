@@ -3,10 +3,10 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { formatHealth, formatPercentage, formatHealthCompact } from '../../../utils';
 
 const HEALTH_COLORS = {
-  success: 'oklch(0.623 0.188 145.28)',
-  warning: 'oklch(0.795 0.184 86.047)',
+  success: 'var(--color-health-safe)',
+  warning: 'var(--color-warning)',
   error: 'var(--color-destructive)',
-  barrier: 'oklch(0.795 0.184 86.047)',
+  barrier: 'var(--color-warning)',
 };
 
 const HealthBar = ({
@@ -70,7 +70,7 @@ const HealthBar = ({
             <span className="whitespace-nowrap">{formatHealthCompact(remainingHealth)} / {formatHealthCompact(maxHealth)}</span>
           </div>
 
-          <div className="w-full h-5 rounded overflow-hidden relative bg-[var(--color-muted)]">
+          <div className="w-full h-5 rounded overflow-hidden relative bg-muted">
             <div className="h-full transition-[width] duration-300" style={{ width: `${healthBeforeHitPercentage}%`, backgroundColor: barColor }} />
 
             {barrierAmount > 0 && (

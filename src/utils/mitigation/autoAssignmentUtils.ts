@@ -3,6 +3,7 @@
  */
 
 import { mitigationAbilities } from '../../data';
+import { isAbilityAssignable } from '../abilities/abilityUtils';
 
 /**
  * Get recommended tank-specific self-mitigations for a tank job
@@ -16,6 +17,7 @@ export const getRecommendedTankMitigations = (tankJobId, bossLevel = 90) => {
 
   // Get all tank-specific self-targeting mitigations for this job
   const tankMitigations = mitigationAbilities.filter(ability =>
+    isAbilityAssignable(ability) &&
     ability.target === 'self' &&
     ability.forTankBusters &&
     !ability.forRaidWide &&
@@ -46,6 +48,7 @@ export const getRecommendedSingleTargetMitigations = (tankJobId, bossLevel = 90)
 
   // Get all single-target mitigations that this tank can cast
   const singleTargetMitigations = mitigationAbilities.filter(ability =>
+    isAbilityAssignable(ability) &&
     ability.target === 'single' &&
     ability.forTankBusters &&
     ability.jobs.includes(tankJobId) &&

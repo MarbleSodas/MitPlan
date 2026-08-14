@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Grid, List, Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Grid, List, Plus, Search } from 'lucide-react';
 import {
   bossActionsLibrary,
   categorizedActions,
@@ -30,15 +30,17 @@ const CATEGORY_TABS = [
   { id: 'mechanics', label: 'Mechanics' },
 ] as const;
 
+const RESULTS_PER_PAGE = 50;
+
 function getClassificationBadgeClasses(classification: BossActionClassification): string {
   switch (classification) {
     case 'dual_tankbuster':
     case 'tankbuster':
-      return 'bg-red-500/15 text-red-300 border-red-500/30';
+      return 'bg-destructive/15 text-destructive border-destructive/30';
     case 'raidwide':
-      return 'bg-orange-500/15 text-orange-300 border-orange-500/30';
+      return 'bg-warning/15 text-warning border-warning/30';
     case 'small_parties':
-      return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+      return 'bg-info/15 text-info border-info/30';
     default:
       return 'bg-secondary text-secondary-foreground border-border';
   }
@@ -68,6 +70,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
   const [selectedBossSource, setSelectedBossSource] = useState('all');
   const [selectedClassification, setSelectedClassification] = useState<'all' | BossActionClassification>('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const bossNameById = useMemo(
     () => new Map(bosses.map((boss) => [boss.id, boss.name])),
@@ -111,6 +114,24 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
     return actions;
   }, [searchTerm, selectedCategory, selectedDamageType, selectedBossSource, selectedClassification]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedDamageType, selectedBossSource, selectedClassification]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredActions.length / RESULTS_PER_PAGE));
+  const visibleActions = useMemo(() => {
+    const pageStart = (currentPage - 1) * RESULTS_PER_PAGE;
+    return filteredActions.slice(pageStart, pageStart + RESULTS_PER_PAGE);
+  }, [currentPage, filteredActions]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSelectedDamageType('all');
+    setSelectedBossSource('all');
+    setSelectedClassification('all');
+  };
+
   const handleDirectAdd = (action: BossActionTemplate) => {
     onSelectAction(action);
   };
@@ -124,6 +145,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
           <Input
+            aria-label="Search boss action templates"
             type="text"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -205,7 +227,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground" role="status" aria-live="polite">
             {filteredActions.length} template{filteredActions.length !== 1 ? 's' : ''}
           </div>
 
@@ -215,7 +237,8 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
               size="icon"
               onClick={() => setViewMode('list')}
               className="h-8 w-8 rounded-none"
-              title="List view"
+              aria-label="List view"
+              aria-pressed={viewMode === 'list'}
             >
               <List size={14} />
             </Button>
@@ -224,7 +247,8 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
               size="icon"
               onClick={() => setViewMode('grid')}
               className="h-8 w-8 rounded-none"
-              title="Grid view"
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
             >
               <Grid size={14} />
             </Button>
@@ -238,11 +262,12 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
       >
         <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-2 xl:grid-cols-2' : 'space-y-1.5'}>
           {filteredActions.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground text-sm">
-              No boss action templates found
+            <div className="space-y-3 py-8 text-center text-sm text-muted-foreground">
+              <p>No templates match these filters.</p>
+              <Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>
             </div>
           ) : (
-            filteredActions.map((action) => {
+            visibleActions.map((action) => {
               const bossName = bossNameById.get(action.sourceBoss) || action.sourceBoss;
               const classificationLabel =
                 BOSS_ACTION_CLASSIFICATION_LABELS[action.classification] || action.classification;
@@ -260,7 +285,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium truncate">{action.name}</span>
                         {isTankBusterClassification(action.classification) && (
-                          <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-500/20 text-red-300">
+                          <span className="px-1.5 py-0.5 text-[10px] rounded bg-destructive/20 text-destructive">
                             TB
                           </span>
                         )}
@@ -313,7 +338,7 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium truncate">{action.name}</span>
                         {isTankBusterClassification(action.classification) && (
-                          <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-500/20 text-red-300">
+                          <span className="px-1.5 py-0.5 text-[10px] rounded bg-destructive/20 text-destructive">
                             TB
                           </span>
                         )}
@@ -369,6 +394,32 @@ const BossActionsLibrary = ({ onSelectAction }: BossActionsLibraryProps) => {
           )}
         </div>
       </div>
+
+      {filteredActions.length > RESULTS_PER_PAGE && (
+        <nav className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3" aria-label="Template pages">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={14} /> Previous
+          </Button>
+          <span className="text-xs text-muted-foreground" aria-live="polite">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next <ChevronRight size={14} />
+          </Button>
+        </nav>
+      )}
     </div>
   );
 };

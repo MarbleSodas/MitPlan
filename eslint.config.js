@@ -10,7 +10,15 @@ const reactHooksRules = {
 }
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage'] },
+  {
+    ignores: [
+      '.agents/**',
+      '.next/**',
+      '**/dist/**',
+      'coverage/**',
+      'node_modules/**',
+    ],
+  },
   // Base config for JS/JSX (browser)
   {
     files: ['**/*.{js,jsx}'],
@@ -41,7 +49,12 @@ export default tseslint.config(
   },
   // TypeScript/TSX application and test files
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: [
+      'app/**/*.{ts,tsx}',
+      'scripts/**/*.{ts,tsx}',
+      'src/**/*.{ts,tsx}',
+      '*.config.{ts,tsx}',
+    ],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -80,7 +93,10 @@ export default tseslint.config(
   },
   // Node scripts and tooling
   {
-    files: ['scripts/**/*.js', 'vite.config.js', 'eslint.config.js'],
+    files: [
+      'scripts/**/*.{js,mjs,ts,tsx}',
+      '*.config.{js,mjs,ts,tsx}',
+    ],
     languageOptions: {
       globals: {
         ...globals.node,

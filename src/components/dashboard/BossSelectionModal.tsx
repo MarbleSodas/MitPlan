@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, Sparkles } from 'lucide-react';
 import { bosses } from '../../data';
 import { cn } from '@/lib/utils';
 import {
@@ -8,9 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const ENABLED_BOSS_IDS = [
   'vamp-fatale-m9s',
@@ -62,6 +63,15 @@ const BOSS_TIERS = [
 
 const BossSelectionModal = ({ onClose, onSelectBoss }) => {
   const [selectedBoss, setSelectedBoss] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [recentBossIds] = useState(() => {
+    try {
+      const value = JSON.parse(localStorage.getItem('mitplan-recent-bosses') || '[]');
+      return Array.isArray(value) ? value.slice(0, 3) : [];
+    } catch {
+      return [];
+    }
+  });
   const [expandedTiers, setExpandedTiers] = useState(() => {
     const initial = {};
     BOSS_TIERS.forEach(tier => {
@@ -82,54 +92,103 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
   const handleBossClick = (boss) => {
     if (!isBossEnabled(boss.id)) return;
     setSelectedBoss(boss);
-    setTimeout(() => {
-      onSelectBoss(boss?.id || null);
-    }, 150);
   };
 
   const handleNoBossClick = () => {
     setSelectedBoss({ id: null });
-    setTimeout(() => {
-      onSelectBoss(null);
-    }, 150);
   };
+
+  const handleContinue = () => {
+    if (!selectedBoss) return;
+    if (selectedBoss.id) {
+      try {
+        const nextRecent = [selectedBoss.id, ...recentBossIds.filter(id => id !== selectedBoss.id)].slice(0, 3);
+        localStorage.setItem('mitplan-recent-bosses', JSON.stringify(nextRecent));
+      } catch {
+        // Recent encounters are a convenience only.
+      }
+    }
+    onSelectBoss(selectedBoss.id || null);
+  };
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const recentBosses = recentBossIds
+    .map(id => bosses.find(boss => boss.id === id))
+    .filter(boss => boss && isBossEnabled(boss.id));
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Select Boss Encounter (Optional)</DialogTitle>
+          <DialogTitle className="text-2xl">Start a plan</DialogTitle>
           <DialogDescription>
-            Choose a boss to start with their timeline, or create a custom plan
+            Choose an encounter or custom timeline, then review the plan details before creating it.
           </DialogDescription>
         </DialogHeader>
 
-        <Card
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search encounters"
+            aria-label="Search encounters"
+            className="pl-9"
+          />
+        </div>
+
+        <button
+          type="button"
           onClick={handleNoBossClick}
           className={cn(
-            'flex cursor-pointer items-center gap-4 border border-dashed p-4 transition-colors hover:border-primary/50 hover:bg-muted/60',
+            'flex w-full items-center gap-4 rounded-lg border border-dashed p-4 text-left transition-colors hover:border-primary/50 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             selectedBoss?.id === null && 'border-primary bg-primary/10'
           )}
+          aria-pressed={selectedBoss?.id === null}
         >
-          <div className="text-2xl">✨</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
+          </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Custom Timeline</h3>
             <p className="text-sm text-muted-foreground m-0">Create from scratch using the boss actions library</p>
           </div>
-        </Card>
+        </button>
+
+        {recentBosses.length > 0 && !normalizedQuery ? (
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-foreground">Recent encounters</h3>
+            <div className="flex flex-wrap gap-2">
+              {recentBosses.map((boss) => (
+                <Button
+                  key={boss.id}
+                  type="button"
+                  variant={selectedBoss?.id === boss.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleBossClick(boss)}
+                >
+                  {boss.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-4 max-h-[55vh] overflow-y-auto rounded-lg border border-border">
           {BOSS_TIERS.map(tier => {
             const tierBosses = tier.bossIds
               .map(id => bosses.find(b => b.id === id))
-              .filter(Boolean);
+              .filter(Boolean)
+              .filter(boss => !normalizedQuery || boss.name.toLowerCase().includes(normalizedQuery));
+            if (tierBosses.length === 0) return null;
             
             return (
               <div key={tier.id} className="border-b border-border last:border-b-0">
                 <button
                   type="button"
                   onClick={() => toggleTier(tier.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/70 hover:bg-muted transition-colors text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/70 hover:bg-muted transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <span className="font-medium text-foreground">{tier.name}</span>
                   {expandedTiers[tier.id] ? (
@@ -138,18 +197,21 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                     <ChevronRight size={18} className="text-muted-foreground" />
                   )}
                 </button>
-                {expandedTiers[tier.id] && (
+                {(normalizedQuery || expandedTiers[tier.id]) && (
                   <div className="grid grid-cols-1 gap-3 bg-background p-3 sm:grid-cols-2">
                     {tierBosses.map(boss => {
                       const enabled = isBossEnabled(boss.id);
                       const isSelected = selectedBoss?.id === boss.id;
                       
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={boss.id}
                           onClick={() => handleBossClick(boss)}
+                          disabled={!enabled}
+                          aria-pressed={isSelected}
                           className={cn(
-                            'p-4 rounded-lg border transition-colors text-center',
+                            'rounded-lg border p-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             enabled && !isSelected && 'border-border hover:border-primary/60 hover:bg-muted/60 cursor-pointer',
                             enabled && isSelected && 'border-primary bg-primary/10',
                             !enabled && 'border-border opacity-50 cursor-not-allowed'
@@ -167,11 +229,11 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
                             enabled ? 'text-foreground' : 'text-muted-foreground'
                           )}>{boss.name}</h3>
                           {!enabled && (
-                            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                            <span className="text-xs text-warning font-medium">
                               Coming Soon
                             </span>
                           )}
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -180,6 +242,13 @@ const BossSelectionModal = ({ onClose, onSelectBoss }) => {
             );
           })}
         </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="button" onClick={handleContinue} disabled={!selectedBoss}>
+            Continue
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

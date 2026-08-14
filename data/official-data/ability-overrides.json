@@ -1,0 +1,4343 @@
+{
+  "schemaVersion": 1,
+  "overrides": {
+    "accession": {
+      "id": "accession",
+      "name": "Accession",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 240 Additional Effect: Erects a magicked barrier which nullifies damage equaling 180% of the amount of HP restored Duration: 30s Effect cannot be stacked with certain sage barrier effects. Can only be executed while under the effect of Seraphism. â»This action cannot be assigned to a hotbar. â»Concitation changes to Accession when requirements for execution are met.",
+      "levelRequirement": 100,
+      "levelDescriptions": {
+        "100": "Restores party HP with 240 potency and grants a barrier equal to 180% of the HP restored while Seraphism is active."
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Accession.png",
+      "type": "healing",
+      "healingPotency": 240,
+      "healingType": "instant",
+      "barrierFlatPotency": 432,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "requiresActiveWindow": {
+        "abilityId": "seraphism",
+        "windowDuration": 20
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "9feb31eadea354774cd0aaffa1abb75cade06ff09505d082dc5f29ee6265b04d",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__41",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "addle": {
+      "id": "addle",
+      "name": "Addle",
+      "description": "Lowers target's physical damage dealt by 5% and magic damage dealt by 10%. Duration: 15s",
+      "levelRequirement": 8,
+      "levelDescriptions": {
+        "8": "Reduces target's magic damage dealt by 10% for 10s",
+        "98": "Reduces target's magic damage dealt by 10% and physical damage dealt by 5% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "BLM",
+        "SMN",
+        "RDM",
+        "PCT"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/14_BLM/Role_Actions/Addle.png",
+      "type": "mitigation",
+      "mitigationValue": {
+        "magical": 0.1,
+        "physical": 0.05
+      },
+      "levelMitigationValues": {
+        "8": {
+          "magical": 0.1,
+          "physical": 0
+        },
+        "98": {
+          "magical": 0.1,
+          "physical": 0.05
+        }
+      },
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": true,
+      "forRaidWide": true,
+      "isRoleShared": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "bf68a2a234ad87506bab5ac0992bdb38536872080710cfe22029459206520556",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "mrange_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/blackmage/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "bf68a2a234ad87506bab5ac0992bdb38536872080710cfe22029459206520556",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "mrange_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/pictomancer/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "bf68a2a234ad87506bab5ac0992bdb38536872080710cfe22029459206520556",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "mrange_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/redmage/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "bf68a2a234ad87506bab5ac0992bdb38536872080710cfe22029459206520556",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "mrange_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/summoner/"
+        }
+      ]
+    },
+    "adloquium": {
+      "id": "adloquium",
+      "name": "Adloquium",
+      "description": "Restores target's HP. Cure Potency: 300 Additional Effect: Grants Galvanize to target, nullifying damage equaling 180% of the amount of HP restored. When critical HP is restored, also grants Catalyze, nullifying damage equaling 180% the amount of HP restored. Duration: 30s Effect cannot be stacked with certain sage barrier effects.",
+      "levelRequirement": 30,
+      "levelDescriptions": {
+        "30": "Restores target's HP with 300 potency and grants barrier equivalent to 180% of healing done"
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Adloquium.png",
+      "type": "healing",
+      "healingPotency": 300,
+      "healingType": "instant",
+      "barrierFlatPotency": 540,
+      "conditionalBarrierOnCrit": {
+        "additionalBarrierMultiplier": 1.8,
+        "stackingRule": "add",
+        "incompatibleWith": [
+          "adloquium"
+        ]
+      },
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "55829044c9f22585d54f154a439d58890331bcddd6026dc5a80e33f2ff7c0896",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__08",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "aetherflow": {
+      "id": "aetherflow",
+      "name": "Aetherflow",
+      "description": "Restores 20% of maximum MP. Additional Effect: Aetherflow III Can only be executed while in combat.",
+      "levelRequirement": 45,
+      "levelDescriptions": {
+        "45": "Restores 3 Aetherflow stacks"
+      },
+      "duration": 0,
+      "cooldown": 60,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Aetherflow.png",
+      "type": "utility",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "isAetherflowProvider": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "99ac751ec0ccfb6d0950aa3ff444a92b2c2e5cff142489f0a100fd3cded322ee",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__12",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "afflatus_rapture": {
+      "id": "afflatus_rapture",
+      "name": "Afflatus Rapture",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 400 Additional Effect: Nourishes the Blood Lily Healing Gauge Cost: 1 Lily",
+      "levelRequirement": 76,
+      "levelDescriptions": {
+        "76": "Restores own HP and the HP of all nearby party members with 400 potency. Consumes 1 Lily."
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Rapture.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "consumesLily": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "86c0e9e20950c34a3c8ecef846e843d0a7c316f2eb94d02a67328deafbae126c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__28",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "afflatus_solace": {
+      "id": "afflatus_solace",
+      "name": "Afflatus Solace",
+      "description": "Restores target's HP. Cure Potency: 800 Additional Effect: Nourishes the Blood Lily Healing Gauge Cost: 1 Lily",
+      "levelRequirement": 52,
+      "levelDescriptions": {
+        "52": "Restores target's HP with 800 potency. Consumes 1 Lily."
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Afflatus_Solace.png",
+      "type": "healing",
+      "healingPotency": 800,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "consumesLily": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "f08ad01e964342d8946ff4177c8523259a412770c79448a8e81e6709abfda6a6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__16",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "aquaveil": {
+      "id": "aquaveil",
+      "name": "Aquaveil",
+      "description": "Reduces damage taken by a party member or self by 15%. Duration: 8s",
+      "levelRequirement": 86,
+      "levelDescriptions": {
+        "86": "Reduces damage taken by target party member by 15% for 8s"
+      },
+      "duration": 8,
+      "cooldown": 60,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Aquaveil.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "28fb238244b7e830c13989236c25ea39c50f75c63540d11284735afa54577c9b",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__32",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "arcane_crest": {
+      "id": "arcane_crest",
+      "name": "Arcane Crest",
+      "description": "Grants Crest of Time Borrowed to self, creating a barrier that nullifies damage totaling up to 10% of maximum HP. Duration: 5s Grants Crest of Time Returned to self and nearby party members within a radius of 15 yalms when barrier is completely absorbed. Crest of Time Returned Effect: Gradually restores HP Cure Potency: 50 Duration: 15s",
+      "levelRequirement": 40,
+      "levelDescriptions": {
+        "40": "Creates a barrier on self that absorbs damage equal to 10% of maximum HP for 5s and heals nearby party members when broken"
+      },
+      "duration": 5,
+      "cooldown": 30,
+      "jobs": [
+        "RPR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/08_RPR/Arcane_Crest.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierPotency": 0.1,
+      "regenPotency": 50,
+      "regenDuration": 15,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "1c638e5df6a1c35f54e9aeb1627a7b6f79e00f8fd5f4552a2b6eea1eb6ad27b5",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__10",
+          "url": "https://na.finalfantasyxiv.com/jobguide/reaper/"
+        }
+      ]
+    },
+    "arms_length": {
+      "id": "arms_length",
+      "name": "Arm's Length",
+      "description": "Nullifies most knockback and draw-in effects. Duration: 6s Additional Effect: When you are struck by a physical attack, the striker will be afflicted with Slow +20% Duration: 15s",
+      "levelRequirement": 32,
+      "levelDescriptions": {
+        "32": "Creates a barrier preventing knockback and most draw-in effects for 6s"
+      },
+      "duration": 6,
+      "cooldown": 120,
+      "jobs": [
+        "MNK",
+        "DRG",
+        "NIN",
+        "SAM",
+        "RPR",
+        "VPR",
+        "BRD",
+        "MCH",
+        "DNC",
+        "PLD",
+        "WAR",
+        "DRK",
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/05_MNK/Role_Actions/Arm's_Length.png",
+      "type": "utility",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "a1e43135c693b8b4aaf9b9ad92e91453e6b438447e557ed4be8028b61ca1c188",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "prange_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/bard/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "a1e43135c693b8b4aaf9b9ad92e91453e6b438447e557ed4be8028b61ca1c188",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "prange_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/dancer/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "fdd053397ce234430c3e0966946b895cd34a6c6d762e4862723d769b355c43d2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/dragoon/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "3072f27bb1a36e3e1b3c660a17e8d9bf056eb6a00b2fb53de5bb1366719abd81",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "3072f27bb1a36e3e1b3c660a17e8d9bf056eb6a00b2fb53de5bb1366719abd81",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "a1e43135c693b8b4aaf9b9ad92e91453e6b438447e557ed4be8028b61ca1c188",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "prange_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/machinist/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "fdd053397ce234430c3e0966946b895cd34a6c6d762e4862723d769b355c43d2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/monk/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "fdd053397ce234430c3e0966946b895cd34a6c6d762e4862723d769b355c43d2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/ninja/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "3072f27bb1a36e3e1b3c660a17e8d9bf056eb6a00b2fb53de5bb1366719abd81",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "fdd053397ce234430c3e0966946b895cd34a6c6d762e4862723d769b355c43d2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/reaper/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "fdd053397ce234430c3e0966946b895cd34a6c6d762e4862723d769b355c43d2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/samurai/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "fdd053397ce234430c3e0966946b895cd34a6c6d762e4862723d769b355c43d2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/viper/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "3072f27bb1a36e3e1b3c660a17e8d9bf056eb6a00b2fb53de5bb1366719abd81",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "aspected_benefic": {
+      "id": "aspected_benefic",
+      "name": "Aspected Benefic",
+      "description": "Restores target's HP. Cure Potency: 250 Additional Effect: Regen Cure Potency: 250 Duration: 15s",
+      "levelRequirement": 34,
+      "levelDescriptions": {
+        "34": "Restores target's HP with 250 potency and grants 250 potency regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 2.5,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Aspected_Benefic.png",
+      "type": "healing",
+      "healingPotency": 250,
+      "regenPotency": 250,
+      "healingType": "instant",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "fece9e7bc204959a5f84385cf0aee2234aaa10d1733ef3c860ea2bf8b0dd5f02",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__14",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "aspected_helios": {
+      "id": "aspected_helios",
+      "name": "Aspected Helios",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 250 Additional Effect: Regen Cure Potency: 150 Duration: 15s",
+      "levelRequirement": 40,
+      "levelDescriptions": {
+        "40": "Restores own HP and the HP of all nearby party members with 250 potency and grants 150 potency regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 2.5,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Aspected_Helios.png",
+      "type": "healing",
+      "healingPotency": 250,
+      "regenPotency": 150,
+      "healingType": "instant",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "upgradedBy": "helios_conjunction",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "5920d198109174ba0e5809f298fce9862bf1f138ff1405450cb1df30be6b7a6c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__15",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "assize": {
+      "id": "assize",
+      "name": "Assize",
+      "description": "Deals unaspected damage with a potency of 400 to all nearby enemies. Additional Effect: Restores own HP and the HP of nearby party members Cure Potency: 400 Additional Effect: Restores 5% of maximum MP",
+      "levelRequirement": 56,
+      "levelDescriptions": {
+        "56": "Restores own HP and the HP of all nearby party members with 400 potency"
+      },
+      "duration": 0,
+      "cooldown": 40,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Assize.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "8c2bed2c74218d44e3cbf600cdbe1ac3b7575225f862cade3adbc4e830ddc1e7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__19",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "asylum": {
+      "id": "asylum",
+      "name": "Asylum",
+      "description": "Envelops a designated area in a veil of succor, granting healing over time to self and any party members who enter. Cure Potency: 100 Duration: 24s Additional Effect: Increases HP recovery via healing actions on party members in the designated area by 10%",
+      "levelRequirement": 52,
+      "levelDescriptions": {
+        "52": "Creates a healing area that restores HP over time for 24s and increases HP recovery via healing actions by 10%"
+      },
+      "duration": 24,
+      "cooldown": 90,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Asylum.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "regenPotency": 100,
+      "healingType": "regen",
+      "regenDuration": 24,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingReceivedBonus": 0.1,
+      "levelHealingReceivedBonuses": {
+        "52": 0,
+        "78": 0.1
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "1a75d29c65e71a0be4f9663e0c97d299bb40dc03ff59b7a9b8fc138096123469",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__17",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "aurora": {
+      "id": "aurora",
+      "name": "Aurora",
+      "description": "Grants Regen to target. Cure Potency: 300 Duration: 18s Maximum Charges: 2",
+      "levelRequirement": 45,
+      "levelDescriptions": {
+        "45": "Grants healing over time to self or target party member for 18s"
+      },
+      "duration": 18,
+      "cooldown": 60,
+      "count": 2,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Aurora.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "regenPotency": 200,
+      "healingType": "regen",
+      "regenDuration": 18,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "22dc347dff75748ba11ce100a4777277b28c9b40c0fb7d8e6eb6f983714be002",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__14",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "benediction": {
+      "id": "benediction",
+      "name": "Benediction",
+      "description": "Restores all of a target's HP.",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "Restores all of target's HP"
+      },
+      "duration": 0,
+      "cooldown": 180,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Benediction.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "healingType": "fullHeal",
+      "isFullHeal": true,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "9f63640bd419ab29f4ee079e3e2c432133f7677226e3610658462f3f837d9735",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__15",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "benefic": {
+      "id": "benefic",
+      "name": "Benefic",
+      "description": "Restores target's HP. Cure Potency: 500 Additional Effect: 15% chance next Benefic II will restore critical HP Duration: 15s",
+      "levelRequirement": 2,
+      "levelDescriptions": {
+        "2": "Restores target's HP with 500 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Benefic.png",
+      "type": "healing",
+      "healingPotency": 500,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "b7aa6f102d7176f5d62f01538f3580fec1066464f92c70960fb4155ce90f7c64",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__02",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "benefic_ii": {
+      "id": "benefic_ii",
+      "name": "Benefic II",
+      "description": "Restores target's HP. Cure Potency: 800",
+      "levelRequirement": 26,
+      "levelDescriptions": {
+        "26": "Restores target's HP with 800 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Benefic_II.png",
+      "type": "healing",
+      "healingPotency": 800,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "403b1182eacaa44d8235c09155e065066d864ab2bcfaa9ceb605ba7017808da7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__08",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "bloodwhetting": {
+      "id": "bloodwhetting",
+      "name": "Bloodwhetting",
+      "description": "Reduces damage taken by 10%. Duration: 8s Additional Effect: Restores HP with each weaponskill successfully delivered Cure Potency: 400 Additional Effect: Grants Stem the Flow Stem the Flow Effect: Reduces damage taken by 10% Duration: 4s Additional Effect: Grants Stem the Tide Stem the Tide Effect: Creates a barrier around self that absorbs damage equivalent to a heal of 400 potency Duration: 20s Shares a recast timer with Nascent Flash.",
+      "levelRequirement": 82,
+      "levelDescriptions": {
+        "82": "Reduces damage taken by 10% and grants healing over time for 8s"
+      },
+      "duration": 8,
+      "cooldown": 25,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Bloodwhetting.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "healingPotency": 400,
+      "healingType": "triggered",
+      "barrierFlatPotency": 400,
+      "layeredMitigation": [
+        {
+          "value": 0.1,
+          "duration": 4,
+          "description": "Stem the Flow"
+        }
+      ],
+      "scaleBarrierWithHealing": true,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "sharedCooldownGroup": "war_bloodwhetting_nascent",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "762fe2851ff945a01a4dd55f0440e010e5df0a6f2126daf14202bf0443a4ea65",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__28",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "bulwark": {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "description": "Block incoming attacks. Duration: 10s",
+      "levelRequirement": 52,
+      "levelDescriptions": {
+        "52": "Increases block rate to 100% for 10s (approximately 20% physical damage reduction per blocked attack)"
+      },
+      "duration": 10,
+      "cooldown": 90,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Bulwark.png",
+      "type": "mitigation",
+      "mitigationValue": 0.2,
+      "damageType": "physical",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "780ed59cc706e75f8ef54bbdad63ae6cc95b8f5a99268bfb1738d961109635ea",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__17",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "camouflage": {
+      "id": "camouflage",
+      "name": "Camouflage",
+      "description": "Increases parry rate by 50% while reducing damage taken by 10%. Duration: 20s",
+      "levelRequirement": 6,
+      "levelDescriptions": {
+        "6": "Reduces damage taken by 10% and increases parry rate by 50% for 20s"
+      },
+      "duration": 20,
+      "cooldown": 90,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Camouflage.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "dd610742750f410e46a9fb6db0c4f740cff8450128d32aff3aed5ce12d83e9c7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "celestial_intersection": {
+      "id": "celestial_intersection",
+      "name": "Celestial Intersection",
+      "description": "Restores own or target party member's HP. Cure Potency: 200 Additional Sect Effect: Erects a magicked barrier which nullifies damage equaling 200% of the amount of HP restored Duration: 30s Maximum Charges: 2",
+      "levelRequirement": 74,
+      "levelDescriptions": {
+        "74": "Restores target's HP with 200 potency. Nocturnal Sect: Erects barrier (200% of heal). Maximum Charges: 2"
+      },
+      "duration": 30,
+      "cooldown": 30,
+      "count": 2,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Celestial_Intersection.png",
+      "type": "healing",
+      "healingPotency": 200,
+      "healingType": "instant",
+      "barrierFlatPotency": 400,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "scaleBarrierWithHealing": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "dfe6af40ab95dd6c52df9326266f30b0d116db700c75286b483de13c74cbd82f",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__29",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "celestial_opposition": {
+      "id": "celestial_opposition",
+      "name": "Celestial Opposition",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 200 Additional Effect: Regen Cure Potency: 100 Duration: 15s",
+      "levelRequirement": 60,
+      "levelDescriptions": {
+        "60": "Restores own HP and the HP of all nearby party members with 200 potency and grants 100 potency regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 60,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Celestial_Opposition.png",
+      "type": "healing",
+      "healingPotency": 200,
+      "regenPotency": 100,
+      "healingType": "instant",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "7d41165802a38bf45a1a91527ac44a90fc6b584dfd4380a6e34e4aab2a4dacfe",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__22",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "collective_unconscious": {
+      "id": "collective_unconscious",
+      "name": "Collective Unconscious",
+      "description": "Creates a celestial ring 8 yalms around the caster. Duration: 18s Additional Effect: Reduces damage taken by 10% for self and any party members within 30 yalms and applies Wheel of Fortune to self and any party members within 8 yalms Duration: 10s Wheel of Fortune Effect: Regen Cure Potency: 100 Duration: 15s Wheel of Fortune will be applied continuously to self and all party members standing within the celestial ring. Collective Unconscious effect ends upon using another action or moving (including facing a different direction). Cancels auto-attack upon execution.",
+      "levelRequirement": 58,
+      "levelDescriptions": {
+        "58": "Creates an area that reduces damage taken by 10% and applies regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 60,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Collective_Unconscious.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "regenPotency": 100,
+      "regenDuration": 15,
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "7db163c3aa9cca0eb453aa38c37747109b6878c7633cd1eda67c961eb8f4a63b",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__21",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "concitation": {
+      "id": "concitation",
+      "name": "Concitation",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 200 Additional Effect: Erects a magicked barrier which nullifies damage equaling 180% of the amount of HP restored Duration: 30s Effect cannot be stacked with certain sage barrier effects.",
+      "levelRequirement": 96,
+      "levelDescriptions": {
+        "96": "Restores own HP and the HP of all nearby party members with 200 potency and grants a barrier equivalent to 180% of the HP restored"
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Concitation.png",
+      "type": "healing",
+      "healingPotency": 200,
+      "healingType": "instant",
+      "barrierFlatPotency": 360,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "21357a86c6b52a0c82fea8b501268ff4b72b359e78d6d65df2cd725b96af341c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__38",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "consolation": {
+      "id": "consolation",
+      "name": "Consolation",
+      "description": "Orders Seraph to execute Consolation. Consolation Effect: Restores the HP of all nearby party members Cure Potency: 250 Additional Effect: Erects a magicked barrier which nullifies damage equaling the amount of HP restored Duration: 30s Maximum Charges: 2",
+      "levelRequirement": 80,
+      "levelDescriptions": {
+        "80": "Restores HP of all nearby party members with 250 potency and grants a barrier equivalent to 250 potency. 2 charges. Usable while Seraph is summoned."
+      },
+      "duration": 30,
+      "cooldown": 30,
+      "count": 2,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Consolation.png",
+      "type": "healing",
+      "healingPotency": 250,
+      "healingType": "instant",
+      "barrierFlatPotency": 250,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "scaleBarrierWithHealing": true,
+      "requiresActiveWindow": {
+        "abilityId": "summon_seraph"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "25feace702dc7cdc9bd03e690a0b6af4c54217d50f9a19e004a07003b57ccd48",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__32",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "cure": {
+      "id": "cure",
+      "name": "Cure",
+      "description": "Restores target's HP. Cure Potency: 500 Additional Effect: 15% chance next Cure II will cost no MP Duration: 15s",
+      "levelRequirement": 2,
+      "levelDescriptions": {
+        "2": "Restores target's HP with 500 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure.png",
+      "type": "healing",
+      "healingPotency": 500,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "b1b4fae7c97a611a497e78960c9f860ad2ee487b0a8e6cc706b23ae71f8e9705",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__02",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "cure_ii": {
+      "id": "cure_ii",
+      "name": "Cure II",
+      "description": "Restores target's HP. Cure Potency: 800",
+      "levelRequirement": 30,
+      "levelDescriptions": {
+        "30": "Restores target's HP with 800 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure_II.png",
+      "type": "healing",
+      "healingPotency": 800,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "09c95e52930fab05d096633bed444a4f8e7555367b94a76b9524b616a54cec3a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__07",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "cure_iii": {
+      "id": "cure_iii",
+      "name": "Cure III",
+      "description": "Restores own or target party member's HP and all party members nearby target. Cure Potency: 600",
+      "levelRequirement": 40,
+      "levelDescriptions": {
+        "40": "Restores HP of target and nearby party members with 600 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Cure_III.png",
+      "type": "healing",
+      "healingPotency": 600,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "2280cca4248ac40aa95c070125626a05d6c9964c0e54db0df426b092af576306",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__10",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "damnation": {
+      "id": "damnation",
+      "name": "Damnation",
+      "description": "Reduces damage taken by 40% and delivers an attack with a potency of 55 every time you suffer physical damage. Duration: 15s Additional Effect: Grants Primeval Impulse when the effect expires or damage is taken Primeval Impulse Effect: Healing over time Cure Potency: 300 Duration: 15s",
+      "levelRequirement": 92,
+      "levelDescriptions": {
+        "92": "Reduces damage taken by 40% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Damnation.png",
+      "type": "mitigation",
+      "mitigationValue": 0.4,
+      "regenPotency": 300,
+      "regenDuration": 15,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "4c6a9ecb2e3a8c9a9e06e3daafa942e2ebdc1962ae900cc104c1801c28c8d791",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__31",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "dark_mind": {
+      "id": "dark_mind",
+      "name": "Dark Mind",
+      "description": "Reduces physical damage taken by 10% and magic damage taken by 20%. Duration: 10s",
+      "levelRequirement": 45,
+      "levelDescriptions": {
+        "45": "Reduces magic vulnerability by 20% for 10s"
+      },
+      "duration": 10,
+      "cooldown": 60,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Dark_Mind.png",
+      "type": "mitigation",
+      "mitigationValue": {
+        "physical": 0.1,
+        "magical": 0.2
+      },
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "30037e52aa497be6bf3341e5a0fb3d0062b437c24c05adc0f616515e575363cd",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__13",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "dark_missionary": {
+      "id": "dark_missionary",
+      "name": "Dark Missionary",
+      "description": "Reduces physical damage taken by 5% and magic damage taken by 10% for self and nearby party members. Duration: 15s",
+      "levelRequirement": 66,
+      "levelDescriptions": {
+        "66": "Reduces magic damage taken by party members by 10% and physical damage by 5% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Dark_Missionary.png",
+      "type": "mitigation",
+      "mitigationValue": {
+        "magical": 0.1,
+        "physical": 0.05
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "2a678551f54339ab1dbaeba8e232f0ff73cc7c8aa957e73b0ddb596c6e24d143",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__21",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "diagnosis": {
+      "id": "diagnosis",
+      "name": "Diagnosis",
+      "description": "Restores target's HP. Cure Potency: 450",
+      "levelRequirement": 2,
+      "levelDescriptions": {
+        "2": "Restores target's HP with 450 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Diagnosis.png",
+      "type": "healing",
+      "healingPotency": 450,
+      "healingType": "instant",
+      "isSpell": true,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "2e2c89da77a7f55f57dc6114f1810180f60c054ee04fdb00e5d466621ac6c33f",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__02",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "dismantle": {
+      "id": "dismantle",
+      "name": "Dismantle",
+      "description": "Lowers target's damage dealt by 10%. Duration: 10s",
+      "levelRequirement": 62,
+      "levelDescriptions": {
+        "62": "Lowers target's damage dealt by 10% for 10s"
+      },
+      "duration": 10,
+      "cooldown": 120,
+      "jobs": [
+        "MCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/12_MCH/Dismantle.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": true,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "63c2063838e1c1f1b02c58da4eddf619ba97518bd8b944fbe16e23e985cc8253",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__21",
+          "url": "https://na.finalfantasyxiv.com/jobguide/machinist/"
+        }
+      ]
+    },
+    "divine_benison": {
+      "id": "divine_benison",
+      "name": "Divine Benison",
+      "description": "Creates a barrier around self or target party member that absorbs damage equivalent to a heal of 500 potency. Duration: 15s Maximum Charges: 2",
+      "levelRequirement": 66,
+      "levelDescriptions": {
+        "66": "Creates a barrier that absorbs damage equivalent to a heal of 500 potency for 15s"
+      },
+      "duration": 15,
+      "cooldown": 30,
+      "count": 2,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Divine_Benison.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierFlatPotency": 500,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "scaleBarrierWithHealing": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "316f8ce630a708194a8e79af1fe8415957df7116970bce05fb1f13f98af934f1",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__23",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "divine_caress": {
+      "id": "divine_caress",
+      "name": "Divine Caress",
+      "description": "Creates a barrier around self and all party members near you that absorbs damage equivalent to a heal of 400 potency. Duration: 10s Additional Effect: Grants Divine Aura when barrier effect expires Divine Aura Effect: Healing over time Cure Potency: 200 Duration: 15s Can only be executed while Divine Grace is active.",
+      "levelRequirement": 100,
+      "levelDescriptions": {
+        "100": "Grants healing and creates a barrier that absorbs damage. Barrier duration: 10s. Can only be executed while Divine Grace is active."
+      },
+      "duration": 10,
+      "cooldown": 1,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Divine_Caress.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierFlatPotency": 400,
+      "healingPotency": 400,
+      "healingType": "instant",
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "scaleBarrierWithHealing": true,
+      "requiresActiveWindow": {
+        "abilityId": "temperance",
+        "windowDuration": 30
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "f408334d8f7559e3043afe989da207b3bb86b60c5a5a898766074c0023f1120e",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__36",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "divine_veil": {
+      "id": "divine_veil",
+      "name": "Divine Veil",
+      "description": "Creates a barrier around self and all party members near you that absorbs damage equivalent to 10% of your maximum HP. Duration: 30s Additional Effect: Restores target's HP Cure Potency: 400",
+      "levelRequirement": 56,
+      "levelDescriptions": {
+        "56": "Creates a barrier around self and nearby party members that absorbs damage for 30s",
+        "88": "Creates a barrier around self and nearby party members that absorbs damage and restores HP for 30s"
+      },
+      "duration": 30,
+      "cooldown": 90,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Divine_Veil.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierPotency": 0.1,
+      "healingPotency": 400,
+      "healingType": "instant",
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "971cb8221d1e4b284cbc9c7c5670dbaa9faddfbe1e3a19c890ca53c0d4dec97c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__19",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "druochole": {
+      "id": "druochole",
+      "name": "Druochole",
+      "description": "Restores target's HP. Cure Potency: 600 Additional Effect: Restores 7% of maximum MP Addersgall Cost: 1",
+      "levelRequirement": 45,
+      "levelDescriptions": {
+        "45": "Restores target's HP with 600 potency"
+      },
+      "duration": 0,
+      "cooldown": 1,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Druochole.png",
+      "type": "healing",
+      "healingPotency": 600,
+      "healingType": "instant",
+      "consumesAddersgall": true,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "89cff4b8eee821734d8d2b9c7a023cc05a4fb6304690880f94739d978142515b",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__14",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "earthly_star": {
+      "id": "earthly_star",
+      "name": "Earthly Star",
+      "description": "Deploys an Earthly Star in the designated area and grants the effect of Earthly Dominance. Duration: 10s Executing Stellar Detonation while under the effect of Earthly Dominance creates a Stellar Burst dealing unaspected damage with a potency of 205 to all nearby enemies. Also restores own HP and the HP of all nearby party members. Cure Potency: 540 After 10s, Earthly Dominance effect is changed to Giant Dominance. Duration: 10s Waiting 10s or executing Stellar Detonation while under the effect of Giant Dominance creates a Stellar Explosion dealing unaspected damage with a potency of 310 to all nearby enemies. Also restores own HP and the HP of all nearby party members. Cure Potency: 720",
+      "levelRequirement": 62,
+      "levelDescriptions": {
+        "62": "Deploys a star that heals with 540-720 potency when detonated"
+      },
+      "duration": 20,
+      "cooldown": 60,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Earthly_Star.png",
+      "type": "healing",
+      "healingPotency": 630,
+      "healingType": "triggered",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "a3ec1ad6666b38a327331c18c9b1208c4300f5d963cbe93b7f5f5deb8ed42839",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__23",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "energy_drain": {
+      "id": "energy_drain",
+      "name": "Energy Drain",
+      "description": "Deals unaspected damage with a potency of 100. Additional Effect: Absorbs a portion of damage dealt as HP Additional Effect: Increases Faerie Gauge by 10 Aetherflow Gauge Cost: 1",
+      "levelRequirement": 45,
+      "levelDescriptions": {
+        "45": "Deals damage and restores MP"
+      },
+      "duration": 0,
+      "cooldown": 1,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Energy_Drain.png",
+      "type": "utility",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "consumesAetherflow": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "c5461846c416b5b4d979919c9202a480d323901ba83c5df3b2763a143e7f1dc3",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__13",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "essential_dignity": {
+      "id": "essential_dignity",
+      "name": "Essential Dignity",
+      "description": "Restores target's HP. Cure Potency: 400 Potency increases up to 900 as the target's HP decreases, reaching its maximum value when the target has 30% HP or less. Maximum Charges: 3",
+      "levelRequirement": 15,
+      "levelDescriptions": {
+        "15": "Restores target's HP. Cure Potency: 400. Potency increases up to 900 as target's HP decreases, reaching max at 30% HP or below",
+        "78": "Restores target's HP. Cure Potency: 400. Potency increases up to 900 as target's HP decreases, reaching max at 30% HP or below. Maximum Charges: 2",
+        "98": "Restores target's HP. Cure Potency: 400. Potency increases up to 900 as target's HP decreases, reaching max at 30% HP or below. Maximum Charges: 3"
+      },
+      "duration": 0,
+      "cooldown": 40,
+      "levelCooldowns": {
+        "15": 40,
+        "78": 40
+      },
+      "count": 3,
+      "levelCharges": {
+        "15": 1,
+        "78": 2,
+        "98": 3
+      },
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Essential_Dignity.png",
+      "type": "healing",
+      "healingPotency": 900,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "hpBasedPotencyScaling": {
+        "minPotency": 400,
+        "maxPotency": 900,
+        "thresholdPercent": 30,
+        "scalingType": "step"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "8c6a1d5b7a416204a9203b50d82e1be8faeb4a21308c04fcabc91d663c8deea7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__07",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "eukrasian_diagnosis": {
+      "id": "eukrasian_diagnosis",
+      "name": "Eukrasian Diagnosis",
+      "description": "Restores target's HP. Cure Potency: 300 Additional Effect: Erects a magicked barrier which nullifies damage equaling 180ï1⁄4 of the amount of HP restored. When critical HP is restored, also grants Differential Diagnosis, nullifying damage equaling 180% the amount of HP restored. Duration: 30s Effect cannot be stacked with Eukrasian Prognosis or scholar's Galvanize. Can only be executed while under the effect of Eukrasia. â»This action cannot be assigned to a hotbar. â»Diagnosis changes to Eukrasian Diagnosis when requirements for execution are met.",
+      "levelRequirement": 30,
+      "levelDescriptions": {
+        "30": "Restores target's HP with 300 potency and erects a barrier equal to 180% of the HP restored. Critical heals grant an additional crit-only barrier."
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Eukrasian_Diagnosis.png",
+      "type": "healing",
+      "healingPotency": 300,
+      "healingType": "instant",
+      "isSpell": true,
+      "mitigationValue": 0,
+      "barrierFlatPotency": 540,
+      "conditionalBarrierOnCrit": {
+        "additionalBarrierMultiplier": 1.8,
+        "stackingRule": "add",
+        "incompatibleWith": [
+          "eukrasian_diagnosis"
+        ]
+      },
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "6e3998debd256bcc68705c227f963644e4bb879c70a812ab1e0e29de90602709",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__09",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "eukrasian_prognosis": {
+      "id": "eukrasian_prognosis",
+      "name": "Eukrasian Prognosis",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 100 Additional Effect: Erects a magicked barrier which nullifies damage equaling 320% of the amount of HP restored Duration: 30s Effect cannot be stacked with those of Eukrasian Diagnosis or scholar's Galvanize. Can only be executed while under the effect of Eukrasia. â»This action cannot be assigned to a hotbar. â»Prognosis changes to Eukrasian Prognosis when requirements for execution are met.",
+      "levelRequirement": 30,
+      "levelDescriptions": {
+        "30": "Restores party HP with 100 potency and erects a barrier equal to 320% of the HP restored. Critical heals grant an additional crit-only barrier."
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Eukrasian_Prognosis.png",
+      "type": "healing",
+      "healingPotency": 100,
+      "healingType": "instant",
+      "isSpell": true,
+      "mitigationValue": 0,
+      "barrierFlatPotency": 320,
+      "conditionalBarrierOnCrit": {
+        "additionalBarrierMultiplier": 3.2,
+        "stackingRule": "add",
+        "incompatibleWith": [
+          "eukrasian_prognosis",
+          "eukrasian_prognosis_ii"
+        ]
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "upgradedBy": "eukrasian_prognosis_ii",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "c872f9bd66ae6815036b11b46795ef934774fcf9d744ec2ea5c9913aa377dad0",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__10",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "eukrasian_prognosis_ii": {
+      "id": "eukrasian_prognosis_ii",
+      "name": "Eukrasian Prognosis II",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 100 Additional Effect: Erects a magicked barrier which nullifies damage equaling 360% of the amount of HP restored Duration: 30s Effect cannot be stacked with those of Eukrasian Diagnosis or scholar's Galvanize. Can only be executed while under the effect of Eukrasia. â»This action cannot be assigned to a hotbar. â»Prognosis changes to Eukrasian Prognosis II when requirements for execution are met.",
+      "levelRequirement": 96,
+      "levelDescriptions": {
+        "96": "Restores party HP with 100 potency and erects a barrier equal to 360% of the HP restored. Critical heals grant an additional crit-only barrier."
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Eukrasian_Prognosis_II.png",
+      "type": "healing",
+      "healingPotency": 100,
+      "healingType": "instant",
+      "isSpell": true,
+      "mitigationValue": 0,
+      "barrierFlatPotency": 360,
+      "conditionalBarrierOnCrit": {
+        "additionalBarrierMultiplier": 3.6,
+        "stackingRule": "add",
+        "incompatibleWith": [
+          "eukrasian_prognosis",
+          "eukrasian_prognosis_ii"
+        ]
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "626f125bea22da815500d19ce1c4c3deff940a9dc132806f8e5ea47a5e3b72a6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__39",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "exaltation": {
+      "id": "exaltation",
+      "name": "Exaltation",
+      "description": "Reduces damage taken by self or target party member by 10%. Duration: 8s Additional Effect: Restores HP at the end of the effect's duration Cure Potency: 500",
+      "levelRequirement": 86,
+      "levelDescriptions": {
+        "86": "Reduces damage taken by a party member by 10% and delivers healing after effect expires for 8s"
+      },
+      "duration": 8,
+      "cooldown": 60,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Exaltation.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "healingPotency": 500,
+      "healingType": "triggered",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "0cba6d95889e4ea9b9b63ac589443d2543e98e8e24fee1aaed208c6f9f9b341f",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__35",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "excogitation": {
+      "id": "excogitation",
+      "name": "Excogitation",
+      "description": "Grants self or target party member the effect of Excogitation, restoring HP when member's HP falls to 50% or below, or upon effect duration expiration. Cure Potency: 800 Duration: 45s Additional Effect: Increases Faerie Gauge by 10 Aetherflow Gauge Cost: 1",
+      "levelRequirement": 62,
+      "levelDescriptions": {
+        "62": "Grants healing effect that activates when HP falls below 50% or effect expires with 800 potency"
+      },
+      "duration": 45,
+      "cooldown": 45,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Excogitation.png",
+      "type": "healing",
+      "healingPotency": 800,
+      "healingType": "triggered",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "consumesAetherflow": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "aac6a8810f771cddddba82a7323de2b6035e56f7e5e45bc456a2c7ead910c45f",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__22",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "expedient": {
+      "id": "expedient",
+      "name": "Expedient",
+      "description": "Grants Expedience and Desperate Measures to all nearby party members. Expedience Effect: Increases movement speed Duration: 10s Desperate Measures Effect: Reduces damage taken by 10% Duration: 20s",
+      "levelRequirement": 90,
+      "levelDescriptions": {
+        "90": "Increases movement speed for 10s and reduces damage taken by 10% for 20s"
+      },
+      "duration": 20,
+      "cooldown": 120,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Expedient.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "af10121b0aa04924ef2990fa028617d564d94a4b8105a78d56fd66e1b941cbdb",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__36",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "feint": {
+      "id": "feint",
+      "name": "Feint",
+      "description": "Lowers target's physical damage dealt by 10% and magic damage dealt by 5%. Duration: 15s",
+      "levelRequirement": 22,
+      "levelDescriptions": {
+        "22": "Reduces target's physical damage dealt by 10% for 10s",
+        "98": "Reduces target's physical damage dealt by 10% and magic damage dealt by 5% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "MNK",
+        "DRG",
+        "NIN",
+        "SAM",
+        "RPR",
+        "VPR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/05_MNK/Role_Actions/Feint.png",
+      "type": "mitigation",
+      "mitigationValue": {
+        "physical": 0.1,
+        "magical": 0.05
+      },
+      "levelMitigationValues": {
+        "22": {
+          "physical": 0.1,
+          "magical": 0
+        },
+        "98": {
+          "physical": 0.1,
+          "magical": 0.05
+        }
+      },
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": true,
+      "forRaidWide": true,
+      "isRoleShared": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "4a0f51a18957c66a3e253327517004f840c88832e151fb839014dc96f9d0aea6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/dragoon/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "4a0f51a18957c66a3e253327517004f840c88832e151fb839014dc96f9d0aea6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/monk/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "4a0f51a18957c66a3e253327517004f840c88832e151fb839014dc96f9d0aea6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/ninja/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "4a0f51a18957c66a3e253327517004f840c88832e151fb839014dc96f9d0aea6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/reaper/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "4a0f51a18957c66a3e253327517004f840c88832e151fb839014dc96f9d0aea6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/samurai/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "4a0f51a18957c66a3e253327517004f840c88832e151fb839014dc96f9d0aea6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "melee_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/viper/"
+        }
+      ]
+    },
+    "fey_illumination": {
+      "id": "fey_illumination",
+      "name": "Fey Illumination",
+      "aliases": [
+        "Seraphic Illumination"
+      ],
+      "description": "Orders faerie to execute Fey Illumination. If Seraph is summoned, orders her to execute Seraphic Illumination. Fey Illumination/Seraphic Illumination Effect: Increases healing magic potency of all nearby party members by 10%, while reducing magic damage taken by all nearby party members by 5% Duration: 20s Effect cannot be stacked with Seraphic Illumination.",
+      "levelRequirement": 40,
+      "levelDescriptions": {
+        "40": "Increases healing potency by 10% and reduces magic damage taken by party members by 5% for 20s"
+      },
+      "duration": 20,
+      "cooldown": 120,
+      "count": 1,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Fey_Illumination.png",
+      "type": "mitigation",
+      "mitigationValue": 0.05,
+      "damageType": "magical",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingPotencyBonus": {
+        "value": 0.1,
+        "stackMode": "multiplicative"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "60a4eac85f754c638ab6e1d135b9f95066f9ac6646e3795ace2669b01958a0c2",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__11",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "great_nebula": {
+      "id": "great_nebula",
+      "name": "Great Nebula",
+      "description": "Reduces damage taken by 40%. Additional Effect: Increases maximum HP by 20% and restores the amount increased. Duration: 15s",
+      "levelRequirement": 92,
+      "levelDescriptions": {
+        "92": "Reduces damage taken by 40% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Great_Nebula.png",
+      "type": "mitigation",
+      "mitigationValue": 0.4,
+      "maxHpIncrease": 0.2,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "d89dad5d0c215014df943d681368133f79f09fbf3a474552ee98b3c44bfcf5d3",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__34",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "guardian": {
+      "id": "guardian",
+      "name": "Guardian",
+      "description": "Reduces damage taken by 40%. Duration: 15s Additional Effect: Erects a magicked barrier which nullifies damage equivalent to a heal of 1,000 potency Duration: 15s",
+      "levelRequirement": 92,
+      "levelDescriptions": {
+        "92": "Reduces damage taken by 40% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Guardian.png",
+      "type": "mitigation",
+      "mitigationValue": 0.4,
+      "barrierFlatPotency": 1000,
+      "scaleBarrierWithHealing": true,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "f94033f5b35ea5af55864231cd7d37f648624da51ff6845971b3848c03db35e7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__37",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "haima": {
+      "id": "haima",
+      "name": "Haima",
+      "description": "Erects a magicked barrier around self or target party member that absorbs damage equivalent to a heal of 300 potency. Additional Effect: Grants 5 stacks of Haimatinon Duration: 15s When the barrier is completely absorbed, a stack of Haimatinon is consumed and a new barrier is applied. When the effect duration expires, a healing effect is then applied. Cure Potency: 150 per remaining stack of Haimatinon",
+      "levelRequirement": 70,
+      "levelDescriptions": {
+        "70": "Creates a barrier that absorbs damage and grants additional barriers when consumed for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Haima.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierFlatPotency": 300,
+      "stackBarrierEffect": {
+        "initialBarrierPotency": 300,
+        "stackCount": 5,
+        "barrierRefreshOnBreak": true,
+        "healingOnExpire": {
+          "enabled": true,
+          "potencyPerStack": 150
+        },
+        "stackConsumptionPerHit": 1
+      },
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "scaleBarrierWithHealing": true,
+      "targetsTank": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "e681e24ddeb8fe6ba386664aea3bc6345ca421579a8de45cef99fd2686835c52",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__23",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "hallowed_ground": {
+      "id": "hallowed_ground",
+      "name": "Hallowed Ground",
+      "description": "Renders you impervious to most attacks. Duration: 10s",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "Renders you impervious to most attacks for 10s"
+      },
+      "duration": 10,
+      "cooldown": 420,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Hallowed_Ground.png",
+      "type": "invulnerability",
+      "mitigationValue": 1,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "3f40c8fa903203ffd98bbcadb006fcad599bc57d38fec2aa8156513848cbc774",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__16",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "heart_of_corundum": {
+      "id": "heart_of_corundum",
+      "name": "Heart of Corundum",
+      "description": "Reduces damage taken by target party member or self by 15%. Duration: 8s Additional Effect: When targeting a party member while under the effect of Brutal Shell, that effect is also granted to the target Duration: 30s Additional Effect: Grants Clarity of Corundum to target Clarity of Corundum Effect: Reduces damage taken by 15% Duration: 4s Additional Effect: Grants Catharsis of Corundum to target Catharsis of Corundum Effect: Restores HP when HP falls to 50% or below, or upon effect duration expiration Cure Potency: 900 Duration: 20s",
+      "levelRequirement": 82,
+      "levelDescriptions": {
+        "82": "Reduces damage taken by 15% and grants healing over time for 8s"
+      },
+      "duration": 8,
+      "cooldown": 25,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Heart_of_Corundum.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "healingPotency": 900,
+      "healingType": "triggered",
+      "lowHpTrigger": {
+        "thresholdPercent": 50,
+        "triggerOnExpire": true,
+        "healingPotency": 900
+      },
+      "layeredMitigation": [
+        {
+          "value": 0.15,
+          "duration": 4,
+          "description": "Clarity of Corundum"
+        }
+      ],
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "3c590ce24501f8398da747a973ed0342bcb12cdf034323956636b894b03b0023",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__31",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "heart_of_light": {
+      "id": "heart_of_light",
+      "name": "Heart of Light",
+      "description": "Reduces physical damage taken by 5% and magic damage taken by 10% for self and nearby party members. Duration: 15s",
+      "levelRequirement": 64,
+      "levelDescriptions": {
+        "64": "Reduces magic damage taken by party members by 10% and physical damage by 5% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Heart_of_Light.png",
+      "type": "mitigation",
+      "mitigationValue": {
+        "magical": 0.1,
+        "physical": 0.05
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "b2ea3b7719bb5d5bfab6a0e87d939cff4690c0b67af275434e5381f2330847d6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__22",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "heart_of_stone": {
+      "id": "heart_of_stone",
+      "name": "Heart of Stone",
+      "description": "Reduces damage taken by a party member or self by 15%. Duration: 7s Additional Effect: When targeting a party member while under the effect of Brutal Shell, that effect is also granted to the target Duration: 30s",
+      "levelRequirement": 68,
+      "levelDescriptions": {
+        "68": "Reduces damage taken by 15% for 7s"
+      },
+      "duration": 7,
+      "cooldown": 25,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Heart_of_Stone.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "dc7ffd2296e2c4241499d50113c559fdfca21a1205372b58748e8e3dc96b9a08",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__23",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "helios": {
+      "id": "helios",
+      "name": "Helios",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 400",
+      "levelRequirement": 10,
+      "levelDescriptions": {
+        "10": "Restores own HP and the HP of all nearby party members with 400 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Helios.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "f26f6df28dffb7e1dbf351bcf0a448c60dd9247921c8c8faa546b9e9bb313ea7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "helios_conjunction": {
+      "id": "helios_conjunction",
+      "name": "Helios Conjunction",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 250 Additional Effect: Regen Cure Potency: 175 Duration: 15s",
+      "levelRequirement": 96,
+      "levelDescriptions": {
+        "96": "Restores own HP and the HP of all nearby party members with 250 potency and grants 175 potency regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 2.5,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Helios_Conjunction.png",
+      "type": "healing",
+      "healingPotency": 250,
+      "regenPotency": 175,
+      "healingType": "instant",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "7970accc21858b2ec4415f6fda3b07da0525cf8efaabb57b0d83745a87ac940a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__39",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "holmgang": {
+      "id": "holmgang",
+      "name": "Holmgang",
+      "description": "Brace yourself for an enemy onslaught, preventing most attacks from reducing your HP to less than 1. Duration: 10s When a target is selected, halts their movement with chains.",
+      "levelRequirement": 42,
+      "levelDescriptions": {
+        "42": "Prevents most attacks from reducing your HP to less than 1 for 10s"
+      },
+      "duration": 10,
+      "cooldown": 240,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Holmgang.png",
+      "type": "invulnerability",
+      "mitigationValue": 1,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "19c50030b3174c8b71807dbfda9886ba2e7a62a0ae4ae096aaafc499fa6ae547",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__13",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "holos": {
+      "id": "holos",
+      "name": "Holos",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 300 Additional Effect: Erects a magicked barrier which nullifies damage equaling the amount of HP restored Duration: 30s Additional Effect: Reduces damage taken by self and nearby party members by 10% Duration: 20s",
+      "levelRequirement": 76,
+      "levelDescriptions": {
+        "76": "Reduces damage taken by 10% and grants barrier for 20s"
+      },
+      "duration": 20,
+      "cooldown": 120,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Holos.png",
+      "type": "mitigation",
+      "healingPotency": 300,
+      "healingType": "instant",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "barrierFlatPotency": 300,
+      "scaleBarrierWithHealing": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "2046caf0fcba29d6673e05fa7a9bf47333fa8ea53f3a189873aa396f2150d56f",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__28",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "holy_sheltron": {
+      "id": "holy_sheltron",
+      "name": "Holy Sheltron",
+      "description": "Reduces damage taken by 15%. Duration: 8s Additional Effect: Grants Knight's Resolve Knight's Resolve Effect: Reduces damage taken by 15% Duration: 4s Additional Effect: Grants Knight's Benediction Knight's Benediction Effect: Gradually restores HP Cure Potency: 250 Duration: 12s Oath Gauge Cost: 50",
+      "levelRequirement": 82,
+      "levelDescriptions": {
+        "82": "Reduces damage taken by 15% and grants a healing over time effect for 8s"
+      },
+      "duration": 8,
+      "cooldown": 5,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Holy_Sheltron.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "regenPotency": 250,
+      "regenDuration": 8,
+      "layeredMitigation": [
+        {
+          "value": 0.15,
+          "duration": 4,
+          "description": "Knight's Resolve"
+        }
+      ],
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "e4be3d56b356a9b08b7cb69e640496af0b2e8b1b099d0155c304766381a0c8dd",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__32",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "horoscope": {
+      "id": "horoscope",
+      "name": "Horoscope",
+      "description": "Applies a healing effect to nearby party members that triggers when duration expires or when manually activated",
+      "levelRequirement": 76,
+      "levelDescriptions": {
+        "76": "Grants Horoscope to nearby party members. Effect: 200 potency heal when triggered. Casting Helios/Helios Conjunction upgrades to 400 potency. Duration: 10s (30s if upgraded)"
+      },
+      "duration": 10,
+      "cooldown": 60,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Horoscope_1.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "triggered",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "a25f44dc5c60b593b95baf6e5421073c3ac26c3c2100ffa5db3dcf6382e34842",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__30",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "6c5e8de5f64abf9cd891ebd653ad501fc19e63d84b5d818d4c683d876dbc27bc",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__31",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "indomitability": {
+      "id": "indomitability",
+      "name": "Indomitability",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 400 Additional Effect: Increases Faerie Gauge by 10 Aetherflow Gauge Cost: 1",
+      "levelRequirement": 52,
+      "levelDescriptions": {
+        "52": "Restores HP of all nearby party members with 400 potency"
+      },
+      "duration": 0,
+      "cooldown": 30,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Indomitability.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "consumesAetherflow": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "abfb464d132a4f0b8fa3f7063c34d4a3f17dd99f0830714fe44a40e0ac0b1f12",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__17",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "intervention": {
+      "id": "intervention",
+      "name": "Intervention",
+      "description": "Reduces target party member's damage taken by 10%. Duration: 8s Additional Effect: Increases damage reduction by an additional 10% if Rampart or Guardian are active Additional Effect: Grants Knight's Resolve to target Knight's Resolve Effect: Reduces damage taken by 10% Duration: 4s Additional Effect: Grants Knight's Benediction to target Knight's Benediction Effect: Gradually restores HP Cure Potency: 250 Duration: 12s Oath Gauge Cost: 50",
+      "levelRequirement": 62,
+      "levelDescriptions": {
+        "62": "Reduces target party member's damage taken by 10% for 6s",
+        "82": "Reduces target party member's damage taken by 10% for 8s and grants healing over time for 12s"
+      },
+      "duration": 8,
+      "cooldown": 10,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Intervention.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "levelMitigationValues": {
+        "62": 0.1,
+        "82": 0.1
+      },
+      "regenPotency": 250,
+      "regenDuration": 12,
+      "layeredMitigation": [
+        {
+          "value": 0.1,
+          "duration": 4,
+          "description": "Knight's Resolve"
+        },
+        {
+          "value": 0.1,
+          "duration": 8,
+          "conditionAbilityIds": [
+            "rampart",
+            "guardian"
+          ],
+          "description": "Rampart/Guardian bonus"
+        }
+      ],
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "982cee6e58082383f3f3ddf6f599051e57becb2e71c2cd995f0e68d86ad6a85d",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__22",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "ixochole": {
+      "id": "ixochole",
+      "name": "Ixochole",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 400 Additional Effect: Restores 7% of maximum MP Addersgall Cost: 1",
+      "levelRequirement": 52,
+      "levelDescriptions": {
+        "52": "Restores own HP and the HP of all nearby party members with 400 potency"
+      },
+      "duration": 0,
+      "cooldown": 30,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Ixochole.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "instant",
+      "consumesAddersgall": true,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "3bf4f8af68e85cdf2063765597be3666f523d69b482d5a02b1c22ed9defb164c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__17",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "kerachole": {
+      "id": "kerachole",
+      "name": "Kerachole",
+      "description": "Reduces damage taken by self and nearby party members by 10%. Duration: 15s Effect cannot be stacked with Taurochole. Additional Effect: Regen Cure Potency: 100 Duration: 15s Additional Effect: Restores 7% of maximum MP Addersgall Cost: 1",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "Reduces damage taken by 10% in an area for 15s",
+        "78": "Reduces damage taken by 10% in an area and applies regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 30,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Kerachole.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "regenPotency": 100,
+      "regenDuration": 15,
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "c98b8a54f9e8c9eb7bbef4bdd7ca19dd6e29c1e84e7ff26c948c5a5547d170af",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__16",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "krasis": {
+      "id": "krasis",
+      "name": "Krasis",
+      "description": "Increases HP recovery via healing actions for a party member or self by 20%. Duration: 10s",
+      "levelRequirement": 86,
+      "levelDescriptions": {
+        "86": "Increases HP recovered by healing actions for target by 20% for 10s"
+      },
+      "duration": 10,
+      "cooldown": 60,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Krasis.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "healingType": "boost",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "healingReceivedBonus": 0.2,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "abafd50b981afb0090ca43610b0bd5685b7692715bfd2867650fe8451d07906a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__36",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "liturgy_of_the_bell": {
+      "id": "liturgy_of_the_bell",
+      "name": "Liturgy of the Bell",
+      "description": "Places a healing blossom at the designated location and grants 5 stacks of Liturgy of the Bell to self. Duration: 20s Taking damage will expend 1 stack of Liturgy of the Bell to heal self and all party members within a radius of 20 yalms. Cure Potency: 400 The effect of this action can only be triggered once per second. Any remaining stacks of Liturgy of the Bell will trigger an additional healing effect when time expires or upon executing this action a second time. Cure Potency: 200 for every remaining stack of Liturgy of the Bell This action does not share a recast timer with any other actions.",
+      "levelRequirement": 90,
+      "levelDescriptions": {
+        "90": "Creates healing bells that activate when you take damage, healing you and nearby party members for 20s"
+      },
+      "duration": 20,
+      "cooldown": 180,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Liturgy_of_the_Bell.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "triggered",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "43f066b677f3f56d10cda2ff71cb5b476d20ef7155be5faf1b15ed64a12c0c2b",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__33",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "living_dead": {
+      "id": "living_dead",
+      "name": "Living Dead",
+      "description": "Grants the effect of Living Dead. When HP is reduced to 0 while under the effect of Living Dead, instead of becoming KO'd, your status will change to Walking Dead. Living Dead Duration: 10s Additional Effect: Restores HP with each weaponskill successfully delivered or spell cast Cure Potency: 1500 While under the effect of Walking Dead, most attacks will not lower your HP below 1. If, before the Walking Dead timer runs out, an amount of HP totaling your maximum HP is restored, the effect will change to Undead Rebirth. If this amount is not restored, you will be KO'd. Walking Dead Duration: 10s While under the effect of Undead Rebirth, most attacks will not lower your HP below 1. Undead Rebirth Duration: Time remaining on Walking Dead",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "When HP is reduced to 0, instead of becoming KO'd, your status will change to Walking Dead for 10s. Restores HP with each weaponskill or spell cast."
+      },
+      "duration": 10,
+      "cooldown": 300,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Living_Dead.png",
+      "type": "invulnerability",
+      "mitigationValue": 1,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "5cfff35a794848442b065c9dd75ff7ddb03a6da43d31a8900ec0d739c6bb3a82",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__14",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "lustrate": {
+      "id": "lustrate",
+      "name": "Lustrate",
+      "description": "Restores target's HP. Cure Potency: 600 Additional Effect: Increases Faerie Gauge by 10 Aetherflow Gauge Cost: 1",
+      "levelRequirement": 45,
+      "levelDescriptions": {
+        "45": "Restores target's HP with 600 potency"
+      },
+      "duration": 0,
+      "cooldown": 1,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Lustrate.png",
+      "type": "healing",
+      "healingPotency": 600,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "consumesAetherflow": true,
+      "lowHpTrigger": {
+        "thresholdPercent": 50,
+        "triggerOnExpire": true,
+        "healingPotency": 800
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "447d1f10bd17a162e68345a0af0d97e29834dd850363ab59dc91f1e7091d97d0",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__14",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "macrocosmos": {
+      "id": "macrocosmos",
+      "name": "Macrocosmos",
+      "description": "Deals unaspected damage to all nearby enemies with a potency of 270 for the first enemy, and 40% less for all remaining enemies. Additional Effect: Grants Macrocosmos to self and all nearby party members Duration: 15s For the effect's duration, 50% of damage taken is compiled. Restores HP equal to a cure of 200 potency plus compiled damage when the effect expires or upon execution of Microcosmos. Amount restored cannot exceed the target's maximum HP. Recast timer cannot be affected by status effects or gear attributes.",
+      "levelRequirement": 90,
+      "levelDescriptions": {
+        "90": "Records damage taken by party members and then delivers healing based on the amount recorded for 15s"
+      },
+      "duration": 15,
+      "cooldown": 180,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Macrocosmos.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "triggered",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "a3d8d6b47297616ce8c7be14c527817c23de78c7b32f64f801ea56e381c94384",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__36",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "magick_barrier": {
+      "id": "magick_barrier",
+      "name": "Magick Barrier",
+      "description": "Reduces magic damage taken by self and nearby party members by 10%, while increasing HP recovered by healing actions by 5%. Duration: 10s",
+      "levelRequirement": 86,
+      "levelDescriptions": {
+        "86": "Reduces magic damage taken by 10% and increases healing received by 5% for 10s"
+      },
+      "duration": 10,
+      "cooldown": 120,
+      "jobs": [
+        "RDM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/16_RDM/Magick_Barrier.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "magical",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingReceivedBonus": 0.05,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "b9a776c00c8822df2986ded4095fc07a82caad49658284310da234ae72a3cca7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__32",
+          "url": "https://na.finalfantasyxiv.com/jobguide/redmage/"
+        }
+      ]
+    },
+    "manifestation": {
+      "id": "manifestation",
+      "name": "Manifestation",
+      "description": "Restores target's HP. Cure Potency: 360 Additional Effect: Grants Galvanize to target, nullifying damage equaling 180% of the amount of HP restored. When critical HP is restored, also grants Catalyze, nullifying damage equaling 180% the amount of HP restored. Duration: 30s Effect cannot be stacked with certain sage barrier effects. Can only be executed while under the effect of Seraphism. â»This action cannot be assigned to a hotbar. â»Adloquium changes to Manifestation when requirements for execution are met.",
+      "levelRequirement": 100,
+      "levelDescriptions": {
+        "100": "Restores target's HP with 360 potency and grants a barrier equal to 180% of the HP restored while Seraphism is active. Critical heals grant an additional crit-only barrier."
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Manifestation.png",
+      "type": "healing",
+      "healingPotency": 360,
+      "healingType": "instant",
+      "barrierFlatPotency": 648,
+      "conditionalBarrierOnCrit": {
+        "additionalBarrierMultiplier": 1.8,
+        "stackingRule": "add",
+        "incompatibleWith": [
+          "adloquium",
+          "manifestation"
+        ]
+      },
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "requiresActiveWindow": {
+        "abilityId": "seraphism",
+        "windowDuration": 20
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "8d4c853a0945b19408529453aef731cdd2aa27e86acf601c48dc61872cd70e4d",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__40",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "medica": {
+      "id": "medica",
+      "name": "Medica",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 400",
+      "levelRequirement": 10,
+      "levelDescriptions": {
+        "10": "Restores own HP and the HP of all nearby party members with 400 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Medica.png",
+      "type": "healing",
+      "healingPotency": 400,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "92e26eddb2e422549161f66e08c07bc0a842c885e13d3a5914aa2c204eb1737a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "medica_ii": {
+      "id": "medica_ii",
+      "name": "Medica II",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 250 Additional Effect: Regen Cure Potency: 150 Duration: 15s",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "Restores own HP and the HP of all nearby party members with 250 potency and grants 150 potency regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Medica_II.png",
+      "type": "healing",
+      "healingPotency": 250,
+      "regenPotency": 150,
+      "healingType": "instant",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "upgradedBy": "medica_iii",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "d9ee0fc049681cf38f7187875cfd8ed7ee225e3a654c60c4677443694d9f79e6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__14",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "medica_iii": {
+      "id": "medica_iii",
+      "name": "Medica III",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 250 Additional Effect: Regen Cure Potency: 175 Duration: 15s",
+      "levelRequirement": 96,
+      "levelDescriptions": {
+        "96": "Restores own HP and the HP of all nearby party members with 250 potency and grants 175 potency regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Medica_III.png",
+      "type": "healing",
+      "healingPotency": 250,
+      "regenPotency": 175,
+      "healingType": "instant",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "807024b13aaa7a49cb5e647e1a89b4a951a79f68ed1b9dba5b98e897ac934be7",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__35",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "nascent_flash": {
+      "id": "nascent_flash",
+      "name": "Nascent Flash",
+      "description": "Grants Nascent Flash to self and Nascent Glint to target party member. Nascent Flash Effect: Restores HP with each weaponskill successfully delivered Cure Potency: 400 Nascent Glint Effect: Restores HP equaling 100% of that recovered by Nascent Flash while also reducing damage taken by 10% Duration: 8s Additional Effect: Grants Stem the Flow to target, reducing damage taken by 10% Duration: 4s Additional Effect: Grants Stem the Tide to target, nullifying damage equivalent to a heal of 400 potency Duration: 20s Shares a recast timer with Bloodwhetting.",
+      "levelRequirement": 76,
+      "levelDescriptions": {
+        "76": "Reduces damage taken by a party member by 10% and grants healing over time for 8s"
+      },
+      "duration": 8,
+      "cooldown": 25,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Nascent_Flash.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "healingPotency": 400,
+      "healingType": "triggered",
+      "barrierFlatPotency": 400,
+      "layeredMitigation": [
+        {
+          "value": 0.1,
+          "duration": 4,
+          "description": "Stem the Flow"
+        }
+      ],
+      "scaleBarrierWithHealing": true,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "count": 1,
+      "sharedCooldownGroup": "war_bloodwhetting_nascent",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "0b42d2e477d0f9d179e8272e967205adf94b44cc09e4cca5c86e5294b77d39c3",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__26",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "natures_minne": {
+      "id": "natures_minne",
+      "name": "Nature's Minne",
+      "description": "Increases HP recovery via healing actions by 15% for self and nearby party members. Duration: 15s",
+      "levelRequirement": 66,
+      "levelDescriptions": {
+        "66": "Increases HP recovery via healing actions by 15% for self and nearby party members for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "BRD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/11_BRD/Nature's_Minne.png",
+      "type": "healing",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingReceivedBonus": 0.15,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "8523f99ff7fbb57766ff88ee9d3455124d05d8b01335ec6a9ac51f7bb35c652a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__24",
+          "url": "https://na.finalfantasyxiv.com/jobguide/bard/"
+        }
+      ]
+    },
+    "nebula": {
+      "id": "nebula",
+      "name": "Nebula",
+      "description": "Reduces damage taken by 30%. Duration: 15s",
+      "levelRequirement": 38,
+      "levelDescriptions": {
+        "38": "Reduces damage taken by 30% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Nebula.png",
+      "type": "mitigation",
+      "mitigationValue": 0.3,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "e442e883b02017aa65f647a66e3ad25b55688463406c25f238adac6066d999be",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__12",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "neutral_sect": {
+      "id": "neutral_sect",
+      "name": "Neutral Sect",
+      "description": "Increases healing magic potency by 20%. Duration: 20s Additional Effect: When casting Aspected Benefic or Helios Conjunction, erects a magicked barrier which nullifies damage Aspected Benefic Effect: Nullifies damage equaling 250% of the amount of HP restored Helios Conjunction Effect: Nullifies damage equaling 125% of the amount of HP restored Duration: 30s Additional Effect: Grants Suntouched Duration: 30s",
+      "levelRequirement": 80,
+      "levelDescriptions": {
+        "80": "Increases healing magic potency by 20% for 20s. Additional Effect: When casting Aspected Benefic or Helios Conjunction, erects a magicked barrier which nullifies damage (Aspected Benefic: 250% of HP restored, Helios Conjunction: 125% of HP restored) for 30s. Additional Effect: Grants Suntouched for 30s."
+      },
+      "duration": 20,
+      "cooldown": 120,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Neutral_Sect.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "healingType": "boost",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingPotencyBonus": {
+        "value": 0.2,
+        "stackMode": "multiplicative"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "9f8133080a01872a05f889711229cfc204039d77ef712f4904c2778650dc75d8",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__32",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "oblation": {
+      "id": "oblation",
+      "name": "Oblation",
+      "description": "Reduces damage taken by target party member or self by 10%. Duration: 10s Maximum Charges: 2",
+      "levelRequirement": 82,
+      "levelDescriptions": {
+        "82": "Reduces damage taken by self or a party member by 10% for 10s"
+      },
+      "duration": 10,
+      "cooldown": 60,
+      "count": 2,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Oblation.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "3970476934830d184b9f7e7e05bc1afae7ce22c46a92c2c4a0785b26712e3988",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__27",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "panhaima": {
+      "id": "panhaima",
+      "name": "Panhaima",
+      "description": "Erects a magicked barrier around self and all party members near you that absorbs damage equivalent to a heal of 200 potency. Additional Effect: Grants 5 stacks of Panhaimatinon Duration: 15s When the barrier is completely absorbed, a stack of Panhaimatinon is consumed and a new barrier is applied. When the effect duration expires, a healing effect is then applied. Cure Potency: 100 per remaining stack of Panhaimatinon",
+      "levelRequirement": 80,
+      "levelDescriptions": {
+        "80": "Creates barriers around party members that absorb damage for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Panhaima.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierFlatPotency": 200,
+      "stackBarrierEffect": {
+        "initialBarrierPotency": 200,
+        "stackCount": 5,
+        "barrierRefreshOnBreak": true,
+        "healingOnExpire": {
+          "enabled": true,
+          "potencyPerStack": 100
+        },
+        "stackConsumptionPerHit": 1
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "scaleBarrierWithHealing": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "b00d1c4c9fc4ee1458bfc5b33984e71ddb8bc8273cd5298b86220e2bd9a3b04d",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__29",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "passage": {
+      "id": "passage",
+      "name": "Passage of Arms",
+      "description": "Increases block rate to 100% and creates a designated area in a cone behind you in which party members will only suffer 85% of all damage inflicted. Duration: 18s Effect ends upon using another action or moving (including facing a different direction). Cancels auto-attack upon execution.",
+      "levelRequirement": 70,
+      "levelDescriptions": {
+        "70": "Increases block rate to 100% and reduces damage taken by party members behind you by 15% for 18s"
+      },
+      "duration": 18,
+      "cooldown": 120,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Passage_of_Arms.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "3afd89e82b73f887e2ea90cde47bcebadb884ac29f43db0ef9516bd931497884",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__26",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "philosophia": {
+      "id": "philosophia",
+      "name": "Philosophia",
+      "description": "Increases healing magic potency by 20%. Duration: 20s Additional Effect: Grants self and nearby party members the effect of Eudaimonia, restoring HP after landing spells Cure Potency: 150 Duration: 20s",
+      "levelRequirement": 100,
+      "levelDescriptions": {
+        "100": "Increases healing magic potency by 20%. Duration: 20s Additional Effect: Grants self and nearby party members the effect of Eudaimonia, restoring HP after landing spells Duration: 20s"
+      },
+      "duration": 20,
+      "cooldown": 180,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Philosophia.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "healingType": "boost",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingPotencyBonus": {
+        "value": 0.2,
+        "stackMode": "multiplicative"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "804429b6fb2a111882b142c76944c027998c5d06a86c7cde0e9eda64cd80866b",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__40",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "physick": {
+      "id": "physick",
+      "name": "Physick",
+      "description": "Restores target's HP. Cure Potency: 450",
+      "levelRequirement": 4,
+      "levelDescriptions": {
+        "4": "Restores target's HP with 450 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Physick.png",
+      "type": "healing",
+      "healingPotency": 450,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "ed4780e93f3fa5a2e501f70276dd1b7babc56bdab1ec70b38ab0a781db0a5330",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__03",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "physis": {
+      "id": "physis",
+      "name": "Physis",
+      "description": "Gradually restores own HP and the HP of all nearby party members. Cure Potency: 100 Duration: 15s",
+      "levelRequirement": 20,
+      "levelDescriptions": {
+        "20": "Grants regen to self and nearby party members for 15s"
+      },
+      "duration": 15,
+      "cooldown": 60,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Physis.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "regenPotency": 100,
+      "healingType": "regen",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "upgradedBy": "physis_ii",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "dc4003933eac0632042bdf635ceced8de1bed8ebb1374e2a9afe28e2d0dc952d",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "physis_ii": {
+      "id": "physis_ii",
+      "name": "Physis II",
+      "description": "Gradually restores own HP and the HP of all nearby party members. Cure Potency: 130 Duration: 15s Additional Effect: Increases HP recovered by healing actions by 10% Duration: 15s",
+      "levelRequirement": 60,
+      "levelDescriptions": {
+        "60": "Grants regen to self and nearby party members for 15s and increases HP recovered by healing actions by 10%"
+      },
+      "duration": 15,
+      "cooldown": 60,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Physis_II.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "regenPotency": 130,
+      "healingType": "regen",
+      "regenDuration": 15,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingReceivedBonus": 0.1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "3a3652d7affebe6e4b694a0160092a35ce67fa63232d85c87a6ad116db178d47",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__20",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "plenary_indulgence": {
+      "id": "plenary_indulgence",
+      "name": "Plenary Indulgence",
+      "description": "Grants Confession to self and nearby party members, reducing damage taken by 10%. Duration: 10s Party members under the effect of Confession will receive additional healing upon receiving HP recovery via Medica, Medica III, Cure III, or Afflatus Rapture. Cure Potency: 200",
+      "levelRequirement": 70,
+      "levelDescriptions": {
+        "70": "Grants Confession to nearby party members for 10s. Effect: Adds 200 potency to Medica, Medica III, Cure III, and Afflatus Rapture. Also reduces damage taken by 10%."
+      },
+      "duration": 10,
+      "cooldown": 60,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Plenary_Indulgence.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingPotencyBonus": {
+        "value": 200,
+        "stackMode": "additive"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "580fe49b1dc818d686ee2ce3126094658c7993c0da7118082e34c4f2a15c3d38",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__24",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "pneuma": {
+      "id": "pneuma",
+      "name": "Pneuma",
+      "description": "Deals unaspected damage to all enemies in a straight line before you with a potency of 380 for the first enemy, and 40% less for all remaining enemies. Additional Effect: Restores own HP and the HP of all party members within a radius of 20 yalms Cure Potency: 600 Additional Effect: Restores HP to targets under the effect of Kardion granted by you Cure Potency: 170 Recast timer cannot be affected by status effects or gear attributes.",
+      "levelRequirement": 90,
+      "levelDescriptions": {
+        "90": "Restores own HP and the HP of all nearby party members with 600 potency"
+      },
+      "duration": 0,
+      "cooldown": 120,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Pneuma.png",
+      "type": "healing",
+      "healingPotency": 600,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "isSpell": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "04ded79e6423fb7700bef95b236ba277e09ae9f8665f125bbd50e6c185e452ed",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__37",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "prognosis": {
+      "id": "prognosis",
+      "name": "Prognosis",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 300",
+      "levelRequirement": 10,
+      "levelDescriptions": {
+        "10": "Restores own HP and the HP of all nearby party members with 300 potency"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Prognosis.png",
+      "type": "healing",
+      "healingPotency": 300,
+      "healingType": "instant",
+      "isSpell": true,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "17efeaa1aa9740c1b2f0b7d2d81e3f2bcf2d625a07e5f25c7e67585fb77ee3f9",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__04",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "protraction": {
+      "id": "protraction",
+      "name": "Protraction",
+      "description": "Increases maximum HP of a party member or self by 10% and restores the amount increased. Additional Effect: Increases HP recovery via healing actions by 10% Duration: 10s",
+      "levelRequirement": 86,
+      "levelDescriptions": {
+        "86": "Increases target's maximum HP by 10% and increases HP recovery via healing actions by 10% for 10s. Also restores HP by the amount increased."
+      },
+      "duration": 10,
+      "cooldown": 60,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Protraction.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "maxHpIncrease": 0.1,
+      "healingReceivedBonus": 0.1,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "c383e3156e9db931b9c2dd72839d6f23b092c9821b8d7744720d22fb80d6e7fc",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__35",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "rampart": {
+      "id": "rampart",
+      "name": "Rampart",
+      "description": "Reduces damage taken by 20%. Additional Effect: Increases HP recovery via healing actions on self by 15% Duration: 20s",
+      "levelRequirement": 8,
+      "levelDescriptions": {
+        "8": "Reduces damage taken by 20% for 20s",
+        "94": "Reduces damage taken by 20% for 20s and increases HP recovery via healing actions by 15%"
+      },
+      "duration": 20,
+      "cooldown": 90,
+      "jobs": [
+        "PLD",
+        "WAR",
+        "DRK",
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Role_Actions/Rampart.png",
+      "type": "mitigation",
+      "mitigationValue": 0.2,
+      "levelMitigationValues": {
+        "8": 0.2,
+        "94": 0.2
+      },
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "isRoleShared": true,
+      "healingReceivedBonus": 0.15,
+      "levelHealingReceivedBonuses": {
+        "8": 0,
+        "94": 0.15
+      },
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "23fcb784cc5aab939fde93b45f9a5d0374d6ddea468fff2a21f5eca64d6bfc98",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "23fcb784cc5aab939fde93b45f9a5d0374d6ddea468fff2a21f5eca64d6bfc98",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "23fcb784cc5aab939fde93b45f9a5d0374d6ddea468fff2a21f5eca64d6bfc98",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "23fcb784cc5aab939fde93b45f9a5d0374d6ddea468fff2a21f5eca64d6bfc98",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__01",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "regen": {
+      "id": "regen",
+      "name": "Regen",
+      "description": "Grants healing over time effect to target. Cure Potency: 250 Duration: 18s",
+      "levelRequirement": 35,
+      "levelDescriptions": {
+        "35": "Grants healing over time with 250 potency over 18s"
+      },
+      "duration": 18,
+      "cooldown": 2.5,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Regen.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "regenPotency": 250,
+      "healingType": "regen",
+      "regenDuration": 18,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "7725c313cce5aeb8352b3182a92a51cd489b8cc821f9d0e53db1fb77a4d90f32",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__09",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "reprisal": {
+      "id": "reprisal",
+      "name": "Reprisal",
+      "description": "Reduces damage dealt by nearby enemies by 10%. Duration: 15s",
+      "levelRequirement": 22,
+      "levelDescriptions": {
+        "22": "Reduces damage dealt by nearby enemies by 10% for 10s",
+        "98": "Reduces damage dealt by nearby enemies by 10% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 60,
+      "jobs": [
+        "PLD",
+        "WAR",
+        "DRK",
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Role_Actions/Reprisal.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "levelMitigationValues": {
+        "22": 0.1,
+        "98": 0.1
+      },
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": true,
+      "forRaidWide": true,
+      "isRoleShared": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "34a6f389f43be6f0c0cbce3620300a214024d3d2f7e36dbdbce340d827215536",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "34a6f389f43be6f0c0cbce3620300a214024d3d2f7e36dbdbce340d827215536",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "34a6f389f43be6f0c0cbce3620300a214024d3d2f7e36dbdbce340d827215536",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        },
+        {
+          "patch": "7.5",
+          "semanticHash": "34a6f389f43be6f0c0cbce3620300a214024d3d2f7e36dbdbce340d827215536",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "tank_action__05",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "rhizomata": {
+      "id": "rhizomata",
+      "name": "Rhizomata",
+      "description": "Grants 1 stack of Addersgall.",
+      "levelRequirement": 74,
+      "levelDescriptions": {
+        "74": "Grants 1 stack of Addersgall"
+      },
+      "duration": 0,
+      "cooldown": 90,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Rhizomata.png",
+      "type": "utility",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "providesAddersgall": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "d188b23d5c277f6ec4834623624f6938c71567342837ffe34fc65ef8b1b7ffc5",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__27",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "sacred_soil": {
+      "id": "sacred_soil",
+      "name": "Sacred Soil",
+      "description": "Creates a designated area in which party members will only suffer 90% of all damage inflicted. Duration: 15s Additional Effect: Regen Cure Potency: 100 Additional Effect: Increases Faerie Gauge by 10 Aetherflow Gauge Cost: 1",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "Creates an area that reduces damage taken by 10% for 15s",
+        "78": "Creates an area that reduces damage taken by 10% and applies regen for 15s"
+      },
+      "duration": 15,
+      "cooldown": 30,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Sacred_Soil.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "regenPotency": 100,
+      "regenDuration": 15,
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": true,
+      "forRaidWide": true,
+      "consumesAetherflow": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "897e2c6a1cfa5570b8da0aa5cc4b8c867b15a4f3688715f1cea8c9dd3fc118de",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__16",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "sentinel": {
+      "id": "sentinel",
+      "name": "Sentinel",
+      "description": "Reduces damage taken by 30%. Duration: 15s",
+      "levelRequirement": 38,
+      "levelDescriptions": {
+        "38": "Reduces damage taken by 30% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "PLD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/01_PLD/Sentinel.png",
+      "type": "mitigation",
+      "mitigationValue": 0.3,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "upgradedBy": "guardian",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "ca52b4529785f24de100d4094196f366ab3fcbfd52471bb5c606bea21b282a1a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__12",
+          "url": "https://na.finalfantasyxiv.com/jobguide/paladin/"
+        }
+      ]
+    },
+    "seraphism": {
+      "id": "seraphism",
+      "name": "Seraphism",
+      "description": "Gradually restores the HP of self and all party members within a radius of 50 yalms. Cure Potency: 100 Additional Effect: Changes Adloquium to Manifestation and Concitation to Accession Additional Effect: Resets Emergency Tactics recast timer and reduces its recast timer to 1s Duration: 20s Effect cannot be stacked with Dissipation. Can only be executed while a faerie or Seraph is summoned and you are in combat.",
+      "levelRequirement": 100,
+      "levelDescriptions": {
+        "100": "Gradually restores the HP of self and all party members within a radius of 50 yalms."
+      },
+      "duration": 20,
+      "cooldown": 180,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Seraphism.png",
+      "type": "healing",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingPotencyBonus": {
+        "value": 0.2,
+        "stackMode": "multiplicative"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "81613334ca333ce41f0a273c91f8c75a124a05dda7203ad6940bbd84eb726802",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__39",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "shadow_wall": {
+      "id": "shadow_wall",
+      "name": "Shadow Wall",
+      "description": "Reduces damage taken by 30%. Duration: 15s",
+      "levelRequirement": 38,
+      "levelDescriptions": {
+        "38": "Reduces damage taken by 30% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Shadow_Wall.png",
+      "type": "mitigation",
+      "mitigationValue": 0.3,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "eeba8ac2a5bc716047cfe7dd6ec41c2a3f2bd531f3e6a1ac4bb6fec77e33fc07",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__10",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "shadowed_vigil": {
+      "id": "shadowed_vigil",
+      "name": "Shadowed Vigil",
+      "description": "Reduces damage taken by 40%. Duration: 15s Additional Effect: Grants Vigilant Duration: 20s Vigilant Effect: Restores HP when HP falls below 50% or upon effect duration expiration Cure Potency: 1,200",
+      "levelRequirement": 92,
+      "levelDescriptions": {
+        "92": "Reduces damage taken by 40% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/Shadowed_Vigil.png",
+      "type": "mitigation",
+      "mitigationValue": 0.4,
+      "healingPotency": 1200,
+      "healingType": "triggered",
+      "lowHpTrigger": {
+        "thresholdPercent": 50,
+        "triggerOnExpire": true,
+        "healingPotency": 1200
+      },
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "95612a1a668a2342cdd4b1677b6c78fbfbb6220f836bda02b75b4da72724116c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__30",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "shake": {
+      "id": "shake",
+      "name": "Shake It Off",
+      "description": "Creates a barrier around self and all nearby party members that absorbs damage totaling 15% of maximum HP. Dispels Thrill of Battle, Damnation, and Bloodwhetting, increasing damage absorbed by 2% for each effect removed. Duration: 30s Additional Effect: Gradually restores HP Cure Potency: 100 Duration: 15s Additional Effect: Restores target's HP Cure Potency: 300",
+      "levelRequirement": 68,
+      "levelDescriptions": {
+        "68": "Creates a barrier around self and nearby party members that absorbs damage for 30s",
+        "76": "Creates a barrier around self and nearby party members that absorbs damage and applies regen for 30s"
+      },
+      "duration": 30,
+      "cooldown": 90,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Shake_It_Off.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierPotency": 0.15,
+      "conditionalBarrierModifiers": [
+        {
+          "value": 0.02,
+          "maxStacks": 3,
+          "conditionAbilityIds": [
+            "thrill_of_battle",
+            "vengeance",
+            "damnation",
+            "bloodwhetting"
+          ],
+          "description": "Dispels active Warrior defensive effects"
+        }
+      ],
+      "healingPotency": 300,
+      "healingType": "instant",
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "d9488e6e419bea5707299f2ff80e6f07e9bbb3a3b99a6398ab5d6cf1901850be",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__23",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "shield_samba": {
+      "id": "shield_samba",
+      "name": "Shield Samba",
+      "description": "Reduces damage taken by self and nearby party members by 15%. Duration: 15s Effect cannot be stacked with bard's Troubadour or machinist's Tactician.",
+      "levelRequirement": 56,
+      "levelDescriptions": {
+        "56": "Reduces damage taken by party members by 10% for 15s",
+        "98": "Reduces damage taken by party members by 15% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "DNC"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/13_DNC/Shield_Samba.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "levelMitigationValues": {
+        "56": 0.1,
+        "98": 0.15
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "isRoleShared": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "74118a5e37637ca7e4a76880cb55a8e57fb521c16161d6e0fdcd43f046f5b1f3",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__15",
+          "url": "https://na.finalfantasyxiv.com/jobguide/dancer/"
+        }
+      ]
+    },
+    "succor": {
+      "id": "succor",
+      "name": "Succor",
+      "description": "Restores own HP and the HP of all nearby party members. Cure Potency: 200 Additional Effect: Erects a magicked barrier which nullifies damage equaling 160% of the amount of HP restored Duration: 30s Effect cannot be stacked with certain sage barrier effects.",
+      "levelRequirement": 35,
+      "levelDescriptions": {
+        "35": "Restores own HP and the HP of all nearby party members with 200 potency and grants barrier equivalent to 160% of healing done"
+      },
+      "duration": 30,
+      "cooldown": 2.5,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Succor.png",
+      "type": "healing",
+      "healingPotency": 200,
+      "healingType": "instant",
+      "barrierFlatPotency": 320,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "upgradedBy": "concitation",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "199be50c216c35a1505929b4a188610c960f8d17576f8b39610e4c01e7617b13",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__09",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "summon_seraph": {
+      "id": "summon_seraph",
+      "name": "Summon Seraph",
+      "description": "Summons Seraph to fight at your side. When set to guard, automatically casts Seraphic Veil on party members who suffer damage. Cannot summon Seraph unless a pet is already summoned. Current pet will leave the battlefield while Seraph is present, and return once gone. Duration: 22s",
+      "levelRequirement": 80,
+      "levelDescriptions": {
+        "80": "Summons Seraph to fight at your side for 22s. Grants access to Consolation."
+      },
+      "duration": 22,
+      "cooldown": 120,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Summon_Seraph.png",
+      "type": "utility",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "f6255fd417eb6aab8adfdbc4714a0101b152ef78799100a5e5bf381b1819af7d",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__31",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "sun_sign": {
+      "id": "sun_sign",
+      "name": "Sun Sign",
+      "description": "Reduces damage taken by self and nearby party members by 10%. Duration: 15s Can only be executed while Suntouched.",
+      "levelRequirement": 100,
+      "levelDescriptions": {
+        "100": "Reduces damage taken by 10% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 1,
+      "jobs": [
+        "AST"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Sun_Sign.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "requiresActiveWindow": {
+        "abilityId": "neutral_sect",
+        "windowDuration": 30
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "5b60b32db79638a50cd018d63ac597565a99f0ab7ae085dd9f9873dc1600595c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__40",
+          "url": "https://na.finalfantasyxiv.com/jobguide/astrologian/"
+        }
+      ]
+    },
+    "superbolide": {
+      "id": "superbolide",
+      "name": "Superbolide",
+      "description": "Reduces HP by 50% of maximum and renders you impervious to most attacks. Duration: 10s",
+      "levelRequirement": 50,
+      "levelDescriptions": {
+        "50": "Reduces HP by 50% of maximum and renders you impervious to most attacks for 10s"
+      },
+      "duration": 10,
+      "cooldown": 360,
+      "jobs": [
+        "GNB"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/04_GNB/Superbolide.png",
+      "type": "invulnerability",
+      "mitigationValue": 1,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "4402ccd12b590cc9c8dfbc2fcd11ae1c36ef0fd77caabc26325e7de51402f920",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__15",
+          "url": "https://na.finalfantasyxiv.com/jobguide/gunbreaker/"
+        }
+      ]
+    },
+    "tactician": {
+      "id": "tactician",
+      "name": "Tactician",
+      "description": "Reduces damage taken by self and nearby party members by 15%. Duration: 15s Effect cannot be stacked with bard's Troubadour or dancer's Shield Samba.",
+      "levelRequirement": 56,
+      "levelDescriptions": {
+        "56": "Reduces damage taken by party members by 10% for 15s",
+        "98": "Reduces damage taken by party members by 15% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "MCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/12_MCH/Tactician.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "levelMitigationValues": {
+        "56": 0.1,
+        "98": 0.15
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "isRoleShared": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "e131e3ee2c2c6eb0688bf860b9fe6ef81db51ad58fed5119ff4cdb5b3508e6f6",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__18",
+          "url": "https://na.finalfantasyxiv.com/jobguide/machinist/"
+        }
+      ]
+    },
+    "taurochole": {
+      "id": "taurochole",
+      "name": "Taurochole",
+      "description": "Restores own or target party member's HP. Cure Potency: 700 Additional Effect: Reduces target's damage taken by 10% Duration: 15s Effect cannot be stacked with Kerachole. Additional Effect: Restores 7% of maximum MP Addersgall Cost: 1",
+      "levelRequirement": 62,
+      "levelDescriptions": {
+        "62": "Restores HP and reduces damage taken by 10% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 45,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Taurochole.png",
+      "type": "mitigation",
+      "healingPotency": 700,
+      "healingType": "instant",
+      "consumesAddersgall": true,
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "f0ccc272fbe8c6d1398d4e6562694da45f69d040d8824058303b137dd5719719",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__21",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "tempera_coat": {
+      "id": "tempera_coat",
+      "name": "Tempera Coat",
+      "description": "Creates a barrier around self that absorbs damage totaling 20% of maximum HP. Duration: 10s Reduces the recast time of Tempera Coat by 60 seconds when barrier is completely absorbed.",
+      "levelRequirement": 10,
+      "levelDescriptions": {
+        "10": "Creates a barrier around self that absorbs damage totaling 20% of maximum HP for 10s"
+      },
+      "duration": 10,
+      "cooldown": 120,
+      "jobs": [
+        "PCT"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/17_PCT/Tempera_Coat.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierPotency": 0.2,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "9805f3067379548962d548d229a2edd1c179b2e3cf63d6c6e6a2cf8bbcc91927",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__03",
+          "url": "https://na.finalfantasyxiv.com/jobguide/pictomancer/"
+        }
+      ]
+    },
+    "tempera_grassa": {
+      "id": "tempera_grassa",
+      "name": "Tempera Grassa",
+      "description": "Removes Tempera Coat to create a barrier around self and all nearby party members that absorbs damage totaling 10% of maximum HP. Duration: 10s Reduces the recast time of Tempera Coat by 30 seconds when barrier is completely absorbed. Can only be executed when under the effect of Tempera Coat.",
+      "levelRequirement": 88,
+      "levelDescriptions": {
+        "88": "Creates a barrier that absorbs damage equal to 10% of maximum HP for 10s"
+      },
+      "duration": 10,
+      "cooldown": 1,
+      "jobs": [
+        "PCT"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/17_PCT/Tempera_Grassa.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierPotency": 0.1,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "requiresActiveWindow": {
+        "abilityId": "tempera_coat",
+        "windowDuration": 10
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "1722ecb576b8a568c9f3d639fca250e7b302dc3cfa58f6e23fa8120bdea2138b",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__35",
+          "url": "https://na.finalfantasyxiv.com/jobguide/pictomancer/"
+        }
+      ]
+    },
+    "temperance": {
+      "id": "temperance",
+      "name": "Temperance",
+      "description": "Increases healing magic potency by 20%, while reducing damage taken by self and all party members within a radius of 50 yalms by 10%. Duration: 20s Additional Effect: Grants Divine Grace Duration: 30s",
+      "levelRequirement": 80,
+      "levelDescriptions": {
+        "80": "Reduces damage taken by party members by 10% for 20s",
+        "100": "Reduces damage taken by party members by 10% for 20s and grants Divine Grace for 30s"
+      },
+      "duration": 20,
+      "cooldown": 120,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Temperance.png",
+      "type": "mitigation",
+      "mitigationValue": 0.1,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "healingPotencyBonus": {
+        "value": 0.2,
+        "stackMode": "multiplicative"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "17781671dd4d70535ac47eb23e8714a245e6f95ecb348c01a8a3d78e890b1018",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__29",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "tetragrammaton": {
+      "id": "tetragrammaton",
+      "name": "Tetragrammaton",
+      "description": "Restores target's HP. Cure Potency: 700 Maximum Charges: 2",
+      "levelRequirement": 60,
+      "levelDescriptions": {
+        "60": "Restores target's HP with 700 potency"
+      },
+      "duration": 0,
+      "cooldown": 60,
+      "count": 2,
+      "jobs": [
+        "WHM"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/18_WHM/Tetragrammaton.png",
+      "type": "healing",
+      "healingPotency": 700,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "bc9268556f811a29492c5b3db685dbd7eacca66cde59002d1926108781b31688",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__21",
+          "url": "https://na.finalfantasyxiv.com/jobguide/whitemage/"
+        }
+      ]
+    },
+    "the_blackest_night": {
+      "id": "the_blackest_night",
+      "name": "The Blackest Night",
+      "description": "Creates a barrier around self or target party member that absorbs damage totaling 25% of target's maximum HP. Duration: 7s Grants Dark Arts when barrier is completely absorbed. Dark Arts Effect: Consume Dark Arts instead of MP to execute Edge of Shadow or Flood of Shadow",
+      "levelRequirement": 70,
+      "levelDescriptions": {
+        "70": "Creates a barrier that absorbs damage equal to 25% of maximum HP for 7s"
+      },
+      "duration": 7,
+      "cooldown": 15,
+      "jobs": [
+        "DRK"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/03_DRK/The_Blackest_Night.png",
+      "type": "barrier",
+      "mitigationValue": 0,
+      "barrierPotency": 0.25,
+      "damageType": "both",
+      "target": "single",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "targetsTank": true,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "9f9a92f45f41a75c0de76a8037f5e98c7be0f8f9b4af27ff93f5424c85aa665a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__23",
+          "url": "https://na.finalfantasyxiv.com/jobguide/darkknight/"
+        }
+      ]
+    },
+    "thrill_of_battle": {
+      "id": "thrill_of_battle",
+      "name": "Thrill of Battle",
+      "description": "Increases maximum HP by 20% and restores the amount increased. Additional Effect: Increases HP recovery via healing actions on self by 20% Duration: 10s",
+      "levelRequirement": 30,
+      "levelDescriptions": {
+        "30": "Increases maximum HP by 20% and restores the amount increased for 10s"
+      },
+      "duration": 10,
+      "cooldown": 90,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Thrill_of_Battle.png",
+      "type": "mitigation",
+      "mitigationValue": 0.2,
+      "maxHpIncrease": 0.2,
+      "healingReceivedBonus": 0.2,
+      "levelHealingReceivedBonuses": {
+        "30": 0,
+        "78": 0.2
+      },
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "744637ae84ff5edcb82b0afadd109bc3686edcc2511a8d053a34243b6340711c",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__09",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "toxikon": {
+      "id": "toxikon",
+      "name": "Toxikon",
+      "description": "Deals unaspected damage to target and all enemies nearby it with a potency of 300 for the first enemy, and 50% less for all remaining enemies. Additional Effect: Restores HP to targets under the effect of Kardion granted by you Cure Potency: 170 Addersting Cost: 1",
+      "levelRequirement": 66,
+      "levelDescriptions": {
+        "66": "Deals 300 potency AoE damage. Heals Kardia target for 170 potency. Requires 1 Addersting"
+      },
+      "duration": 0,
+      "cooldown": 2.5,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Toxikon.png",
+      "type": "healing",
+      "healingPotency": 170,
+      "healingType": "instant",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "area",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "isSpell": true,
+      "adderstingCost": 1,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "52183d6797ad27d1bb576cf45b0337b215f87dbee7705acf4eb156475f49f040",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__22",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    },
+    "troubadour": {
+      "id": "troubadour",
+      "name": "Troubadour",
+      "description": "Reduces damage taken by self and nearby party members by 15%. Duration: 15s Effect cannot be stacked with machinist's Tactician or dancer's Shield Samba.",
+      "levelRequirement": 62,
+      "levelDescriptions": {
+        "62": "Reduces damage taken by party members by 10% for 15s",
+        "98": "Reduces damage taken by party members by 15% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 90,
+      "jobs": [
+        "BRD"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/11_BRD/Troubadour.png",
+      "type": "mitigation",
+      "mitigationValue": 0.15,
+      "levelMitigationValues": {
+        "62": 0.1,
+        "98": 0.15
+      },
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "isRoleShared": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "cd96b1ace7ef8e072d3d2c9e6bbc4cc90e515f5451126676fb4ae4e17d030c3a",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__21",
+          "url": "https://na.finalfantasyxiv.com/jobguide/bard/"
+        }
+      ]
+    },
+    "vengeance": {
+      "id": "vengeance",
+      "name": "Vengeance",
+      "description": "Reduces damage taken by 30% and delivers an attack with a potency of 55 every time you suffer physical damage. Duration: 15s",
+      "levelRequirement": 38,
+      "levelDescriptions": {
+        "38": "Reduces damage taken by 30% for 15s"
+      },
+      "duration": 15,
+      "cooldown": 120,
+      "jobs": [
+        "WAR"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/02_WAR/Vengeance.png",
+      "type": "mitigation",
+      "mitigationValue": 0.3,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": true,
+      "forRaidWide": false,
+      "count": 1,
+      "upgradedBy": "damnation",
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "02a8d1e9adf425284a52a7b77b96de69dd479cbd4e518432625611ebf02982e0",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__11",
+          "url": "https://na.finalfantasyxiv.com/jobguide/warrior/"
+        }
+      ]
+    },
+    "whispering_dawn": {
+      "id": "whispering_dawn",
+      "name": "Whispering Dawn",
+      "description": "Orders faerie to execute Whispering Dawn. If Seraph is summoned, orders her to execute Angel's Whisper. Whispering Dawn/Angel's Whisper Effect: Gradually restores the HP of all nearby party members Cure Potency: 80 Duration: 21s",
+      "levelRequirement": 20,
+      "levelDescriptions": {
+        "20": "Gradually restores the HP of all nearby party members with a potency of 80 for 21s"
+      },
+      "duration": 21,
+      "cooldown": 60,
+      "jobs": [
+        "SCH"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/19_SCH/Whispering_Dawn.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "regenPotency": 80,
+      "healingType": "regen",
+      "regenDuration": 21,
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "party",
+      "forTankBusters": false,
+      "forRaidWide": true,
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "2a71b96f9324f864d5a0a3e83ef1e42ad26aaa074538ed9f66706a24f93fb718",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__06",
+          "url": "https://na.finalfantasyxiv.com/jobguide/scholar/"
+        }
+      ]
+    },
+    "zoe": {
+      "id": "zoe",
+      "name": "Zoe",
+      "description": "Increases healing magic potency of your next healing spell by 50%. Duration: 30s",
+      "levelRequirement": 56,
+      "levelDescriptions": {
+        "56": "Increases healing magic potency of your next healing spell by 50% for 30s"
+      },
+      "duration": 30,
+      "cooldown": 90,
+      "jobs": [
+        "SGE"
+      ],
+      "icon": "/icons/pve/FFXIVIcons Battle(PvE)/21_SGE/Zoe.png",
+      "type": "healing",
+      "healingPotency": 0,
+      "healingType": "boost",
+      "mitigationValue": 0,
+      "damageType": "both",
+      "target": "self",
+      "forTankBusters": false,
+      "forRaidWide": false,
+      "healingPotencyBonus": {
+        "value": 0.5,
+        "stackMode": "multiplicative"
+      },
+      "provenance": [
+        {
+          "patch": "7.5",
+          "semanticHash": "9629c76943c248e118332f9a1cd21aac2248ca9a4c72132feba4f554215f3259",
+          "source": "ffxiv-job-guide",
+          "sourceActionId": "pve_action__18",
+          "url": "https://na.finalfantasyxiv.com/jobguide/sage/"
+        }
+      ]
+    }
+  }
+}

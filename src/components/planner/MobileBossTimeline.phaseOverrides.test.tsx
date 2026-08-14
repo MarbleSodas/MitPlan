@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MobileBossTimeline from './MobileBossTimeline';
 
@@ -113,5 +113,31 @@ describe('MobileBossTimeline phase summary UI', () => {
 
     expect(screen.queryByTestId('phase-time-strip-phase_1')).toBeNull();
     expect(screen.getByText('30s')).toBeTruthy();
+  });
+
+  it('exposes each timeline action as a keyboard-ready pressed-state button', () => {
+    render(
+      <MobileBossTimeline
+        sortedBossActions={sortedBossActions}
+        selectedBossAction={null}
+        assignments={{}}
+        getActiveMitigations={() => []}
+        selectedJobs={{}}
+        currentBossLevel={100}
+        baseHealth={{ party: 143000, tank: 225000 }}
+        phaseSummaryByAnchorActionId={new Map()}
+        skippedActionsByPhaseId={{}}
+        phaseOverrides={{}}
+        onSelectAction={onSelectAction}
+      />
+    );
+
+    const actionButton = screen.getByRole('button', {
+      name: 'Anchor Action at 0:30.000. 0 mitigations assigned.',
+    });
+    expect(actionButton.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(actionButton);
+    expect(onSelectAction).toHaveBeenCalledWith(sortedBossActions[0]);
   });
 });

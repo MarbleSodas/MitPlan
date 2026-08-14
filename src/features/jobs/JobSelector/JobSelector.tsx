@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, memo, useState, useEffect, useMemo } from 'react';
-import { RefreshCw, XCircle } from 'lucide-react';
+import { ChevronDown, RefreshCw, XCircle } from 'lucide-react';
 import { useRealtimeJobContext } from '../../../contexts/RealtimeJobContext';
 import { useTankPositionContext } from '../../../contexts/TankPositionContext';
 import { useRealtimePlan } from '../../../contexts/RealtimePlanContext';
@@ -22,13 +22,17 @@ import PresenceTarget from '../../../components/collaboration/PresenceTarget';
 import SectionPresencePill from '../../../components/collaboration/SectionPresencePill';
 import SelectionBorder from '../../../components/collaboration/SelectionBorder';
 import type { Job, JobId, UserJobAssignment } from '../../../types';
+import {
+  isJobAvailableInMode,
+  normalizePlanAbilityMode,
+} from '../../../utils/abilities/abilityModeUtils';
 
 const ROLE_CONFIG = {
-  tank: { color: 'text-blue-600 dark:text-blue-400', border: 'border-blue-600 dark:border-blue-400', bg: 'bg-blue-600/10 dark:bg-blue-400/10', icon: '🛡️', label: 'Tanks' },
-  healer: { color: 'text-green-600 dark:text-green-400', border: 'border-green-600 dark:border-green-400', bg: 'bg-green-600/10 dark:bg-green-400/10', icon: '💉', label: 'Healers' },
-  melee: { color: 'text-red-600 dark:text-red-400', border: 'border-red-600 dark:border-red-400', bg: 'bg-red-600/10 dark:bg-red-400/10', icon: '🗡️', label: 'Melee DPS' },
-  ranged: { color: 'text-zinc-600 dark:text-zinc-400', border: 'border-zinc-600 dark:border-zinc-400', bg: 'bg-zinc-600/10 dark:bg-zinc-400/10', icon: '🏹', label: 'Phys Ranged' },
-  caster: { color: 'text-purple-600 dark:text-purple-400', border: 'border-purple-600 dark:border-purple-400', bg: 'bg-purple-600/10 dark:bg-purple-400/10', icon: '🔮', label: 'Magic Ranged' }
+  tank: { color: 'text-role-tank', border: 'border-role-tank', bg: 'bg-role-tank/10', icon: '🛡️', label: 'Tanks' },
+  healer: { color: 'text-role-healer', border: 'border-role-healer', bg: 'bg-role-healer/10', icon: '💉', label: 'Healers' },
+  melee: { color: 'text-role-melee', border: 'border-role-melee', bg: 'bg-role-melee/10', icon: '🗡️', label: 'Melee DPS' },
+  ranged: { color: 'text-role-ranged', border: 'border-role-ranged', bg: 'bg-role-ranged/10', icon: '🏹', label: 'Phys Ranged' },
+  caster: { color: 'text-role-caster', border: 'border-role-caster', bg: 'bg-role-caster/10', icon: '🔮', label: 'Magic Ranged' }
 };
 
 interface JobCardProps {
@@ -43,6 +47,7 @@ interface JobCardProps {
   onClaimJob: () => void;
   onReleaseJob: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 const JobCard = ({
@@ -56,7 +61,8 @@ const JobCard = ({
   onAssignTankPosition,
   onClaimJob,
   onReleaseJob,
-  disabled = false
+  disabled = false,
+  compact = false,
 }: JobCardProps) => {
   const [isClaiming, setIsClaiming] = useState(false);
   const hasAssignment = !!assignment;
@@ -102,8 +108,20 @@ const JobCard = ({
     >
       <div
         onClick={handleClick}
+        onKeyDown={(event) => {
+          if (event.currentTarget !== event.target || disabled) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleClick();
+          }
+        }}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-pressed={job.selected}
+        aria-label={`${job.selected ? 'Remove' : 'Add'} ${job.name} ${job.selected ? 'from' : 'to'} party`}
         className={cn(
-          "flex flex-col items-center justify-center text-center rounded-md transition-all duration-200 px-2.5 py-2 min-h-[100px] w-full border-2 cursor-pointer hover:-translate-y-0.5 hover:shadow-sm relative",
+          "relative flex w-full cursor-pointer flex-col items-center justify-center rounded-md border-2 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          compact ? "min-h-20 px-1.5 py-1.5" : "min-h-[100px] px-2.5 py-2",
           disabled && "opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-none",
           job.selected
             ? "border-primary bg-primary/10"
@@ -114,30 +132,32 @@ const JobCard = ({
       >
 
         {/* Job Icon */}
-        <div className="mb-1 h-10 flex items-center justify-center">
+        <div className={cn('flex items-center justify-center', compact ? 'mb-0.5 h-8' : 'mb-1 h-10')}>
           {typeof job.icon === 'string' && job.icon.startsWith('/') ? (
-            <img src={job.icon} alt={job.name} className="max-h-10 max-w-10" />
+            <img src={job.icon} alt={job.name} className={cn(compact ? 'max-h-8 max-w-8' : 'max-h-10 max-w-10')} />
           ) : (
             job.icon
           )}
         </div>
 
         {/* Job Name */}
-        <div className={cn("text-sm font-medium", job.selected ? "text-foreground" : "text-muted-foreground")}>
+        <div className={cn(compact ? 'text-xs' : 'text-sm', "font-medium", job.selected ? "text-foreground" : "text-muted-foreground")}>
           {job.name}
         </div>
 
         {/* Tank Position Toggle Button */}
         {isTank && job.selected && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onAssignTankPosition();
             }}
             className={cn(
-              "mt-1 px-2 py-0.5 rounded text-[10px] font-bold text-white transition-all hover:scale-105",
-              tankPosition === 'mainTank' ? "bg-blue-600" : tankPosition === 'offTank' ? "bg-red-500" : "bg-gray-400"
+              "mt-1 px-2 py-0.5 rounded text-[10px] font-bold text-white transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              tankPosition === 'mainTank' ? "bg-primary" : tankPosition === 'offTank' ? "bg-destructive" : "bg-muted"
             )}
+            aria-label={`Set ${job.name} tank position. Current position: ${tankPosition === 'mainTank' ? 'main tank' : tankPosition === 'offTank' ? 'off tank' : 'not set'}`}
           >
             {tankPosition === 'mainTank' ? 'MT' : tankPosition === 'offTank' ? 'OT' : 'Set'}
           </button>
@@ -169,9 +189,11 @@ const JobCard = ({
               </div>
               {isMyJob && (
                 <button
+                  type="button"
                   onClick={handleRelease}
                   className="p-0.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                   title="Release job"
+                  aria-label={`Release ${job.name}`}
                 >
                   <XCircle className="w-3.5 h-3.5" />
                 </button>
@@ -210,19 +232,17 @@ interface HealthSettingsSectionProps {
   setOtMaxHp: (value: number) => void;
   persistTankHp: (key: string, value: number) => void;
   resetTankHpToDefault: (key: string) => void;
-  defaultTankHp: number;
   partyMinHp: number;
   setPartyMinHp: (value: number) => void;
   persistPartyMinHp: (value: number) => void;
   resetPartyMinHp: () => void;
-  defaultPartyHp: number;
   mtTankJob: Job | null;
   otTankJob: Job | null;
   healingPotency: number;
   setHealingPotency: (value: number) => void;
-  defaultHealingPotency: number;
   resetHealingPotency: () => void;
   currentBossLevel: number;
+  compact?: boolean;
 }
 
 const HealthSettingsSection = ({
@@ -232,19 +252,17 @@ const HealthSettingsSection = ({
   setOtMaxHp,
   persistTankHp,
   resetTankHpToDefault,
-  defaultTankHp,
   partyMinHp,
   setPartyMinHp,
   persistPartyMinHp,
   resetPartyMinHp,
-  defaultPartyHp,
   mtTankJob,
   otTankJob,
   healingPotency,
   setHealingPotency,
-  defaultHealingPotency,
   resetHealingPotency,
-  currentBossLevel
+  currentBossLevel,
+  compact = false,
 }: HealthSettingsSectionProps) => {
   const presence = usePresenceOptional();
 
@@ -324,6 +342,7 @@ const HealthSettingsSection = ({
           size="icon"
           onClick={onReset}
           title="Reset to default"
+          aria-label={`Reset ${label.replace(':', '')} to default`}
           className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 shrink-0"
         >
           <RefreshCw size={14} />
@@ -333,9 +352,11 @@ const HealthSettingsSection = ({
   );
 
   return (
-    <div className="border-t border-border pt-4">
-      <h4 className="text-base font-semibold text-foreground mb-3">Health Settings</h4>
-      <div className="flex flex-wrap gap-3">
+    <div className={cn('border-t border-border', compact ? 'pt-3' : 'pt-4')}>
+      <h4 className={cn('font-semibold text-foreground', compact ? 'mb-2 text-sm' : 'mb-3 text-base')}>
+        {compact ? 'Tank HP' : 'Health Settings'}
+      </h4>
+      <div className={cn('flex flex-wrap', compact ? 'gap-2' : 'gap-3')}>
         {renderSettingRow(
           'mainTankHp',
           'MT HP:',
@@ -354,43 +375,47 @@ const HealthSettingsSection = ({
           () => resetTankHpToDefault('offTank'),
           renderTankIcon(otTankJob)
         )}
-        {renderSettingRow(
-          'partyMinHealth',
-          'Party Min:',
-          partyMinHp,
-          setPartyMinHp,
-          persistPartyMinHp,
-          resetPartyMinHp,
-          undefined,
-          'HP'
-        )}
-        {renderSettingRow(
-          'healingPotency',
-          'Heal Potency:',
-          healingPotency,
-          setHealingPotency,
-          () => undefined,
-          resetHealingPotency,
-          undefined,
-          'ppt'
+        {!compact && (
+          <>
+            {renderSettingRow(
+              'partyMinHealth',
+              'Party Min:',
+              partyMinHp,
+              setPartyMinHp,
+              persistPartyMinHp,
+              resetPartyMinHp,
+              undefined,
+              'HP'
+            )}
+            {renderSettingRow(
+              'healingPotency',
+              'Heal Potency:',
+              healingPotency,
+              setHealingPotency,
+              () => undefined,
+              resetHealingPotency,
+              undefined,
+              'ppt'
+            )}
+          </>
         )}
       </div>
     </div>
   );
 };
 
-function JobSelector({ disabled = false }) {
+function JobSelector({ disabled = false, compact = false, showHealthSettings = true }) {
   const { selectedJobs: jobs, toggleJobSelection: contextToggleJobSelection } = useRealtimeJobContext();
   const { tankPositions, assignTankPosition, selectedTankJobs } = useTankPositionContext();
   const { realtimePlan, batchUpdateRealtime } = useRealtimePlan();
+  const planAbilityMode = normalizePlanAbilityMode(realtimePlan?.mode);
   const { currentBossId, currentBossLevel } = useRealtimeBossContext();
-  const presence = usePresenceOptional();
   const jobAssignment = useUserJobAssignmentOptional();
   const lastClickTimeRef = useRef(new Map());
 
   const planTimelineLayout = useMemo(
     () => getPlanTimelineLayout(realtimePlan),
-    [realtimePlan?.timelineLayout]
+    [realtimePlan]
   );
   const currentBoss = bosses.find(b => b.id === currentBossId) || null;
   const timelineDefaultTankHp = planTimelineLayout?.healthConfig?.defaultTank
@@ -530,7 +555,7 @@ function JobSelector({ disabled = false }) {
     contextToggleJobSelection(roleKey, jobId);
   };
 
-  const handleTankPositionClick = useCallback((tankJobId: string) => {
+  const handleTankPositionClick = useCallback((tankJobId: JobId) => {
     const currentMT = tankPositions.mainTank;
     const currentOT = tankPositions.offTank;
 
@@ -564,6 +589,18 @@ function JobSelector({ disabled = false }) {
 
   const mtTankJob = tankPositions.mainTank ? selectedTankJobs.find(t => t.id === tankPositions.mainTank) || null : null;
   const otTankJob = tankPositions.offTank ? selectedTankJobs.find(t => t.id === tankPositions.offTank) || null : null;
+  const selectedJobCount = (Object.values(jobs) as Job[][]).reduce(
+    (count, roleJobs) => count + roleJobs.filter((job: Job) => job.selected).length,
+    0,
+  );
+  const [isExpanded, setIsExpanded] = useState(selectedJobCount === 0);
+  const hasInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+    setIsExpanded(selectedJobCount === 0);
+  }, [selectedJobCount]);
 
   return (
     <PresenceSurface
@@ -571,16 +608,43 @@ function JobSelector({ disabled = false }) {
       panel="jobs"
       section="jobs"
       hideRemoteCursorsOnMobile={true}
-      className="mb-5"
+      className={compact ? "mb-3" : "mb-5"}
     >
     <Card className="bg-card">
-      <CardHeader className="pb-3 border-b border-border">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-foreground">
-          <span>Select FFXIV Jobs</span>
-          <SectionPresencePill surface="planner" section="jobs" />
+      <CardHeader className={cn("border-b border-border pb-3", compact && "p-3")}>
+        <CardTitle className={cn("flex items-center justify-between gap-3 font-semibold text-foreground", compact ? "text-base" : "text-lg")}>
+          <div className={cn("flex min-w-0 items-center", compact ? "gap-2" : "gap-3")}>
+            <span>{compact ? 'Party jobs' : 'Select FFXIV Jobs'}</span>
+            <SectionPresencePill surface="planner" section="jobs" />
+            {selectedJobCount > 0 ? (
+              <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                {selectedJobCount} selected
+              </span>
+            ) : null}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-expanded={isExpanded}
+            aria-controls="planner-job-selector-content"
+            onClick={() => setIsExpanded((expanded) => !expanded)}
+            className="shrink-0 gap-1.5"
+          >
+            {isExpanded ? 'Collapse' : 'Configure'}
+            <ChevronDown className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')} aria-hidden="true" />
+          </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4 grid gap-4 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
+      {isExpanded ? <CardContent
+        id="planner-job-selector-content"
+        className={cn(
+          "grid gap-4 pt-4",
+          compact
+            ? "grid-cols-1 gap-2 px-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+            : "grid-cols-[repeat(auto-fit,minmax(250px,1fr))]"
+        )}
+      >
         {Object.entries(jobs).map(([roleKey, roleJobs]: [string, any]) => {
           const config = ROLE_CONFIG[roleKey as keyof typeof ROLE_CONFIG] || ROLE_CONFIG.tank;
           const isTankRole = roleKey === 'tank';
@@ -588,19 +652,26 @@ function JobSelector({ disabled = false }) {
           return (
             <div
               key={roleKey}
-              className="rounded-lg shadow-sm p-4 bg-card border border-border"
+              className={cn("rounded-lg border border-border bg-card shadow-sm", compact ? "p-2" : "p-4")}
             >
-              <div className={cn("flex items-center mb-4 pb-2 border-b-2", config.border)}>
-                <div className={cn("mr-4 text-2xl w-10 h-10 flex items-center justify-center rounded-full", config.bg, config.color)}>
+              <div className={cn("flex items-center border-b-2", compact ? "mb-2 pb-2" : "mb-4 pb-2", config.border)}>
+                <div className={cn(
+                  "flex items-center justify-center rounded-full",
+                  compact ? "mr-2 h-7 w-7 text-base" : "mr-4 h-10 w-10 text-2xl",
+                  config.bg,
+                  config.color,
+                )}>
                   {config.icon}
                 </div>
-                <h4 className={cn("m-0 font-bold text-lg", config.color)}>
+                <h4 className={cn("m-0 font-bold", compact ? "text-sm" : "text-lg", config.color)}>
                   {config.label}
                 </h4>
               </div>
 
-              <div className="grid gap-3 grid-cols-2">
-                {roleJobs.map((job: Job) => {
+              <div className={cn("grid grid-cols-2", compact ? "gap-2" : "gap-3")}>
+                {roleJobs
+                  .filter((job: Job) => isJobAvailableInMode(job, planAbilityMode))
+                  .map((job: Job) => {
                   const isTank = isTankRole;
                   const tankPosition: 'mainTank' | 'offTank' | null = isTank
                     ? (tankPositions.mainTank === job.id ? 'mainTank' : tankPositions.offTank === job.id ? 'offTank' : null)
@@ -619,20 +690,21 @@ function JobSelector({ disabled = false }) {
                       isMyJob={isMyJob}
                       canClaim={canClaim}
                       disabled={disabled}
+                      compact={compact}
                       onToggleJob={() => toggleJobSelection(roleKey, job.id)}
                       onAssignTankPosition={() => handleTankPositionClick(job.id)}
                       onClaimJob={() => handleClaimJob(job.id)}
                       onReleaseJob={handleReleaseJob}
                     />
                   );
-                })}
+                  })}
               </div>
             </div>
           );
         })}
-      </CardContent>
+      </CardContent> : null}
 
-      <div className="px-6 pb-6">
+      {isExpanded && showHealthSettings ? <div className={compact ? "px-3 pb-3 pt-3" : "px-6 pb-6"}>
         <HealthSettingsSection
           mtMaxHp={mtMaxHp}
           otMaxHp={otMaxHp}
@@ -640,21 +712,19 @@ function JobSelector({ disabled = false }) {
           setOtMaxHp={setOtMaxHp}
           persistTankHp={persistTankHp}
           resetTankHpToDefault={resetTankHpToDefault}
-          defaultTankHp={defaultTankHp}
           partyMinHp={partyMinHp}
           setPartyMinHp={setPartyMinHp}
           persistPartyMinHp={persistPartyMinHp}
           resetPartyMinHp={resetPartyMinHp}
-          defaultPartyHp={defaultPartyHp}
           mtTankJob={mtTankJob}
           otTankJob={otTankJob}
           healingPotency={healingPotency}
           setHealingPotency={setHealingPotency}
-          defaultHealingPotency={defaultHealingPotency}
           resetHealingPotency={resetHealingPotency}
           currentBossLevel={currentBossLevel}
+          compact={compact}
         />
-      </div>
+      </div> : null}
     </Card>
     </PresenceSurface>
   );

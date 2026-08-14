@@ -1,46 +1,47 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @variant dark (&:where(.dark, .dark *));
 
 @plugin "tailwindcss-animate";
 
 /* ============================================
-   LIGHT MODE - RealTime Colors Palette
-   Source: colors=0d1b26-f3f8fc-1d4e7c-7eb4e7-1b6bb6
-   Font: Outfit
+   LIGHT MODE - Caffeine theme baseline
+   Source: tweakcn.com/r/themes/caffeine.json
    ============================================ */
 :root {
-  /* Core palette from RealTime Colors */
-  --background: oklch(0.973 0.008 230);       /* #f3f8fc - light blue-white */
-  --foreground: oklch(0.165 0.025 235);       /* #0d1b26 - dark navy text */
+  /* Caffeine neutral palette */
+  --background: oklch(0.9821 0 0);       /* #f3f8fc - light blue-white */
+  --foreground: oklch(0.2435 0 0);       /* #0d1b26 - dark navy text */
 
   /* Primary action color - main buttons, links, CTAs */
-  --primary: oklch(0.380 0.080 245);          /* #1d4e7c - dark blue */
-  --primary-foreground: oklch(0.98 0.005 230);
+  --primary: oklch(0.4341 0.0392 41.9938);          /* #1d4e7c - dark blue */
+  --primary-foreground: oklch(1.0000 0 0);
 
   /* Secondary action color */
-  --secondary: oklch(0.745 0.075 235);        /* #7eb4e7 - light blue */
-  --secondary-foreground: oklch(0.165 0.025 235);
+  --secondary: oklch(0.9200 0.0651 74.3695);        /* #7eb4e7 - light blue */
+  --secondary-foreground: oklch(0.3499 0.0685 40.8288);
 
   /* Accent/highlight color - focus states, highlights */
-  --accent: oklch(0.485 0.100 240);           /* #1b6bb6 - medium blue */
-  --accent-foreground: oklch(0.98 0.005 230);
+  --accent: oklch(0.9310 0 0);           /* #1b6bb6 - medium blue */
+  --accent-foreground: oklch(0.2435 0 0);
 
   /* Card/elevated surfaces */
-  --card: oklch(0.995 0.002 230);
-  --card-foreground: oklch(0.165 0.025 235);
+  --card: oklch(0.9911 0 0);
+  --card-foreground: oklch(0.2435 0 0);
 
   /* Popover/dropdown surfaces */
-  --popover: oklch(0.995 0.002 230);
-  --popover-foreground: oklch(0.165 0.025 235);
+  --popover: oklch(0.9911 0 0);
+  --popover-foreground: oklch(0.2435 0 0);
 
   /* Muted/subtle elements */
-  --muted: oklch(0.945 0.010 235);
-  --muted-foreground: oklch(0.45 0.030 235);
+  --muted: oklch(0.9521 0 0);
+  --muted-foreground: oklch(0.5032 0 0);
 
   /* Destructive actions - errors, delete */
-  --destructive: oklch(0.55 0.200 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.6271 0.1936 33.3390);
+  --destructive-foreground: oklch(1.0000 0 0);
 
   /* Semantic status accents */
   --success: oklch(0.52 0.130 155);
@@ -50,32 +51,43 @@
   --info: oklch(0.55 0.110 225);
   --info-foreground: oklch(0.98 0.005 225);
 
+  /* FFXIV semantics stay stable while the product shell follows Caffeine. */
+  --role-tank: oklch(0.62 0.16 250);
+  --role-healer: oklch(0.66 0.16 155);
+  --role-melee: oklch(0.61 0.18 25);
+  --role-ranged: oklch(0.63 0.14 90);
+  --role-caster: oklch(0.64 0.16 310);
+  --damage-physical: oklch(0.62 0.18 25);
+  --damage-magical: oklch(0.64 0.16 250);
+  --health-safe: oklch(0.66 0.16 155);
+  --health-danger: oklch(0.62 0.18 25);
+
   /* Borders and inputs */
-  --border: oklch(0.88 0.015 235);
-  --input: oklch(0.88 0.015 235);
-  --ring: oklch(0.380 0.080 245);
+  --border: oklch(0.8822 0 0);
+  --input: oklch(0.8822 0 0);
+  --ring: oklch(0.4341 0.0392 41.9938);
 
   /* Chart colors - based on primary palette */
-  --chart-1: oklch(0.380 0.080 245);
-  --chart-2: oklch(0.485 0.100 240);
-  --chart-3: oklch(0.745 0.075 235);
-  --chart-4: oklch(0.60 0.090 240);
-  --chart-5: oklch(0.50 0.070 235);
+  --chart-1: oklch(0.4341 0.0392 41.9938);
+  --chart-2: oklch(0.9200 0.0651 74.3695);
+  --chart-3: oklch(0.9310 0 0);
+  --chart-4: oklch(0.9367 0.0523 75.5009);
+  --chart-5: oklch(0.4338 0.0437 41.6746);
 
   /* Sidebar (inherits from main theme) */
-  --sidebar: oklch(0.945 0.010 235);
-  --sidebar-foreground: oklch(0.165 0.025 235);
-  --sidebar-primary: oklch(0.380 0.080 245);
-  --sidebar-primary-foreground: oklch(0.98 0.005 230);
-  --sidebar-accent: oklch(0.485 0.100 240);
-  --sidebar-accent-foreground: oklch(0.98 0.005 230);
-  --sidebar-border: oklch(0.88 0.015 235);
-  --sidebar-ring: oklch(0.380 0.080 245);
+  --sidebar: oklch(0.9881 0 0);
+  --sidebar-foreground: oklch(0.2645 0 0);
+  --sidebar-primary: oklch(0.3250 0 0);
+  --sidebar-primary-foreground: oklch(0.9881 0 0);
+  --sidebar-accent: oklch(0.9761 0 0);
+  --sidebar-accent-foreground: oklch(0.3250 0 0);
+  --sidebar-border: oklch(0.9401 0 0);
+  --sidebar-ring: oklch(0.7731 0 0);
 
   /* Typography - Outfit font family */
-  --font-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: Georgia, Cambria, 'Times New Roman', serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Border radius */
   --radius: 0.5rem;
@@ -83,18 +95,18 @@
   /* Shadows */
   --shadow-x: 0px;
   --shadow-y: 4px;
-  --shadow-blur: 8px;
-  --shadow-spread: -1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
   --shadow-opacity: 0.1;
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-2xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
-  --shadow: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 2px 4px -2px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 8px 10px -2px hsl(0 0% 0% / 0.10);
-  --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
+  --shadow-color: oklch(0 0 0);
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 
   /* Spacing and tracking */
   --tracking-normal: 0em;
@@ -108,44 +120,46 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --select-bg: var(--muted);
+  --shadow-offset-x: 0;
+  --shadow-offset-y: 1px;
+  --letter-spacing: 0em;
 }
 
 /* ============================================
-   DARK MODE - RealTime Colors Palette
-   Source: colors=d9e7f2-03080c-83b4e2-184e81-4999e4
+   DARK MODE - Caffeine theme baseline
    ============================================ */
 .dark {
-  /* Core palette from RealTime Colors */
-  --background: oklch(0.085 0.015 235);       /* #03080c - near-black navy */
-  --foreground: oklch(0.925 0.015 230);       /* #d9e7f2 - light blue-gray text */
+  /* Caffeine neutral palette */
+  --background: oklch(0.1776 0 0);       /* #03080c - near-black navy */
+  --foreground: oklch(0.9491 0 0);       /* #d9e7f2 - light blue-gray text */
 
   /* Primary action color */
-  --primary: oklch(0.745 0.080 235);          /* #83b4e2 - light blue */
-  --primary-foreground: oklch(0.10 0.015 235);
+  --primary: oklch(0.9247 0.0524 66.1732);          /* #83b4e2 - light blue */
+  --primary-foreground: oklch(0.2029 0.0240 200.1962);
 
   /* Secondary action color */
-  --secondary: oklch(0.380 0.080 245);        /* #184e81 - dark blue */
-  --secondary-foreground: oklch(0.90 0.015 230);
+  --secondary: oklch(0.3163 0.0190 63.6992);        /* #184e81 - dark blue */
+  --secondary-foreground: oklch(0.9247 0.0524 66.1732);
 
   /* Accent/highlight color */
-  --accent: oklch(0.620 0.120 240);           /* #4999e4 - bright blue */
-  --accent-foreground: oklch(0.10 0.015 235);
+  --accent: oklch(0.2850 0 0);           /* #4999e4 - bright blue */
+  --accent-foreground: oklch(0.9491 0 0);
 
   /* Card/elevated surfaces */
-  --card: oklch(0.12 0.020 235);
-  --card-foreground: oklch(0.925 0.015 230);
+  --card: oklch(0.2134 0 0);
+  --card-foreground: oklch(0.9491 0 0);
 
   /* Popover/dropdown surfaces */
-  --popover: oklch(0.12 0.020 235);
-  --popover-foreground: oklch(0.925 0.015 230);
+  --popover: oklch(0.2134 0 0);
+  --popover-foreground: oklch(0.9491 0 0);
 
   /* Muted/subtle elements */
-  --muted: oklch(0.18 0.020 235);
-  --muted-foreground: oklch(0.65 0.020 230);
+  --muted: oklch(0.2520 0 0);
+  --muted-foreground: oklch(0.7699 0 0);
 
   /* Destructive actions */
-  --destructive: oklch(0.55 0.200 25);
-  --destructive-foreground: oklch(0.10 0.015 235);
+  --destructive: oklch(0.6271 0.1936 33.3390);
+  --destructive-foreground: oklch(1.0000 0 0);
 
   /* Semantic status accents */
   --success: oklch(0.65 0.130 155);
@@ -155,32 +169,42 @@
   --info: oklch(0.68 0.105 225);
   --info-foreground: oklch(0.08 0.015 225);
 
+  --role-tank: oklch(0.76 0.15 250);
+  --role-healer: oklch(0.76 0.15 155);
+  --role-melee: oklch(0.74 0.16 25);
+  --role-ranged: oklch(0.78 0.13 90);
+  --role-caster: oklch(0.77 0.15 310);
+  --damage-physical: oklch(0.74 0.16 25);
+  --damage-magical: oklch(0.76 0.14 250);
+  --health-safe: oklch(0.76 0.15 155);
+  --health-danger: oklch(0.74 0.16 25);
+
   /* Borders and inputs */
-  --border: oklch(0.30 0.025 235);
-  --input: oklch(0.30 0.025 235);
-  --ring: oklch(0.745 0.080 235);
+  --border: oklch(0.2351 0.0115 91.7467);
+  --input: oklch(0.4017 0 0);
+  --ring: oklch(0.9247 0.0524 66.1732);
 
   /* Chart colors */
-  --chart-1: oklch(0.745 0.080 235);
-  --chart-2: oklch(0.620 0.120 240);
-  --chart-3: oklch(0.380 0.080 245);
-  --chart-4: oklch(0.55 0.090 240);
-  --chart-5: oklch(0.45 0.070 235);
+  --chart-1: oklch(0.9247 0.0524 66.1732);
+  --chart-2: oklch(0.3163 0.0190 63.6992);
+  --chart-3: oklch(0.2850 0 0);
+  --chart-4: oklch(0.3481 0.0219 67.0001);
+  --chart-5: oklch(0.9245 0.0533 67.0855);
 
   /* Sidebar */
-  --sidebar: oklch(0.12 0.020 235);
-  --sidebar-foreground: oklch(0.925 0.015 230);
-  --sidebar-primary: oklch(0.745 0.080 235);
-  --sidebar-primary-foreground: oklch(0.10 0.015 235);
-  --sidebar-accent: oklch(0.620 0.120 240);
-  --sidebar-accent-foreground: oklch(0.10 0.015 235);
-  --sidebar-border: oklch(0.30 0.025 235);
-  --sidebar-ring: oklch(0.745 0.080 235);
+  --sidebar: oklch(0.2103 0.0059 285.8852);
+  --sidebar-foreground: oklch(0.9674 0.0013 286.3752);
+  --sidebar-primary: oklch(0.4882 0.2172 264.3763);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.2739 0.0055 286.0326);
+  --sidebar-accent-foreground: oklch(0.9674 0.0013 286.3752);
+  --sidebar-border: oklch(0.2739 0.0055 286.0326);
+  --sidebar-ring: oklch(0.8711 0.0055 286.2860);
 
   /* Typography - same font in dark mode */
-  --font-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: Georgia, Cambria, 'Times New Roman', serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Border radius (same as light) */
   --radius: 0.5rem;
@@ -188,18 +212,18 @@
   /* Shadows (slightly adjusted for dark mode) */
   --shadow-x: 0px;
   --shadow-y: 4px;
-  --shadow-blur: 8px;
-  --shadow-spread: -1px;
-  --shadow-opacity: 0.3;
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-2xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.15);
-  --shadow-xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.15);
-  --shadow-sm: 0px 4px 8px -1px hsl(0 0% 0% / 0.20), 0px 1px 2px -2px hsl(0 0% 0% / 0.20);
-  --shadow: 0px 4px 8px -1px hsl(0 0% 0% / 0.20), 0px 1px 2px -2px hsl(0 0% 0% / 0.20);
-  --shadow-md: 0px 4px 8px -1px hsl(0 0% 0% / 0.20), 0px 2px 4px -2px hsl(0 0% 0% / 0.20);
-  --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.20), 0px 4px 6px -2px hsl(0 0% 0% / 0.20);
-  --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.20), 0px 8px 10px -2px hsl(0 0% 0% / 0.20);
-  --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.40);
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.1;
+  --shadow-color: oklch(0 0 0);
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 
   /* Legacy variable aliases used by older screens */
   --color-background: var(--background);
@@ -209,6 +233,10 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --select-bg: var(--muted);
+  --shadow-offset-x: 0;
+  --shadow-offset-y: 1px;
+  --letter-spacing: 0em;
+  --spacing: 0.25rem;
 }
 
 /* ============================================
@@ -237,6 +265,15 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-role-tank: var(--role-tank);
+  --color-role-healer: var(--role-healer);
+  --color-role-melee: var(--role-melee);
+  --color-role-ranged: var(--role-ranged);
+  --color-role-caster: var(--role-caster);
+  --color-damage-physical: var(--damage-physical);
+  --color-damage-magical: var(--damage-magical);
+  --color-health-safe: var(--health-safe);
+  --color-health-danger: var(--health-danger);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -254,9 +291,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -276,6 +313,24 @@
   --animate-fade-in: fade-in 0.5s ease-out forwards;
   --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;
   --animate-scale-in: scale-in 0.5s ease-out forwards;
+  --radius: 0.5rem;
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  --tracking-normal: var(--tracking-normal);
+  --spacing: var(--spacing);
+  --letter-spacing: var(--letter-spacing);
+  --shadow-offset-y: var(--shadow-offset-y);
+  --shadow-offset-x: var(--shadow-offset-x);
+  --shadow-spread: var(--shadow-spread);
+  --shadow-blur: var(--shadow-blur);
+  --shadow-opacity: var(--shadow-opacity);
+  --color-shadow-color: var(--shadow-color);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 @layer base {
@@ -291,8 +346,64 @@
     min-width: 320px;
     background: var(--background);
     color: var(--foreground);
+    cursor: default;
     font-family: var(--font-sans);
     letter-spacing: var(--tracking-normal);
+  }
+
+  /*
+   * Keep static application copy from presenting an I-beam cursor. Text is
+   * still selectable; editable and interactive controls opt back into the
+   * cursor that describes their actual behavior.
+   */
+  :where(
+    a[href],
+    button:not(:disabled),
+    summary,
+    select:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    [role="checkbox"]:not([aria-disabled="true"]),
+    [role="link"]:not([aria-disabled="true"]),
+    [role="menuitem"]:not([aria-disabled="true"]),
+    [role="option"]:not([aria-disabled="true"]),
+    [role="radio"]:not([aria-disabled="true"]),
+    [role="switch"]:not([aria-disabled="true"]),
+    [role="tab"]:not([aria-disabled="true"]),
+    label[for],
+    label:has(input, select, textarea),
+    input[type="button"]:not(:disabled),
+    input[type="checkbox"]:not(:disabled),
+    input[type="color"]:not(:disabled),
+    input[type="file"]:not(:disabled),
+    input[type="radio"]:not(:disabled),
+    input[type="range"]:not(:disabled),
+    input[type="reset"]:not(:disabled),
+    input[type="submit"]:not(:disabled)
+  ) {
+    cursor: pointer;
+  }
+
+  :where(
+    input:not([type]):not(:disabled),
+    input[type="email"]:not(:disabled),
+    input[type="number"]:not(:disabled),
+    input[type="password"]:not(:disabled),
+    input[type="search"]:not(:disabled),
+    input[type="tel"]:not(:disabled),
+    input[type="text"]:not(:disabled),
+    input[type="url"]:not(:disabled),
+    textarea:not(:disabled),
+    [contenteditable="true"]
+  ) {
+    cursor: text;
+  }
+
+  :where([draggable="true"]) {
+    cursor: grab;
+  }
+
+  :where(:disabled, [aria-disabled="true"]) {
+    cursor: not-allowed;
   }
 
   button,

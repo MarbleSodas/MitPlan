@@ -87,7 +87,7 @@ describe('SectionPresencePill', () => {
           {
             sessionId: 'session-3',
             displayName: 'Alice',
-            color: '#3b82f6',
+            color: '#3399ff',
             viewport: {
               surface: 'planner',
               section: 'timeline',

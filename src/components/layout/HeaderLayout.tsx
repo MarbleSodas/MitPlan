@@ -7,7 +7,7 @@ export const HeaderLayout = ({ title, description, topLeftContent, topRightConte
         {topLeftContent}
         {topRightContent}
       </div>
-      <h1 className="text-4xl font-bold mb-2 text-foreground">{title}</h1>
+      <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2 text-foreground">{title}</h1>
       <p className="text-lg text-muted-foreground">{description}</p>
     </header>
   );

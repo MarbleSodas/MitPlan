@@ -1,0 +1,131 @@
+{
+  "$schema": "./timeline-evidence.schema.json",
+  "schemaVersion": 1,
+  "gamePatch": "7.51",
+  "thresholds": {
+    "minimumPublicClears": 30,
+    "minimumStableSupportRatio": 0.8,
+    "minimumBranchReportCount": 5,
+    "minimumBranchSupportRatio": 0.15,
+    "maximumUnexplainedDriftSeconds": 8
+  },
+  "timelines": [
+    {
+      "timelineId": "official-brute-abominator-m7s",
+      "bossId": "brute-abominator-m7s",
+      "encounterCode": "M7S",
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "89e4f8031018db841589032ac9d57ee3ec5ff7128e3af5c0d70b1dc4cdc89c8c", "fflogsSourceHash": "4801b5bea92a823ad2e0abca9136e1bead3913c25f332a15ca95b28fda0b8875", "guideSourceHash": "1465a7646f564090f97cd66ce7176dbde004ba6652e128373cf4d389accf4089", "encounterDefinitionHash": "506ba575737aaad101b2132f1d45834c2b2655dd7fadbadfe58faa3250462d9b", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["30 public clear reports have not been collected with revisions"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-dancing-green-m5s",
+      "bossId": "dancing-green-m5s",
+      "encounterCode": "M5S",
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "f229ff23dc8c409b745bacdc1be9819c86eb4207597c4751578ffa3f980405f6", "fflogsSourceHash": "4801b5bea92a823ad2e0abca9136e1bead3913c25f332a15ca95b28fda0b8875", "guideSourceHash": "12acdc499a32b60ccd50dc10552b924196b0c9db663b6b18cc12e0d2178da570", "encounterDefinitionHash": "1775612a45ae964cc07df31e639722ef1b6df1b80e1092f04a7e3f7a2756c39f", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["30 public clear reports have not been collected with revisions"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-howling-blade-m8s",
+      "bossId": "howling-blade-m8s",
+      "encounterCode": "M8S",
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "c9e622be03ad22f09ace12227f5916e5c990c75a47c87792fb248b2e263138c2", "fflogsSourceHash": "4801b5bea92a823ad2e0abca9136e1bead3913c25f332a15ca95b28fda0b8875", "guideSourceHash": "fd8807bd54a4fc5af82e8116d83e0dabdd733f315cd985b285fd7dffa356fd30", "encounterDefinitionHash": "7e460530c611d99b027c0d45f2b7466877eb78b30935fd882917679349762468", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["30 public clear reports have not been collected with revisions"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-ketuduke",
+      "bossId": "ketuduke",
+      "encounterCode": null,
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "bfe7a37d72f0377dddfa6ce9158f84d1cdcff7d0763af7b9b2df4eb511c45cc1", "fflogsSourceHash": "2adbcec2237de048be34e451b69a7575fd6fa00dc6fa67d902fdedfbcdeb4c3b", "guideSourceHash": "290a3119ab96a20b2d83f69f49611d70bb5d7d0c8d08c1796077cdc077c7b1cf", "encounterDefinitionHash": "bc7c73c1d13301527399e96b46320a2afd37e54da082508237470e4cf27882af", "fflogsPartition": null },
+      "validation": { "status": "pending-waiver", "blockers": ["FF Logs clear evidence is not yet mapped for this Criterion encounter"] },
+      "waivers": ["waiver-official-ketuduke"]
+    },
+    {
+      "timelineId": "official-lala",
+      "bossId": "lala",
+      "encounterCode": null,
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "d0803641d67cfbaabd539a3e119e3bb378992c9c90e3e3546f01a34aafc6327e", "fflogsSourceHash": "2adbcec2237de048be34e451b69a7575fd6fa00dc6fa67d902fdedfbcdeb4c3b", "guideSourceHash": "969063af28be0fbaa9b409acf3c9f0135bdf370f08708473119c9fc37a6c92ae", "encounterDefinitionHash": "e91641c77310870d56ec2f1fcc275ae822ae80d17859f3f8d798e22119993cb1", "fflogsPartition": null },
+      "validation": { "status": "pending-waiver", "blockers": ["FF Logs clear evidence is not yet mapped for this Criterion encounter"] },
+      "waivers": ["waiver-official-lala"]
+    },
+    {
+      "timelineId": "official-lindwurm-m12s",
+      "bossId": "lindwurm-m12s",
+      "encounterCode": "M12S",
+      "evidence": { "sampleCount": 30, "distinctPublicClearCount": 30, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "6af381006f117cc56b60c9fdf6c8fe1aa6005a0eaa4594ff698f3a6ccef6f48e", "fflogsSourceHash": "737ef6c490be6d0d0ca2d59afbc2a73094a1380811ea4f93a5fd6bcb89ddca69", "guideSourceHash": "8805f04531814e124901eaedd84af7bca3ca0715319646805eb180083628011b", "encounterDefinitionHash": "66acb8f6341a658fe77970526b8b4e56194dbfd03277e4515ab1e6dbc9d0054f", "fflogsPartition": null },
+      "validation": { "status": "pending-revision-audit", "blockers": ["Legacy evidence lacks report revisions and timing spread"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-lindwurm-ii-m12s",
+      "bossId": "lindwurm-ii-m12s",
+      "encounterCode": "M12S-II",
+      "evidence": { "sampleCount": 30, "distinctPublicClearCount": 30, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": "5f6746983a53a95f46d5c80456f2e82ba02080fe9a6bdc95df3d5f7bac7ff484", "eventCount": 29, "stableEventCount": 29, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": "1bc2aa26cd37e464b825fd0eff252164ed0a0cdc251352c7de88994a46400695" }, "damageDistributionHash": "1bc2aa26cd37e464b825fd0eff252164ed0a0cdc251352c7de88994a46400695" },
+      "sourceHashes": { "cactbotHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945", "fflogsSourceHash": "468535c31fbe02a37baf454ba0588bf7af19657021bd1bfdb5640c871007366f", "guideSourceHash": "3fc2e6aa3831ea89780cf6eb04b79d6778093b2d79c427c968f9edf803d16913", "encounterDefinitionHash": "d2e6f8a7994b9f7e6e08349eb0af03396351a3fb9c1dee5b3c8ddb65a6116b21", "fflogsPartition": null },
+      "validation": { "status": "pending-revision-audit", "blockers": ["Legacy evidence lacks report revisions and timing spread"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-necron",
+      "bossId": "necron",
+      "encounterCode": null,
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "d2622876b9ed8ff163a21bc76189263f5c99d037a5794dbca7d719f4e8012c2f", "fflogsSourceHash": "4801b5bea92a823ad2e0abca9136e1bead3913c25f332a15ca95b28fda0b8875", "guideSourceHash": "c676a945d46bfa8dc0a84f6abba8ee75c6b2de3c6979437d667b0fe74f2a8c89", "encounterDefinitionHash": "539b9be8692d05647ce0ed472735e646b6c8f50317f5fe390115d84dcb3bec63", "fflogsPartition": null },
+      "validation": { "status": "pending-waiver", "blockers": ["FF Logs encounter mapping and clear availability require review"] },
+      "waivers": ["waiver-official-necron"]
+    },
+    {
+      "timelineId": "official-red-hot-deep-blue-m10s",
+      "bossId": "red-hot-deep-blue-m10s",
+      "encounterCode": "M10S",
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "53f3ee2f4f66f16fc3075697617a7346239490df8d0f150dec5e18488d92f948", "fflogsSourceHash": "4801b5bea92a823ad2e0abca9136e1bead3913c25f332a15ca95b28fda0b8875", "guideSourceHash": "e5663ad88c022e1e08bd25e528bda37f19a8fbe185a872559ab9be5fd0e0ae9c", "encounterDefinitionHash": "ac4dcc827c529d8d31dc5ef858ec655a00716964dff6cdc0a1a2558b24052418", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["30 public clear reports have not been collected with revisions"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-statice",
+      "bossId": "statice",
+      "encounterCode": null,
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "68db3666fa91a63ccfe1244f259202f0659bb718551d644fb5efa88a891c303c", "fflogsSourceHash": "2adbcec2237de048be34e451b69a7575fd6fa00dc6fa67d902fdedfbcdeb4c3b", "guideSourceHash": "346be0a3429cea26ec20df053b7ce130249a9c75d0cde0e903c4fad1c8856625", "encounterDefinitionHash": "773110fe722e4a260dd5560af199dd158b31ccc6b8234e4420d52593c98d55cb", "fflogsPartition": null },
+      "validation": { "status": "pending-waiver", "blockers": ["FF Logs clear evidence is not yet mapped for this Criterion encounter"] },
+      "waivers": ["waiver-official-statice"]
+    },
+    {
+      "timelineId": "official-sugar-riot",
+      "bossId": "sugar-riot",
+      "encounterCode": "M6S",
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "d13488856672ede8d359f5a8e2b429f518070d040a0fdf43cd6fe048b544d14f", "fflogsSourceHash": "4801b5bea92a823ad2e0abca9136e1bead3913c25f332a15ca95b28fda0b8875", "guideSourceHash": "37b8b7c39e90bd35846a86638813af632c58bea54f3012eb440c64b346a8065d", "encounterDefinitionHash": "38a2065c981389afb3a8c8b8ae9b3a468f7384159812ba336c5e99ece98b52c2", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["30 public clear reports have not been collected with revisions"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-the-tyrant-m11s",
+      "bossId": "the-tyrant-m11s",
+      "encounterCode": "M11S",
+      "evidence": { "sampleCount": 11, "distinctPublicClearCount": 11, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "5d0ab8ee9e2b0c1605f4501285137bed11216b5d2f0bb2fc2d1d4df58533b58a", "fflogsSourceHash": "28a82efd4b273d8fd5326ec128a9dce39bb1f915abb12a8ae5d36264acbe1057", "guideSourceHash": "54ff90c5a22cf63b7037ab2e799175fd0ad457a69855295a42d8a2e2b0a7f361", "encounterDefinitionHash": "3954bec43b331a80bcd4314f424be6af3c01917db07b4da9e03ae6675eb89f3a", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["Only 11 of 30 required public clears are present", "Legacy evidence lacks report revisions and timing spread"] },
+      "waivers": []
+    },
+    {
+      "timelineId": "official-vamp-fatale-m9s",
+      "bossId": "vamp-fatale-m9s",
+      "encounterCode": "M9S",
+      "evidence": { "sampleCount": 0, "distinctPublicClearCount": 0, "reportRevisions": [], "reportRevisionCount": 0, "evidenceHash": null, "eventCount": 0, "stableEventCount": 0, "branchEventCount": 0, "unsupportedEventCount": 0, "supportRatios": { "stableMinimum": 0.8, "branchMinimum": 0.15, "branchReportMinimum": 5 }, "minimumStableSupportRatio": 0.8, "minimumBranchSupportRatio": 0.15, "minimumBranchReportCount": 5, "timingSpreadSeconds": { "maximum": null, "p50": null, "p95": null }, "maximumTimingSpreadSeconds": null, "damageDistribution": { "semanticHash": null }, "damageDistributionHash": null },
+      "sourceHashes": { "cactbotHash": "d6337636d735057a6f31c352d3d8e26e61d3d3cb77c897fdb245a07ff41c5a11", "fflogsSourceHash": "555aa1326e5d9a043fecc1036e2f6d129dbf9d36afb281a7ecdee69fb36de39e", "guideSourceHash": "63b02e236c1234484cc13cc2fc5b8e758dc005ea853cabf7ff838280a4e575a2", "encounterDefinitionHash": "f6456a24e384f9c99a131d33a1a6b421f3ffb50450124b4a3d3ea1e28640a2eb", "fflogsPartition": null },
+      "validation": { "status": "pending-evidence", "blockers": ["30 public clear reports have not been collected with revisions"] },
+      "waivers": []
+    }
+  ]
+}

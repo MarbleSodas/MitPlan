@@ -46,12 +46,12 @@ const CooldownOverlay = ({ children, className = '', ...rest }) => (
 
 const StatusBadge = ({ children, className = '', $type, $available, ...rest }) => {
   const color = $type === 'charges'
-    ? ($available === 0 ? 'bg-red-500' : 'bg-emerald-600')
+    ? ($available === 0 ? 'bg-destructive' : 'bg-role-healer')
     : $type === 'instances'
-      ? ($available === 0 ? 'bg-red-500' : 'bg-blue-600')
+      ? ($available === 0 ? 'bg-destructive' : 'bg-info')
       : $type === 'aetherflow'
-        ? ($available === 0 ? 'bg-red-500' : 'bg-purple-600')
-        : 'bg-neutral-500';
+        ? ($available === 0 ? 'bg-destructive' : 'bg-role-caster')
+        : 'bg-muted';
   return (
     <span {...rest} className={`inline-block ml-1 px-[6px] py-[1px] rounded-[10px] text-[9px] font-bold text-white ${color} ${className}`}>
       {children}

@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Share2, Edit2, Check, X, Copy, Trash2, FileText, BookmarkX, Globe, Lock } from 'lucide-react';
+import { Share2, Copy, Trash2, FileText, BookmarkX, Globe, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigation';
 import { deleteTimeline, duplicateTimeline, getShareableLink, removeFromCollection, togglePublicStatus } from '../../services/timelineService';
 import { bosses } from '../../data/bosses/bossData';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import ActionMenu from '@/components/ui/action-menu';
 
 const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
   const { user } = useAuth();
@@ -211,72 +211,38 @@ const TimelineCard = ({ timeline, onTimelineChanged, onTimelineDeleted }) => {
 
           {isOwner() && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-semibold">Visibility:</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleTogglePublic}
-                disabled={togglingPublic}
-                className={cn("h-7 px-2 text-xs", isPublic ? "text-primary" : "text-muted-foreground")}
-                title={isPublic ? 'Click to make private' : 'Click to make public'}
-              >
-                {isPublic ? (
-                  <>
-                    <Globe size={14} className="mr-1.5" />
-                    Public
-                  </>
-                ) : (
-                  <>
-                    <Lock size={14} className="mr-1.5" />
-                    Private
-                  </>
-                )}
-              </Button>
+              {isPublic ? <Globe size={14} aria-hidden="true" /> : <Lock size={14} aria-hidden="true" />}
+              <span>{isPublic ? 'Public' : 'Private'}</span>
             </div>
           )}
         </CardContent>
 
-        <CardFooter className="flex flex-wrap gap-2 pt-4 border-t border-border">
-          {isOwner() && (
-            <Button onClick={handleEdit} disabled={loading} className="min-w-[6.5rem] flex-1 gap-2">
-              <Edit2 size={16} />
-              Edit
-            </Button>
-          )}
-
-          <Button variant="outline" onClick={handleView} disabled={loading} className="min-w-[6.5rem] flex-1 gap-2">
+        <CardFooter className="flex gap-2 border-t border-border pt-4">
+          <Button onClick={isOwner() ? handleEdit : handleView} disabled={loading} className="min-w-0 flex-1 gap-2">
             <FileText size={16} />
-            View
+            Open
           </Button>
 
-          <Button variant="outline" onClick={handleCreateMitplan} disabled={loading} className="min-w-[9rem] flex-1 gap-2">
-            <FileText size={16} />
-            Create Mitplan
-          </Button>
-
-          <Button variant="outline" onClick={handleDuplicate} disabled={loading} className="min-w-[8rem] flex-1 gap-2">
-            <Copy size={16} />
-            Duplicate
-          </Button>
-
-          <Button variant="outline" onClick={handleCopyShareLink} disabled={loading} className="min-w-[8rem] flex-1 gap-2">
-            <Share2 size={16} />
-            Copy Link
-          </Button>
-
-          {isOwner() && (
-            <Button variant="ghost" onClick={() => setShowDeleteConfirm(true)} disabled={loading} className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
-              <Trash2 size={16} />
-              Delete
-            </Button>
-          )}
-
-          {!isOwner() && timeline.inCollection && (
-            <Button variant="outline" onClick={handleRemoveFromCollection} disabled={loading} className="gap-2">
-              <BookmarkX size={16} />
-              Remove from Collection
-            </Button>
-          )}
+          <ActionMenu
+            label={`More actions for ${timeline.name}`}
+            items={[
+              ...(isOwner() ? [{ label: 'View', icon: FileText, onSelect: handleView, disabled: loading }] : []),
+              { label: 'Create a plan', icon: FileText, onSelect: handleCreateMitplan, disabled: loading },
+              { label: 'Copy share link', icon: Share2, onSelect: handleCopyShareLink, disabled: loading },
+              ...(isOwner() ? [{
+                label: isPublic ? 'Make private' : 'Make public',
+                icon: isPublic ? Lock : Globe,
+                onSelect: handleTogglePublic,
+                disabled: loading || togglingPublic,
+              }] : []),
+              { label: 'Duplicate', icon: Copy, onSelect: handleDuplicate, disabled: loading },
+              ...(isOwner()
+                ? [{ label: 'Delete', icon: Trash2, onSelect: () => setShowDeleteConfirm(true), destructive: true, disabled: loading }]
+                : timeline.inCollection
+                  ? [{ label: 'Remove from Collection', icon: BookmarkX, onSelect: handleRemoveFromCollection, disabled: loading }]
+                  : []),
+            ]}
+          />
         </CardFooter>
       </Card>
 

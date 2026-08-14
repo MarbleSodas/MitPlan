@@ -1,41 +1,30 @@
-# MitPlan Documentation
+# MitPlan documentation
 
-This folder contains the longer-form docs for the MitPlan codebase and product behavior.
+- [Feature inventory](./01-feature-inventory.md)
+- [Technical implementation](./02-technical-implementation.md)
+- [Architecture overview](./03-architecture-overview.md)
+- [User workflows](./04-user-workflows.md)
+- [Database schema](./05-database-schema.md)
+- [Development setup](./06-development-setup.md)
+- [Troubleshooting](./07-troubleshooting.md)
+- [Contributing](./08-contributing.md)
+- [Firebase cutover report](./09-firebase-cutover-report.md)
+- [Collaborative planning cutover](./10-collaborative-planning-cutover.md)
+- [Evercold and composable planning](./11-evercold-composable-planning.md)
 
-## Start Here
+## Current platform
 
-- [01. Feature Inventory](./01-feature-inventory.md): Product capabilities and user-facing behavior.
-- [03. Architecture Overview](./03-architecture-overview.md): High-level app structure, data flow, and deployment shape.
-- [06. Development Setup Guide](./06-development-setup.md): Local environment, scripts, testing, and Firebase setup.
-- [08. Contributing Guide](./08-contributing.md): Contribution expectations and review guidance.
+MitPlan runs on Next.js 16 and React 19. Supabase provides Auth, Postgres persistence, row-level authorization, transaction RPCs, and realtime database notifications. Vitest remains the unit-test runner, and Bun is the package manager and script runner.
 
-## Current Stack Snapshot
-
-- React 19
-- React Router 7
-- TypeScript
-- Vite
-- Tailwind CSS v4
-- Firebase Realtime Database + Auth
-- Vitest + Testing Library
-- Bun package manager / script runner
-
-## Codebase Orientation
+The primary entry points are:
 
 ```text
-src/
-├── components/   # Screens plus shared UI pieces
-├── contexts/     # Auth, theme, planner, realtime, collaboration
-├── data/         # Jobs, bosses, abilities, official timelines
-├── features/     # Feature-oriented slices added during newer cleanup work
-├── services/     # Firebase reads/writes and domain workflows
-├── tests/        # Shared Vitest setup plus manual-test notes
-├── types/        # Shared TypeScript contracts
-└── utils/        # Cooldown, mitigation, timeline, permissions, storage helpers
+app/                  Next.js routes and provider boundary
+src/components/       screens and shared UI
+src/contexts/         auth, planner, theme, and collaboration state
+src/services/         application workflows
+src/lib/              navigation and database adapters
+supabase/migrations/  backend schema and security source of truth
 ```
 
-## Maintenance Notes
-
-- Use Bun commands in docs and examples.
-- Vitest is configured in [`vite.config.js`](/Users/eugene/Documents/Github/MitPlan/vite.config.js) and shared mocks/polyfills live in [`src/tests/setup.ts`](/Users/eugene/Documents/Github/MitPlan/src/tests/setup.ts).
-- When architecture changes, update the matching docs here instead of leaving historical stack details in place.
+Historical document shapes remain only as a recovery archive and for legacy timeline workflows. Collaborative plans now use normalized tables, transactional operations, ordered changes, private Broadcast, and ephemeral Presence. Treat mentions of Firebase or document-based plan collaboration in older feature history as legacy context.

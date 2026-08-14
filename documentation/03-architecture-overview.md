@@ -1,351 +1,70 @@
-# MitPlan Architecture Overview
+# Architecture overview
 
-## System Architecture
+## Runtime shape
 
-### High-Level Architecture
-MitPlan follows a modern web application architecture with a React frontend, Firebase backend services, and real-time collaboration capabilities.
+MitPlan is a Next.js App Router application deployed as a single web project. Route entry points in `app/` establish the server-rendered shell, metadata, CSS, analytics, and client provider boundary. The feature-complete planner screens remain client components and are loaded on demand by `src/components/routing/AppRouter.tsx`.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Client (Browser)                        │
-├─────────────────────────────────────────────────────────────┤
-│  React Application (Vite + React 19)                       │
-│  ├── Components (UI Layer)                                 │
-│  ├── Contexts (State Management)                           │
-│  ├── Services (Business Logic)                             │
-│  ├── Hooks (Reusable Logic)                               │
-│  └── Utils (Helper Functions)                              │
-├─────────────────────────────────────────────────────────────┤
-│  Local Storage (Offline Fallback)                          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │ HTTPS/WebSocket
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                Firebase Services (Google Cloud)             │
-├─────────────────────────────────────────────────────────────┤
-│  ├── Firebase Authentication (User Management)             │
-│  ├── Firebase Realtime Database (Real-time Collaboration)  │
-│  ├── Firebase Analytics (Usage Tracking)                   │
-│  └── Firebase Hosting (Static Asset Delivery)              │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │ CDN
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Vercel (Hosting)                        │
-├─────────────────────────────────────────────────────────────┤
-│  ├── Static Site Hosting                                   │
-│  ├── Edge Functions                                        │
-│  ├── CDN Distribution                                       │
-│  └── Automatic Deployments                                 │
-└─────────────────────────────────────────────────────────────┘
+```text
+Browser
+  └─ Next.js App Router
+      ├─ server-rendered application shell
+      ├─ dynamically loaded feature screens
+      └─ React context providers
+          ├─ Supabase Auth session
+          ├─ planner state
+          ├─ collaboration/presence
+          └─ theme and notifications
+
+Supabase
+  ├─ Auth
+  ├─ Postgres + Row Level Security
+  ├─ atomic plan-operation RPCs
+  └─ Realtime private Broadcast + Presence
 ```
 
-## Frontend Architecture
+## Routing
 
-### Technology Stack
-- **React 19**: Modern React UI runtime
-- **Vite**: Fast build tool and development server
-- **Tailwind CSS v4**: Utility-first styling
-- **React Router v7**: Client-side routing
-- **@dnd-kit**: Drag and drop functionality
-- **Firebase SDK**: Backend service integration
+`app/page.tsx` serves the landing route. `app/[...route]/page.tsx` forwards the historical application paths to a compatibility router, so existing plan and timeline links continue to work. Dedicated callback routes handle OAuth and password recovery.
 
-### Component Architecture
-```
-src/
-├── components/           # Reusable UI components
-│   ├── common/          # Shared components (buttons, modals, etc.)
-│   ├── landing/         # Landing page components
-│   ├── dashboard/       # Dashboard-specific components
-│   ├── planner/         # Mitigation planner components
-│   ├── auth/           # Authentication components
-│   └── ui/             # Shared UI primitives
-├── features/           # Feature-specific components
-│   ├── jobs/           # Job selection feature
-│   └── bosses/         # Boss selection feature
-├── contexts/           # React Context providers
-├── hooks/              # Custom React hooks
-├── services/           # Business logic and API calls
-├── utils/              # Helper functions and utilities
-├── data/               # Static data (jobs, abilities, bosses)
-└── tailwind.css        # Global styles and theme tokens
-```
+Navigation components use `src/lib/navigation.tsx`, a small Next.js facade that preserves the former screen-level API (`Link`, `Navigate`, `useNavigate`, `useLocation`, and semantic route parameters). This lets route migration remain separate from planner-domain changes.
 
-### State Management Pattern
-MitPlan uses a hybrid state management approach:
+## Authentication
 
-1. **React Context API**: Global application state
-2. **Local Component State**: Component-specific state
-3. **Custom Hooks**: Reusable stateful logic
-4. **Real-time Synchronization**: Firebase Realtime Database
+`src/contexts/AuthContext.tsx` owns the Supabase session. It restores the current session, subscribes to Auth changes, exposes the existing user contract, and stores the profile document. Email/password, Google OAuth, password recovery, profile edits, sign-out, and account deletion all use Supabase.
 
-#### Context Hierarchy
-```
-App
-├── ThemeProvider (Theme state)
-├── AuthProvider (Authentication state)
-└── Router
-    ├── PlanProvider (Plan management)
-    └── RealtimeAppProvider (Real-time features)
-        ├── CollaborationProvider (Session management)
-        ├── RealtimePlanProvider (Plan synchronization)
-        ├── RealtimeBossProvider (Boss state sync)
-        ├── RealtimeJobProvider (Job state sync)
-        ├── TankPositionProvider (Tank assignments)
-        ├── EnhancedMitigationProvider (Mitigation logic)
-        ├── FilterProvider (UI filters)
-        └── TankSelectionModalProvider (Modal state)
-```
+The browser receives only the public Supabase URL and publishable/anon key. Authorization is enforced in Postgres rather than trusted to client route guards.
 
-## Backend Architecture
+## Plan persistence
 
-### Firebase Services
+`plans`, `plan_access`, `party_slots`, `plan_assignments`, `plan_timeline_overrides`, and `user_plan_preferences` are the collaborative plan source of truth. Published timeline versions are immutable and plans pin one version and one route. At runtime, that route is composed with plan-owned phase overrides and custom events. The plan's `CURRENT`, `REBORN`, or `EVOLVED` job-action mode is orthogonal to encounter timing, so Evercold support does not duplicate timeline versions.
 
-#### Firebase Realtime Database
-**Purpose**: Real-time collaboration and plan storage
-**Structure**:
-```
-/plans/{planId}/
-├── metadata/
-│   ├── name: "Plan Name"
-│   ├── bossId: "ketuduke"
-│   ├── createdAt: timestamp
-│   ├── updatedAt: timestamp
-│   ├── ownerId: "user_id"
-│   └── accessedBy: ["user1", "user2"]
-├── data/
-│   ├── selectedJobs: {...}
-│   ├── tankPositions: {...}
-│   ├── assignments: {...}
-│   └── bossId: "ketuduke"
-└── collaboration/
-    ├── activeUsers/
-    │   └── {sessionId}/
-    │       ├── userId: "user_id"
-    │       ├── displayName: "User Name"
-    │       ├── joinedAt: timestamp
-    │       ├── lastActivity: timestamp
-    │       └── isActive: true
-    └── changes/
-        └── {changeId}/
-            ├── userId: "user_id"
-            ├── sessionId: "session_id"
-            ├── timestamp: timestamp
-            ├── type: "assignment_added"
-            └── data: {...}
-```
+Clients submit discriminated operations through `apply_plan_operation`. The database authenticates membership, locks the plan, validates and commits the affected entities, advances `plans.revision`, and records the canonical forward and inverse deltas in `plan_changes`. Operation IDs make retries idempotent. Undo is another server operation and is allowed only while the same entity has not changed again.
 
-#### Firebase Authentication
-**Purpose**: User management and access control
-**Features**:
-- Email/password authentication
-- Anonymous user support
-- Session management
-- User profile data
+The Firebase-shaped `app_documents` table is retained temporarily as a recovery archive and for timeline compatibility. Plan collaboration does not subscribe to or mutate plan documents through it.
 
-#### Firebase Analytics
-**Purpose**: Usage tracking and insights
-**Metrics**:
-- User engagement
-- Feature usage
-- Performance monitoring
-- Error tracking
+## Realtime collaboration
 
-### Data Flow Architecture
+Each signed-in plan workspace joins one private `plan:<uuid>` channel before loading its authoritative snapshot. A `plan_changes` trigger emits committed canonical deltas with database Broadcast. Revision buffering and gap recovery prevent snapshot/subscription races.
 
-#### Read Operations
-```
-Component Request
-    ↓
-Context/Hook
-    ↓
-Service Layer
-    ↓
-Firebase SDK
-    ↓
-Firebase Realtime Database
-    ↓
-Real-time Updates
-    ↓
-Context State Update
-    ↓
-Component Re-render
-```
+Presence contains only low-frequency connected-client state. Cursor positions use client Broadcast at no more than 10 Hz and are never stored. Reopening a plan restores durable content and account-synced preferences, while presence and cursors start fresh. Anonymous share views call `get_shared_plan(token)` on refresh and do not join private channels.
 
-#### Write Operations
-```
-User Action
-    ↓
-Event Handler
-    ↓
-Context Action
-    ↓
-Service Layer (with batching/debouncing)
-    ↓
-Firebase SDK
-    ↓
-Firebase Realtime Database
-    ↓
-Real-time Broadcast
-    ↓
-All Connected Clients Update
-```
+## Authorization
 
-## Authentication & Authorization
+RLS policies delegate the document rules to helper functions. The effective rules are:
 
-### Authentication Flow
-```
-User Access → Route Guard → Authentication Check
-                              ↓
-                         Authenticated?
-                         ├── Yes → Protected Route
-                         └── No → Anonymous Flow
-                                   ↓
-                              Anonymous User Creation
-                                   ↓
-                              Full App Access
-```
+- preferences are tied to the signed-in user;
+- private plans are available according to owner/editor/viewer membership;
+- only owners manage deletion, invites, and anonymous share-link lifecycle;
+- anonymous links return only the sanitized snapshot exposed by their RPC;
+- anonymous callers cannot read private plan data;
+- account deletion is a confirmed, authenticated security-definer RPC.
 
-### Authorization Patterns
-- **Universal Edit Access**: Any user can edit any plan
-- **Ownership Tracking**: Plans track original creator
-- **Access History**: Track who accessed which plans
-- **Anonymous Support**: Full functionality without accounts
+The service-role key is used only by the offline migration utility. It is never shipped to the browser.
 
-## Performance Architecture
+## Static and server work
 
-### Optimization Strategies
+The landing route can be prerendered, shared layout assets are emitted once, and route screens are split into separate client chunks. Planner state still runs in the browser because it is highly interactive; Next.js provides the delivery, routing, and rendering shell without changing that behavior.
 
-#### Frontend Optimizations
-1. **Component Memoization**: React.memo for expensive components
-2. **Context Splitting**: Separate contexts to minimize re-renders
-3. **Lazy Loading**: Route-based code splitting
-4. **Debounced Updates**: Reduce API call frequency
-5. **Optimistic Updates**: Immediate UI feedback
+## Deployment
 
-#### Backend Optimizations
-1. **Batched Writes**: Group Firebase operations
-2. **Connection Pooling**: Efficient Firebase connections
-3. **Data Denormalization**: Optimized read patterns
-4. **Caching**: Multiple cache layers for performance
-
-#### Caching Strategy
-```
-Browser Cache
-    ↓
-Component State Cache
-    ↓
-Context Cache
-    ↓
-Service Layer Cache
-    ↓
-Firebase Local Cache
-    ↓
-Firebase Server
-```
-
-## Security Architecture
-
-### Security Measures
-1. **Environment Variables**: Sensitive configuration
-2. **Firebase Security Rules**: Database access control
-3. **Input Validation**: Client and server-side validation
-4. **HTTPS Enforcement**: Secure data transmission
-5. **Content Security Policy**: XSS protection
-
-### Firebase Security Rules
-```javascript
-{
-  "rules": {
-    "plans": {
-      "$planId": {
-        ".read": true,  // Universal read access
-        ".write": "auth != null || auth.uid == 'anonymous'",
-        "collaboration": {
-          "activeUsers": {
-            "$sessionId": {
-              ".write": "$sessionId == auth.uid || auth.uid == 'anonymous'"
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-## Deployment Architecture
-
-### Build Process
-```
-Source Code (GitHub)
-    ↓
-Vite Build Process
-    ↓
-Static Assets Generation
-    ↓
-Vercel Deployment
-    ↓
-CDN Distribution
-    ↓
-Global Edge Locations
-```
-
-### Environment Configuration
-- **Development**: Local Vite server + Firebase Emulator
-- **Staging**: Vercel preview deployments
-- **Production**: Vercel production + Firebase production
-
-### Monitoring & Observability
-- **Firebase Analytics**: User behavior tracking
-- **Vercel Analytics**: Performance monitoring
-- **Console Logging**: Development debugging
-- **Error Boundaries**: React error handling
-
-## Scalability Considerations
-
-### Current Limitations
-- Firebase Realtime Database concurrent connections
-- Client-side state management complexity
-- Bundle size with feature growth
-
-### Scaling Strategies
-1. **Database Sharding**: Separate plans by region/user
-2. **CDN Optimization**: Global asset distribution
-3. **Code Splitting**: Feature-based lazy loading
-4. **Service Workers**: Offline functionality
-5. **Edge Computing**: Vercel Edge Functions
-
-## Development Workflow
-
-### Local Development
-```bash
-# Install dependencies
-bun install
-
-# Start development server
-bun run dev
-
-# Run tests
-bun run test
-
-# Build for production
-bun run build
-```
-
-### Deployment Pipeline
-```
-Git Push → Vercel Build → Frontend Deployment
-                        ↓
-              Firebase RTDB Rules Deploy
-```
-
-### Code Quality
-- **ESLint**: Code linting and style enforcement
-- **Prettier**: Code formatting
-- **TypeScript**: Type safety (planned)
-- **Testing**: Vitest + React Testing Library
-
-This architecture overview provides a comprehensive understanding of MitPlan's system design, enabling developers to effectively work with and extend the application.
+The application build is `next build`. Vercel detects the Next.js framework from `vercel.json`. Backend changes are forward-only SQL migrations applied with `supabase db push`. A deploy should pass security checks, tests, and the production build before frontend release.

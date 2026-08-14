@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from '@/lib/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { createTimeline, getTimeline, updateTimeline } from '../../services/timelineService';

@@ -1,9 +1,18 @@
 import { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { useRealtimePlan } from './RealtimePlanContext';
 import { ffxivJobs } from '../data';
+import type { Job } from '../types';
 
 // Create the context
-const RealtimeJobContext = createContext();
+type RealtimeJobContextState = {
+  selectedJobs: Record<string, Job[]>;
+  toggleJobSelection: (roleKey: string, jobId: string) => void;
+  setSelectedJobs: React.Dispatch<React.SetStateAction<Record<string, Job[]>>>;
+  setAllJobsInRole: (roleKey: string, selected: boolean) => void;
+  importJobs: (jobs: Record<string, Job[]>) => void;
+};
+
+const RealtimeJobContext = createContext<RealtimeJobContextState | null>(null);
 
 // Create a provider component
 export const RealtimeJobProvider = ({ children }) => {
@@ -18,8 +27,8 @@ export const RealtimeJobProvider = ({ children }) => {
     return JSON.parse(JSON.stringify(ffxivJobs));
   });
 
-  // Flag to prevent syncing when updating from Firebase
-  const isUpdatingFromFirebase = useRef(false);
+  // Flag to prevent syncing when updating from Supabase
+  const isUpdatingFromBackend = useRef(false);
   const lastSyncedData = useRef(null);
 
   // Helper function to deep compare job data
@@ -39,8 +48,8 @@ export const RealtimeJobProvider = ({ children }) => {
 
     console.log('[RealtimeJobContext] Syncing real-time job data:', realtimeSelectedJobs);
 
-    // Set flag to prevent Firebase sync during this update
-    isUpdatingFromFirebase.current = true;
+    // Set flag to prevent Supabase sync during this update
+    isUpdatingFromBackend.current = true;
 
     // Check if we have meaningful realtime data
     if (realtimeSelectedJobs && typeof realtimeSelectedJobs === 'object' && Object.keys(realtimeSelectedJobs).length > 0) {
@@ -89,14 +98,14 @@ export const RealtimeJobProvider = ({ children }) => {
 
     // Reset flag after state update with a shorter delay for better responsiveness
     setTimeout(() => {
-      isUpdatingFromFirebase.current = false;
+      isUpdatingFromBackend.current = false;
     }, 50);
   }, [realtimeSelectedJobs, isInitialized]);
 
-  // Sync local changes to Firebase (separate effect to avoid setState during render)
+  // Sync local changes to Supabase (separate effect to avoid setState during render)
   useEffect(() => {
-    // Don't sync if we're updating from Firebase or not initialized
-    if (isUpdatingFromFirebase.current || !isInitialized || !updateJobsRealtime) {
+    // Don't sync if we're updating from Supabase or not initialized
+    if (isUpdatingFromBackend.current || !isInitialized || !updateJobsRealtime) {
       return;
     }
 
@@ -106,7 +115,7 @@ export const RealtimeJobProvider = ({ children }) => {
       return;
     }
 
-    console.log('[RealtimeJobContext] Syncing local changes to Firebase:', localSelectedJobs);
+    console.log('[RealtimeJobContext] Syncing local changes to Supabase:', localSelectedJobs);
     updateJobsRealtime(localSelectedJobs);
     lastSyncedData.current = localSelectedJobs;
   }, [localSelectedJobs, isInitialized, updateJobsRealtime]);
@@ -146,7 +155,7 @@ export const RealtimeJobProvider = ({ children }) => {
 
       console.log(`%c[REALTIME JOB CONTEXT] Job ${jobId} toggled successfully`, 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
 
-      // Firebase sync will happen automatically via useEffect
+      // Supabase sync will happen automatically via useEffect
       return newState;
     });
   }, []);
@@ -171,7 +180,7 @@ export const RealtimeJobProvider = ({ children }) => {
         };
       }
 
-      // Firebase sync will happen automatically via useEffect
+      // Supabase sync will happen automatically via useEffect
       return newState;
     });
   }, []);
@@ -185,13 +194,13 @@ export const RealtimeJobProvider = ({ children }) => {
       Object.entries(importedJobs).forEach(([roleKey, jobs]) => {
         if (modifiedImportedJobs[roleKey]) {
           modifiedImportedJobs[roleKey] = modifiedImportedJobs[roleKey].map(existingJob => {
-            const importedJob = jobs.find(j => j.id === existingJob.id);
+            const importedJob = (jobs as Job[]).find(j => j.id === existingJob.id);
             return importedJob ? { ...existingJob, selected: importedJob.selected } : existingJob;
           });
         }
       });
 
-      // Firebase sync will happen automatically via useEffect
+      // Supabase sync will happen automatically via useEffect
       return modifiedImportedJobs;
     });
   }, []);
@@ -215,7 +224,7 @@ export const RealtimeJobProvider = ({ children }) => {
 // Create a custom hook for using the job context
 export const useRealtimeJobContext = () => {
   const context = useContext(RealtimeJobContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useRealtimeJobContext must be used within a RealtimeJobProvider');
   }
   return context;

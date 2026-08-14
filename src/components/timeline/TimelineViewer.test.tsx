@@ -14,8 +14,8 @@ const {
   navigateMock: vi.fn(),
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+vi.mock('@/lib/navigation', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/navigation')>('@/lib/navigation');
   return {
     ...actual,
     useNavigate: () => navigateMock,
@@ -52,7 +52,13 @@ describe('TimelineViewer', () => {
       bossId: 'lala',
       bossTags: ['lala'],
       description: 'Viewer description',
-      actions: [{ id: 'a1', name: 'Opening Hit', time: 10 }],
+      actions: [{
+        id: 'a1',
+        name: 'Opening Hit',
+        time: 89.40300000000002,
+        description: 'A heavy opening hit.',
+        unmitigatedDamage: 10000,
+      }],
       ownerId: 'owner-2',
       userId: 'owner-2',
     });
@@ -81,5 +87,16 @@ describe('TimelineViewer', () => {
 
     expect(header.className).toContain('bg-card');
     expect(header.className).not.toContain('bg-[var(--color-cardBackground)]');
+  });
+
+  it('rounds action times, formats damage, and expands details on demand', async () => {
+    render(<TimelineViewer />);
+
+    await screen.findByText('1:29.403');
+    expect(screen.getByText('10,000 unmitigated damage')).toBeTruthy();
+    expect(screen.queryByText('A heavy opening hit.')).toBeNull();
+
+    fireEvent.click(screen.getByText('Opening Hit'));
+    expect(screen.getByText('A heavy opening hit.')).toBeTruthy();
   });
 });

@@ -12,8 +12,8 @@ import {
   query,
   orderByChild,
   equalTo
-} from 'firebase/database';
-import { database } from '../config/firebase';
+} from '../lib/supabaseRealtimeDatabase';
+import { database, supabase } from '../config/supabase';
 import {
   getUserAccessiblePlans,
   initializePlanOwnership,
@@ -25,7 +25,7 @@ import {
   getJobAssignmentPath,
   getJobAssignmentsPath
 } from './collaborationPaths';
-import { isPermissionDeniedError } from './firebaseErrorUtils';
+import { isPermissionDeniedError } from './backendErrorUtils';
 import { getTimeline } from './timelineService';
 import {
   createPlanTimelineLayoutFromLegacyPlan,
@@ -33,6 +33,7 @@ import {
   getPlanTimelineMirrorFields,
   normalizePlanTimelineLayout,
 } from '../utils/timeline/planTimelineLayoutUtils';
+import { normalizePlanAbilityMode } from '../utils/abilities/abilityModeUtils';
 import { getUserDisplayNames } from './userService';
 
 const PLANS_PATH = 'plans';
@@ -62,20 +63,20 @@ const getCanonicalBossId = (planData = {}) => {
   return planData.timelineLayout?.bossId || planData.bossId || planData.selectedBoss?.id || 'ketuduke';
 };
 
-const sanitizeFirebaseValue = (value) => {
+const sanitizeDatabaseValue = (value) => {
   if (value === undefined) {
     return undefined;
   }
 
   if (Array.isArray(value)) {
     return value
-      .map((entry) => sanitizeFirebaseValue(entry))
+      .map((entry) => sanitizeDatabaseValue(entry))
       .filter((entry) => entry !== undefined);
   }
 
   if (value && typeof value === 'object') {
     return Object.entries(value).reduce((acc, [key, entryValue]) => {
-      const sanitizedEntryValue = sanitizeFirebaseValue(entryValue);
+      const sanitizedEntryValue = sanitizeDatabaseValue(entryValue);
       if (sanitizedEntryValue !== undefined) {
         acc[key] = sanitizedEntryValue;
       }
@@ -186,12 +187,13 @@ const buildShareViewPayload = (planId, planData = {}, overrides = {}) => {
   const snapshotCreatedAt = overrides.snapshotCreatedAt ?? Date.now();
   const sourcePlanUpdatedAt = overrides.sourcePlanUpdatedAt ?? normalizedPlan.updatedAt ?? snapshotCreatedAt;
 
-  return sanitizeFirebaseValue({
+  return sanitizeDatabaseValue({
     planId,
     ownerId: normalizedPlan.ownerId || null,
     name: normalizedPlan.name,
     description: normalizedPlan.description || '',
     bossId: normalizedPlan.bossId,
+    mode: normalizePlanAbilityMode(normalizedPlan.mode),
     selectedJobs: normalizedPlan.selectedJobs || {},
     assignments: normalizedPlan.assignments || {},
     tankPositions: normalizedPlan.tankPositions || {
@@ -222,6 +224,7 @@ const buildViewOnlyPlanRecord = (viewToken, viewData = {}) => {
     name: viewData.name || 'Untitled Plan',
     description: viewData.description || '',
     bossId: timelineLayout?.bossId || bossId,
+    mode: normalizePlanAbilityMode(viewData.mode),
     selectedJobs: viewData.selectedJobs || {},
     assignments: viewData.assignments || {},
     tankPositions: viewData.tankPositions || {
@@ -266,6 +269,7 @@ const normalizePlanRecord = (planId, planData = {}) => {
     name: planFields.name || planFields.title || 'Untitled Plan',
     description: planFields.description || '',
     bossId: timelineLayout?.bossId || bossId,
+    mode: normalizePlanAbilityMode(planFields.mode),
     selectedJobs: planFields.selectedJobs || {},
     assignments: planFields.assignments || planFields.assignedMitigations || {},
     tankPositions: planFields.tankPositions || planFields.tankAssignments || {
@@ -304,6 +308,7 @@ const preparePlanForStorage = (userId, planData = {}) => {
     name: normalizedPlan.name,
     description: normalizedPlan.description,
     bossId: normalizedPlan.bossId,
+    mode: normalizePlanAbilityMode(normalizedPlan.mode),
     selectedJobs: normalizedPlan.selectedJobs,
     assignments: normalizedPlan.assignments,
     tankPositions: normalizedPlan.tankPositions,
@@ -354,7 +359,7 @@ const buildPlanUpdates = (planId, planData, userId = null, sessionId = null) => 
 
   Object.entries(expandedPlanData).forEach(([fieldPath, value]) => {
     const [canonicalFieldPath, canonicalValue] = getCanonicalPlanField(fieldPath, value);
-    const sanitizedValue = sanitizeFirebaseValue(canonicalValue);
+    const sanitizedValue = sanitizeDatabaseValue(canonicalValue);
     if (sanitizedValue !== undefined) {
       updates[`${PLANS_PATH}/${planId}/${canonicalFieldPath}`] = sanitizedValue;
     }
@@ -456,7 +461,7 @@ const removePlanCollaborationIndexes = async (planId, collaborators = {}) => {
 export const createPlan = async (userId, planData) => {
   try {
     const hydratedPlanData = await hydratePlanFieldsFromSourceTimeline(planData);
-    const planDoc = sanitizeFirebaseValue(preparePlanForStorage(userId, hydratedPlanData));
+    const planDoc = sanitizeDatabaseValue(preparePlanForStorage(userId, hydratedPlanData));
 
     console.log('[createPlan] Creating plan with data:', {
       name: planDoc.name,
@@ -485,7 +490,7 @@ export const updatePlan = async (planId, planData) => {
   try {
     console.log('[updatePlan] Updating plan:', { planId, updates: planData });
     const updates = buildPlanUpdates(planId, planData);
-    console.log('[updatePlan] Firebase updates:', updates);
+    console.log('[updatePlan] Supabase updates:', updates);
     await update(ref(database), updates);
     console.log('[updatePlan] Update successful');
     return { id: planId, ...normalizePlanRecord(planId, planData), updatedAt: Date.now() };
@@ -554,7 +559,7 @@ export const getPlan = async (planId) => {
       });
       const migratedPlan = normalizePlanRecord(planId, migratedPlanData);
 
-      // If migration added fields, update the plan in Firebase
+      // If migration added fields, update the plan in Supabase
       if (!planData.accessedBy || !planData.ownerId) {
         console.log('[getPlan] Migrating plan to new schema:', planId);
         try {
@@ -660,7 +665,7 @@ export const exportPlan = async (planId) => {
   try {
     const plan = await getPlan(planId);
     
-    // Remove user-specific and Firebase-specific data for export
+    // Remove user-specific and backend-specific data for export
     const {
       id,
       userId,
@@ -692,7 +697,7 @@ export const exportPlan = async (planId) => {
 export const importPlan = async (userId, importData, planName) => {
   try {
     // Import the migration utilities
-    const { migratePlanData, validatePlanData } = await import('../utils/version/versionUtils.js');
+    const { migratePlanData, validatePlanData } = await import('../utils/version/versionUtils');
 
     console.log('%c[IMPORT] Starting plan import process',
       'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', importData);
@@ -1109,24 +1114,22 @@ export const trackPlanShareViewAccess = async (viewToken, userId) => {
       return;
     }
 
-    const shareView = await getPlanShareView(viewToken);
-    const now = Date.now();
-    const viewerRef = ref(database, `${PLAN_SHARE_VIEW_TRACKING_PATH}/${viewToken}/viewers/${userId}`);
-    const viewerSnapshot = await get(viewerRef);
-    const existingViewer = viewerSnapshot.exists() ? viewerSnapshot.val() : null;
-
-    await set(viewerRef, {
-      firstViewedAt: existingViewer?.firstViewedAt || now,
-      lastViewedAt: now,
-      accessCount: (existingViewer?.accessCount || 0) + 1,
+    const { data, error } = await supabase.rpc('track_plan_share_view_access', {
+      p_view_token: viewToken,
     });
+    if (error) throw error;
+    const tracking = data as {
+      planId: string;
+      accessCount: number;
+      lastViewedAt: number;
+    };
 
-    await update(ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans/${shareView.planId}`), {
-      planId: shareView.planId,
+    await update(ref(database, `${USER_PROFILES_PATH}/${userId}/accessedPlans/${tracking.planId}`), {
+      planId: tracking.planId,
       viewToken,
       accessType: 'view',
-      lastAccess: now,
-      accessCount: (existingViewer?.accessCount || 0) + 1,
+      lastAccess: tracking.lastViewedAt,
+      accessCount: tracking.accessCount,
     });
   } catch (error) {
     if (!isPermissionDeniedError(error)) {

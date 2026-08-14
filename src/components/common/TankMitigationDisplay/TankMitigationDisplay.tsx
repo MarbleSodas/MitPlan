@@ -16,7 +16,7 @@ const TankMitigationDisplay = ({
 
   const Pill = ({ value }) => (
     <div
-      className="inline-flex items-center justify-center font-bold px-2.5 py-1 rounded border select-none min-h-8 text-sm bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/20 dark:border-blue-500/30 text-neutral-900 dark:text-neutral-100"
+      className="inline-flex items-center justify-center font-bold px-2.5 py-1 rounded border select-none min-h-8 text-sm bg-info/10 dark:bg-info/20 border-info/20 dark:border-info/30 text-info"
     >
       <span className="mr-1">🛡️</span>
       {formatMitigation(value)}

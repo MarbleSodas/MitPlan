@@ -8,13 +8,11 @@ import UserProfile from './UserProfile';
 const {
   authState,
   deleteCurrentUserAccountMock,
-  getIdTokenMock,
   logoutMock,
   navigateMock,
-  reauthenticateWithCredentialMock,
-  reauthenticateWithPopupMock,
+  signInWithPasswordMock,
   toastSuccessMock,
-  updateProfileMock,
+  updateUserMock,
 } = vi.hoisted(() => ({
   authState: {
     user: {
@@ -25,26 +23,15 @@ const {
     } as any,
   },
   deleteCurrentUserAccountMock: vi.fn(),
-  getIdTokenMock: vi.fn(),
   logoutMock: vi.fn(),
   navigateMock: vi.fn(),
-  reauthenticateWithCredentialMock: vi.fn(),
-  reauthenticateWithPopupMock: vi.fn(),
+  signInWithPasswordMock: vi.fn(),
   toastSuccessMock: vi.fn(),
-  updateProfileMock: vi.fn(),
+  updateUserMock: vi.fn(),
 }));
 
-vi.mock('react-router-dom', () => ({
+vi.mock('@/lib/navigation', () => ({
   useNavigate: () => navigateMock,
-}));
-
-vi.mock('firebase/auth', () => ({
-  EmailAuthProvider: {
-    credential: (email: string, password: string) => ({ email, password }),
-  },
-  reauthenticateWithCredential: (...args: unknown[]) => reauthenticateWithCredentialMock(...args),
-  reauthenticateWithPopup: (...args: unknown[]) => reauthenticateWithPopupMock(...args),
-  updateProfile: (...args: unknown[]) => updateProfileMock(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -60,18 +47,13 @@ vi.mock('../../contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('../../config/firebase', () => ({
-  auth: {
-    get currentUser() {
-      return authState.user
-        ? {
-            ...authState.user,
-            getIdToken: getIdTokenMock,
-          }
-        : null;
+vi.mock('../../config/supabase', () => ({
+  supabase: {
+    auth: {
+      signInWithPassword: (...args: unknown[]) => signInWithPasswordMock(...args),
+      updateUser: (...args: unknown[]) => updateUserMock(...args),
     },
   },
-  googleProvider: { providerId: 'google.com' },
 }));
 
 vi.mock('../../services/accountDeletionService', () => ({
@@ -124,13 +106,11 @@ describe('UserProfile account deletion', () => {
       scrubbedPlans: 0,
       scrubbedTimelines: 0,
     });
-    getIdTokenMock.mockReset().mockResolvedValue('fresh-token');
     logoutMock.mockReset().mockResolvedValue(undefined);
     navigateMock.mockReset();
-    reauthenticateWithCredentialMock.mockReset().mockResolvedValue(undefined);
-    reauthenticateWithPopupMock.mockReset().mockResolvedValue(undefined);
+    signInWithPasswordMock.mockReset().mockResolvedValue({ data: {}, error: null });
     toastSuccessMock.mockReset();
-    updateProfileMock.mockReset().mockResolvedValue(undefined);
+    updateUserMock.mockReset().mockResolvedValue({ data: {}, error: null });
   });
 
   afterEach(() => {
@@ -176,17 +156,17 @@ describe('UserProfile account deletion', () => {
     fireEvent.click(deleteButtons[deleteButtons.length - 1]);
 
     await waitFor(() => {
-      expect(reauthenticateWithCredentialMock).toHaveBeenCalledWith(
-        expect.objectContaining({ uid: 'user-1' }),
-        { email: 'raider@example.com', password: 'secret-password' }
-      );
+      expect(signInWithPasswordMock).toHaveBeenCalledWith({
+        email: 'raider@example.com',
+        password: 'secret-password',
+      });
       expect(deleteCurrentUserAccountMock).toHaveBeenCalled();
       expect(logoutMock).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalledWith('/', { replace: true });
     });
   });
 
-  it('reauthenticates Google users with a popup before deleting', async () => {
+  it('uses the active OAuth session when deleting a Google account', async () => {
     authState.user = {
       uid: 'user-1',
       email: 'raider@example.com',
@@ -203,10 +183,7 @@ describe('UserProfile account deletion', () => {
     fireEvent.click(deleteButtons[deleteButtons.length - 1]);
 
     await waitFor(() => {
-      expect(reauthenticateWithPopupMock).toHaveBeenCalledWith(
-        expect.objectContaining({ uid: 'user-1' }),
-        { providerId: 'google.com' }
-      );
+      expect(signInWithPasswordMock).not.toHaveBeenCalled();
       expect(deleteCurrentUserAccountMock).toHaveBeenCalled();
     });
   });

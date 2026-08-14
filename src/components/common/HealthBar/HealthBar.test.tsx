@@ -32,7 +32,7 @@ describe('HealthBar', () => {
 
     const styles = Array.from(container.querySelectorAll('div[style]')).map((element) => element.getAttribute('style') || '');
 
-    expect(styles.some((style) => style.includes('width: 100%;') && style.includes('background-color: oklch(0.623 0.188 145.28);'))).toBe(true);
+    expect(styles.some((style) => style.includes('width: 100%;') && style.includes('background-color: var(--color-health-safe);'))).toBe(true);
     expect(styles.some((style) => style.includes('left: 40%;') && style.includes('width: 60%;') && style.includes('background-color: rgba(255, 0, 0, 0.3);'))).toBe(true);
   });
 });
@@ -53,6 +53,6 @@ describe('HealingHealthBar', () => {
     const styles = Array.from(container.querySelectorAll('div[style]')).map((element) => element.getAttribute('style') || '');
 
     expect(styles.some((style) => style.includes('width: 25%;') && style.includes('background-color: var(--color-destructive);'))).toBe(true);
-    expect(styles.some((style) => style.includes('left: 25%;') && style.includes('width: 75%;') && style.includes('background-color: oklch(0.623 0.188 145.28);'))).toBe(true);
+    expect(styles.some((style) => style.includes('left: 25%;') && style.includes('width: 75%;') && style.includes('background-color: var(--color-health-safe);'))).toBe(true);
   });
 });

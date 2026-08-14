@@ -39,8 +39,8 @@ const HealingHealthBar = ({
     : tooltipContent;
 
   const getBarColorClass = () => {
-    if (remainingHealthPercentage > 70) return 'oklch(0.623 0.188 145.28)';
-    if (remainingHealthPercentage > 40) return 'oklch(0.795 0.184 86.047)';
+    if (remainingHealthPercentage > 70) return 'var(--color-health-safe)';
+    if (remainingHealthPercentage > 40) return 'var(--color-warning)';
     return 'var(--color-destructive)';
   };
 
@@ -59,7 +59,7 @@ const HealingHealthBar = ({
             <span className="whitespace-nowrap">&nbsp;{formatHealthCompact(healthAfterHealing)} / {formatHealthCompact(maxHealth)}</span>
           </div>
 
-          <div className="w-full h-5 rounded overflow-hidden relative bg-[var(--color-muted)]">
+          <div className="w-full h-5 rounded overflow-hidden relative bg-muted">
             <div
               className="h-full transition-[width] duration-300"
               style={{ 
@@ -74,7 +74,7 @@ const HealingHealthBar = ({
                 style={{
                   left: `${remainingHealthPercentage}%`,
                   width: `${healingPercentage}%`,
-                  backgroundColor: 'oklch(0.623 0.188 145.28)'
+                  backgroundColor: 'var(--color-health-safe)'
                 }}
               />
             )}
@@ -85,7 +85,7 @@ const HealingHealthBar = ({
                 style={{
                   left: `${healthAfterHealingPercentage}%`,
                   width: `${barrierPercentage}%`,
-                  backgroundColor: 'oklch(0.795 0.184 86.047)'
+                  backgroundColor: 'var(--color-warning)'
                 }}
               />
             )}

@@ -1,5 +1,8 @@
 export type Role = 'tank' | 'healer' | 'melee' | 'ranged' | 'caster';
 
+export type AbilityMode = 'CURRENT' | 'REBORN' | 'EVOLVED' | 'ALL';
+export type PlanAbilityMode = Exclude<AbilityMode, 'ALL'>;
+
 export type JobId =
   | 'PLD' | 'WAR' | 'DRK' | 'GNB'
   | 'WHM' | 'SCH' | 'AST' | 'SGE'
@@ -12,6 +15,8 @@ export interface Job {
   name: string;
   icon: string;
   selected: boolean;
+  availableModes?: PlanAbilityMode[];
+  evolvedOnly?: boolean;
 }
 
 export type JobsByRole = Record<Role, Job[]>;
@@ -99,9 +104,21 @@ export interface LayeredMitigationEffect {
   description?: string;
 }
 
+export type AbilityAvailabilityStatus = 'active' | 'retired' | 'unavailable';
+
+export interface AbilityProvenance {
+  source: 'ffxiv-job-guide' | 'manual-override';
+  patch: string;
+  url: string;
+  sourceActionId?: string;
+  semanticHash?: string;
+  notes?: string;
+}
+
 export interface MitigationAbility {
   id: string;
   name: string;
+  aliases?: string[];
   description: string;
   levelRequirement: number;
   levelDescriptions?: Record<number, string>;
@@ -119,6 +136,7 @@ export interface MitigationAbility {
   forTankBusters: boolean;
   forRaidWide: boolean;
   count?: number;
+  levelCharges?: Record<number, number>;
   isRoleShared?: boolean;
   consumesAetherflow?: boolean;
   isAetherflowProvider?: boolean;
@@ -144,6 +162,15 @@ export interface MitigationAbility {
   providesAddersting?: boolean;
   adderstingCost?: number;
   requiresActiveWindow?: { abilityId: string; windowDuration?: number };
+  provenance?: AbilityProvenance[];
+  availability?: AbilityAvailabilityStatus;
+  effectiveFromPatch?: string;
+  effectiveToPatch?: string;
+  /**
+   * Modes in which this definition is assignable. Untagged pre-Evercold
+   * records are treated as CURRENT + REBORN for backward compatibility.
+   */
+  modes?: AbilityMode[];
 
   // NEW FIELDS FOR EXPANDED MECHANICS:
 
@@ -401,11 +428,15 @@ export interface Plan {
   name: string;
   description?: string;
   bossId: string;
+  mode?: PlanAbilityMode;
   selectedJobs: SelectedJobs;
   assignments: MitigationAssignments;
   tankPositions: TankPositions;
   jobAssignments?: JobAssignments;
   healthSettings?: Record<string, unknown>;
+  maxTankHP?: number;
+  partyMinHP?: number;
+  maxPartyHP?: number;
   isPublic?: boolean;
   userId?: string;
   ownerId?: string;
@@ -414,11 +445,18 @@ export interface Plan {
   updatedAt?: number;
   lastAccessedAt?: number;
   version?: number;
+  schemaVersion?: number;
+  revision?: number;
+  timelineVersionId?: string | null;
+  timelineVersionLabel?: string | null;
+  timelineStatus?: 'draft' | 'candidate' | 'published' | 'deprecated' | null;
+  routeId?: string;
   lastModifiedBy?: string;
   lastChangeOrigin?: string;
   sourceTimelineId?: string | null;
   sourceTimelineName?: string | null;
   phaseOverrides?: Record<string, PhaseOverride>;
+  customEvents?: BossAction[];
   bossTags?: string[];
   bossMetadata?: BossMetadata | null;
   timelineLayout?: PlanTimelineLayout | null;
@@ -430,6 +468,125 @@ export interface Plan {
   snapshotCreatedAt?: number | null;
   sourcePlanUpdatedAt?: number | null;
   isLocal?: boolean;
+}
+
+export type PlanConnectionState =
+  | 'loading'
+  | 'connecting'
+  | 'saved'
+  | 'saving'
+  | 'reconnecting'
+  | 'offline-queued'
+  | 'error';
+
+export interface TimelineVersionRecord {
+  id: string;
+  timelineKey: string;
+  versionLabel: string;
+  gamePatch?: string | null;
+  schemaVersion: number;
+  contentHash: string;
+  status: 'draft' | 'candidate' | 'published' | 'deprecated';
+  sourceType: 'official' | 'community' | 'custom' | 'legacy';
+  routeIds: string[];
+  document: PlanTimelineLayout;
+  provenance: Record<string, unknown> | TimelineAnalysisSource[];
+  validationReport: Record<string, unknown>;
+}
+
+export interface PlanWorkspacePermissions {
+  canRead: boolean;
+  canEdit: boolean;
+  canAdmin: boolean;
+}
+
+export interface PlanPartySlot {
+  id: string;
+  slotIndex: number;
+  roleKey: string;
+  jobKey: string;
+  jobData: Record<string, unknown>;
+  playerUserId?: string | null;
+  playerLabel?: string | null;
+  tankPosition?: 'mainTank' | 'offTank' | null;
+  entityRevision: number;
+}
+
+export interface PlanChange {
+  id: string;
+  operationId: string;
+  revision: number;
+  baseRevision?: number | null;
+  actorId: string;
+  operationKind: string;
+  targetType: string;
+  targetKey?: string | null;
+  createdAt: string;
+  undoEligible: boolean;
+}
+
+export interface UserPlanPreference {
+  lastPhaseId?: string | null;
+  lastEventKey?: string | null;
+  filters: Record<string, unknown>;
+  panelRatio: number;
+  zoom: number;
+  density: 'compact' | 'comfortable';
+  lastOpenedAt?: string | null;
+}
+
+export interface PlanWorkspaceSnapshot {
+  plan: Plan;
+  timelineVersion: TimelineVersionRecord | null;
+  partySlots: PlanPartySlot[];
+  assignments: MitigationAssignments;
+  revision: number;
+  permissions: PlanWorkspacePermissions;
+  preference: UserPlanPreference | null;
+  changes: PlanChange[];
+  changesSinceRevision?: Array<PlanChange & { afterData?: PlanWorkspaceSnapshot }>;
+  committedChange?: {
+    operationId: string;
+    revision: number;
+    actorId: string;
+    operationKind: string;
+  };
+  idempotentReplay?: boolean;
+}
+
+export interface PlanOperation {
+  kind:
+    | 'patch_plan'
+    | 'set_plan_meta'
+    | 'set_health_settings'
+    | 'set_party'
+    | 'set_event_assignments'
+    | 'set_assignment_target'
+    | 'set_phase_overrides'
+    | 'set_custom_events'
+    | 'set_timeline_layout'
+    | 'set_route'
+    | 'upgrade_timeline';
+  targetType?: string;
+  targetKey?: string | null;
+  payload: {
+    name?: string;
+    description?: string;
+    healthSettings?: Record<string, unknown>;
+    routeId?: string;
+    metadata?: Record<string, unknown>;
+    selectedJobs?: SelectedJobs | Record<string, unknown[]>;
+    tankPositions?: TankPositions;
+    assignmentEvents?: MitigationAssignments;
+    phaseOverrides?: Record<string, PhaseOverride>;
+    customEvents?: BossAction[];
+    timelineLayout?: PlanTimelineLayout;
+    sourceTimelineId?: string | null;
+    sourceTimelineName?: string | null;
+    timelineVersionId?: string;
+    reviewApproved?: boolean;
+    mode?: PlanAbilityMode;
+  };
 }
 
 export interface AbilityAvailability {

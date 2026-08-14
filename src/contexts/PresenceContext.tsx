@@ -34,7 +34,6 @@ import type {
 } from '../types/presence';
 import {
   EMPTY_PRESENCE_DATA,
-  PRESENCE_HEARTBEAT_INTERVAL,
   PRESENCE_THROTTLE,
   createPresenceTarget,
   deriveViewportFromTarget,
@@ -44,7 +43,7 @@ import {
   COLLABORATION_UNAVAILABLE_MESSAGE,
   getErrorMessage,
   isPermissionDeniedError,
-} from '../services/firebaseErrorUtils';
+} from '../services/backendErrorUtils';
 
 interface PresenceProviderProps {
   children: ReactNode;
@@ -67,14 +66,6 @@ function clearQueuedPresenceUpdates(roomId: string, sessionId: string): void {
   (Object.keys(PRESENCE_THROTTLE) as Array<keyof typeof PRESENCE_THROTTLE>).forEach((channel) => {
     presenceDebouncer.clear(getPresenceUpdateKey(roomId, sessionId, channel));
   });
-}
-
-function hasStickyPresence(presence: UserPresenceData | null | undefined): boolean {
-  if (!presence?.activeTarget) {
-    return false;
-  }
-
-  return presence.interaction === 'selected' || presence.interaction === 'editing';
 }
 
 export const usePresence = (): PresenceContextValue => {
@@ -115,7 +106,6 @@ export const PresenceProvider = ({ children, roomId }: PresenceProviderProps) =>
   const lastPublishedPresenceRef = useRef<UserPresenceData>({ ...EMPTY_PRESENCE_DATA });
   const presenceDisabledRef = useRef(false);
   const loggedPresenceErrorRef = useRef<string | null>(null);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     myPresenceRef.current = myPresence;
@@ -179,10 +169,6 @@ export const PresenceProvider = ({ children, roomId }: PresenceProviderProps) =>
       }
 
       presenceDisabledRef.current = true;
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
       setPresenceAvailable(false);
       setPresenceError(nextErrorMessage);
       setIsConnected(false);
@@ -193,10 +179,6 @@ export const PresenceProvider = ({ children, roomId }: PresenceProviderProps) =>
 
   useEffect(() => {
     if (!roomId || !sessionId || !isCollaborating || !sessionCollaborationAvailable) {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
       setRawPresenceMap(new Map());
       setIsConnected(false);
       setPresenceAvailable(true);
@@ -267,11 +249,6 @@ export const PresenceProvider = ({ children, roomId }: PresenceProviderProps) =>
     return () => {
       isActive = false;
       unsubscribe();
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-
       if (roomId && sessionId) {
         clearQueuedPresenceUpdates(roomId, sessionId);
         if (!presenceDisabledRef.current) {
@@ -317,50 +294,6 @@ export const PresenceProvider = ({ children, roomId }: PresenceProviderProps) =>
     [roomId, sessionId, sessionCollaborationAvailable, handlePresenceServiceError]
   );
 
-  useEffect(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-
-    if (
-      !roomId ||
-      !sessionId ||
-      !isCollaborating ||
-      !sessionCollaborationAvailable ||
-      presenceDisabledRef.current ||
-      !hasStickyPresence(myPresence)
-    ) {
-      return undefined;
-    }
-
-    heartbeatIntervalRef.current = setInterval(() => {
-      if (presenceDisabledRef.current || !hasStickyPresence(myPresenceRef.current)) {
-        if (heartbeatIntervalRef.current) {
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
-        }
-        return;
-      }
-
-      publishPresence('activity', { force: true });
-    }, PRESENCE_HEARTBEAT_INTERVAL);
-
-    return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-    };
-  }, [
-    isCollaborating,
-    myPresence,
-    publishPresence,
-    roomId,
-    sessionCollaborationAvailable,
-    sessionId,
-  ]);
-
   const updateMyPresence = useCallback(
     (patch: Partial<UserPresenceData>, channel: keyof typeof PRESENCE_THROTTLE) => {
       if (presenceDisabledRef.current || !sessionCollaborationAvailable) {
@@ -378,13 +311,12 @@ export const PresenceProvider = ({ children, roomId }: PresenceProviderProps) =>
       myPresenceRef.current = nextPresence;
       publishPresence(channel);
     },
-    [publishPresence]
+    [publishPresence, sessionCollaborationAvailable]
   );
 
   const setActiveTarget = useCallback(
     (target: PresenceTargetInput | PresenceTarget | null) => {
       const normalizedTarget = target ? createPresenceTarget(target) : null;
-      const currentTarget = myPresenceRef.current.activeTarget;
       const currentViewport = myPresenceRef.current.viewport;
       const nextViewport =
         normalizedTarget

@@ -9,7 +9,13 @@ import {
   subscribeToJobAssignments 
 } from '../services/realtimePlanService';
 import { getColorFromUserId } from '../types/presence';
+import { DEFAULT_PRESENCE_COLOR } from '@/lib/presence-colors';
 import { mitigationAbilities } from '../data';
+import { isAbilityAssignable } from '../utils/abilities/abilityUtils';
+import {
+  isAbilityAvailableInMode,
+  normalizePlanAbilityMode,
+} from '../utils/abilities/abilityModeUtils';
 import type { JobId, JobAssignments, UserJobAssignment, MitigationAbility } from '../types';
 
 interface UserJobAssignmentContextValue {
@@ -52,7 +58,8 @@ export const useUserJobAssignmentOptional = (): UserJobAssignmentContextValue | 
 };
 
 export const UserJobAssignmentProvider = ({ children }: UserJobAssignmentProviderProps) => {
-  const { planId } = useRealtimePlan();
+  const { planId, realtimePlan } = useRealtimePlan();
+  const planAbilityMode = normalizePlanAbilityMode(realtimePlan?.mode);
   const { user } = useAuth();
   const { displayName: collaborationDisplayName } = useCollaboration();
   const { selectedJobs } = useRealtimeJobContext();
@@ -71,7 +78,7 @@ export const UserJobAssignmentProvider = ({ children }: UserJobAssignmentProvide
   }, [collaborationDisplayName, user?.displayName, user?.email]);
   
   const myColor = useMemo(() => {
-    return userId ? getColorFromUserId(userId) : '#3b82f6';
+    return userId ? getColorFromUserId(userId) : DEFAULT_PRESENCE_COLOR;
   }, [userId]);
   
   const myAssignedJob = useMemo((): JobId | null => {
@@ -178,13 +185,16 @@ export const UserJobAssignmentProvider = ({ children }: UserJobAssignmentProvide
     
     return mitigationAbilities.filter((ability) => 
       ability.jobs.includes(myAssignedJob)
+      && isAbilityAssignable(ability)
+      && isAbilityAvailableInMode(ability, planAbilityMode)
     );
-  }, [myAssignedJob]);
+  }, [myAssignedJob, planAbilityMode]);
   
   const canICast = useCallback((ability: MitigationAbility): boolean => {
     if (!myAssignedJob) return false;
-    return ability.jobs.includes(myAssignedJob);
-  }, [myAssignedJob]);
+    return ability.jobs.includes(myAssignedJob)
+      && isAbilityAvailableInMode(ability, planAbilityMode);
+  }, [myAssignedJob, planAbilityMode]);
   
   const getAbilityCasterInfo = useCallback((ability: MitigationAbility): { jobId: JobId; assignment: UserJobAssignment | null } | null => {
     const selectedJobIds = getSelectedJobIds();

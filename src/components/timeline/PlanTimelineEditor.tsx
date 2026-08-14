@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '@/lib/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import RealtimeAppProvider from '../../contexts/RealtimeAppProvider';

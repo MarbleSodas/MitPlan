@@ -3,14 +3,15 @@
  * Handles plan ownership and access control tracking
  */
 
-import { ref, get, set, update, query, orderByChild, orderByKey, equalTo } from 'firebase/database';
-import { database } from '../config/firebase';
+import { ref, get, set, update, query, orderByChild, orderByKey, equalTo } from '../lib/supabaseRealtimeDatabase';
+import { database } from '../config/supabase';
 import {
   getDashboardPlanLoadErrorMessage,
   getErrorMessage,
   isPermissionDeniedError,
   STALE_DATABASE_RULES_MESSAGE,
-} from './firebaseErrorUtils';
+} from './backendErrorUtils';
+import { normalizePlanAbilityMode } from '../utils/abilities/abilityModeUtils';
 
 const PLANS_PATH = 'plans';
 const USER_PROFILES_PATH = 'userProfiles';
@@ -67,6 +68,7 @@ const normalizeViewedDashboardPlan = (viewToken, viewData, userId, overrides = {
     name: viewData.name || 'Untitled Plan',
     description: viewData.description || '',
     bossId: viewData.bossId || 'ketuduke',
+    mode: normalizePlanAbilityMode(viewData.mode),
     selectedJobs: viewData.selectedJobs || {},
     assignments: viewData.assignments || {},
     tankPositions: viewData.tankPositions || {

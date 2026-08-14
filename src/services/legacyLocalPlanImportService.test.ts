@@ -53,7 +53,7 @@ describe('legacyLocalPlanImportService', () => {
     window.localStorage.setItem('mitplan_display_name', 'Guest');
     window.localStorage.setItem('mitplan_anonymous_session', 'session-1');
 
-    createPlanMock.mockResolvedValue({ id: 'firebase-plan-1' });
+    createPlanMock.mockResolvedValue({ id: 'supabase-plan-1' });
 
     const results = await legacyLocalPlanImportService.importAll('user-1');
 
@@ -70,7 +70,7 @@ describe('legacyLocalPlanImportService', () => {
       expect.objectContaining({
         success: true,
         localPlanId: 'local-plan-1',
-        newPlanId: 'firebase-plan-1',
+        newPlanId: 'supabase-plan-1',
       }),
     ]);
 

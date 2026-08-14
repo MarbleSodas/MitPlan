@@ -1,5 +1,4 @@
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { supabase } from '../config/supabase';
 
 export interface AccountDeletionResult {
   deleted: true;
@@ -10,11 +9,9 @@ export interface AccountDeletionResult {
 }
 
 export const deleteCurrentUserAccount = async (): Promise<AccountDeletionResult> => {
-  const callable = httpsCallable<{ confirm: true }, AccountDeletionResult>(
-    functions,
-    'deleteCurrentUserAccount'
-  );
-
-  const result = await callable({ confirm: true });
-  return result.data;
+  const { data, error } = await supabase.rpc('delete_legacy_app_account', {
+    p_confirm: true,
+  });
+  if (error) throw error;
+  return data as AccountDeletionResult;
 };

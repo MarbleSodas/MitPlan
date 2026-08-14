@@ -1,6 +1,6 @@
 type LogMethod = 'debug' | 'info' | 'warn' | 'error';
 
-const isDevLoggingEnabled = () => import.meta.env.DEV;
+const isDevLoggingEnabled = () => process.env.NODE_ENV !== 'production';
 
 const log = (method: LogMethod, ...args: unknown[]) => {
   if (!isDevLoggingEnabled() && method !== 'error') {

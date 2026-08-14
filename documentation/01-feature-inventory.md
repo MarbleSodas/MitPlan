@@ -103,7 +103,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - Auto-assignment for job-specific self-target abilities
 
 ### 5. Real-Time Collaboration System
-**Description**: Firebase-powered real-time collaboration allowing multiple users to edit plans simultaneously.
+**Description**: Supabase-powered real-time collaboration allowing multiple users to edit plans simultaneously.
 
 **Core Features**:
 - Real-time plan synchronization across all connected users
@@ -121,7 +121,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 
 **Data Synchronization**:
 - Batched updates for performance optimization
-- Debounced writes to reduce Firebase calls
+- Debounced writes to reduce database calls
 - Optimistic UI updates for responsiveness
 - Automatic retry mechanisms for failed operations
 
@@ -129,7 +129,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 **Description**: Flexible authentication system supporting both authenticated and anonymous users.
 
 **Authentication Methods**:
-- Firebase Authentication integration
+- Supabase Authentication integration
 - Email/password authentication
 - Anonymous user support with full functionality
 
@@ -151,7 +151,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 
 **Plan Features**:
 - Create new plans with boss pre-selection
-- Save plans to Firebase Realtime Database
+- Save plans to Supabase Postgres and Realtime
 - Local storage fallback for offline mode
 - Plan naming and metadata management
 - Access control and ownership tracking
@@ -238,7 +238,7 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 - Debounced API calls for real-time updates
 - Cached cooldown calculations
 - Lazy loading for large datasets
-- Optimized Firebase queries
+- Optimized Supabase queries
 - Batched database writes
 
 **Caching Systems**:
@@ -292,20 +292,20 @@ MitPlan is a comprehensive web application designed for Final Fantasy XIV player
 ### Frontend Stack
 - **React 19** with functional components and hooks
 - **Tailwind CSS v4** for utility-first styling
-- **React Router** for client-side routing
+- **Next.js App Router** for client-side routing
 - **@dnd-kit** for drag and drop functionality
-- **Vite** for build tooling and development server
+- **Next.js** for build tooling and development server
 
 ### Backend Services
-- **Firebase Realtime Database** for real-time collaboration
-- **Firebase Authentication** for user management
-- **Firebase Analytics** for usage tracking
+- **Supabase Postgres and Realtime** for real-time collaboration
+- **Supabase Authentication** for user management
+- **Vercel Analytics** for usage tracking
 - **Vercel** for hosting and deployment
 
 ### State Management
 - **React Context API** for global state
 - **Custom hooks** for feature-specific logic
 - **Local storage** for offline functionality
-- **Real-time synchronization** with Firebase
+- **Real-time synchronization** with Supabase
 
 This feature inventory provides a comprehensive overview of MitPlan's capabilities, serving as a reference for developers and stakeholders to understand the application's scope and functionality.

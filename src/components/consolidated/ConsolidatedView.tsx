@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '@/lib/navigation';
 import { ArrowLeft, FilePlus2, LogIn, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,10 +7,9 @@ import { bosses, bossActionsMap } from '../../data';
 import { mitigationAbilities } from '../../data';
 import { getTimeline } from '../../services/timelineService';
 import {
-  duplicatePlanFromViewToken,
-  subscribeToPlanShareView,
-  trackPlanShareViewAccess,
-} from '../../services/realtimePlanService';
+  createNormalizedPlan,
+  getSharedPlan,
+} from '../../services/normalizedPlanService';
 import { processMultiHitTankBusters } from '../../utils/boss/bossActionUtils';
 import { getJobIcon } from '../../utils';
 import { getPlanTimelineLayout } from '../../utils/timeline/planTimelineLayoutUtils';
@@ -53,7 +52,7 @@ const MitigationCard = ({ mitigation, assignment }: { mitigation: MitigationAbil
       : '';
 
   return (
-    <div className="flex items-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800 print:border print:border-gray-400 print:bg-white print:break-inside-avoid">
+    <div className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2 print:border print:border-gray-400 print:bg-white print:break-inside-avoid">
       {assignment.casterJobId && (
         <span className="h-6 w-6 shrink-0">
           <img
@@ -94,31 +93,26 @@ const SharedPlanView = () => {
     setLoading(true);
     setError(null);
 
-    const unsubscribe = subscribeToPlanShareView(viewToken, (nextPlan, shareViewError) => {
-      if (shareViewError) {
-        setError('Unable to load this shared plan.');
-        setSharedPlan(null);
-      } else if (!nextPlan) {
-        setError('This shared plan link is no longer available.');
-        setSharedPlan(null);
-      } else {
-        setSharedPlan(nextPlan);
+    let active = true;
+    void getSharedPlan(viewToken)
+      .then((workspace) => {
+        if (!active) return;
+        setSharedPlan(workspace.plan);
         setError(null);
-      }
+      })
+      .catch(() => {
+        if (!active) return;
+        setError('This shared plan link is invalid, expired, or revoked.');
+        setSharedPlan(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    return () => {
+      active = false;
+    };
   }, [viewToken]);
-
-  useEffect(() => {
-    if (!viewToken || !user?.uid) {
-      return;
-    }
-
-    trackPlanShareViewAccess(viewToken, user.uid);
-  }, [user?.uid, viewToken]);
 
   useEffect(() => {
     if (!sharedPlan) {
@@ -197,7 +191,14 @@ const SharedPlanView = () => {
 
     setCopying(true);
     try {
-      const copiedPlan = await duplicatePlanFromViewToken(viewToken, user.uid);
+      const copiedPlan = (await createNormalizedPlan({
+        ...sharedPlan,
+        id: undefined,
+        name: `${sharedPlan.name} (Copy)`,
+        ownerId: user.uid,
+        accessLevel: 'owner',
+        revision: 0,
+      })).plan;
       toast.success('Private copy created', {
         description: 'You can now edit your own copy of this plan.',
       });
@@ -262,8 +263,8 @@ const SharedPlanView = () => {
             </div>
           </div>
 
-          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
-            Read-only plan snapshot. Print this view or create your own private copy to make changes. This link stays frozen until the owner regenerates it.
+          <div className="mb-4 rounded-lg border border-info/30 bg-info/10 px-4 py-3 text-info">
+            Read-only plan view. Refresh to fetch the latest saved revision. Anonymous viewers never join the private collaboration room.
           </div>
 
           <div className="flex flex-wrap gap-2">

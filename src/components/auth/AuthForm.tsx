@@ -1,12 +1,6 @@
 import { useState, useLayoutEffect, useRef } from 'react';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  updateProfile,
-  signInWithPopup
-} from 'firebase/auth';
-import { auth, googleProvider } from '../../config/firebase';
+import { supabase } from '../../config/supabase';
+import { toAppUser } from '../../types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,20 +19,21 @@ const AuthForm = ({ onSuccess }) => {
   const [success, setSuccess] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const FIREBASE_ERROR_MAP = {
-    'auth/user-not-found': { field: 'email', message: 'No account found with this email address' },
-    'auth/invalid-email': { field: 'email', message: 'No account found with this email address' },
-    'auth/email-already-in-use': { field: 'email', message: 'An account with this email already exists' },
-    'auth/wrong-password': { field: 'password', message: 'Incorrect password' },
-    'auth/weak-password': { field: 'password', message: 'Password is too weak. Use at least 6 characters' },
-    'auth/invalid-credential': { field: 'both', message: 'Invalid email or password' },
-    'auth/too-many-requests': { field: 'general', message: 'Too many attempts. Please try again later' },
-    'auth/network-request-failed': { field: 'general', message: 'Network error. Check your connection' },
+  const AUTH_ERROR_MAP = {
+    invalid_credentials: {
+      field: 'general',
+      message: 'The email or password is incorrect.',
+    },
+    email_address_invalid: { field: 'email', message: 'Enter a valid email address' },
+    user_already_exists: { field: 'email', message: 'An account with this email already exists' },
+    email_exists: { field: 'email', message: 'An account with this email already exists' },
+    weak_password: { field: 'password', message: 'Password is too weak. Use at least 6 characters' },
+    over_email_send_rate_limit: { field: 'general', message: 'Too many attempts. Please try again later' },
   };
 
-  const parseFirebaseError = (err) => {
+  const parseAuthError = (err) => {
     const errorCode = err.code || '';
-    return FIREBASE_ERROR_MAP[errorCode] || { field: 'general', message: err.message || 'An error occurred. Please try again' };
+    return AUTH_ERROR_MAP[errorCode] || { field: 'general', message: err.message || 'An error occurred. Please try again' };
   };
 
   const isValidEmail = (email) => {
@@ -139,24 +134,28 @@ const AuthForm = ({ onSuccess }) => {
           return;
         }
 
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-        if (displayName.trim()) {
-          await updateProfile(userCredential.user, {
-            displayName: displayName.trim()
-          });
-        }
-
-        onSuccess?.(userCredential.user);
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: displayName.trim() ? { display_name: displayName.trim() } : undefined,
+          },
+        });
+        if (signUpError) throw signUpError;
+        onSuccess?.(toAppUser(data.user));
       } else if (mode === 'login') {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        onSuccess?.(userCredential.user);
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        onSuccess?.(toAppUser(data.user));
       } else if (mode === 'reset') {
-        await sendPasswordResetEmail(auth, email);
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+        if (resetError) throw resetError;
         setSuccess('Password reset email sent! Check your inbox.');
       }
     } catch (err) {
-      handleFieldError(parseFirebaseError(err));
+      handleFieldError(parseAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -168,10 +167,15 @@ const AuthForm = ({ onSuccess }) => {
     setSuccess('');
 
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
-      onSuccess?.(userCredential.user);
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      });
+      if (oauthError) throw oauthError;
     } catch (err) {
-      handleFieldError(parseFirebaseError(err));
+      handleFieldError(parseAuthError(err));
     } finally {
       setGoogleLoading(false);
     }
@@ -195,8 +199,8 @@ const AuthForm = ({ onSuccess }) => {
   };
 
   return (
-    <div className="w-[400px] mx-auto p-8 rounded-3xl bg-card shadow-2xl border border-border mt-14">
-      <h2 className="text-center mb-8 text-foreground font-bold text-3xl leading-tight tracking-tight">{getTitle()}</h2>
+    <div className="mx-auto w-full max-w-[400px] rounded-xl border border-border bg-card p-5 shadow-lg sm:p-8">
+      <h2 className="mb-6 text-center text-2xl font-semibold leading-tight tracking-tight text-foreground">{getTitle()}</h2>
       <form onSubmit={handleSubmit}>
         <div
           ref={containerRef}
@@ -205,16 +209,16 @@ const AuthForm = ({ onSuccess }) => {
           <div ref={contentRef} key={mode} className="flex flex-col gap-4">
             {mode === 'register' && (
               <div className="flex flex-col gap-2">
-                <Label className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <Label htmlFor="auth-display-name" className="flex items-center gap-2">
                   Display Name
                   <span className="text-xs font-normal text-muted-foreground ml-auto">Optional</span>
                 </Label>
                 <Input
                   type="text"
-                  placeholder="How should we call you?"
+                  id="auth-display-name"
+                  name="displayName"
+                  autoComplete="name"
+                  placeholder="Example: Eugene"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
@@ -225,19 +229,25 @@ const AuthForm = ({ onSuccess }) => {
             )}
 
             <div className="flex flex-col gap-1.5">
+              <Label htmlFor="auth-email">Email address</Label>
               <Input
+                id="auth-email"
+                name="email"
+                autoComplete="email"
                 className={cn(emailError && 'ring-2 ring-destructive/50 border-destructive')}
                 type="email"
-                placeholder="Email address"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (emailError) setEmailError('');
                 }}
                 required
+                aria-invalid={Boolean(emailError)}
+                aria-describedby={emailError ? 'auth-email-error' : undefined}
               />
               {emailError && (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-destructive animate-fade-in">
+                <div id="auth-email-error" role="alert" className="flex items-center gap-1.5 text-xs font-medium text-destructive animate-fade-in">
                   <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
@@ -248,19 +258,25 @@ const AuthForm = ({ onSuccess }) => {
 
             {mode !== 'reset' && (
               <div className="flex flex-col gap-1.5">
+                <Label htmlFor="auth-password">Password</Label>
                 <Input
+                  id="auth-password"
+                  name="password"
+                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   className={cn(passwordError && 'ring-2 ring-destructive/50 border-destructive')}
                   type="password"
-                  placeholder="Password"
+                  placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
                     if (passwordError) setPasswordError('');
                   }}
                   required
+                  aria-invalid={Boolean(passwordError)}
+                  aria-describedby={passwordError ? 'auth-password-error' : undefined}
                 />
                 {passwordError && (
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-destructive animate-fade-in">
+                  <div id="auth-password-error" role="alert" className="flex items-center gap-1.5 text-xs font-medium text-destructive animate-fade-in">
                     <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
@@ -272,9 +288,13 @@ const AuthForm = ({ onSuccess }) => {
 
             {mode === 'register' && (
               <div className="flex flex-col gap-1.5">
+                <Label htmlFor="auth-confirm-password">Confirm password</Label>
                 <Input
+                  id="auth-confirm-password"
+                  name="confirmPassword"
+                  autoComplete="new-password"
                   type="password"
-                  placeholder="Confirm Password"
+                  placeholder="Re-enter your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -286,7 +306,6 @@ const AuthForm = ({ onSuccess }) => {
               <Button
                 type="submit"
                 disabled={loading || !isFormValid()}
-                className="bg-gradient-to-r from-primary to-chart-2 hover:shadow-lg hover:shadow-primary/30"
                 size="lg"
               >
                 {getButtonText()}
@@ -387,12 +406,12 @@ const AuthForm = ({ onSuccess }) => {
       </form>
 
       {error && (
-        <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3.5 text-sm font-semibold text-destructive animate-fade-in">
+        <div role="alert" className="mt-5 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3.5 text-sm font-semibold text-destructive animate-fade-in">
           {error}
         </div>
       )}
       {success && (
-        <div className="mt-5 rounded-xl border border-[oklch(0.623_0.188_145.28)]/20 bg-[oklch(0.623_0.188_145.28)]/10 px-4 py-3.5 text-sm font-semibold text-[oklch(0.623_0.188_145.28)] animate-fade-in">
+        <div role="status" className="mt-5 rounded-xl border border-success/20 bg-success/10 px-4 py-3.5 text-sm font-semibold text-success animate-fade-in">
           {success}
         </div>
       )}

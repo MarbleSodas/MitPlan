@@ -27,7 +27,7 @@ const {
           sessionId: 'session-1',
           userId: 'user-1',
           displayName: 'User One',
-          color: '#3b82f6',
+          color: '#3399ff',
         },
         {
           sessionId: 'session-2',
@@ -153,7 +153,7 @@ describe('PresenceProvider', () => {
           sessionId: 'session-1',
           userId: 'user-1',
           displayName: 'User One',
-          color: '#3b82f6',
+          color: '#3399ff',
         },
         {
           sessionId: 'session-2',
@@ -235,7 +235,7 @@ describe('PresenceProvider', () => {
           sessionId: 'session-1',
           userId: 'user-1',
           displayName: 'User One',
-          color: '#3b82f6',
+          color: '#3399ff',
           lastActivity: Date.now(),
         },
         {
@@ -292,7 +292,7 @@ describe('PresenceProvider', () => {
     expect(updatePresenceMock).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps selected presence alive with heartbeat updates until deselected', async () => {
+  it('does not write heartbeat updates for selected presence', async () => {
     vi.useFakeTimers();
 
     render(
@@ -319,7 +319,7 @@ describe('PresenceProvider', () => {
       vi.advanceTimersByTime(31_000);
     });
 
-    expect(updatePresenceMock.mock.calls.length).toBe(callsAfterSelect + 3);
+    expect(updatePresenceMock.mock.calls.length).toBe(callsAfterSelect);
 
     fireEvent.click(screen.getByRole('button', { name: 'Capture' }));
     expect(screen.getByTestId('interaction').textContent).toBe('selected');

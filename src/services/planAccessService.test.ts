@@ -7,11 +7,11 @@ const orderByKeyMock = vi.fn();
 const queryMock = vi.fn();
 const refMock = vi.fn();
 
-vi.mock('../config/firebase', () => ({
+vi.mock('../config/supabase', () => ({
   database: {},
 }));
 
-vi.mock('firebase/database', () => ({
+vi.mock('../lib/supabaseRealtimeDatabase', () => ({
   ref: (...args: unknown[]) => refMock(...args),
   get: (...args: unknown[]) => getMock(...args),
   set: vi.fn(),
@@ -27,7 +27,7 @@ import {
   getUserOwnedPlans,
   getUserSharedPlans,
 } from './planAccessService';
-import { STALE_DATABASE_RULES_MESSAGE } from './firebaseErrorUtils';
+import { STALE_DATABASE_RULES_MESSAGE } from './backendErrorUtils';
 
 function buildSnapshot(value: unknown) {
   return {

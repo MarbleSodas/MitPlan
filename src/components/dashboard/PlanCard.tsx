@@ -4,7 +4,6 @@ import { usePlan } from '../../contexts/PlanContext';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../services/userService';
-import { updatePlanFieldsWithOrigin } from '../../services/realtimePlanService';
 import { bosses } from '../../data/bosses/bossData';
 import { canAdminPlan } from '../../utils/permissions/planPermissions';
 import SharePlanModal from '../collaboration/SharePlanModal';
@@ -12,9 +11,24 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import ActionMenu from '@/components/ui/action-menu';
+import StatusBadge from '@/components/ui/status-badge';
+import { getPlanAbilityModeLabel } from '../../utils/abilities/abilityModeUtils';
 
-const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanChanged }) => {
-  const { deletePlanById, duplicatePlanById, exportPlanById } = usePlan();
+const PlanCard = ({
+  plan,
+  onEdit,
+  isSharedPlan = false,
+  isMostRecent = false,
+  onPlanDeleted,
+  onPlanChanged,
+}) => {
+  const {
+    deletePlanById,
+    duplicatePlanById,
+    exportPlanById,
+    updateExistingPlan,
+  } = usePlan();
   const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -42,7 +56,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
   const canRenamePlan = canAdmin;
   const canDuplicatePlan = plan.shareMode !== 'view';
   const canExportPlan = plan.shareMode !== 'view';
-  const primaryActionLabel = plan.shareMode === 'view' ? 'View' : 'Edit';
+  const primaryActionLabel = isMostRecent ? 'Continue planning' : 'Open';
   const sharingStatusLabel = canAdmin
     ? 'Owner'
     : plan.shareMode === 'edit'
@@ -102,12 +116,11 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
     plan.name = trimmedName;
 
     try {
-      const currentUserId = user?.uid;
-      if (!currentUserId) {
+      if (!user?.uid) {
         throw new Error('User not authenticated');
       }
 
-      await updatePlanFieldsWithOrigin(plan.id, { name: trimmedName }, currentUserId, null);
+      await updateExistingPlan(plan.id, { name: trimmedName });
       onPlanChanged?.();
 
       setIsEditingName(false);
@@ -228,13 +241,14 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
 
   return (
     <>
-      <Card className="flex h-full flex-col overflow-hidden hover:border-primary/30 hover:shadow-md">
+      <Card className="flex h-full flex-col hover:border-primary/30 hover:shadow-md">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
               {isEditingName ? (
                 <div className="flex gap-2">
                   <Input
+                    aria-label="Plan name"
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
                     onKeyDown={handleKeyPress}
@@ -249,6 +263,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
                     onClick={handleSaveEdit}
                     disabled={nameUpdateLoading || !editedName.trim()}
                     title="Save name"
+                    aria-label="Save plan name"
                     className="h-9 w-9 text-green-500 hover:text-green-600 hover:bg-green-500/10"
                   >
                     <Check size={16} />
@@ -259,6 +274,7 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
                     onClick={handleCancelEdit}
                     disabled={nameUpdateLoading}
                     title="Cancel editing"
+                    aria-label="Cancel plan name editing"
                     className="h-9 w-9 text-muted-foreground"
                   >
                     <X size={16} />
@@ -269,18 +285,6 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
                   <CardTitle className="text-xl font-semibold leading-snug truncate">
                     {plan.name}
                   </CardTitle>
-                  {canRenamePlan && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={handleStartEdit}
-                      disabled={loading}
-                      title="Edit plan name"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary shrink-0"
-                    >
-                      <Edit2 size={16} />
-                    </Button>
-                  )}
                 </div>
               )}
               <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
@@ -291,27 +295,53 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
         </CardHeader>
 
         <CardContent className="flex-1">
-          <div className="grid gap-2 border-t border-border pt-4 text-xs text-muted-foreground sm:grid-cols-2">
-            <div className="rounded-md bg-muted/45 px-3 py-2">
-              <span className="block text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Created</span>
-              <span className="font-medium text-foreground">{formatDate(plan.createdAt)}</span>
-            </div>
-            <div className="rounded-md bg-muted/45 px-3 py-2">
-              <span className="block text-[10px] font-semibold uppercase tracking-normal text-muted-foreground">Updated</span>
-              <span className="font-medium text-foreground">{formatDate(plan.updatedAt)}</span>
-            </div>
-            <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground">
-                {sharingStatusLabel}
+          <div className="space-y-3 border-t border-border pt-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <span>
+                Route <span className="font-medium text-foreground">{plan.routeId || 'default'}</span>
               </span>
-              {plan.shareMode === 'view' && plan.viewToken ? (
-                <span className="rounded-full border border-info/30 bg-info/10 px-2.5 py-1 text-xs font-medium text-info">
-                  Read-only link
+              <span>
+                Timeline <span className="font-medium text-foreground">
+                  {plan.timelineVersionLabel || 'Pinned'}
                 </span>
+              </span>
+              <span>
+                Jobs <span className="font-medium text-foreground">
+                  {getPlanAbilityModeLabel(plan.mode)}
+                </span>
+              </span>
+              <span>
+                Party <span className="font-medium text-foreground">
+                  {Object.values(plan.selectedJobs || {}).flat().length}/8
+                </span>
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <span>Last opened <span className="font-medium text-foreground">{formatDate(plan.lastAccessedAt)}</span></span>
+              <span>Updated <span className="font-medium text-foreground">{formatDate(plan.updatedAt)}</span></span>
+              {plan.lastModifiedBy && (
+                <span>Last editor <span className="font-medium text-foreground">
+                  {plan.lastModifiedBy.slice(0, 8)}
+                </span></span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge tone={canAdmin ? 'success' : plan.shareMode === 'view' ? 'neutral' : 'info'}>
+                {sharingStatusLabel}
+              </StatusBadge>
+              {plan.shareMode === 'view' && plan.viewToken ? (
+                <StatusBadge tone="info">
+                  Read-only link
+                </StatusBadge>
+              ) : null}
+              {plan.timelineStatus && plan.timelineStatus !== 'published' ? (
+                <StatusBadge tone="warning">
+                  {plan.timelineStatus} timeline
+                </StatusBadge>
               ) : null}
             </div>
             {isSharedPlan && (
-              <div className="sm:col-span-2 rounded-md border border-border bg-background px-3 py-2 text-center font-medium text-primary">
+              <div className="font-medium text-primary">
                 {fetchingCreator ? (
                   'Loading creator...'
                 ) : creatorDisplayName ? (
@@ -322,39 +352,30 @@ const PlanCard = ({ plan, onEdit, isSharedPlan = false, onPlanDeleted, onPlanCha
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-wrap gap-2 pt-0">
+        <CardFooter className="flex items-center gap-2 pt-0">
           <Button onClick={onEdit} disabled={loading} className="min-w-[7rem] flex-1">
             {primaryActionLabel}
           </Button>
-          {canAdmin && (
-            <Button variant="outline" onClick={handleShare} disabled={loading} className="flex-1 sm:flex-none">
-              <Share2 size={16} />
-              Share
-            </Button>
-          )}
-          {canDuplicatePlan && (
-            <Button variant="outline" onClick={handleDuplicate} disabled={loading} className="flex-1 sm:flex-none">
-              <Copy size={16} />
-              Duplicate
-            </Button>
-          )}
-          {canExportPlan && (
-            <Button variant="outline" onClick={handleExport} disabled={loading} className="flex-1 sm:flex-none">
-              <Download size={16} />
-              Export
-            </Button>
-          )}
-          {canAdmin && (
-            <Button
-              variant="ghost"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={loading}
-              title="Delete plan"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2 size={16} />
-              <span className="sm:sr-only">Delete</span>
-            </Button>
+          {(canAdmin || canRenamePlan || canDuplicatePlan || canExportPlan) && (
+            <ActionMenu
+              items={[
+                ...(canAdmin
+                  ? [{ label: 'Share', icon: Share2, onSelect: handleShare }]
+                  : []),
+                ...(canRenamePlan
+                  ? [{ label: 'Rename', icon: Edit2, onSelect: handleStartEdit }]
+                  : []),
+                ...(canDuplicatePlan
+                  ? [{ label: 'Duplicate', icon: Copy, onSelect: handleDuplicate }]
+                  : []),
+                ...(canExportPlan
+                  ? [{ label: 'Export', icon: Download, onSelect: handleExport }]
+                  : []),
+                ...(canAdmin
+                  ? [{ label: 'Delete', icon: Trash2, onSelect: () => setShowDeleteConfirm(true), destructive: true }]
+                  : []),
+              ]}
+            />
           )}
         </CardFooter>
       </Card>

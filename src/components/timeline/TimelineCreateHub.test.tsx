@@ -18,8 +18,8 @@ const {
   navigateMock: vi.fn(),
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+vi.mock('@/lib/navigation', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/navigation')>('@/lib/navigation');
   return {
     ...actual,
     useNavigate: () => navigateMock,
@@ -119,38 +119,36 @@ describe('TimelineCreateHub', () => {
     cleanup();
   });
 
-  it('shows owned, collected, official, and public community entry points', async () => {
+  it('organizes owned, plan, and community entry points into focused tabs', async () => {
     render(<TimelineCreateHub />);
 
     await waitFor(() => {
-      expect(screen.getByText('Continue Your Timelines')).toBeTruthy();
+      expect(screen.getByText('Owned Timeline')).toBeTruthy();
     });
 
-    expect(screen.getByText('Owned Timeline')).toBeTruthy();
-    expect(screen.getByText('Start From a Plan Timeline')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: 'From a plan' }));
     expect(screen.getByText('Private Plan')).toBeTruthy();
-    expect(screen.getByText('Start From an Official Timeline')).toBeTruthy();
     expect(screen.getByText('Official Lala')).toBeTruthy();
-    expect(screen.getByText('Duplicate a Community Timeline')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Browse' }));
     expect(screen.getByText('Collected Timeline')).toBeTruthy();
-    expect(screen.getByText('Browse Public Community Timelines')).toBeTruthy();
     expect(screen.getByText('Public Lala')).toBeTruthy();
   });
 
   it('routes plan and timeline seeds into the shared community editor flow', async () => {
     render(<TimelineCreateHub />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Private Plan')).toBeTruthy();
-    });
+    await screen.findByText('Owned Timeline');
+    fireEvent.click(screen.getByRole('tab', { name: 'From a plan' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start From Plan Timeline' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start from plan' }));
     expect(navigateMock).toHaveBeenCalledWith('/timeline/create/editor?sourcePlanId=plan-1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Into Editor' }));
-    expect(navigateMock).toHaveBeenCalledWith('/timeline/create/editor?sourceTimelineId=collected-timeline');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Use as Starting Point' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use as starting point' }));
     expect(navigateMock).toHaveBeenCalledWith('/timeline/create/editor?sourceTimelineId=official-lala');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Browse' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Start from this' })[0]!);
+    expect(navigateMock).toHaveBeenCalledWith('/timeline/create/editor?sourceTimelineId=collected-timeline');
   });
 });

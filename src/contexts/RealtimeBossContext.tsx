@@ -5,12 +5,30 @@ import { processMultiHitTankBusters } from '../utils';
 import { getTimeline } from '../services/timelineService';
 import { normalizeTimelineRecord } from '../utils/timeline/adaptiveTimelineUtils';
 import { getPlanTimelineLayout } from '../utils/timeline/planTimelineLayoutUtils';
-import { resolvePhaseAwareTimeline } from '../utils/timeline/phaseOverrideResolver';
+import { composePlanTimeline } from '../utils/timeline/composePlanTimeline';
+import type { BossAction, ResolvedTimelinePhaseSummary, TimelinePhase } from '../types';
 
 // import { autoAssignTankBusterMitigations, shouldTriggerAutoAssignment } from '../utils/mitigation/autoAssignmentUtils';
 
 // Create the context
-const RealtimeBossContext = createContext();
+type RealtimeBossContextState = {
+  currentBossId: string;
+  setCurrentBossId: (bossId: string) => void;
+  currentBossActions: BossAction[];
+  sortedBossActions: BossAction[];
+  selectedBossAction: BossAction | null;
+  toggleBossActionSelection: (action: BossAction) => void;
+  clearSelectedBossAction: () => void;
+  currentBossLevel: number;
+  currentBaseHealth: { party: number; tank: number };
+  bossMetadata: Record<string, unknown> | null;
+  timelinePhases: TimelinePhase[];
+  timelinePhaseSummaries: ResolvedTimelinePhaseSummary[];
+  skippedBossActions: BossAction[];
+  hasPhaseOverrideSupport: boolean;
+};
+
+const RealtimeBossContext = createContext<RealtimeBossContextState | null>(null);
 
 // Create a provider component
 export const RealtimeBossProvider = ({ children }) => {
@@ -43,7 +61,7 @@ export const RealtimeBossProvider = ({ children }) => {
 
     const loadActions = async () => {
       if (planTimelineLayout) {
-        const timeline = normalizeTimelineRecord(planTimelineLayout);
+        const timeline = normalizeTimelineRecord(planTimelineLayout as any);
 
         if (!isCancelled) {
           setSourceTimeline(timeline);
@@ -136,10 +154,11 @@ export const RealtimeBossProvider = ({ children }) => {
       return;
     }
 
-    const resolvedTimeline = resolvePhaseAwareTimeline(
-      sourceTimeline,
-      realtimePlan?.phaseOverrides || {}
-    );
+    const resolvedTimeline = composePlanTimeline(sourceTimeline, {
+      routeId: realtimePlan?.routeId,
+      phaseOverrides: realtimePlan?.phaseOverrides || {},
+      customEvents: realtimePlan?.customEvents || [],
+    });
     const processedActions = processMultiHitTankBusters(resolvedTimeline.actions);
 
     setCurrentBossActions(processedActions);
@@ -155,7 +174,12 @@ export const RealtimeBossProvider = ({ children }) => {
       const nextSelection = processedActions.find((action) => action.id === previousSelection.id);
       return nextSelection || null;
     });
-  }, [sourceTimeline, realtimePlan?.phaseOverrides]);
+  }, [
+    sourceTimeline,
+    realtimePlan?.customEvents,
+    realtimePlan?.phaseOverrides,
+    realtimePlan?.routeId,
+  ]);
 
   // Get current boss level - prefer timeline metadata, fallback to hardcoded boss data
   const currentBossLevel = useMemo(() => {
@@ -258,7 +282,7 @@ export const RealtimeBossProvider = ({ children }) => {
 // Create a custom hook for using the boss context
 export const useRealtimeBossContext = () => {
   const context = useContext(RealtimeBossContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useRealtimeBossContext must be used within a RealtimeBossProvider');
   }
   return context;

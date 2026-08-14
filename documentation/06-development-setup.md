@@ -1,96 +1,63 @@
-# MitPlan Development Setup Guide
+# Development setup
 
 ## Prerequisites
 
-- Node.js 18 or newer
 - Bun 1.3 or newer
-- Git
-- A Firebase project if you want realtime auth/database features locally
+- Node.js 22 or newer for ecosystem tooling
+- Supabase CLI
+- Docker Desktop only when running the complete local Supabase stack
 
-## Install
+## Install and configure
 
 ```bash
-git clone https://github.com/MarbleSodas/MitPlan.git
-cd MitPlan
 bun install
+cp .env.example .env.local
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-Verify Bun:
+Fill in `.env.local` with the project URL and browser-safe publishable key. The secret key is used only by server-side operational scripts and must never use a `NEXT_PUBLIC_` name.
 
-```bash
-bun --version
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-## Environment Setup
-
-Create `.env.local` in the repo root:
-
-```bash
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_DATABASE_URL=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
-VITE_FIREBASE_MEASUREMENT_ID=...
-```
-
-MitPlan expects a Firebase web app plus Realtime Database/Auth enabled in that project.
-
-## Daily Commands
+Start the Next.js development server:
 
 ```bash
 bun run dev
-bun run build
-bun run preview
-bun run lint
-bun run typecheck
-bun run test
-bun run test:run
-bun run test:coverage
 ```
 
-## Testing Setup
+The app is available at `http://localhost:3000`.
 
-Vitest is configured directly in [`vite.config.js`](/Users/eugene/Documents/Github/MitPlan/vite.config.js):
+## Database workflow
 
-```ts
-test: {
-  environment: 'jsdom',
-  globals: true,
-  setupFiles: ['./src/tests/setup.ts'],
-}
-```
-
-Shared test setup responsibilities:
-
-- Firebase config mocking
-- `matchMedia` and `ResizeObserver` shims
-- `localStorage` shim/reset
-- Testing Library cleanup
-- `@testing-library/jest-dom` matchers
-
-If a test needs app-level providers, prefer reusing this shared setup and only mock the domain-specific edges required by that suite.
-
-## Firebase Notes
-
-- Realtime Database rules are stored in [`database.rules.json`](/Users/eugene/Documents/Github/MitPlan/database.rules.json).
-- Project config for deploy targets is in [`firebase.json`](/Users/eugene/Documents/Github/MitPlan/firebase.json) and [`.firebaserc`](/Users/eugene/Documents/Github/MitPlan/.firebaserc).
-- Validate rules before or after deploy with:
+Remote migration status and deployment:
 
 ```bash
 bun run verify:database
+bun run deploy:database
 ```
 
-- Deploy database rules with:
+For fully local backend development, run `supabase start` with Docker, obtain local credentials from `supabase status`, and use those values in `.env.local`. Apply migrations locally with `supabase db reset`.
+
+After the normalized planning migration is present, follow the [collaborative planning cutover runbook](./10-collaborative-planning-cutover.md). Do not run the backfill concurrently with plan mutations.
+
+## Quality checks
 
 ```bash
-bun run deploy:database-rules
+bun run test:run
+bun run typecheck
+bun run lint
+bun run build
+bun run security:check
 ```
 
-## Codebase Notes
+Vitest configuration lives in `vitest.config.ts`; shared DOM setup is in `src/tests/setup.ts`. Next.js production compilation is configured in `next.config.ts`.
 
-- Route screens in [`src/App.tsx`](/Users/eugene/Documents/Github/MitPlan/src/App.tsx) are lazy-loaded, so route tests should wait for resolved UI rather than assuming sync renders.
-- The repo is Bun-first; `bun.lock` is the canonical lockfile.
-- Shared utilities and contexts contain a mix of legacy and newer patterns, so prefer focused refactors over large folder migrations unless a task explicitly calls for reorganization.
+## Firebase migration prerequisites
+
+The cutover script is intentionally separate from normal development. It requires authenticated `firebase` and `supabase` CLI sessions. Run the dry-run command first and review user mappings, missing target accounts, orphan IDs, document totals, and collection counts before using `--apply`. Apply mode creates missing email-address Auth accounts before rewriting document identities; newly created password accounts require password recovery.
+
+Exports are temporary by default because they include sensitive authentication and user data. Do not commit them.

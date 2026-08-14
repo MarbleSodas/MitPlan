@@ -5,8 +5,14 @@ import { useRealtimeBossContext } from './RealtimeBossContext';
 import { bosses } from '../data';
 import { baseHealthValues } from '../data/bosses/bossData';
 import { getPlanTimelineLayout } from '../utils/timeline/planTimelineLayoutUtils';
+import type { FilterContextValue } from '../types/contexts';
 
-const FilterContext = createContext();
+type FilterContextState = FilterContextValue & {
+  showOnlyMyAbilities: boolean;
+  toggleMyAbilitiesFilter: () => void;
+};
+
+const FilterContext = createContext<FilterContextState | null>(null);
 
 export const FilterProvider = ({ children }) => {
   const [showAllMitigations, setShowAllMitigations] = useState(() => {
@@ -123,7 +129,7 @@ export const FilterProvider = ({ children }) => {
 
 export const useFilterContext = () => {
   const context = useContext(FilterContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useFilterContext must be used within a FilterProvider');
   }
   return context;

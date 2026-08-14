@@ -1,6 +1,12 @@
 const { chromium } = require('playwright');
 
 (async () => {
+  const email = process.env.MITPLAN_TEST_EMAIL;
+  const password = process.env.MITPLAN_TEST_PASSWORD;
+  if (!email || !password) {
+    throw new Error('Set MITPLAN_TEST_EMAIL and MITPLAN_TEST_PASSWORD before running this script.');
+  }
+
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -10,8 +16,8 @@ const { chromium } = require('playwright');
   await page.waitForTimeout(1000);
 
   // Fill in login
-  await page.fill('input[type="email"], input[placeholder*="email" i], input[id*="email" i]', 'eugenepark03@gmail.com');
-  await page.fill('input[type="password"], input[placeholder*="password" i], input[id*="password" i]', 'Epepep1434!');
+  await page.fill('input[type="email"], input[placeholder*="email" i], input[id*="email" i]', email);
+  await page.fill('input[type="password"], input[placeholder*="password" i], input[id*="password" i]', password);
   await page.click('button[type="submit"], button:has-text("Sign In")');
   await page.waitForTimeout(3000);
 

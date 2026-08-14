@@ -1,17 +1,21 @@
-import type { User } from 'firebase/auth';
 import type { ReactNode } from 'react';
+import type { AppUser } from './auth';
 import type {
   Job,
   JobId,
   Plan,
   MitigationAssignments,
   PlanTimelineLayout,
+  PlanChange,
+  PlanConnectionState,
+  PlanWorkspacePermissions,
   TankPositions,
   MitigationAbility,
   BossAction,
   PhaseOverride,
   ResolvedTimelinePhaseSummary,
   TimelinePhase,
+  UserPlanPreference,
 } from './index';
 
 export interface ChildrenProp {
@@ -19,7 +23,7 @@ export interface ChildrenProp {
 }
 
 export interface AuthContextValue {
-  user: User | null;
+  user: AppUser | null;
   loading: boolean;
   error: string | null;
   logout: () => Promise<void>;
@@ -27,7 +31,7 @@ export interface AuthContextValue {
   hasPendingMigration: boolean;
   setHasPendingMigration: (value: boolean) => void;
   checkForPendingMigration: () => Promise<void>;
-  currentUser: User | null;
+  currentUser: AppUser | null;
   displayName: string | null;
   userId: string | null;
 }
@@ -134,13 +138,20 @@ export interface RealtimePlanContextValue {
   phaseOverrides: Record<string, PhaseOverride>;
   isInitialized: boolean;
   isLoading: boolean;
+  loading: boolean;
   error: string | null;
+  connectionState: PlanConnectionState;
+  changes: PlanChange[];
+  preference: UserPlanPreference | null;
+  permissions: PlanWorkspacePermissions;
   loadPlanRealtime: (planId: string) => Promise<void>;
   updatePlanRealtime: (updates: Partial<Plan>) => Promise<void>;
   updateAssignmentsRealtime: (assignments: MitigationAssignments) => Promise<void>;
   updateTankPositionsRealtime: (positions: TankPositions) => Promise<void>;
   updatePhaseOverridesRealtime: (phaseOverrides: Record<string, PhaseOverride>) => Promise<void> | void;
   updateTimelineLayoutRealtime: (timelineLayout: PlanTimelineLayout) => Promise<void> | void;
+  undoChange: (changeId: string) => Promise<void>;
+  savePreferences: (preferences: Partial<UserPlanPreference>) => Promise<void>;
   clearRealtimePlan: () => void;
 }
 
@@ -160,6 +171,9 @@ export interface RealtimeJobContextValue {
   updateSelectedJobs: (role: string, jobs: Job[]) => void;
   toggleJobSelection: (role: string, jobId: JobId) => void;
   clearJobSelections: () => void;
+  setSelectedJobs?: (jobs: Record<string, Job[]>) => void;
+  setAllJobsInRole?: (role: string, selected: boolean) => void;
+  importJobs?: (jobs: Record<string, Job[]>) => void;
 }
 
 export interface MitigationAssignment {

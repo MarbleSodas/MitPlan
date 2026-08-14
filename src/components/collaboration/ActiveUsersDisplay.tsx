@@ -1,18 +1,10 @@
 import { useState, useMemo } from 'react';
 import { usePresenceOptional } from '../../contexts/PresenceContext';
 import { describePresenceActivity } from '../../types/presence';
+import { getPresenceColor } from '../../lib/presence-colors';
+import { cn } from '../../lib/utils';
 
-const generateUserColor = (userId) => {
-  const colors = [
-    '#3399ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
-  ];
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
+const generateUserColor = getPresenceColor;
 
 const cleanDisplayName = (name) => {
   if (!name) return name;
@@ -32,7 +24,13 @@ const getInitials = (displayName) => {
     .slice(0, 2);
 };
 
-const ActiveUsersDisplay = ({ collaborators = [], currentSessionId, maxDisplayUsers = 8 }) => {
+const ActiveUsersDisplay = ({
+  collaborators = [],
+  currentSessionId,
+  maxDisplayUsers = 8,
+  compact = false,
+  className = '',
+}) => {
   const [hoveredUser, setHoveredUser] = useState(null);
   const presence = usePresenceOptional();
 
@@ -60,20 +58,36 @@ const ActiveUsersDisplay = ({ collaborators = [], currentSessionId, maxDisplayUs
 
   if (activeCollaborators.length === 0) {
     return (
-      <div className="flex items-center gap-3 px-6 py-4 rounded-xl mb-4 shadow-sm border transition-all bg-card border-border">
-        <span className="text-sm font-semibold whitespace-nowrap text-foreground">Active Users:</span>
-        <span className="text-sm italic text-muted-foreground">No active collaborators</span>
+      <div
+        className={cn(
+          'flex items-center border border-border bg-card shadow-sm transition-all',
+          compact ? 'gap-2 rounded-lg px-2.5 py-2' : 'mb-4 gap-3 rounded-xl px-6 py-4',
+          className,
+        )}
+      >
+        <span className={cn('whitespace-nowrap font-semibold text-foreground', compact ? 'text-xs' : 'text-sm')}>
+          Active users:
+        </span>
+        <span className={cn('italic text-muted-foreground', compact ? 'text-xs' : 'text-sm')}>
+          None
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-3 px-6 py-4 rounded-xl mb-4 shadow-sm border transition-all bg-card border-border">
-      <span className="text-sm font-semibold whitespace-nowrap text-foreground">
-        Active Users ({activeCollaborators.length}):
+    <div
+      className={cn(
+        'flex min-w-0 items-center border border-border bg-card shadow-sm transition-all',
+        compact ? 'gap-2 rounded-lg px-2.5 py-2' : 'mb-4 gap-3 rounded-xl px-6 py-4',
+        className,
+      )}
+    >
+      <span className={cn('whitespace-nowrap font-semibold text-foreground', compact ? 'text-xs' : 'text-sm')}>
+        {compact ? `${activeCollaborators.length} active` : `Active Users (${activeCollaborators.length}):`}
       </span>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className={cn('flex min-w-0 items-center', compact ? '-space-x-1.5' : 'flex-wrap gap-2')}>
         {displayedUsers.map((user) => {
           const bg = generateUserColor(user.userId);
           const isHovered = hoveredUser === user.sessionId;
@@ -81,8 +95,11 @@ const ActiveUsersDisplay = ({ collaborators = [], currentSessionId, maxDisplayUs
           return (
             <div
               key={user.sessionId}
-              className="relative w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-[0.875rem] shrink-0 cursor-pointer border-2 shadow-sm transition-transform bg-[var(--avatar-bg)] border-card"
-              style={{ '--avatar-bg': bg }}
+              className={cn(
+                'relative flex shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-card font-semibold text-white shadow-sm transition-transform',
+                compact ? 'h-7 w-7 text-[0.7rem] hover:z-10 hover:-translate-y-0.5' : 'h-9 w-9 text-[0.875rem]',
+              )}
+              style={{ backgroundColor: bg }}
               onMouseEnter={() => setHoveredUser(user.sessionId)}
               onMouseLeave={() => setHoveredUser(null)}
             >
@@ -100,7 +117,10 @@ const ActiveUsersDisplay = ({ collaborators = [], currentSessionId, maxDisplayUs
 
         {overflowCount > 0 && (
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-[0.75rem] shrink-0 border-2 shadow-sm bg-muted-foreground border-card"
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-full border-2 border-card bg-muted-foreground font-semibold text-white shadow-sm',
+              compact ? 'h-7 w-7 text-[0.65rem]' : 'h-9 w-9 text-[0.75rem]',
+            )}
           >
             +{overflowCount}
           </div>

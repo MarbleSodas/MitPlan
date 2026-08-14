@@ -1,0 +1,34 @@
+[
+  {
+    "id": "waiver-official-ketuduke",
+    "recordType": "timeline",
+    "recordId": "official-ketuduke",
+    "reviewStatus": "pending",
+    "reviewedBy": null,
+    "reason": "Criterion encounter evidence availability must be reviewed before baseline acceptance."
+  },
+  {
+    "id": "waiver-official-lala",
+    "recordType": "timeline",
+    "recordId": "official-lala",
+    "reviewStatus": "pending",
+    "reviewedBy": null,
+    "reason": "Criterion encounter evidence availability must be reviewed before baseline acceptance."
+  },
+  {
+    "id": "waiver-official-statice",
+    "recordType": "timeline",
+    "recordId": "official-statice",
+    "reviewStatus": "pending",
+    "reviewedBy": null,
+    "reason": "Criterion encounter evidence availability must be reviewed before baseline acceptance."
+  },
+  {
+    "id": "waiver-official-necron",
+    "recordType": "timeline",
+    "recordId": "official-necron",
+    "reviewStatus": "pending",
+    "reviewedBy": null,
+    "reason": "Extreme encounter mapping and public-clear evidence availability must be reviewed before baseline acceptance."
+  }
+]

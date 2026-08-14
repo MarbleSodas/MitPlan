@@ -42,8 +42,9 @@
  */
 
 import type { MitigationAbility } from '../../types';
+import abilityOverridesDocument from '../../../data/official-data/ability-overrides.json';
 
-export const mitigationAbilities: MitigationAbility[] = [
+const mitigationAbilityDefinitions: MitigationAbility[] = [
   // Tank invulnerability abilities
   {
     id: 'hallowed_ground',
@@ -1512,7 +1513,8 @@ export const mitigationAbilities: MitigationAbility[] = [
   },
   {
     id: 'fey_illumination',
-    name: 'Fey/Seraphic Illumination',
+    name: 'Fey Illumination',
+    aliases: ['Seraphic Illumination'],
     description: 'Increases healing potency by 10% and reduces magic damage taken by party members by 5% for 20s',
     levelRequirement: 40,
     levelDescriptions: {
@@ -1850,7 +1852,14 @@ export const mitigationAbilities: MitigationAbility[] = [
     forTankBusters: true,
     forRaidWide: false,
     scaleBarrierWithHealing: true,
-    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 }
+    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 },
+    provenance: [{
+      source: 'manual-override',
+      patch: '7.5',
+      url: 'https://na.finalfantasyxiv.com/jobguide/astrologian/',
+      sourceActionId: 'pve_action__32',
+      notes: 'Planner-only derived action representing Aspected Benefic while Neutral Sect is active.'
+    }]
   },
   {
     id: 'neutral_sect_helios_conjunction',
@@ -1876,7 +1885,14 @@ export const mitigationAbilities: MitigationAbility[] = [
     forTankBusters: false,
     forRaidWide: true,
     scaleBarrierWithHealing: true,
-    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 }
+    requiresActiveWindow: { abilityId: 'neutral_sect', windowDuration: 30 },
+    provenance: [{
+      source: 'manual-override',
+      patch: '7.5',
+      url: 'https://na.finalfantasyxiv.com/jobguide/astrologian/',
+      sourceActionId: 'pve_action__32',
+      notes: 'Planner-only derived action representing Helios Conjunction while Neutral Sect is active.'
+    }]
   },
 
   // ASTROLOGIAN HEALING ABILITIES
@@ -1929,7 +1945,8 @@ export const mitigationAbilities: MitigationAbility[] = [
     levelRequirement: 15,
     levelDescriptions: {
       15: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below',
-      78: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below. Maximum Charges: 2'
+      78: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below. Maximum Charges: 2',
+      98: 'Restores target\'s HP. Cure Potency: 400. Potency increases up to 900 as target\'s HP decreases, reaching max at 30% HP or below. Maximum Charges: 3'
     },
     duration: 0,
     cooldown: 40,
@@ -1937,7 +1954,12 @@ export const mitigationAbilities: MitigationAbility[] = [
       15: 40,
       78: 40
     },
-    count: 2,
+    count: 3,
+    levelCharges: {
+      15: 1,
+      78: 2,
+      98: 3
+    },
     jobs: ['AST'],
     icon: '/icons/pve/FFXIVIcons Battle(PvE)/20_AST/Essential_Dignity.png',
     type: 'healing',
@@ -2852,6 +2874,16 @@ export const mitigationAbilities: MitigationAbility[] = [
   },
 
   // SGE REGEN ABILITIES
+];
+
+const officialAbilityOverrides = (
+  abilityOverridesDocument as { overrides: Record<string, MitigationAbility> }
+).overrides;
+const definitionIds = new Set(mitigationAbilityDefinitions.map(ability => ability.id));
+
+export const mitigationAbilities: MitigationAbility[] = [
+  ...mitigationAbilityDefinitions.map(ability => officialAbilityOverrides[ability.id] || ability),
+  ...Object.values(officialAbilityOverrides).filter(ability => !definitionIds.has(ability.id)),
 ];
 
 export default mitigationAbilities;

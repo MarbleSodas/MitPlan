@@ -97,7 +97,7 @@ const TimelineSettingsDrawer = ({
                           {boss ? boss.name : tag}
                           <button
                             onClick={() => onRemoveBossTag(tag)}
-                            className="hover:bg-primary/30 rounded-full p-0.5 ml-1"
+                            className="hover:bg-primary/30 rounded-full p-0.5 ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           >
                             <X size={14} />
                           </button>
@@ -152,7 +152,7 @@ const TimelineSettingsDrawer = ({
                           <button
                             key={`${suggestion.id}-${index}`}
                             onClick={() => onSelectTagSuggestion(suggestion.id)}
-                            className="w-full px-3 py-2 text-left hover:bg-accent transition-colors flex items-center justify-between text-sm"
+                            className="w-full px-3 py-2 text-left hover:bg-accent transition-colors flex items-center justify-between text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           >
                             <span className="flex items-center gap-2">
                               {boss && <span>{boss.icon}</span>}

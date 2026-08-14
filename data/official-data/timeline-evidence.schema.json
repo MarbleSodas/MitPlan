@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mitplan.app/schemas/timeline-evidence.schema.json",
+  "title": "MitPlan official timeline evidence manifests",
+  "type": "object",
+  "required": ["schemaVersion", "gamePatch", "timelines"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "gamePatch": { "type": "string" },
+    "timelines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timelineId", "bossId", "evidence", "sourceHashes", "validation", "waivers"],
+        "properties": {
+          "timelineId": { "type": "string", "pattern": "^official-" },
+          "bossId": { "type": "string" },
+          "encounterCode": { "type": ["string", "null"] },
+          "evidence": {
+            "type": "object",
+            "required": [
+              "sampleCount",
+              "distinctPublicClearCount",
+              "reportRevisions",
+              "reportRevisionCount",
+              "evidenceHash",
+              "eventCount",
+              "supportRatios",
+              "timingSpreadSeconds",
+              "damageDistribution"
+            ]
+          },
+          "sourceHashes": { "type": "object" },
+          "validation": { "type": "object" },
+          "waivers": { "type": "array" }
+        }
+      }
+    }
+  }
+}

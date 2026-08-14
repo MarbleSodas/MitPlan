@@ -167,7 +167,7 @@ docs/add-troubleshooting-guide
 
 # Refactoring
 refactor/simplify-mitigation-context
-refactor/optimize-firebase-queries
+refactor/optimize-supabase-queries
 ```
 
 ### Commit Messages
@@ -183,7 +183,7 @@ docs(readme): update installation instructions
 style(components): improve button hover states
 refactor(contexts): simplify state management
 test(utils): add cooldown manager tests
-chore(deps): update firebase dependencies
+chore(deps): update supabase dependencies
 ```
 
 ### Pull Request Process
@@ -267,7 +267,7 @@ it('should update mitigation assignments when job selection changes', () => {
   // Test implementation
 });
 
-// Test Firebase integration
+// Test Supabase integration
 it('should sync changes across multiple users in real-time', () => {
   // Test implementation
 });
@@ -320,15 +320,15 @@ const handleClick = useCallback(() => {
 }, [dependency]);
 ```
 
-### Firebase Performance
+### Supabase Performance
 ```javascript
-// Batch Firebase operations
+// Batch Supabase operations
 const batch = {};
 batch[`plans/${planId}/data/selectedJobs`] = selectedJobs;
 batch[`plans/${planId}/data/assignments`] = assignments;
 await update(ref(database), batch);
 
-// Use appropriate Firebase queries
+// Use appropriate Supabase queries
 // Avoid downloading unnecessary data
 const jobsRef = ref(database, `plans/${planId}/data/selectedJobs`);
 ```
@@ -338,15 +338,15 @@ const jobsRef = ref(database, `plans/${planId}/data/selectedJobs`);
 ### Environment Variables
 ```javascript
 // Never commit sensitive data
-// Use VITE_ prefix for client-side variables
+// Only browser-safe values may use the NEXT_PUBLIC_ prefix
 // Validate environment variables on startup
 
 const requiredEnvVars = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_PROJECT_ID'
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY'
 ];
 
-const missingVars = requiredEnvVars.filter(envVar => !import.meta.env[envVar]);
+const missingVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 if (missingVars.length > 0) {
   throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
 }

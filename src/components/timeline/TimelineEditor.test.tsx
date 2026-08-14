@@ -25,8 +25,8 @@ const {
   toastSuccessMock: vi.fn(),
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+vi.mock('@/lib/navigation', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/navigation')>('@/lib/navigation');
   return {
     ...actual,
     useNavigate: () => navigateMock,

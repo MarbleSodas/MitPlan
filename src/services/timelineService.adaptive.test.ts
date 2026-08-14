@@ -10,11 +10,11 @@ const refMock = vi.fn();
 const setMock = vi.fn();
 const updateMock = vi.fn();
 
-vi.mock('../config/firebase', () => ({
+vi.mock('../config/supabase', () => ({
   database: {},
 }));
 
-vi.mock('firebase/database', () => ({
+vi.mock('../lib/supabaseRealtimeDatabase', () => ({
   ref: (...args: unknown[]) => refMock(...args),
   push: (...args: unknown[]) => pushMock(...args),
   set: (...args: unknown[]) => setMock(...args),
@@ -108,7 +108,7 @@ describe('timelineService adaptive reads', () => {
     expect(timeline.actions.every((action) => !('events' in action))).toBe(true);
   });
 
-  it('returns local official timelines without querying Firebase', async () => {
+  it('returns local official timelines without querying Supabase', async () => {
     const timeline = await getTimeline('official-the-tyrant-m11s');
 
     expect(getMock).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ describe('timelineService adaptive reads', () => {
     expect(timeline.format).toBe('adaptive_damage');
   });
 
-  it('returns the new local official M9S timeline without querying Firebase', async () => {
+  it('returns the new local official M9S timeline without querying Supabase', async () => {
     const timeline = await getTimeline('official-vamp-fatale-m9s');
 
     expect(getMock).not.toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe('timelineService adaptive reads', () => {
     expect(timeline.phases?.length).toBeGreaterThan(1);
   });
 
-  it('returns the new local official M12S timeline without querying Firebase', async () => {
+  it('returns the new local official M12S timeline without querying Supabase', async () => {
     const timeline = await getTimeline('official-lindwurm-m12s');
 
     expect(getMock).not.toHaveBeenCalled();
@@ -140,7 +140,7 @@ describe('timelineService adaptive reads', () => {
     expect(timeline.phases?.length).toBeGreaterThan(3);
   });
 
-  it('returns the new local official M12S Part 2 timeline without querying Firebase', async () => {
+  it('returns the new local official M12S Part 2 timeline without querying Supabase', async () => {
     const timeline = await getTimeline('official-lindwurm-ii-m12s');
 
     expect(getMock).not.toHaveBeenCalled();

@@ -7,11 +7,11 @@ const setMock = vi.fn();
 const updateMock = vi.fn();
 const getTimelineMock = vi.fn();
 
-vi.mock('../config/firebase', () => ({
+vi.mock('../config/supabase', () => ({
   database: {},
 }));
 
-vi.mock('firebase/database', () => ({
+vi.mock('../lib/supabaseRealtimeDatabase', () => ({
   ref: (...args: unknown[]) => refMock(...args),
   push: (...args: unknown[]) => pushMock(...args),
   set: (...args: unknown[]) => setMock(...args),

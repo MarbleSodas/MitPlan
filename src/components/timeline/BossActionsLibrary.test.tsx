@@ -43,4 +43,12 @@ describe('BossActionsLibrary', () => {
     });
     expect(selectedAction && 'time' in selectedAction).toBe(false);
   });
+
+  it('limits the visible library to 50 templates and paginates the rest', () => {
+    render(<BossActionsLibrary onSelectAction={onSelectAction} />);
+
+    expect(screen.getByRole('navigation', { name: 'Template pages' })).toBeTruthy();
+    expect(screen.getByText(/Page 1 of/)).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /set time/i })).toHaveLength(50);
+  });
 });

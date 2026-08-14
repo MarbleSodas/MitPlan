@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRealtimeJobContext } from './RealtimeJobContext';
 import { useRealtimePlan } from './RealtimePlanContext';
+import type { TankPositionContextValue } from '../types/contexts';
 
 // Create the context
-const TankPositionContext = createContext();
+const TankPositionContext = createContext<TankPositionContextValue | null>(null);
 
 /**
  * Provider component for managing tank positions
@@ -39,10 +40,10 @@ export const TankPositionProvider = ({ children }) => {
     }
   }, [realtimeTankPositions, isInitialized]);
 
-  // Helper function to sync tank positions to Firebase
+  // Helper function to sync tank positions to Supabase
   const syncTankPositions = useCallback((newPositions) => {
     if (isInitialized && updateTankPositionsRealtime) {
-      console.log('[TankPositionContext] Syncing tank positions to Firebase:', newPositions);
+      console.log('[TankPositionContext] Syncing tank positions to Supabase:', newPositions);
       updateTankPositionsRealtime(newPositions);
     }
   }, [isInitialized, updateTankPositionsRealtime]);
@@ -112,7 +113,7 @@ export const TankPositionProvider = ({ children }) => {
       return prev;
     });
 
-    // Sync the updated positions to Firebase after state update (outside of setState)
+    // Sync the updated positions to Supabase after state update (outside of setState)
     if (newPositionsToSync) {
       syncTankPositions(newPositionsToSync);
     }
@@ -191,7 +192,7 @@ export const TankPositionProvider = ({ children }) => {
         }, 0);
       }
 
-      // Sync the updated positions to Firebase
+      // Sync the updated positions to Supabase
       syncTankPositions(newPositions);
 
       return newPositions;
@@ -233,7 +234,7 @@ export const TankPositionProvider = ({ children }) => {
         }, 0);
       }
 
-      // Sync the updated positions to Firebase
+      // Sync the updated positions to Supabase
       syncTankPositions(newPositions);
 
       return newPositions;

@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Check, Copy, RotateCw, Share2 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { Check, Copy, RotateCw, Share2, UserPlus, XCircle } from 'lucide-react';
 import {
-  enablePlanShareView,
-  getShareableEditLink,
-  getShareableViewLink,
-  makePlanPublic,
-  revokePlanShareView,
-  rotatePlanShareViewToken,
-} from '../../services/realtimePlanService';
+  createPlanInvite,
+  createPlanShareLink,
+  revokePlanInvites,
+  revokePlanShareLinks,
+} from '../../services/normalizedPlanService';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -22,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-const copyToClipboard = async (value) => {
+const copyToClipboard = async (value: string) => {
   try {
     await navigator.clipboard.writeText(value);
   } catch {
@@ -36,163 +33,95 @@ const copyToClipboard = async (value) => {
 };
 
 const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
-  const { user } = useAuth();
   const [copiedKey, setCopiedKey] = useState('');
-  const [isPublicEditEnabled, setIsPublicEditEnabled] = useState(plan?.isPublic === true);
-  const [shareState, setShareState] = useState({
-    viewToken: plan?.shareSettings?.viewToken || null,
-    viewEnabled: plan?.shareSettings?.viewEnabled === true,
-  });
+  const [viewUrl, setViewUrl] = useState('');
+  const [inviteUrl, setInviteUrl] = useState('');
   const [workingAction, setWorkingAction] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isOpen || !plan) {
-      return;
-    }
-
+    if (!isOpen) return;
     setCopiedKey('');
     setError('');
-    setIsPublicEditEnabled(plan.isPublic === true);
-    setShareState({
-      viewToken: plan?.shareSettings?.viewToken || null,
-      viewEnabled: plan?.shareSettings?.viewEnabled === true,
-    });
-  }, [isOpen, plan]);
+    // Capability tokens are shown only when created. They are never stored
+    // in plaintext or rehydrated into the owner's browser.
+    setViewUrl('');
+    setInviteUrl('');
+  }, [isOpen, plan?.id]);
 
-  const editUrl = useMemo(() => (plan ? getShareableEditLink(plan.id) : ''), [plan]);
-  const viewUrl = useMemo(() => (
-    shareState.viewToken && shareState.viewEnabled ? getShareableViewLink(shareState.viewToken) : ''
-  ), [shareState.viewEnabled, shareState.viewToken]);
-
-  const markCopied = async (value, key, successMessage) => {
-    if (!value) {
-      return;
-    }
-
+  const markCopied = async (value: string, key: string, message: string) => {
+    if (!value) return;
     await copyToClipboard(value);
     setCopiedKey(key);
-    setTimeout(() => setCopiedKey((currentKey) => (currentKey === key ? '' : currentKey)), 2000);
-    toast.success(successMessage);
+    window.setTimeout(() => {
+      setCopiedKey((current) => current === key ? '' : current);
+    }, 2_000);
+    toast.success(message);
   };
 
-  const handleEnablePublicEdit = async () => {
-    if (!plan || !user?.uid) {
-      return;
-    }
-
-    setWorkingAction('enable-public-edit');
+  const createViewLink = async () => {
+    if (!plan?.id) return;
+    setWorkingAction('view');
     setError('');
-
     try {
-      await makePlanPublic(plan.id, true, user.uid);
-      setIsPublicEditEnabled(true);
+      const result = await createPlanShareLink(plan.id);
+      setViewUrl(`${window.location.origin}/plan/view/${result.token}`);
       onPlanChanged?.();
-      toast.success('Public edit link enabled');
-    } catch (enableError) {
-      console.error('Failed to enable public edit sharing:', enableError);
-      setError(enableError instanceof Error ? enableError.message : 'Failed to enable public edit sharing.');
+      toast.success('Anonymous view link created');
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Could not create view link.');
     } finally {
       setWorkingAction('');
     }
   };
 
-  const handleDisablePublicEdit = async () => {
-    if (!plan || !user?.uid) {
-      return;
-    }
-
-    setWorkingAction('disable-public-edit');
+  const revokeViewLinks = async () => {
+    if (!plan?.id) return;
+    setWorkingAction('revoke');
     setError('');
-
     try {
-      await makePlanPublic(plan.id, false, user.uid);
-      setIsPublicEditEnabled(false);
+      await revokePlanShareLinks(plan.id);
+      setViewUrl('');
       onPlanChanged?.();
-      toast.success('Public edit link disabled');
-    } catch (disableError) {
-      console.error('Failed to disable public edit sharing:', disableError);
-      setError(disableError instanceof Error ? disableError.message : 'Failed to disable public edit sharing.');
+      toast.success('Anonymous view links revoked');
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Could not revoke view links.');
     } finally {
       setWorkingAction('');
     }
   };
 
-  const handleEnableViewLink = async () => {
-    if (!plan || !user?.uid) {
-      return;
-    }
-
-    setWorkingAction('enable-view');
+  const createEditInvite = async () => {
+    if (!plan?.id) return;
+    setWorkingAction('invite');
     setError('');
-
     try {
-      const result = await enablePlanShareView(plan.id, user.uid);
-      setShareState({
-        viewToken: result.viewToken,
-        viewEnabled: true,
-      });
-      onPlanChanged?.();
-      toast.success('Snapshot link enabled');
-    } catch (enableError) {
-      console.error('Failed to enable snapshot link:', enableError);
-      setError(enableError instanceof Error ? enableError.message : 'Failed to enable the snapshot link.');
+      const result = await createPlanInvite(plan.id, 'EDITOR');
+      setInviteUrl(`${window.location.origin}/plan/invite/${result.token}`);
+      toast.success('Authenticated editor invite created');
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Could not create invite.');
     } finally {
       setWorkingAction('');
     }
   };
 
-  const handleRotateViewLink = async () => {
-    if (!plan || !user?.uid) {
-      return;
-    }
-
-    setWorkingAction('rotate-view');
+  const revokeEditInvites = async () => {
+    if (!plan?.id) return;
+    setWorkingAction('revoke-invites');
     setError('');
-
     try {
-      const result = await rotatePlanShareViewToken(plan.id, user.uid);
-      setShareState({
-        viewToken: result.viewToken,
-        viewEnabled: true,
-      });
-      onPlanChanged?.();
-      toast.success('Snapshot link regenerated');
-    } catch (rotateError) {
-      console.error('Failed to regenerate snapshot link:', rotateError);
-      setError(rotateError instanceof Error ? rotateError.message : 'Failed to regenerate the snapshot link.');
+      await revokePlanInvites(plan.id);
+      setInviteUrl('');
+      toast.success('Outstanding editor invites revoked');
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Could not revoke invites.');
     } finally {
       setWorkingAction('');
     }
   };
 
-  const handleDisableViewLink = async () => {
-    if (!plan || !user?.uid) {
-      return;
-    }
-
-    setWorkingAction('disable-view');
-    setError('');
-
-    try {
-      await revokePlanShareView(plan.id, user.uid);
-      setShareState((currentState) => ({
-        ...currentState,
-        viewEnabled: false,
-      }));
-      onPlanChanged?.();
-      toast.success('Snapshot link disabled');
-    } catch (disableError) {
-      console.error('Failed to disable snapshot link:', disableError);
-      setError(disableError instanceof Error ? disableError.message : 'Failed to disable the snapshot link.');
-    } finally {
-      setWorkingAction('');
-    }
-  };
-
-  if (!plan) {
-    return null;
-  }
+  if (!plan) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -200,114 +129,94 @@ const SharePlanModal = ({ isOpen, onClose, onPlanChanged, plan }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="text-primary" size={22} />
-            Share Plan
+            Share plan
           </DialogTitle>
           <DialogDescription>
-            Share "{plan.name}" with a public edit link for signed-in users and a frozen printable snapshot for viewers.
+            Invite signed-in editors to the private workspace, or create a refresh-only anonymous view link.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <section className="rounded-lg border border-border bg-muted/25 p-4">
-            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-base font-semibold">Public Edit Link</h3>
-              {!isPublicEditEnabled ? (
-                <Button onClick={handleEnablePublicEdit} disabled={workingAction === 'enable-public-edit'}>
-                  {workingAction === 'enable-public-edit' ? 'Enabling...' : 'Enable Edit Link'}
-                </Button>
-              ) : null}
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">Editor invite</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  The recipient must sign in before redeeming this revocable, one-time token.
+                </p>
+              </div>
+              <Button onClick={createEditInvite} disabled={workingAction === 'invite'}>
+                <UserPlus className="h-4 w-4" />
+                {workingAction === 'invite' ? 'Creating…' : 'Create invite'}
+              </Button>
             </div>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Signed-in users who open this link can edit the original plan. It will also appear in their shared plans after first access.
-            </p>
-            {isPublicEditEnabled ? (
-              <>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input value={editUrl} readOnly onClick={(event) => event.currentTarget.select()} className="bg-background" />
-                  <Button
-                    onClick={() => markCopied(editUrl, 'edit-link', 'Public edit link copied')}
-                    className={cn('sm:w-28', copiedKey === 'edit-link' && 'bg-success text-success-foreground hover:bg-success/90')}
-                  >
-                    {copiedKey === 'edit-link' ? <Check size={16} /> : <Copy size={16} />}
-                    {copiedKey === 'edit-link' ? 'Copied' : 'Copy'}
-                  </Button>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={handleDisablePublicEdit}
-                    disabled={workingAction === 'disable-public-edit'}
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    {workingAction === 'disable-public-edit' ? 'Disabling...' : 'Disable Edit Link'}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
-                Public edit sharing is currently disabled.
+            {inviteUrl && (
+              <div className="mt-4 flex gap-2">
+                <Input value={inviteUrl} readOnly onClick={(event) => event.currentTarget.select()} />
+                <Button
+                  onClick={() => markCopied(inviteUrl, 'invite', 'Editor invite copied')}
+                  className={cn(copiedKey === 'invite' && 'bg-success text-success-foreground')}
+                >
+                  {copiedKey === 'invite' ? <Check size={16} /> : <Copy size={16} />}
+                  {copiedKey === 'invite' ? 'Copied' : 'Copy'}
+                </Button>
               </div>
             )}
+            <Button
+              variant="ghost"
+              className="mt-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={revokeEditInvites}
+              disabled={workingAction === 'revoke-invites'}
+            >
+              <XCircle className="h-4 w-4" />
+              {workingAction === 'revoke-invites' ? 'Revoking…' : 'Revoke outstanding invites'}
+            </Button>
           </section>
 
           <section className="rounded-lg border border-border bg-muted/25 p-4">
-            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-base font-semibold">Read-Only Snapshot Link</h3>
-              {!shareState.viewEnabled ? (
-                <Button onClick={handleEnableViewLink} disabled={workingAction === 'enable-view'}>
-                  {workingAction === 'enable-view' ? 'Capturing...' : 'Enable Snapshot Link'}
-                </Button>
-              ) : null}
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">Anonymous view link</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Viewers fetch the latest saved plan on refresh and never join private Realtime.
+                </p>
+              </div>
+              <Button onClick={createViewLink} disabled={workingAction === 'view'}>
+                <RotateCw className="h-4 w-4" />
+                {workingAction === 'view' ? 'Creating…' : 'Create or rotate'}
+              </Button>
             </div>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Anyone with this link can view and print a frozen snapshot of the plan. Regenerate the link to capture a newer version.
-            </p>
-            {shareState.viewEnabled && shareState.viewToken ? (
-              <>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input value={viewUrl} readOnly onClick={(event) => event.currentTarget.select()} className="bg-background" />
-                  <Button
-                    onClick={() => markCopied(viewUrl, 'view-link', 'Snapshot link copied')}
-                    className={cn('sm:w-28', copiedKey === 'view-link' && 'bg-success text-success-foreground hover:bg-success/90')}
-                  >
-                    {copiedKey === 'view-link' ? <Check size={16} /> : <Copy size={16} />}
-                    {copiedKey === 'view-link' ? 'Copied' : 'Copy'}
-                  </Button>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleRotateViewLink}
-                    disabled={workingAction === 'rotate-view'}
-                  >
-                    <RotateCw className="mr-2 h-4 w-4" />
-                    {workingAction === 'rotate-view' ? 'Regenerating...' : 'Regenerate Snapshot'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={handleDisableViewLink}
-                    disabled={workingAction === 'disable-view'}
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    {workingAction === 'disable-view' ? 'Disabling...' : 'Disable Snapshot'}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
-                Read-only snapshot sharing is currently disabled.
+            {viewUrl && (
+              <div className="mt-4 flex gap-2">
+                <Input value={viewUrl} readOnly onClick={(event) => event.currentTarget.select()} />
+                <Button
+                  onClick={() => markCopied(viewUrl, 'view', 'Anonymous view link copied')}
+                  className={cn(copiedKey === 'view' && 'bg-success text-success-foreground')}
+                >
+                  {copiedKey === 'view' ? <Check size={16} /> : <Copy size={16} />}
+                  {copiedKey === 'view' ? 'Copied' : 'Copy'}
+                </Button>
               </div>
             )}
+            <Button
+              variant="ghost"
+              className="mt-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={revokeViewLinks}
+              disabled={workingAction === 'revoke'}
+            >
+              <XCircle className="h-4 w-4" />
+              {workingAction === 'revoke' ? 'Revoking…' : 'Revoke all view links'}
+            </Button>
           </section>
 
-          {error ? (
+          {error && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
-          ) : null}
+          )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
+        <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>

@@ -7,9 +7,11 @@ import {
   isTankBusterClassification,
 } from '../../utils/boss/bossActionUtils';
 import { cn } from '@/lib/utils';
+import { SEVERITY_STYLES, getSeverityStyle } from '@/lib/severity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PresenceTarget from '../collaboration/PresenceTarget';
+import { formatTimelineDamage, formatTimelineTime } from '../../utils/timeline/timeFormat';
 
 const TimelineActionCard = ({
   action,
@@ -30,30 +32,14 @@ const TimelineActionCard = ({
     entityId: action.id,
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const getImportanceBorderColor = () => {
-    if (isTankBusterClassification(action.classification) || action.isTankBuster || action.isDualTankBuster) return 'border-l-destructive';
-    switch (action.importance) {
-      case 'critical': return 'border-l-destructive';
-      case 'high': return 'border-l-[oklch(0.795_0.184_86.047)]';
-      case 'medium': return 'border-l-[oklch(0.967_0.003_264.542)]';
-      case 'low': return 'border-l-[oklch(0.623_0.188_145.28)]';
-      default: return 'border-l-primary';
-    }
+    if (isTankBusterClassification(action.classification) || action.isTankBuster || action.isDualTankBuster) return SEVERITY_STYLES.critical.border;
+    return getSeverityStyle(action.importance).border;
   };
 
   const getImportanceBackground = () => {
-    if (isTankBusterClassification(action.classification) || action.isTankBuster || action.isDualTankBuster) return 'bg-destructive/5';
-    switch (action.importance) {
-      case 'critical': return 'bg-destructive/5';
-      case 'high': return 'bg-[oklch(0.795_0.184_86.047)]/5';
-      default: return '';
-    }
+    if (isTankBusterClassification(action.classification) || action.isTankBuster || action.isDualTankBuster) return SEVERITY_STYLES.critical.background;
+    return getSeverityStyle(action.importance).background;
   };
 
   const handleTimeKeyDown = (e) => {
@@ -91,12 +77,14 @@ const TimelineActionCard = ({
       >
         <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-1 gap-3">
-            <div
+            <button
+              type="button"
               {...dragHandleProps}
-              className="mt-0.5 flex h-9 w-9 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
+              className="mt-0.5 flex h-11 w-11 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:cursor-grabbing"
+              aria-label={`Reorder ${action.name}`}
             >
               <GripVertical size={16} />
-            </div>
+            </button>
 
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -116,7 +104,8 @@ const TimelineActionCard = ({
                       onBlur={handleTimeBlur}
                       autoFocus
                       variant="compact"
-                      className="h-9 w-20 rounded-lg font-mono text-center"
+                      className="h-11 w-24 rounded-lg font-mono text-center"
+                      aria-label={`Time for ${action.name} in seconds`}
                       min={0}
                     />
                   ) : (
@@ -125,10 +114,10 @@ const TimelineActionCard = ({
                         setTempTime(action.time);
                         setIsEditingTime(true);
                       }}
-                      className="inline-flex h-9 min-w-[4.75rem] items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-semibold font-mono text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+                      className="inline-flex h-11 min-w-[5.75rem] items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-semibold font-mono text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title="Click to edit time"
                     >
-                      {formatTime(action.time)}
+                      {formatTimelineTime(action.time)}
                     </button>
                   )}
                 </PresenceTarget>
@@ -144,27 +133,27 @@ const TimelineActionCard = ({
                   {classificationLabel}
                 </span>
                 {(action.isTankBuster || isTankBusterClassification(action.classification)) && (
-                  <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-500">
+                  <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[11px] font-medium text-destructive">
                     TB
                   </span>
                 )}
                 {action.isDualTankBuster && (
-                  <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[11px] font-medium text-orange-500">
+                  <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[11px] font-medium text-destructive">
                     Dual
                   </span>
                 )}
                 {isSmallPartyClassification(action.classification) && (
-                  <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[11px] font-medium text-blue-500">
+                  <span className="rounded-full bg-info/15 px-2 py-0.5 text-[11px] font-medium text-info">
                     4P
                   </span>
                 )}
                 {action.isMultiHit && (
-                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-500">
+                  <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
                     {action.hitCount && action.hitCount > 1 ? `${action.hitCount}x` : 'Multi'}
                   </span>
                 )}
                 {action.hasDot && (
-                  <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[11px] font-medium text-cyan-500">
+                  <span className="rounded-full bg-info/15 px-2 py-0.5 text-[11px] font-medium text-info">
                     DoT
                   </span>
                 )}
@@ -173,15 +162,15 @@ const TimelineActionCard = ({
                     className={cn(
                       'rounded-full px-2 py-0.5 text-[11px] font-medium',
                       action.damageType === 'magical'
-                        ? 'bg-purple-500/15 text-purple-500'
-                        : 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
+                        ? 'bg-role-caster/15 text-role-caster'
+                        : 'bg-damage-physical/15 text-damage-physical'
                     )}
                   >
                     {action.damageType === 'magical' ? 'Magical' : 'Physical'}
                   </span>
                 )}
                 {action.isCustom && (
-                  <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[11px] font-medium text-blue-500">
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
                     Custom
                   </span>
                 )}
@@ -194,8 +183,8 @@ const TimelineActionCard = ({
               variant="ghost"
               size="icon"
               onClick={() => onToggleExpand(action.id)}
-              className="h-9 w-9 rounded-lg"
-              title={isExpanded ? 'Collapse' : 'Expand'}
+              className="h-11 w-11 rounded-lg"
+              aria-label={isExpanded ? `Collapse ${action.name}` : `Expand ${action.name}`}
             >
               {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </Button>
@@ -203,8 +192,8 @@ const TimelineActionCard = ({
               variant="ghost"
               size="icon"
               onClick={() => onEdit(action)}
-              className="h-9 w-9 rounded-lg hover:text-primary"
-              title="Edit action"
+              className="h-11 w-11 rounded-lg hover:text-primary"
+              aria-label={`Edit ${action.name}`}
             >
               <Edit2 size={16} />
             </Button>
@@ -212,8 +201,8 @@ const TimelineActionCard = ({
               variant="ghost"
               size="icon"
               onClick={() => onDelete(action.id)}
-              className="h-9 w-9 rounded-lg hover:text-destructive hover:bg-destructive/10"
-              title="Delete action"
+              className="h-11 w-11 rounded-lg hover:text-destructive hover:bg-destructive/10"
+              aria-label={`Delete ${action.name}`}
             >
               <Trash2 size={16} />
             </Button>
@@ -226,7 +215,9 @@ const TimelineActionCard = ({
             {action.unmitigatedDamage && (
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Damage:</span>
-                <span className="font-medium">{action.unmitigatedDamage}</span>
+                <span className="font-medium">
+                  {formatTimelineDamage(action.unmitigatedDamage)} unmitigated damage
+                </span>
               </div>
             )}
 
@@ -234,10 +225,7 @@ const TimelineActionCard = ({
               <span className="text-muted-foreground">Importance:</span>
               <span className={cn(
                 "capitalize font-medium",
-                action.importance === 'critical' && 'text-red-400',
-                action.importance === 'high' && 'text-orange-400',
-                action.importance === 'medium' && 'text-amber-400',
-                action.importance === 'low' && 'text-green-400'
+                getSeverityStyle(action.importance).text
               )}>
                 {action.importance || 'medium'}
               </span>

@@ -1,36 +1,34 @@
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { formatTimelineTime } from '../../utils/timeline/timeFormat';
+import { SEVERITY_STYLES, type Severity } from '@/lib/severity';
 
 const MARKER_LANE_GAP = 16;
 const MIN_MARKER_SEPARATION_PERCENT = 3;
 
-const getMarkerSeverity = (marker) => {
+const getMarkerSeverity = (marker): Severity => {
   if (marker.isTankBuster) {
     return 'critical';
   }
 
-  return marker.importance || 'medium';
+  return (marker.importance as Severity) || 'medium';
 };
 
 const MARKER_STYLES = {
   critical: {
-    dot: 'bg-red-500',
-    chip: 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300',
+    ...SEVERITY_STYLES.critical,
     label: 'Critical / TB',
   },
   high: {
-    dot: 'bg-orange-500',
-    chip: 'border-orange-500/20 bg-orange-500/10 text-orange-700 dark:text-orange-300',
+    ...SEVERITY_STYLES.high,
     label: 'High',
   },
   medium: {
-    dot: 'bg-amber-500',
-    chip: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    ...SEVERITY_STYLES.medium,
     label: 'Medium',
   },
   low: {
-    dot: 'bg-green-500',
-    chip: 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-300',
+    ...SEVERITY_STYLES.low,
     label: 'Low',
   },
 };
@@ -108,12 +106,6 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
     };
   }, [actions]);
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const axisTop = 16 + ((laneCount - 1) * MARKER_LANE_GAP) + 20;
   const chartHeight = axisTop + 34;
   const legendItems = ['critical', 'high', 'medium', 'low'];
@@ -145,7 +137,7 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
             {actions.length} action{actions.length !== 1 ? 's' : ''}
           </span>
           <span className="rounded-full border border-border bg-background px-2.5 py-1 text-muted-foreground">
-            {formatTime(maxTime)} total
+            {formatTimelineTime(maxTime)} total
           </span>
         </div>
       </div>
@@ -181,11 +173,11 @@ const CompactTimelineVisualization = ({ actions, onActionClick, selectedActionId
                   key={marker.id}
                   type="button"
                   onClick={() => onActionClick?.(marker.id)}
-                  aria-label={`Jump to ${marker.name} at ${formatTime(marker.time)}`}
+                  aria-label={`Jump to ${marker.name} at ${formatTimelineTime(marker.time)}`}
                   aria-pressed={selectedActionId === marker.id}
-                  className="absolute -translate-x-1/2 text-left transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+                  className="absolute w-11 -translate-x-1/2 text-left transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
                   style={{ left: `${marker.position}%`, top: `${markerTop}px` }}
-                  title={`${formatTime(marker.time)} - ${marker.name}`}
+                  title={`${formatTimelineTime(marker.time)} - ${marker.name}`}
                 >
                   <span className="flex flex-col items-center">
                     <span

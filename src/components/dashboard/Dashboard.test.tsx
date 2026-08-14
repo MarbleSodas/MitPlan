@@ -4,28 +4,23 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Dashboard from './Dashboard';
-import { STALE_DATABASE_RULES_MESSAGE } from '../../services/firebaseErrorUtils';
 
 const {
-  getCategorizedUserPlansMock,
-  getUserTimelinesMock,
+  listNormalizedPlansMock,
   loadUserPlansMock,
   logoutMock,
   navigateMock,
   setHasPendingMigrationMock,
-  setUserContextMock,
 } = vi.hoisted(() => ({
-  getCategorizedUserPlansMock: vi.fn(),
-  getUserTimelinesMock: vi.fn(),
+  listNormalizedPlansMock: vi.fn(),
   loadUserPlansMock: vi.fn(),
   logoutMock: vi.fn(),
   navigateMock: vi.fn(),
   setHasPendingMigrationMock: vi.fn(),
-  setUserContextMock: vi.fn(),
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+vi.mock('@/lib/navigation', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/navigation')>('@/lib/navigation');
   return {
     ...actual,
     useNavigate: () => navigateMock,
@@ -47,16 +42,8 @@ vi.mock('../../contexts/PlanContext', () => ({
   }),
 }));
 
-vi.mock('../../services/unifiedPlanService', () => ({
-  default: {
-    setUserContext: (...args: unknown[]) => setUserContextMock(...args),
-    getCategorizedUserPlans: (...args: unknown[]) => getCategorizedUserPlansMock(...args),
-    createPlan: vi.fn(),
-  },
-}));
-
-vi.mock('../../services/timelineService', () => ({
-  getUserTimelines: (...args: unknown[]) => getUserTimelinesMock(...args),
+vi.mock('../../services/normalizedPlanService', () => ({
+  listNormalizedPlans: (...args: unknown[]) => listNormalizedPlansMock(...args),
 }));
 
 vi.mock('./PlanCard', () => ({
@@ -99,20 +86,19 @@ vi.mock('@/components/ui/button', () => ({
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   SheetContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  SheetDescription: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  SheetHeader: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  SheetTitle: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   SheetTrigger: ({ children }: { children?: ReactNode }) => <>{children}</>,
 }));
 
 describe('Dashboard', () => {
   beforeEach(() => {
-    getCategorizedUserPlansMock.mockReset();
-    getUserTimelinesMock.mockReset();
+    listNormalizedPlansMock.mockReset();
     loadUserPlansMock.mockReset();
     logoutMock.mockReset();
     navigateMock.mockReset();
     setHasPendingMigrationMock.mockReset();
-    setUserContextMock.mockReset();
-
-    getUserTimelinesMock.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -120,11 +106,10 @@ describe('Dashboard', () => {
   });
 
   it('renders owned and shared plans instead of the empty dashboard state', async () => {
-    getCategorizedUserPlansMock.mockResolvedValue({
-      ownedPlans: [{ id: 'owned-1', name: 'Owned Plan' }],
-      sharedPlans: [{ id: 'shared-1', name: 'Shared Plan' }],
-      totalPlans: 2,
-    });
+    listNormalizedPlansMock.mockResolvedValue([
+      { id: 'owned-1', name: 'Owned Plan', accessLevel: 'owner' },
+      { id: 'shared-1', name: 'Shared Plan', accessLevel: 'editor' },
+    ]);
 
     render(<Dashboard />);
 
@@ -136,42 +121,38 @@ describe('Dashboard', () => {
     expect(screen.getByTestId('shared-plan-card').textContent).toBe('Shared Plan');
   });
 
-  it('shows the empty state only when both owned and shared plans are empty', async () => {
-    getCategorizedUserPlansMock.mockResolvedValue({
-      ownedPlans: [],
-      sharedPlans: [],
-      totalPlans: 0,
-    });
+  it('keeps plans and shared sections visible when the account is empty', async () => {
+    listNormalizedPlansMock.mockResolvedValue([]);
 
     render(<Dashboard />);
 
-    await screen.findByText('No Plans Yet');
+    await screen.findByText(/No plans yet/);
+    expect(screen.getByRole('heading', { name: 'Plans' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Shared' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Timelines' })).toBeTruthy();
     expect(screen.queryByTestId('owned-plan-card')).toBeNull();
     expect(screen.queryByTestId('shared-plan-card')).toBeNull();
   });
 
-  it('shows a configuration-focused error instead of the empty state when /plans queries are denied', async () => {
-    getCategorizedUserPlansMock.mockRejectedValue(new Error('permission_denied at /plans'));
+  it('shows the plan RPC error instead of the empty state when access is denied', async () => {
+    listNormalizedPlansMock.mockRejectedValue(new Error('permission denied'));
 
     render(<Dashboard />);
 
     await screen.findByText('Plans Unavailable');
-    expect(screen.getAllByText(STALE_DATABASE_RULES_MESSAGE).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/permission denied/i).length).toBeGreaterThan(0);
     expect(screen.queryByText('No Plans Yet')).toBeNull();
   });
 
-  it('routes dashboard community timeline actions into the timeline hub', async () => {
-    getCategorizedUserPlansMock.mockResolvedValue({
-      ownedPlans: [{ id: 'owned-1', name: 'Owned Plan' }],
-      sharedPlans: [],
-      totalPlans: 1,
-    });
+  it('routes the separate Timelines action into the timeline hub', async () => {
+    listNormalizedPlansMock.mockResolvedValue([
+      { id: 'owned-1', name: 'Owned Plan', accessLevel: 'owner' },
+    ]);
 
     render(<Dashboard />);
 
-    await screen.findByText('Community Timelines');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open Timeline Hub' }));
+    await screen.findByText('Owned Plan');
+    fireEvent.click(screen.getByRole('button', { name: 'Timelines' }));
 
     expect(navigateMock).toHaveBeenCalledWith('/timeline/create');
   });

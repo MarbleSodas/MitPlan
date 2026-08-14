@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { getAllPublicTimelines, getAllUniqueBossTags, addToCollection, toggleLike, hasUserLiked, getCollectionTimelineIds } from '../../services/timelineService';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import PageHeader from '../layout/PageHeader';
+import ActionMenu from '../ui/action-menu';
 
 const TimelineBrowser = () => {
   const navigate = useNavigate();
@@ -79,7 +81,6 @@ const TimelineBrowser = () => {
         type: 'error',
         title: 'Failed to load timelines',
         message: 'Please try again.',
-        duration: 4000
       });
     } finally {
       setLoading(false);
@@ -98,7 +99,7 @@ const TimelineBrowser = () => {
   // Get boss info from boss data
   const getBossInfo = (bossTag) => {
     const boss = bosses.find(b => b.id === bossTag);
-    return boss || { name: bossTag, icon: '📋' };
+    return boss || { name: bossTag, icon: '' };
   };
 
   // Filter timelines based on search and selected boss tags
@@ -140,7 +141,6 @@ const TimelineBrowser = () => {
         type: 'error',
         title: 'Authentication required',
         message: 'Please sign in to add timelines to your collection.',
-        duration: 4000
       });
       return;
     }
@@ -155,7 +155,6 @@ const TimelineBrowser = () => {
         type: 'success',
         title: 'Timeline added!',
         message: 'Timeline has been added to your collection.',
-        duration: 3000
       });
     } catch (error) {
       console.error('Error adding timeline:', error);
@@ -171,7 +170,6 @@ const TimelineBrowser = () => {
         type: 'error',
         title: 'Failed to add timeline',
         message: error.message || 'Please try again.',
-        duration: 4000
       });
     } finally {
       setAddingToCollection(prev => {
@@ -194,7 +192,6 @@ const TimelineBrowser = () => {
         type: 'info',
         title: 'Login Required',
         message: 'Please log in to like timelines.',
-        duration: 3000
       });
       return;
     }
@@ -234,7 +231,6 @@ const TimelineBrowser = () => {
         type: 'error',
         title: 'Failed to update like',
         message: 'Please try again.',
-        duration: 3000
       });
     } finally {
       setLikingInProgress(prev => {
@@ -250,40 +246,27 @@ const TimelineBrowser = () => {
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/dashboard')}
-              >
+          <PageHeader
+            className="mb-0"
+            title="Browse Community Timelines"
+            description="Discover community-created timelines, collect favorites, and start your own community copy"
+            leading={
+              <Button variant="ghost" size="icon" onClick={() => navigate('/timeline/create')} aria-label="Back to timeline hub">
                 <ArrowLeft size={20} />
               </Button>
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold m-0">Browse Community Timelines</h1>
-                <p className="m-0 mt-1 max-w-2xl text-sm text-muted-foreground">
-                  Discover community-created timelines, collect favorites, and start your own community copy
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/timeline/create')}
-                className="hidden md:inline-flex"
-              >
-                Open Timeline Hub
-              </Button>
+            }
+            actions={
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setShowFilters(!showFilters)}
                 className="md:hidden"
+                aria-label={showFilters ? 'Hide filters' : 'Show filters'}
               >
                 <Filter size={20} />
               </Button>
-            </div>
-          </div>
+            }
+          />
         </div>
       </div>
 
@@ -298,7 +281,7 @@ const TimelineBrowser = () => {
               <div className="mb-6">
                 <Label className="block text-sm font-medium mb-2">Sort By</Label>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" aria-label="Sort timelines">
                     <SelectValue placeholder="Sort by..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -323,6 +306,7 @@ const TimelineBrowser = () => {
                         variant={isSelected ? 'secondary' : 'outline'}
                         onClick={() => handleToggleBossTag(tag)}
                         className={`w-full justify-start ${isSelected ? 'font-semibold border-primary' : ''}`}
+                        aria-pressed={isSelected}
                       >
                         <span className="mr-2">{bossInfo.icon}</span>
                         {bossInfo.name}
@@ -351,6 +335,7 @@ const TimelineBrowser = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
                 <Input
                   type="text"
+                  aria-label="Search community timelines"
                   placeholder="Search timelines..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -360,23 +345,28 @@ const TimelineBrowser = () => {
             </div>
 
             {/* Results Count */}
-            <div className="mb-4 text-sm text-muted-foreground">
+            <div className="mb-4 text-sm text-muted-foreground" role="status" aria-live="polite">
               Showing {filteredTimelines.length} of {timelines.length} timelines
             </div>
 
             {/* Timeline Grid */}
             {loading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
                 <p className="text-muted-foreground">Loading timelines...</p>
               </div>
             ) : filteredTimelines.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card py-12 text-center">
+              <div className="space-y-4 rounded-lg border border-dashed border-border py-12 text-center">
                 <p className="text-muted-foreground">
                   {searchTerm || selectedBossTags.length > 0
                     ? 'No timelines match your search criteria.'
                     : 'No community timelines available yet.'}
                 </p>
+                {(searchTerm || selectedBossTags.length > 0) && (
+                  <Button variant="outline" onClick={() => { setSearchTerm(''); setSelectedBossTags([]); }}>
+                    Clear filters
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
@@ -385,13 +375,13 @@ const TimelineBrowser = () => {
                   return (
                     <div
                       key={timeline.id}
-                      className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/35"
+                      className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/35"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <h3 className="text-lg font-semibold mb-1 truncate">{timeline.name}</h3>
                           {timeline.official && (
-                            <span className="inline-block px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded mb-2">
+                            <span className="inline-block px-2 py-0.5 bg-info/10 text-info text-xs rounded mb-2">
                               Official
                             </span>
                           )}
@@ -432,10 +422,12 @@ const TimelineBrowser = () => {
                             disabled={likingInProgress.has(timeline.id)}
                             className={`flex items-center gap-1.5 ${
                               likedTimelines.has(timeline.id)
-                                ? 'bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20'
-                                : 'hover:border-red-500/30 hover:text-red-500'
+                                ? 'bg-destructive/10 border-destructive/50 text-destructive hover:bg-destructive/20'
+                                : 'hover:border-destructive/30 hover:text-destructive'
                             }`}
                             title={likedTimelines.has(timeline.id) ? 'Unlike this timeline' : 'Like this timeline'}
+                            aria-label={likedTimelines.has(timeline.id) ? `Unlike ${timeline.name}` : `Like ${timeline.name}`}
+                            aria-pressed={likedTimelines.has(timeline.id)}
                           >
                             <Heart
                               size={14}
@@ -449,43 +441,30 @@ const TimelineBrowser = () => {
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
                         <Button
-                          variant="outline"
                           onClick={() => handleViewTimeline(timeline.id)}
-                          className="min-w-[7rem] flex-1"
+                          className="min-w-0 flex-1"
                         >
                           <Eye size={16} />
                           View
                         </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => navigate(`/timeline/create/editor?sourceTimelineId=${encodeURIComponent(timeline.id)}`)}
-                          className="min-w-[9rem] flex-1"
-                        >
-                          <Copy size={16} />
-                          Start From This
-                        </Button>
-                        <Button
-                          variant={timeline.official || collectionTimelineIds.has(timeline.id) ? 'outline' : 'default'}
-                          onClick={() => handleAddToCollection(timeline)}
-                          disabled={timeline.official || collectionTimelineIds.has(timeline.id) || addingToCollection.has(timeline.id)}
-                          className={`min-w-[10rem] flex-1 ${
-                            timeline.official || collectionTimelineIds.has(timeline.id)
-                              ? 'opacity-50'
-                              : ''
-                          } ${addingToCollection.has(timeline.id) ? 'opacity-70' : ''}`}
-                          title={
-                            timeline.official
-                              ? 'Official timelines cannot be added to collection'
-                              : collectionTimelineIds.has(timeline.id)
-                              ? 'Already in your collection'
-                              : 'Add to your collection'
-                          }
-                        >
-                          <Plus size={16} />
-                          {collectionTimelineIds.has(timeline.id) ? 'In Collection' : 'Save to Collection'}
-                        </Button>
+                        <ActionMenu
+                          label={`More actions for ${timeline.name}`}
+                          items={[
+                            {
+                              label: 'Start from this',
+                              icon: Copy,
+                              onSelect: () => navigate(`/timeline/create/editor?sourceTimelineId=${encodeURIComponent(timeline.id)}`),
+                            },
+                            {
+                              label: collectionTimelineIds.has(timeline.id) ? 'In collection' : 'Save to collection',
+                              icon: Plus,
+                              onSelect: () => void handleAddToCollection(timeline),
+                              disabled: timeline.official || collectionTimelineIds.has(timeline.id) || addingToCollection.has(timeline.id),
+                            },
+                          ]}
+                        />
                       </div>
                     </div>
                   );

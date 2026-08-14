@@ -1,145 +1,114 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  onValueMock,
-  unsubscribeMock,
-} = vi.hoisted(() => ({
-  onValueMock: vi.fn(),
-  unsubscribeMock: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const presenceState = { current: {} as Record<string, unknown[]> };
+  const presenceSyncListeners = new Set<() => void>();
+  const cursorListeners = new Set<(payload: Record<string, unknown>) => void>();
+  const channel = {
+    presenceState: vi.fn(() => presenceState.current),
+    track: vi.fn(async (payload) => {
+      presenceState.current = { connection: [payload] };
+      presenceSyncListeners.forEach((listener) => listener());
+    }),
+    untrack: vi.fn(async () => {
+      presenceState.current = {};
+    }),
+    send: vi.fn(async () => 'ok'),
+  };
+  const release = vi.fn(async () => {});
+  return {
+    channel,
+    cursorListeners,
+    presenceState,
+    presenceSyncListeners,
+    release,
+  };
+});
 
-vi.mock('../config/firebase', () => ({
-  database: {},
-}));
-
-vi.mock('firebase/database', () => ({
-  get: vi.fn(),
-  onDisconnect: vi.fn(() => ({ remove: vi.fn() })),
-  onValue: (...args: unknown[]) => onValueMock(...args),
-  ref: vi.fn((_database: unknown, path: string) => ({ path })),
-  remove: vi.fn(),
-  set: vi.fn(),
-  update: vi.fn(),
+vi.mock('./planRealtimeChannel', () => ({
+  acquirePlanChannel: vi.fn(() => ({
+    channel: mocks.channel,
+    ready: Promise.resolve(),
+    onStatus: vi.fn(() => () => {}),
+    onChange: vi.fn(() => () => {}),
+    onCursor: vi.fn((listener) => {
+      mocks.cursorListeners.add(listener);
+      return () => mocks.cursorListeners.delete(listener);
+    }),
+    onPresenceSync: vi.fn((listener) => {
+      mocks.presenceSyncListeners.add(listener);
+      return () => mocks.presenceSyncListeners.delete(listener);
+    }),
+    release: mocks.release,
+  })),
 }));
 
 import sessionManager from './sessionManager';
 
-function createSessionsSnapshot(
-  sessions: Array<{ sessionId: string; data: Record<string, unknown> }>
-) {
-  return {
-    exists: () => sessions.length > 0,
-    forEach: (callback: (childSnapshot: { key: string; val: () => Record<string, unknown> }) => void) => {
-      sessions.forEach((session) => {
-        callback({
-          key: session.sessionId,
-          val: () => session.data,
-        });
-      });
-    },
-  };
-}
-
-describe('sessionManager subscriptions', () => {
+describe('sessionManager Supabase Presence', () => {
   beforeEach(() => {
-    onValueMock.mockReset();
-    unsubscribeMock.mockReset();
-    onValueMock.mockReturnValue(unsubscribeMock);
+    mocks.presenceState.current = {};
+    mocks.channel.track.mockClear();
+    mocks.channel.untrack.mockClear();
+    mocks.channel.send.mockClear();
+    mocks.release.mockClear();
+    mocks.presenceSyncListeners.clear();
+    mocks.cursorListeners.clear();
   });
 
-  afterEach(() => {
-    sessionManager.cleanup();
+  afterEach(async () => {
+    await sessionManager.cleanup();
   });
 
-  it('returns the Firebase unsubscribe directly', () => {
-    const callback = vi.fn();
-
-    const unsubscribe = sessionManager.subscribeToSessions('plan-1', callback);
-    unsubscribe();
-
-    expect(onValueMock).toHaveBeenCalledTimes(1);
-    expect(unsubscribeMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('suppresses heartbeat-only collaborator churn', () => {
-    let sessionSubscriptionCallback: ((snapshot: ReturnType<typeof createSessionsSnapshot>) => void) | null = null;
-
-    onValueMock.mockImplementation((_ref: unknown, callback: (snapshot: ReturnType<typeof createSessionsSnapshot>) => void) => {
-      sessionSubscriptionCallback = callback;
-      return unsubscribeMock;
+  it('tracks a tab-scoped participant without persisting email or heartbeats', async () => {
+    await sessionManager.startSession('plan-1', 'session-1', {
+      userId: 'user-1',
+      displayName: 'User One',
     });
-
     const callback = vi.fn();
-    sessionManager.subscribeToSessions('plan-1', callback);
+    const unsubscribe = sessionManager.subscribeToSessions('plan-1', callback);
 
-    sessionSubscriptionCallback?.(
-      createSessionsSnapshot([
-        {
-          sessionId: 'session-1',
-          data: {
-            userId: 'user-1',
-            displayName: 'User One',
-            email: 'user@example.com',
-            color: '#3b82f6',
-            isActive: true,
-            lastActivity: 100,
-          },
-        },
-      ])
-    );
-
-    sessionSubscriptionCallback?.(
-      createSessionsSnapshot([
-        {
-          sessionId: 'session-1',
-          data: {
-            userId: 'user-1',
-            displayName: 'User One',
-            email: 'user@example.com',
-            color: '#3b82f6',
-            isActive: true,
-            lastActivity: 200,
-          },
-        },
-      ])
-    );
-
-    sessionSubscriptionCallback?.(
-      createSessionsSnapshot([
-        {
-          sessionId: 'session-1',
-          data: {
-            userId: 'user-1',
-            displayName: 'User One Updated',
-            email: 'user@example.com',
-            color: '#3b82f6',
-            isActive: true,
-            lastActivity: 300,
-          },
-        },
-      ])
-    );
-
-    expect(callback).toHaveBeenCalledTimes(2);
-    expect(callback).toHaveBeenNthCalledWith(1, [
-      {
+    expect(mocks.channel.track).toHaveBeenCalledTimes(1);
+    expect(mocks.channel.track.mock.calls[0][0]).not.toHaveProperty('email');
+    expect(callback).toHaveBeenLastCalledWith([
+      expect.objectContaining({
         sessionId: 'session-1',
         userId: 'user-1',
         displayName: 'User One',
-        email: 'user@example.com',
-        color: '#3b82f6',
         isActive: true,
-      },
+      }),
     ]);
-    expect(callback).toHaveBeenNthCalledWith(2, [
-      {
+
+    unsubscribe();
+    await sessionManager.endSession('session-1');
+    expect(mocks.channel.untrack).toHaveBeenCalledTimes(1);
+    expect(mocks.release).toHaveBeenCalledTimes(1);
+  });
+
+  it('broadcasts cursor updates and keeps them out of Presence payloads', async () => {
+    await sessionManager.startSession('plan-1', 'session-1', {
+      userId: 'user-1',
+      displayName: 'User One',
+    });
+    await sessionManager.updateSessionPresence('session-1', {
+      cursor: { x: 10, y: 20 },
+      viewport: { surface: 'planner', section: 'timeline', scrollTop: 900 },
+    });
+
+    expect(mocks.channel.send).toHaveBeenCalledWith({
+      type: 'broadcast',
+      event: 'cursor',
+      payload: {
         sessionId: 'session-1',
-        userId: 'user-1',
-        displayName: 'User One Updated',
-        email: 'user@example.com',
-        color: '#3b82f6',
-        isActive: true,
+        cursor: { x: 10, y: 20 },
       },
-    ]);
+    });
+    const tracked = mocks.channel.track.mock.calls.at(-1)?.[0];
+    expect(tracked).not.toHaveProperty('cursor');
+    expect(tracked.viewport).toEqual({
+      surface: 'planner',
+      panel: null,
+      section: 'timeline',
+    });
   });
 });

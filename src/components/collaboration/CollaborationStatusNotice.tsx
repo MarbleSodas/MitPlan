@@ -16,7 +16,7 @@ const CollaborationStatusNotice = ({
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 ${className}`}
+      className={`flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-warning ${className}`}
       role="status"
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />

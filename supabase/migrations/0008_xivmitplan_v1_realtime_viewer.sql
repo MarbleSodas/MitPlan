@@ -1,0 +1,3 @@
+-- Superseded by private-schema authorization helpers and policies in the
+-- normalized planning migration. Custom realtime-schema functions are no
+-- longer supported by Supabase.

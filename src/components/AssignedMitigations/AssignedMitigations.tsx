@@ -9,10 +9,11 @@ import {
   isMitigationAvailable,
   getJobIcon
 } from '../../utils';
-import { mitigationAbilities } from '../../data/abilities/mitigationAbilities.js';
+import { mitigationAbilities } from '../../data/abilities/mitigationAbilities';
 import { useFilterContext } from '../../contexts';
 import { useUserJobAssignmentOptional } from '../../contexts/UserJobAssignmentContext';
 import PresenceTarget from '../collaboration/PresenceTarget';
+import { DEFAULT_PRESENCE_COLOR } from '@/lib/presence-colors';
 import { Input } from '@/components/ui/input';
 
 
@@ -20,7 +21,7 @@ import { Input } from '@/components/ui/input';
 const RemoveButton = ({ children, className = '', ...rest }) => (
   <button
     {...rest}
-    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-red-500 text-white p-0 ml-[4px] leading-none shrink-0 relative z-[15] select-none hover:bg-red-600 active:bg-red-400 active:scale-95 ${className}`}
+    className={`cursor-pointer text-[18px] flex items-center justify-center w-6 h-6 rounded-full border-0 bg-destructive text-destructive-foreground p-0 ml-[4px] leading-none shrink-0 relative z-[15] select-none hover:bg-destructive/90 active:bg-destructive active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className}`}
   >
     {children}
   </button>
@@ -51,9 +52,9 @@ const CasterBadge = ({ children, className = '', color, jobId, ...rest }) => {
 
 const TankPositionBadge = ({ children, className = '', $position, ...rest }) => {
   const bg = $position === 'mainTank'
-    ? 'bg-blue-100 dark:bg-blue-500/30'
+    ? 'bg-primary/15'
     : $position === 'offTank'
-      ? 'bg-cyan-100 dark:bg-cyan-400/30'
+      ? 'bg-info/15'
       : 'bg-transparent';
   return (
     <span {...rest} className={`inline-flex items-center justify-center text-[9px] font-bold px-[3px] py-[1px] rounded ml-1 uppercase tracking-[0.5px] text-foreground sm:text-[7px] sm:px-[2px] sm:ml-[2px] ${bg} ${className}`}>{children}</span>
@@ -139,7 +140,7 @@ const AssignedMitigations = ({
         const isMyMitigation = myUserId && 
           displayMitigation.casterUserId === myUserId && 
           displayMitigation.casterJobId === myAssignedJob;
-        const highlightColor = isMyMitigation ? (myColor || '#3b82f6') : null;
+        const highlightColor = isMyMitigation ? (myColor || DEFAULT_PRESENCE_COLOR) : null;
         const assignmentTarget = {
           surface: 'planner' as const,
           entityType: 'assignment' as const,
@@ -157,7 +158,7 @@ const AssignedMitigations = ({
                 publishHover={true}
               >
                 <div 
-                  className={`rounded-sm px-[3px] py-[1px] text-[12px] flex items-center text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 ${isMyMitigation ? 'border-l-[3px]' : 'border-l-2 border-blue-500'} ${isMyMitigation ? 'hover:opacity-90' : 'hover:bg-blue-500/10'}`}
+                  className={`rounded-sm px-[3px] py-[1px] text-[12px] flex items-center text-foreground font-medium mb-[1px] w-full max-w-full min-w-0 ${isMyMitigation ? 'border-l-[3px]' : 'border-l-2 border-info'} ${isMyMitigation ? 'hover:opacity-90' : 'hover:bg-info/10'}`}
                   style={isMyMitigation ? { 
                     borderLeftColor: highlightColor, 
                     backgroundColor: `${highlightColor}10`
@@ -277,7 +278,7 @@ const AssignedMitigations = ({
             const isMyInheritedMitigation = myUserId && 
               mitigation.casterUserId === myUserId &&
               mitigation.casterJobId === myAssignedJob;
-            const inheritedHighlightColor = isMyInheritedMitigation ? (myColor || '#3b82f6') : null;
+            const inheritedHighlightColor = isMyInheritedMitigation ? (myColor || DEFAULT_PRESENCE_COLOR) : null;
             const inheritedTarget = {
               surface: 'planner' as const,
               entityType: 'assignment' as const,
@@ -297,7 +298,7 @@ const AssignedMitigations = ({
                     publishHover={true}
                   >
                     <div 
-                      className={`rounded-sm px-[3px] py-[1px] text-[11px] flex items-center text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic ${isMyInheritedMitigation ? 'border-l-[3px]' : 'border-l-2 border-gray-500'} hover:bg-blue-500/5`}
+                      className={`rounded-sm px-[3px] py-[1px] text-[11px] flex items-center text-muted-foreground font-medium mb-[1px] w-full max-w-full min-w-0 opacity-80 italic ${isMyInheritedMitigation ? 'border-l-[3px]' : 'border-l-2 border-border'} hover:bg-info/5`}
                       style={isMyInheritedMitigation ? { 
                         borderLeftColor: inheritedHighlightColor, 
                         backgroundColor: `${inheritedHighlightColor}08`

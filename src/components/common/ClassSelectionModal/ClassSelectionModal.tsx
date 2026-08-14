@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +20,9 @@ const ClassSelectionModal = ({ isOpen, onClose, mitigation, eligibleJobs = [], o
       <DialogContent className="max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Select Caster</DialogTitle>
+          <DialogDescription>
+            Choose which eligible party member will use {mitigation?.name || 'this mitigation'}.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="mb-3 text-foreground">

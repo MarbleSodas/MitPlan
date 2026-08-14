@@ -41,6 +41,13 @@ export const appliesToProjectionTarget = (
     return true;
   }
 
+  // Tank self-cooldowns without an explicit assignment apply to whichever
+  // tank health projection is being evaluated. Assigned cooldowns are still
+  // narrowed by tankPosition below.
+  if (mitigation.target === 'self' && !mitigation.tankPosition) {
+    return true;
+  }
+
   const tankPosition = mitigation.tankPosition;
   return tankPosition === target || tankPosition === 'shared';
 };
@@ -77,13 +84,13 @@ export const calculateHealthProjection = ({
 
   const mitigationPercentage = calculateTotalMitigation(targetMitigations, damageType, bossLevel);
   const healingReceivedMultiplier = calculateHealingReceivedMultiplier(targetMitigations, bossLevel);
+  const activeAbilityIds = mitigations
+    .map(activeMitigation => activeMitigation.id)
+    .filter((id): id is string => Boolean(id));
 
   const barrierAmount = targetMitigations
     .filter(hasBarrierEffect)
     .reduce((sum, mitigation) => {
-      const activeAbilityIds = targetMitigations
-        .map(activeMitigation => activeMitigation.id)
-        .filter((id): id is string => Boolean(id));
       const potencyModifier = (
         mitigation.scaleBarrierWithHealing ||
         mitigation.type === 'healing' ||

@@ -46,18 +46,32 @@ type BossActionItemProps = {
 
 const BossAction = ({ children, className = '', $isSelected, $importance, $hasAssignments, $time, $isTouched, ...rest }) => {
   const base = 'relative w-full min-h-0 flex flex-col mb-2 rounded-lg shadow-sm border transition-all cursor-pointer bg-card text-foreground overflow-hidden';
-  const borderSel = $isSelected ? 'border-blue-500 ring-1 ring-blue-500/10' : 'border-border';
+  const borderSel = $isSelected ? 'border-primary ring-1 ring-primary/10' : 'border-border';
   const leftBorder = $importance === 'critical'
-    ? 'border-l-4 border-l-red-500'
+    ? 'border-l-4 border-l-destructive'
     : $importance === 'high'
-      ? 'border-l-4 border-l-orange-500'
+      ? 'border-l-4 border-l-warning'
       : $importance === 'medium'
-        ? 'border-l-4 border-l-amber-500'
-        : 'border-l-4 border-l-green-500';
-  const hover = 'hover:shadow-md hover:border-blue-500';
+        ? 'border-l-4 border-l-info'
+        : 'border-l-4 border-l-success';
+  const hover = 'hover:shadow-md hover:border-primary';
+
+  const handleKeyDown = (event) => {
+    if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+      event.preventDefault();
+      rest.onClick?.(event);
+    }
+  };
 
   return (
-    <div {...rest} className={`${base} ${borderSel} ${leftBorder} ${hover} ${className}`}>
+    <div
+      {...rest}
+      role="button"
+      tabIndex={0}
+      aria-pressed={Boolean($isSelected)}
+      onKeyDown={handleKeyDown}
+      className={`${base} ${borderSel} ${leftBorder} ${hover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}
+    >
       {children}
     </div>
   );
@@ -96,7 +110,7 @@ const TextContainer = ({ children, className = '', ...rest }) => (
 const MitigationPercentage = ({ children, className = '', ...rest }) => (
   <div
     {...rest}
-    className={`inline-flex items-center justify-center bg-blue-100 dark:bg-blue-500/10 text-blue-900 dark:text-blue-100 font-bold text-sm px-2.5 py-1.5 rounded border border-blue-200 dark:border-blue-500/20 select-none ${className}`}
+    className={`inline-flex items-center justify-center bg-info/10 dark:bg-info/20 text-info font-bold text-sm px-2.5 py-1.5 rounded border border-info/20 dark:border-info/30 select-none ${className}`}
   >
     <span className="mr-1">🛡️</span> {children}
   </div>
@@ -374,7 +388,7 @@ const BossActionItem = memo(({
                       </Tooltip>
                     )}
                     {action.hasDot && (
-                      <div className="inline-flex items-center justify-center bg-cyan-100 dark:bg-cyan-500/10 text-cyan-900 dark:text-cyan-100 font-bold text-sm px-2.5 py-1.5 rounded border border-cyan-200 dark:border-cyan-500/20 select-none">
+                      <div className="inline-flex items-center justify-center bg-info/10 dark:bg-info/20 text-info font-bold text-sm px-2.5 py-1.5 rounded border border-info/20 dark:border-info/30 select-none">
                         <span className="mr-1">☣️</span> DoT
                       </div>
                     )}

@@ -1,9 +1,9 @@
 /**
  * Unified Plan Service
- * Currently routes all plan operations to Firebase-backed services.
+ * Currently routes all plan operations to Supabase-backed services.
  */
 
-import * as firebasePlanService from './realtimePlanService';
+import * as supabasePlanService from './realtimePlanService';
 import { getCategorizedUserPlans } from './planAccessService';
 
 class UnifiedPlanService {
@@ -18,13 +18,13 @@ class UnifiedPlanService {
   async createPlan(planData, userId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
     if (!effectiveUserId) {
-      throw new Error('User ID required for Firebase plan creation');
+      throw new Error('User ID required for Supabase plan creation');
     }
-    return await firebasePlanService.createPlan(effectiveUserId, planData);
+    return await supabasePlanService.createPlan(effectiveUserId, planData);
   }
 
   async getPlan(planId) {
-    return await firebasePlanService.getPlan(planId);
+    return await supabasePlanService.getPlan(planId);
   }
 
   async getPlanWithAccessTracking(planId, userId = null) {
@@ -32,30 +32,30 @@ class UnifiedPlanService {
     if (!effectiveUserId) {
       throw new Error('User ID required for access tracking');
     }
-    return await firebasePlanService.getPlanWithAccessTracking(planId, effectiveUserId);
+    return await supabasePlanService.getPlanWithAccessTracking(planId, effectiveUserId);
   }
 
   async updatePlan(planId, updates) {
     if (!this.currentUser?.uid) {
       throw new Error('User context not set. Please ensure user is authenticated.');
     }
-    return await firebasePlanService.updatePlan(planId, updates);
+    return await supabasePlanService.updatePlan(planId, updates);
   }
 
   async deletePlan(planId) {
     const userId = this.currentUser?.uid;
     if (!userId) {
-      throw new Error('User ID required for Firebase plan deletion');
+      throw new Error('User ID required for Supabase plan deletion');
     }
-    return await firebasePlanService.deletePlan(planId, userId);
+    return await supabasePlanService.deletePlan(planId, userId);
   }
 
   async getUserPlans(userId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
     if (!effectiveUserId) {
-      throw new Error('User ID required for Firebase plan retrieval');
+      throw new Error('User ID required for Supabase plan retrieval');
     }
-    return await firebasePlanService.getUserPlans(effectiveUserId);
+    return await supabasePlanService.getUserPlans(effectiveUserId);
   }
 
   async getCategorizedUserPlans() {
@@ -68,7 +68,7 @@ class UnifiedPlanService {
 
   async planExists(planId) {
     try {
-      const plan = await firebasePlanService.getPlan(planId);
+      const plan = await supabasePlanService.getPlan(planId);
       return !!plan;
     } catch {
       return false;
@@ -80,50 +80,50 @@ class UnifiedPlanService {
   }
 
   subscribeToPlan(planId, callback) {
-    return firebasePlanService.subscribeToPlan(planId, callback);
+    return supabasePlanService.subscribeToPlan(planId, callback);
   }
 
   subscribeToPlanWithOrigin(planId, callback) {
-    return firebasePlanService.subscribeToPlanWithOrigin(planId, callback);
+    return supabasePlanService.subscribeToPlanWithOrigin(planId, callback);
   }
 
   subscribeToUserPlans(userId, callback) {
-    return firebasePlanService.subscribeToUserPlans(userId, callback);
+    return supabasePlanService.subscribeToUserPlans(userId, callback);
   }
 
   async updatePlanRealtime(planId, updates, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.batchUpdatePlanRealtime(planId, updates, effectiveUserId, sessionId);
+    return await supabasePlanService.batchUpdatePlanRealtime(planId, updates, effectiveUserId, sessionId);
   }
 
   async batchUpdatePlanRealtime(planId, updates, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.batchUpdatePlanRealtime(planId, updates, effectiveUserId, sessionId);
+    return await supabasePlanService.batchUpdatePlanRealtime(planId, updates, effectiveUserId, sessionId);
   }
 
   async updatePlanAssignmentsRealtime(planId, assignments, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.updatePlanAssignmentsRealtime(planId, assignments, effectiveUserId, sessionId);
+    return await supabasePlanService.updatePlanAssignmentsRealtime(planId, assignments, effectiveUserId, sessionId);
   }
 
   async updatePlanJobsRealtime(planId, selectedJobs, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.updatePlanJobsRealtime(planId, selectedJobs, effectiveUserId, sessionId);
+    return await supabasePlanService.updatePlanJobsRealtime(planId, selectedJobs, effectiveUserId, sessionId);
   }
 
   async updatePlanTankPositionsRealtime(planId, tankPositions, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.updateTankPositionsRealtime(planId, tankPositions, effectiveUserId, sessionId);
+    return await supabasePlanService.updateTankPositionsRealtime(planId, tankPositions, effectiveUserId, sessionId);
   }
 
   async updatePlanBossRealtime(planId, bossId, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.updatePlanBossRealtime(planId, bossId, effectiveUserId, sessionId);
+    return await supabasePlanService.updatePlanBossRealtime(planId, bossId, effectiveUserId, sessionId);
   }
 
   async updatePlanTimelineLayoutRealtime(planId, timelineLayout, userId = null, sessionId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.updatePlanTimelineLayoutRealtime(
+    return await supabasePlanService.updatePlanTimelineLayoutRealtime(
       planId,
       timelineLayout,
       effectiveUserId,
@@ -133,7 +133,7 @@ class UnifiedPlanService {
 
   async importPlan(importData, planName = null, userId = null) {
     const effectiveUserId = userId || this.currentUser?.uid;
-    return await firebasePlanService.importPlan(effectiveUserId, importData, planName);
+    return await supabasePlanService.importPlan(effectiveUserId, importData, planName);
   }
 
   getStatistics() {
@@ -154,7 +154,7 @@ class UnifiedPlanService {
   }
 
   getCurrentMode() {
-    return 'firebase';
+    return 'supabase';
   }
 }
 

@@ -1,16 +1,9 @@
 import { useState } from 'react';
 import { Users, Eye, Edit3 } from 'lucide-react';
+import { getPresenceColor } from '@/lib/presence-colors';
 
 // Generate a consistent color for a user based on their ID
-const generateUserColor = (userId) => {
-  const colors = [
-    '#3399ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
-  ];
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-};
+const generateUserColor = getPresenceColor;
 
 const cleanDisplayName = (name) => {
   if (!name) return name;
@@ -42,7 +35,7 @@ const CollaboratorsList = ({ collaborators = [], currentSessionId, isReadOnly = 
     <div className="relative inline-block" data-collaborators-container>
       <button
         onClick={handleToggle}
-        className="flex items-center gap-2 rounded-lg text-sm transition px-3 py-2 border bg-card border-border text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex items-center gap-2 rounded-lg text-sm transition px-3 py-2 border bg-card border-border text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <Users size={16} />
         <span>Collaborators</span>

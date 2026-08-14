@@ -4,8 +4,8 @@ import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, X } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const LandingPage = ({ onAuthSuccess }) => {
@@ -19,7 +19,7 @@ const LandingPage = ({ onAuthSuccess }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col p-8 relative transition-colors duration-300 overflow-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background p-4 pt-20 text-foreground transition-colors duration-300 sm:p-8">
       <div 
         className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]"
         style={{
@@ -34,7 +34,7 @@ const LandingPage = ({ onAuthSuccess }) => {
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, var(--color-background) 70%)'
+          background: 'radial-gradient(ellipse at center, transparent 0%, var(--background) 70%)'
         }}
       />
 
@@ -50,11 +50,15 @@ const LandingPage = ({ onAuthSuccess }) => {
         <ThemeToggle />
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur">
-              <Menu className="h-4 w-4" />
+            <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur" aria-label="Open community links">
+              <Menu className="h-4 w-4" aria-hidden="true" />
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px]">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Community links</SheetTitle>
+              <SheetDescription>Support MitPlan or join the Discord community.</SheetDescription>
+            </SheetHeader>
             <div className="flex flex-col gap-4 mt-8">
               <KofiButton />
               <DiscordButton />
@@ -63,9 +67,9 @@ const LandingPage = ({ onAuthSuccess }) => {
         </Sheet>
       </div>
 
-      <main className="flex-1 flex items-center justify-center relative z-10 pb-16">
-        <div className="w-full max-w-[1200px] grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center px-4">
-          <section className="text-foreground space-y-6">
+      <main className="relative z-10 flex flex-1 items-center justify-center py-8 sm:pb-16">
+        <div className="grid w-full max-w-[1200px] grid-cols-1 items-center gap-8 px-0 sm:px-4 lg:grid-cols-2 lg:gap-24">
+          <section className="space-y-3 text-foreground sm:space-y-6">
             <div className="flex items-center gap-4 animate-fade-in-up opacity-0" style={{ animationDelay: '0.1s' }}>
               <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
                 M
@@ -79,12 +83,12 @@ const LandingPage = ({ onAuthSuccess }) => {
               FFXIV Mitigation Planner
             </h2>
 
-            <p className="text-base leading-relaxed text-muted-foreground max-w-[480px] animate-fade-in-up opacity-0" style={{ animationDelay: '0.3s' }}>
+            <p className="hidden max-w-[480px] text-base leading-relaxed text-muted-foreground opacity-0 animate-fade-in-up sm:block" style={{ animationDelay: '0.3s' }}>
               Plan and optimize mitigation strategies for your raid team. 
               Track cooldowns, coordinate abilities, and execute flawlessly.
             </p>
 
-            <ul className="list-none p-0 m-0 space-y-3 pt-2">
+            <ul className="m-0 hidden list-none space-y-3 p-0 pt-2 sm:block">
               {features.map((feature, index) => (
                 <li
                   key={index}
@@ -99,7 +103,7 @@ const LandingPage = ({ onAuthSuccess }) => {
             </ul>
           </section>
 
-          <section className="animate-scale-in opacity-0 lg:justify-self-end justify-self-center" style={{ animationDelay: '0.4s' }}>
+          <section className="w-full justify-self-center opacity-0 animate-scale-in lg:justify-self-end" style={{ animationDelay: '0.4s' }}>
             <AuthForm onSuccess={onAuthSuccess} />
           </section>
         </div>

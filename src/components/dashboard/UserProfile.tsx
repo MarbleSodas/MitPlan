@@ -1,33 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigation';
 import { AlertTriangle, Edit3, Trash2 } from 'lucide-react';
-import {
-  EmailAuthProvider,
-  reauthenticateWithCredential,
-  reauthenticateWithPopup,
-  updateProfile
-} from 'firebase/auth';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
-import { auth, googleProvider } from '../../config/firebase';
+import { supabase } from '../../config/supabase';
 import { deleteCurrentUserAccount } from '../../services/accountDeletionService';
+import { storeUserProfile } from '../../services/userService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { getPresenceColor } from '@/lib/presence-colors';
 
-const generateUserColor = (userId) => {
-  const colors = [
-    '#3399ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
-  ];
-  
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  return colors[Math.abs(hash) % colors.length];
-};
+const generateUserColor = getPresenceColor;
 
 const cleanDisplayName = (name) => {
   if (!name) return name;
@@ -96,13 +81,15 @@ const UserProfile = () => {
     setError('');
 
     try {
-      if (!auth.currentUser) {
+      if (!user) {
         throw new Error('User not authenticated');
       }
 
-      await updateProfile(auth.currentUser, {
-        displayName: trimmedName
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { display_name: trimmedName },
       });
+      if (updateError) throw updateError;
+      await storeUserProfile(user.uid, trimmedName, user.email);
 
       setIsEditModalOpen(false);
     } catch (err) {
@@ -129,24 +116,16 @@ const UserProfile = () => {
   const parseDeleteError = (err) => {
     const code = err?.code || '';
 
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      return 'Google reauthentication was cancelled.';
-    }
-
-    if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+    if (code === 'invalid_credentials') {
       return 'That password did not match this account.';
     }
 
-    if (code === 'auth/requires-recent-login' || code === 'functions/failed-precondition') {
+    if (code === 'reauthentication_needed') {
       return 'Please sign in again, then retry account deletion.';
     }
 
-    if (code === 'functions/unauthenticated') {
+    if (code === 'not_authenticated' || code === '42501') {
       return 'Your session expired. Please sign in again.';
-    }
-
-    if (code === 'functions/internal') {
-      return 'We could not finish deleting your account. Your account is still active, so please try again.';
     }
 
     return err?.message || 'Failed to delete account. Please try again.';
@@ -154,6 +133,7 @@ const UserProfile = () => {
 
   const handleDeleteClick = () => {
     resetDeleteForm();
+    setIsEditModalOpen(false);
     setIsDeleteDialogOpen(true);
   };
 
@@ -165,7 +145,7 @@ const UserProfile = () => {
       return;
     }
 
-    const currentUser = auth.currentUser;
+    const currentUser = user;
     if (!currentUser) {
       setDeleteError('You must be signed in to delete your account.');
       return;
@@ -181,15 +161,13 @@ const UserProfile = () => {
 
     try {
       if (requiresPasswordReauth) {
-        const credential = EmailAuthProvider.credential(currentUser.email || '', reauthPassword);
-        await reauthenticateWithCredential(currentUser, credential);
-      } else if (usesGoogleReauth) {
-        await reauthenticateWithPopup(currentUser, googleProvider);
-      } else {
-        await currentUser.getIdToken(true);
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: currentUser.email || '',
+          password: reauthPassword,
+        });
+        if (reauthError) throw reauthError;
       }
 
-      await currentUser.getIdToken(true);
       const result = await deleteCurrentUserAccount();
 
       toast.success('Account deleted', {
@@ -217,9 +195,11 @@ const UserProfile = () => {
 
   return (
     <>
-      <div 
+      <button
+        type="button"
         onClick={handleEditClick}
-        className="group flex items-center gap-3 cursor-pointer px-2 py-1 h-10 rounded-lg transition-all duration-200 bg-card border border-border hover:bg-muted hover:shadow-md hover:border-primary hover:-translate-y-0.5 active:translate-y-0"
+        aria-label={`Open account settings for ${cleanDisplayName(displayName)}`}
+        className="group flex h-11 w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-2 py-1 text-left transition-colors hover:border-primary/50 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-auto"
       >
         <div
           style={{ backgroundColor: generateUserColor(userId) }}
@@ -227,13 +207,14 @@ const UserProfile = () => {
         >
           {getInitials(displayName)}
         </div>
-        <div className="flex flex-col min-w-0 flex-1 justify-center">
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
           <span className="text-foreground font-semibold text-sm tracking-wide leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] transition-colors duration-200 group-hover:text-primary">
             {cleanDisplayName(displayName)}
           </span>
+          <span className="text-[11px] leading-tight text-muted-foreground">Account settings</span>
         </div>
-        <Edit3 className="w-[14px] h-[14px] text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:text-primary" />
-      </div>
+        <Edit3 className="h-3.5 w-3.5 text-muted-foreground opacity-70 transition-colors group-hover:text-primary" aria-hidden="true" />
+      </button>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
@@ -246,12 +227,13 @@ const UserProfile = () => {
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-4">
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-foreground">Display name</h3>
+              <Label htmlFor="account-display-name" className="mb-2 block">Display name</Label>
               <p className="mb-3 text-sm text-muted-foreground">
                 This is visible to collaborators in shared plans.
               </p>
             </div>
             <Input
+              id="account-display-name"
               type="text"
               placeholder="Enter your display name"
               value={newDisplayName}
@@ -261,7 +243,7 @@ const UserProfile = () => {
               disabled={isSubmitting}
             />
 
-            {error && <div className="text-destructive text-sm">{error}</div>}
+            {error && <div role="alert" className="text-destructive text-sm">{error}</div>}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
@@ -341,7 +323,7 @@ const UserProfile = () => {
 
             {usesGoogleReauth && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
-                You will be asked to confirm your Google account before deletion continues.
+                Your current Google-authenticated session will be used to authorize deletion.
               </div>
             )}
 
@@ -361,7 +343,7 @@ const UserProfile = () => {
               />
             </div>
 
-            {deleteError && <div className="text-sm text-destructive">{deleteError}</div>}
+            {deleteError && <div role="alert" className="text-sm text-destructive">{deleteError}</div>}
 
             <DialogFooter>
               <Button

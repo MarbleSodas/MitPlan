@@ -6,10 +6,10 @@ function BossSelector({ selectedBossId, onSelectBoss, disabled = false, disabled
 
 
   return (
-    <div className="rounded-md p-4 mb-5 shadow-md transition-colors bg-[var(--color-secondary)]">
+    <div className="rounded-md p-4 mb-5 shadow-md transition-colors bg-secondary">
       <h3 className="m-0 mb-4 pb-2 border-b border-b-border text-foreground">Select Boss</h3>
       {disabled && disabledMessage && (
-        <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-700 dark:text-blue-300">
+          <div className="mb-3 p-3 bg-info/10 border border-info/30 rounded-md text-sm text-info">
           ℹ️ {disabledMessage}
         </div>
       )}

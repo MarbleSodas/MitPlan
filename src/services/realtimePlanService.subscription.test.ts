@@ -9,11 +9,11 @@ const refMock = vi.fn();
 const unsubscribeOwnerMock = vi.fn();
 const unsubscribeLegacyMock = vi.fn();
 
-vi.mock('../config/firebase', () => ({
+vi.mock('../config/supabase', () => ({
   database: {},
 }));
 
-vi.mock('firebase/database', () => ({
+vi.mock('../lib/supabaseRealtimeDatabase', () => ({
   ref: (...args: unknown[]) => refMock(...args),
   push: vi.fn(),
   set: vi.fn(),

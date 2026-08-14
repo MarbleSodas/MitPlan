@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserTimelines } from '../../services/timelineService';
 import { Plus, Clock, Tag } from 'lucide-react';
@@ -133,7 +133,7 @@ const CustomTimelineSelectionModal = ({ onClose, onSelectTimeline }) => {
                           </span>
                         )}
                         {timeline.inCollection && !timeline.isOwned && (
-                          <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
+                          <span className="px-2 py-0.5 bg-info/10 text-info rounded text-xs">
                             Collection
                           </span>
                         )}

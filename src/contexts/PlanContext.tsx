@@ -1,13 +1,15 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { useCollaboration } from './CollaborationContext';
-import * as planService from '../services/realtimePlanService';
+import {
+  applyPlanOperation,
+  createNormalizedPlan,
+  deleteNormalizedPlan,
+  listNormalizedPlans,
+  loadPlanWorkspace,
+} from '../services/normalizedPlanService';
 import {
   getErrorMessage,
-  getDashboardPlanLoadErrorMessage,
-  isPermissionDeniedError,
-  isPlansCollectionPermissionDeniedError,
-} from '../services/firebaseErrorUtils';
+} from '../services/backendErrorUtils';
 import type { Plan } from '../types';
 import type { PlanContextValue } from '../types/contexts';
 
@@ -27,7 +29,6 @@ interface PlanProviderProps {
 
 export const PlanProvider = ({ children }: PlanProviderProps) => {
   const { user, isAuthenticated } = useAuth();
-  const { sessionId, isOwnChange, setChangeOrigin } = useCollaboration();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,24 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     }
   }, []);
 
-  // Load user plans with real-time subscription
+  // The dashboard is a durable account view. Plan-specific live updates are
+  // subscribed only after opening that plan, avoiding collection-wide fanout.
+  const loadUserPlansRealtime = useCallback(() => {
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+    void listNormalizedPlans()
+      .then((userPlans) => {
+        setPlans(userPlans);
+        setError(null);
+      })
+      .catch((err) => {
+        setPlans([]);
+        setError(getErrorMessage(err));
+      })
+      .finally(() => setLoading(false));
+  }, [user]);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       loadUserPlansRealtime();
@@ -63,50 +81,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     }
 
     return cleanupListeners;
-  }, [isAuthenticated, user, cleanupListeners]);
-
-  // Real-time user plans loading
-  const loadUserPlansRealtime = useCallback(() => {
-    if (!user) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Set up real-time listener for user plans
-      const unsubscribe = planService.subscribeToUserPlans(user.uid, (userPlans, error) => {
-        if (error) {
-          if (isPlansCollectionPermissionDeniedError(error)) {
-            setError(getDashboardPlanLoadErrorMessage(error));
-          } else if (isPermissionDeniedError(error)) {
-            setError(null);
-          } else {
-            setError(getErrorMessage(error));
-            console.error('Error loading plans:', error);
-          }
-          setPlans([]); // Set empty array to prevent further errors
-        } else {
-          setPlans(Array.isArray(userPlans) ? userPlans : []);
-          setError(null);
-        }
-        setLoading(false);
-      });
-
-      listenersRef.current.set('userPlans', unsubscribe);
-    } catch (err) {
-      if (isPlansCollectionPermissionDeniedError(err)) {
-        setError(getDashboardPlanLoadErrorMessage(err));
-        setPlans([]);
-      } else if (isPermissionDeniedError(err)) {
-        setError(null);
-        setPlans([]);
-      } else {
-        console.error('Error setting up plans listener:', err);
-        setError(getErrorMessage(err));
-      }
-      setLoading(false);
-    }
-  }, [user]);
+  }, [cleanupListeners, isAuthenticated, loadUserPlansRealtime, user]);
 
   // Legacy function for backward compatibility
   const loadUserPlans = useCallback(async () => {
@@ -116,17 +91,11 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
 
     try {
-      const userPlans = await planService.getUserPlans(user.uid);
+      const userPlans = await listNormalizedPlans();
       setPlans(Array.isArray(userPlans) ? userPlans : []);
     } catch (err) {
-      if (isPlansCollectionPermissionDeniedError(err)) {
-        setError(getDashboardPlanLoadErrorMessage(err));
-      } else if (isPermissionDeniedError(err)) {
-        setError(null);
-      } else {
-        setError(getErrorMessage(err));
-        console.error('Error loading plans:', err);
-      }
+      setError(getErrorMessage(err));
+      console.error('Error loading plans:', err);
       setPlans([]); // Set empty array to prevent further errors
     } finally {
       setLoading(false);
@@ -140,7 +109,8 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
     
     try {
-      const newPlan = await planService.createPlan(user.uid, planData);
+      const workspace = await createNormalizedPlan(planData);
+      const newPlan = workspace.plan;
       setPlans(prev => [newPlan, ...prev]);
       return newPlan;
     } catch (err) {
@@ -156,7 +126,27 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
     
     try {
-      const updatedPlan = await planService.updatePlan(planId, planData);
+      const workspace = await loadPlanWorkspace(planId);
+      const updatedWorkspace = await applyPlanOperation(
+        planId,
+        {
+          kind: 'patch_plan',
+          targetType: 'plan',
+          payload: {
+            name: planData.name,
+            description: planData.description,
+            routeId: planData.routeId,
+            selectedJobs: planData.selectedJobs,
+            tankPositions: planData.tankPositions,
+            phaseOverrides: planData.phaseOverrides,
+            timelineLayout: planData.timelineLayout || undefined,
+            healthSettings: planData.healthSettings,
+            metadata: planData,
+          },
+        },
+        workspace.revision
+      );
+      const updatedPlan = updatedWorkspace.plan;
       setPlans(prev => prev.map(plan => 
         plan.id === planId ? { ...plan, ...updatedPlan } : plan
       ));
@@ -189,7 +179,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     }
 
     try {
-      await planService.deletePlan(planId);
+      await deleteNormalizedPlan(planId);
       console.log('[PlanContext] Plan deleted successfully (optimistic)');
     } catch (err) {
       // Rollback on error: Restore previous state
@@ -209,37 +199,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
 
     try {
-      // Clean up existing plan listener
-      if (currentPlanListenerRef.current) {
-        currentPlanListenerRef.current();
-        currentPlanListenerRef.current = null;
-      }
-
-      // Set up real-time listener for the specific plan
-      const unsubscribe = planService.subscribeToPlanWithOrigin(
-        planId,
-        (plan, changeOrigin, error) => {
-          if (error) {
-            setError(getErrorMessage(error));
-            setCurrentPlan(null);
-          } else if (plan) {
-            // Only update if change didn't originate from this session
-            if (!changeOrigin || !isOwnChange(changeOrigin)) {
-              setCurrentPlan(plan);
-            }
-            setError(null);
-          } else {
-            setCurrentPlan(null);
-          }
-          setLoading(false);
-        },
-        sessionId
-      );
-
-      currentPlanListenerRef.current = unsubscribe;
-
-      // Also get initial plan data with access tracking
-      const plan = await planService.getPlanWithAccessTracking(planId);
+      const plan = (await loadPlanWorkspace(planId)).plan;
       setCurrentPlan(plan);
       return plan;
     } catch (err) {
@@ -247,7 +207,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
       setLoading(false);
       throw err;
     }
-  }, [sessionId, isOwnChange]);
+  }, []);
 
   // Legacy function for backward compatibility
   const loadPlan = useCallback(async (planId: string) => {
@@ -255,8 +215,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
 
     try {
-      // Use access tracking when loading plans
-      const plan = await planService.getPlanWithAccessTracking(planId);
+      const plan = (await loadPlanWorkspace(planId)).plan;
       setCurrentPlan(plan);
       return plan;
     } catch (err) {
@@ -274,7 +233,15 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
     
     try {
-      const duplicatedPlan = await planService.duplicatePlan(user.uid, planId, newName);
+      const source = (await loadPlanWorkspace(planId)).plan;
+      const duplicatedPlan = (await createNormalizedPlan({
+        ...source,
+        id: undefined,
+        name: newName,
+        ownerId: user.uid,
+        accessLevel: 'owner',
+        revision: 0,
+      })).plan;
       setPlans(prev => [duplicatedPlan, ...prev]);
       return duplicatedPlan;
     } catch (err) {
@@ -290,7 +257,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
     
     try {
-      const exportData = await planService.exportPlan(planId);
+      const exportData = await loadPlanWorkspace(planId);
       return exportData;
     } catch (err) {
       setError(getErrorMessage(err));
@@ -307,7 +274,12 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
     
     try {
-      const importedPlan = await planService.importPlan(user.uid, importData, planName);
+      const importedPlan = (await createNormalizedPlan({
+        ...((importData || {}) as Partial<Plan>),
+        id: undefined,
+        name: planName,
+        ownerId: user.uid,
+      })).plan;
       setPlans(prev => [importedPlan, ...prev]);
       return importedPlan;
     } catch (err) {
@@ -326,15 +298,26 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     setError(null);
 
     try {
-      // Mark change as originating from this session
-      setChangeOrigin(sessionId);
-
-      const updatedPlan = await planService.batchUpdatePlanRealtime(
+      const workspace = await loadPlanWorkspace(planId);
+      const updatedPlan = (await applyPlanOperation(
         planId,
-        updates,
-        user.uid,
-        sessionId
-      );
+        {
+          kind: 'patch_plan',
+          targetType: 'plan',
+          payload: {
+            name: updates.name,
+            description: updates.description,
+            routeId: updates.routeId,
+            selectedJobs: updates.selectedJobs,
+            tankPositions: updates.tankPositions,
+            phaseOverrides: updates.phaseOverrides,
+            timelineLayout: updates.timelineLayout || undefined,
+            healthSettings: updates.healthSettings,
+            metadata: updates,
+          },
+        },
+        workspace.revision
+      )).plan;
 
       // Update local state immediately for better UX
       setPlans(prev => prev.map(plan =>
@@ -352,7 +335,7 @@ export const PlanProvider = ({ children }: PlanProviderProps) => {
     } finally {
       setLoading(false);
     }
-  }, [user, sessionId, currentPlan, setChangeOrigin]);
+  }, [user, currentPlan]);
 
   const value = {
     plans,

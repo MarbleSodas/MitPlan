@@ -69,14 +69,14 @@ export const calculateBarrierAmount = (
       ? Math.min(hitCount, ability.stackBarrierEffect.stackCount)
       : 1;
     amount += (ability.stackBarrierEffect.initialBarrierPotency / 100) * healingPotencyPer100 * stacksUsed * healingMultiplier;
-    return amount;
+    return Math.round(amount * 1_000_000) / 1_000_000;
   }
 
   if (ability.barrierFlatPotency && ability.barrierFlatPotency > 0 && healingPotencyPer100) {
     amount += (ability.barrierFlatPotency / 100) * healingPotencyPer100 * healingMultiplier;
   }
 
-  return amount;
+  return Math.round(amount * 1_000_000) / 1_000_000;
 };
 
 export const calculateRemainingHealth = (

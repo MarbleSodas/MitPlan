@@ -1,12 +1,4 @@
-import {
-  get,
-  onDisconnect,
-  onValue,
-  ref,
-  remove,
-  set,
-} from 'firebase/database';
-import { database } from '../config/firebase';
+import sessionManager from './sessionManager';
 import type {
   CollaborationInteraction,
   CursorPresence,
@@ -17,28 +9,12 @@ import type {
 } from '../types/presence';
 import {
   EMPTY_PRESENCE_DATA,
-  PRESENCE_STALE_TIMEOUT,
   arePresenceTargetsEqual,
   createPresenceTarget,
 } from '../types/presence';
-import {
-  getPresencePath as getCollaborationPresencePath,
-  getPresenceRoot,
-} from './collaborationPaths';
-import { isPermissionDeniedError } from './firebaseErrorUtils';
-
-type FirebaseSnapshot = Awaited<ReturnType<typeof get>>;
 
 interface PresenceSubscriptionOptions {
   onError?: (error: unknown) => void;
-}
-
-function getPresencePath(roomId: string, sessionId: string): string {
-  return getCollaborationPresencePath(roomId, sessionId);
-}
-
-function getAllPresencePath(roomId: string): string {
-  return getPresenceRoot(roomId);
 }
 
 function normalizeCursor(cursor: CursorPresence | null | undefined): CursorPresence | null {
@@ -89,8 +65,7 @@ export async function updatePresence(
     return;
   }
 
-  const presenceRef = ref(database, getPresencePath(roomId, sessionId));
-  await set(presenceRef, {
+  await sessionManager.updateSessionPresence(sessionId, {
     ...normalizePresenceData(presenceData),
     lastUpdated: Date.now(),
   });
@@ -109,8 +84,13 @@ export async function clearPresence(roomId: string, sessionId: string): Promise<
     return;
   }
 
-  const presenceRef = ref(database, getPresencePath(roomId, sessionId));
-  await remove(presenceRef);
+  await sessionManager.updateSessionPresence(sessionId, {
+    activeTarget: null,
+    interaction: null,
+    cursor: null,
+    viewport: null,
+    lastUpdated: Date.now(),
+  });
 }
 
 export async function setupDisconnectHandler(roomId: string, sessionId: string): Promise<void> {
@@ -118,57 +98,31 @@ export async function setupDisconnectHandler(roomId: string, sessionId: string):
     return;
   }
 
-  const presenceRef = ref(database, getPresencePath(roomId, sessionId));
-  const disconnectRef = onDisconnect(presenceRef);
-  await disconnectRef.remove();
+  // Supabase Presence automatically removes this tab's state when its
+  // private channel leaves. No persisted disconnect sentinel is required.
 }
 
 export function subscribeToPresence(
   roomId: string,
   callback: (presenceMap: Map<string, UserPresenceData & { sessionId: string }>) => void,
-  options: PresenceSubscriptionOptions = {}
+  _options: PresenceSubscriptionOptions = {}
 ): () => void {
   if (!roomId) {
     callback(new Map());
     return () => {};
   }
 
-  const presenceRef = ref(database, getAllPresencePath(roomId));
-
-  const handleValue = (snapshot: FirebaseSnapshot) => {
+  return sessionManager.subscribeToPresence(roomId, (entries) => {
     const presenceMap = new Map<string, UserPresenceData & { sessionId: string }>();
-
-    if (snapshot.exists()) {
-      const now = Date.now();
-      const data = snapshot.val() as Record<string, Partial<UserPresenceData>>;
-
-      Object.entries(data).forEach(([sessionId, rawPresence]) => {
-        const presence = normalizePresenceData(rawPresence);
-        if (presence.lastUpdated && now - presence.lastUpdated < PRESENCE_STALE_TIMEOUT) {
-          presenceMap.set(sessionId, {
-            ...presence,
-            sessionId,
-          });
-        }
+    entries.forEach((rawPresence, sessionId) => {
+      const presence = normalizePresenceData(rawPresence as Partial<UserPresenceData>);
+      presenceMap.set(sessionId, {
+        ...presence,
+        sessionId,
       });
-    }
-
+    });
     callback(presenceMap);
-  };
-
-  const unsubscribe = onValue(
-    presenceRef,
-    handleValue as Parameters<typeof onValue>[1],
-    (error) => {
-      options.onError?.(error);
-      if (!options.onError || !isPermissionDeniedError(error)) {
-        console.error('[PresenceService] Error subscribing to presence:', error);
-      }
-      callback(new Map());
-    }
-  );
-
-  return unsubscribe;
+  });
 }
 
 export async function getPresence(roomId: string, sessionId: string): Promise<UserPresenceData | null> {
@@ -176,19 +130,10 @@ export async function getPresence(roomId: string, sessionId: string): Promise<Us
     return null;
   }
 
-  try {
-    const presenceRef = ref(database, getPresencePath(roomId, sessionId));
-    const snapshot = await get(presenceRef);
-
-    if (!snapshot.exists()) {
-      return null;
-    }
-
-    return normalizePresenceData(snapshot.val() as Partial<UserPresenceData>);
-  } catch (error) {
-    console.error('[PresenceService] Error getting presence:', error);
-    return null;
-  }
+  const presence = sessionManager.getSessionPresence(sessionId);
+  return presence
+    ? normalizePresenceData(presence as Partial<UserPresenceData>)
+    : null;
 }
 
 export async function cleanupStalePresence(roomId: string): Promise<void> {
@@ -196,30 +141,8 @@ export async function cleanupStalePresence(roomId: string): Promise<void> {
     return;
   }
 
-  try {
-    const presenceRef = ref(database, getAllPresencePath(roomId));
-    const snapshot = await get(presenceRef);
-
-    if (!snapshot.exists()) {
-      return;
-    }
-
-    const now = Date.now();
-    const data = snapshot.val() as Record<string, Partial<UserPresenceData>>;
-
-    for (const [sessionId, rawPresence] of Object.entries(data)) {
-      const presence = normalizePresenceData(rawPresence);
-      if (presence.lastUpdated && now - presence.lastUpdated >= PRESENCE_STALE_TIMEOUT) {
-        try {
-          await clearPresence(roomId, sessionId);
-        } catch (error) {
-          console.error('[PresenceService] Error clearing stale presence:', error);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('[PresenceService] Error cleaning up stale presence:', error);
-  }
+  // Presence join/leave semantics are authoritative; there are no persisted
+  // heartbeat rows or stale records to clean.
 }
 
 export function applyPresencePatch(

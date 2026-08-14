@@ -1,9 +1,9 @@
-import { auth, database } from '../config/firebase';
-import { ref, get, set } from 'firebase/database';
+import { supabase } from '../config/supabase';
+import { toAppUser } from '../types/auth';
 
 /**
  * Enhanced User Service for fetching user information
- * Handles authenticated Firebase users
+ * Handles authenticated Supabase users
  * Implements caching and multiple lookup strategies
  */
 
@@ -38,18 +38,21 @@ const getDisplayNameFromCollaboration = async (userId) => {
 };
 
 /**
- * Try to get display name from user profiles stored in Firebase
+ * Try to get display name from user profiles stored in Supabase
  * This looks up user profile data that we store when users first interact with the system
  */
 const getDisplayNameFromUserProfile = async (userId) => {
   try {
-    const userProfileRef = ref(database, `userProfiles/${userId}`);
-    const snapshot = await get(userProfileRef);
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) throw error;
 
-    if (snapshot.exists()) {
-      const profile = snapshot.val();
-      console.log('[UserService] Found display name from user profile:', profile.displayName);
-      return profile.displayName;
+    if (profile) {
+      console.log('[UserService] Found display name from user profile:', profile.display_name);
+      return profile.display_name;
     }
 
     return null;
@@ -65,15 +68,15 @@ const getDisplayNameFromUserProfile = async (userId) => {
  */
 export const storeUserProfile = async (userId, displayName, email = null) => {
   try {
-    const userProfileRef = ref(database, `userProfiles/${userId}`);
-    const profileData = {
-      displayName,
-      email: email || null,
-      lastUpdated: Date.now(),
-      lastSeen: Date.now()
-    };
-
-    await set(userProfileRef, profileData);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        display_name: displayName,
+        email: email || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+    if (error) throw error;
     console.log('[UserService] User profile stored for:', userId, displayName);
 
     // Update cache
@@ -88,8 +91,11 @@ export const storeUserProfile = async (userId, displayName, email = null) => {
  */
 export const updateUserLastSeen = async (userId) => {
   try {
-    const userProfileRef = ref(database, `userProfiles/${userId}/lastSeen`);
-    await set(userProfileRef, Date.now());
+    const { error } = await supabase
+      .from('profiles')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', userId);
+    if (error) throw error;
   } catch (error) {
     console.error('[UserService] Error updating last seen:', error);
   }
@@ -97,7 +103,7 @@ export const updateUserLastSeen = async (userId) => {
 
 /**
  * Get display name for a user by their ID
- * @param {string} userId - The user ID (Firebase UID)
+ * @param {string} userId - The user ID (Supabase Auth user ID)
  * @returns {Promise<string>} The user's display name
  */
 export const getUserDisplayName = async (userId) => {
@@ -112,7 +118,8 @@ export const getUserDisplayName = async (userId) => {
 
     let displayName = null;
 
-    const currentUser = auth.currentUser;
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = toAppUser(authData.user);
 
     if (currentUser && currentUser.uid === userId) {
       displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
@@ -210,11 +217,8 @@ export const clearUserFromCache = (userId) => {
  * @returns {string} Current user's display name
  */
 export const getCurrentUserDisplayName = () => {
-  const currentUser = auth.currentUser;
-  if (currentUser) {
-    return currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
-  }
-
+  // Callers that need fresh auth data should use getUserDisplayName. This
+  // synchronous legacy helper is retained only for API compatibility.
   return 'Unknown User';
 };
 

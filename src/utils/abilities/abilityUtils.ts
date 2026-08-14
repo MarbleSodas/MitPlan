@@ -1,4 +1,5 @@
-import type { MitigationAbility, SelectedJobs, JobId, Job } from '../../types';
+import type { MitigationAbility, SelectedJobs, JobId, Job, PlanAbilityMode } from '../../types';
+import { DEFAULT_PLAN_ABILITY_MODE, isAbilityAvailableInMode } from './abilityModeUtils';
 
 type JobsArray = Job[] | JobId[];
 
@@ -18,14 +19,27 @@ const findHighestLevel = (levelMap: Record<number, unknown>, maxLevel: number): 
   return levels.length > 0 ? levels[0]! : null;
 };
 
+export const isAbilityAssignable = (
+  ability: MitigationAbility | null | undefined
+): boolean => Boolean(ability && (ability.availability ?? 'active') === 'active');
+
 export const filterAbilitiesByLevel = (
   abilities: MitigationAbility[] | null | undefined,
   selectedJobs: SelectedJobs | null | undefined,
-  bossLevel: number
+  bossLevel: number,
+  mode: PlanAbilityMode = DEFAULT_PLAN_ABILITY_MODE
 ): MitigationAbility[] => {
   if (!abilities || !bossLevel) return [];
 
   return abilities.filter(ability => {
+    if (!isAbilityAssignable(ability)) {
+      return false;
+    }
+
+    if (!isAbilityAvailableInMode(ability, mode)) {
+      return false;
+    }
+
     if (ability.levelRequirement && ability.levelRequirement > bossLevel) {
       return false;
     }
@@ -211,17 +225,19 @@ export const filterAbilityUpgrades = (
 export const getAvailableAbilities = (
   abilities: MitigationAbility[] | null | undefined,
   selectedJobs: SelectedJobs | null | undefined,
-  bossLevel: number
+  bossLevel: number,
+  mode: PlanAbilityMode = DEFAULT_PLAN_ABILITY_MODE
 ): MitigationAbility[] => {
   if (!abilities) return [];
 
-  const levelFiltered = filterAbilitiesByLevel(abilities, selectedJobs, bossLevel);
+  const levelFiltered = filterAbilitiesByLevel(abilities, selectedJobs, bossLevel, mode);
 
   return filterAbilityUpgrades(levelFiltered, bossLevel);
 };
 
 export default {
   filterAbilitiesByLevel,
+  isAbilityAssignable,
   getAbilityDescriptionForLevel,
   getAbilityCooldownForLevel,
   getAbilityMitigationValueForLevel,

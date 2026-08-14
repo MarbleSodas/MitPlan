@@ -1,5 +1,6 @@
 export {
   filterAbilitiesByLevel,
+  isAbilityAssignable,
   getAbilityDescriptionForLevel,
   getAbilityCooldownForLevel,
   getAbilityMitigationValueForLevel,
@@ -9,7 +10,17 @@ export {
   isSelfTargetingAbilityUsableByTank,
   filterAbilityUpgrades,
   getAvailableAbilities
-} from './abilities/abilityUtils.js';
+} from './abilities/abilityUtils';
+
+export {
+  DEFAULT_PLAN_ABILITY_MODE,
+  PLAN_ABILITY_MODE_OPTIONS,
+  getAbilityModes,
+  getPlanAbilityModeLabel,
+  isAbilityAvailableInMode,
+  isJobAvailableInMode,
+  normalizePlanAbilityMode,
+} from './abilities/abilityModeUtils';
 
 export {
   findActiveMitigationsAtTime,
@@ -18,7 +29,7 @@ export {
   formatMitigation,
   generateMitigationBreakdown,
   isMitigationAvailable
-} from './mitigation/mitigationUtils.js';
+} from './mitigation/mitigationUtils';
 
 export {
   calculateDamagePercentage,
@@ -34,12 +45,12 @@ export {
   calculateHealingPotencyModifierForAbility,
   calculateHealingReceivedMultiplier,
   calculateHealthAfterHealing
-} from './health/healthBarUtils.js';
+} from './health/healthBarUtils';
 
 export {
   appliesToProjectionTarget,
   calculateHealthProjection
-} from './health/healthProjectionUtils.js';
+} from './health/healthProjectionUtils';
 
 export {
   saveToLocalStorage,
@@ -56,17 +67,17 @@ export {
   checkUrlForPlanData,
   reconstructMitigations,
   reconstructJobs
-} from './url/urlUtils.js';
+} from './url/urlUtils';
 
 export {
   BUILD_TIMESTAMP
-} from './version/versionUtils.js';
+} from './version/versionUtils';
 
 export {
   isDualTankBusterAction,
   parseUnmitigatedDamage,
   processMultiHitTankBusters
-} from './boss/bossActionUtils.js';
+} from './boss/bossActionUtils';
 
 export {
   getJobById,

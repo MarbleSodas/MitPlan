@@ -88,7 +88,7 @@ describe('PlanCard permissions', () => {
 
     expect(await screen.findByText('Created by: Owner One')).toBeTruthy();
     expect(screen.queryByTitle('Edit plan name')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
@@ -112,8 +112,9 @@ describe('PlanCard permissions', () => {
       />
     );
 
-    expect(screen.getByTitle('Edit plan name')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Rename' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Share' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeTruthy();
   });
 });

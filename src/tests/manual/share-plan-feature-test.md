@@ -5,7 +5,7 @@ This guide provides step-by-step instructions to manually test the public edit l
 ## Test Scenario: Public Edit + Frozen Snapshot Sharing
 
 ### Prerequisites
-- Firebase project configured
+- Supabase project configured
 - Two different user accounts (or one authenticated + one anonymous)
 - Development server running
 
@@ -66,7 +66,7 @@ This guide provides step-by-step instructions to manually test the public edit l
 5. **Check Creator Display Name**: Verify that the plan card shows "Created by: [User A's display name]" between the created and updated dates
 
 #### Step 8: Verify Database State
-1. Check Firebase Realtime Database
+1. Check Supabase `app_documents` table
 2. Navigate to `planShareViews/{viewToken}`
 3. Verify a sanitized frozen snapshot record exists for the shared view
 4. Verify the record includes `snapshotCreatedAt` and `sourcePlanUpdatedAt`
@@ -88,7 +88,7 @@ This guide provides step-by-step instructions to manually test the public edit l
 ✅ **Frozen Snapshot**: Existing snapshot links do not change after later plan edits
 ✅ **Shared Plans Section**: Viewed and editable shared plans appear correctly in User B's "Shared Plans" section
 ✅ **Creator Display Name**: Plan card shows "Created by: [User A's display name]"
-✅ **Database State**: Share view snapshot metadata and viewer tracking data are stored in Firebase
+✅ **Database State**: Share view snapshot metadata and viewer tracking data are stored in Supabase
 ✅ **Plan Counts**: Dashboard shows correct counts for owned vs shared plans
 
 ### Debugging
@@ -101,7 +101,7 @@ If the shared plans section is empty:
    - `[PlanAccessService] All accessible plans for user:`
    - `[PlanAccessService] Found shared plan:`
 
-2. Verify Firebase data structure:
+2. Verify Supabase document structure:
    ```
    planShareViews/
      {viewToken}/
@@ -128,9 +128,9 @@ If the creator display name is not showing:
    - `[UserService] Getting display name for user:`
    - `[UserService] Found display name from collaboration data:` (if available)
 
-2. Verify the plan has `ownerId` or `userId` field in Firebase
-3. Check that User A has a display name set in their Firebase Auth profile
-4. Note: Due to Firebase Auth security restrictions, display names for other users may show as "User" unless found in collaboration data
+2. Verify the plan has `ownerId` or `userId` field in Supabase
+3. Check that User A has a display name set in their Supabase Auth profile
+4. Note: Due to Supabase Auth security restrictions, display names for other users may show as "User" unless found in collaboration data
 5. For best results, ensure User A has been active in real-time collaboration (which stores display names)
 
 ### Common Issues
@@ -138,13 +138,13 @@ If the creator display name is not showing:
 - **Anonymous users**: Guests can view and print, but they must sign in before creating a copy
 - **Editable route denied**: Verify the plan still has `isPublic: true` and User B is authenticated
 - **Shared plans missing**: Verify `userProfiles/{userId}/accessedPlans` is populated
-- **Firebase rules**: Ensure the new rules for `/plans`, `/planShareViews`, and `/planShareViewTracking` are deployed
+- **Supabase RLS policies**: Ensure the new rules for `/plans`, `/planShareViews`, and `/planShareViewTracking` are deployed
 
 ### Expected Display Name Behavior
 
-Due to Firebase Auth security restrictions, the creator display name will show:
+Due to Supabase Auth security restrictions, the creator display name will show:
 
-1. **Current User's Plans**: Accurate display name (from Firebase Auth profile)
+1. **Current User's Plans**: Accurate display name (from Supabase Auth profile)
 2. **Other Users' Plans**:
    - "User A's Display Name" if found in collaboration data
    - "User" as fallback if no collaboration data exists

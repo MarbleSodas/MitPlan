@@ -1,15 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useState, useEffect } from 'react';
+import { useNavigate } from '@/lib/navigation';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlan } from '../../contexts/PlanContext';
-import { toast } from 'sonner';
-import { createPlanTimelineLayoutFromTimeline } from '../../utils/timeline/planTimelineLayoutUtils';
-import unifiedPlanService from '../../services/unifiedPlanService';
-import { getUserTimelines } from '../../services/timelineService';
-import { getDashboardPlanLoadErrorMessage } from '../../services/firebaseErrorUtils';
+import { listNormalizedPlans } from '../../services/normalizedPlanService';
+import { getErrorMessage } from '../../services/backendErrorUtils';
 import PlanCard from './PlanCard';
-import TimelineCard from './TimelineCard';
 import CreatePlanModal from './CreatePlanModal';
 import BossSelectionModal from './BossSelectionModal';
 import CustomTimelineSelectionModal from './CustomTimelineSelectionModal';
@@ -20,8 +16,9 @@ import ThemeToggle from '../common/ThemeToggle';
 import KofiButton from '../common/KofiButton/KofiButton';
 import DiscordButton from '../common/DiscordButton/DiscordButton';
 import Footer from '../layout/Footer';
+import PageHeader from '../layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 
 
@@ -31,6 +28,7 @@ import { Menu } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout, hasPendingMigration, setHasPendingMigration } = useAuth();
+  const userId = user?.uid;
   const { loadUserPlans } = usePlan();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBossSelectionModal, setShowBossSelectionModal] = useState(false);
@@ -43,28 +41,11 @@ const Dashboard = () => {
     sharedPlans: [],
     totalPlans: 0
   });
-  const [timelines, setTimelines] = useState([]);
-  const [timelinesLoading, setTimelinesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Set up unified plan service context and load categorized plans
-  useEffect(() => {
-    if (user) {
-      unifiedPlanService.setUserContext(user);
-      loadCategorizedPlans();
-      loadUserTimelines();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (user && hasPendingMigration) {
-      setShowMigrationModal(true);
-    }
-  }, [user, hasPendingMigration]);
-
-  const loadCategorizedPlans = async () => {
-    if (!user) {
+  const loadCategorizedPlans = useCallback(async () => {
+    if (!userId) {
       setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
       return;
     }
@@ -73,35 +54,21 @@ const Dashboard = () => {
     setError(null);
 
     try {
-      const plans = await unifiedPlanService.getCategorizedUserPlans();
-      setCategorizedPlans(plans);
+      const plans = (await listNormalizedPlans()).sort((left, right) =>
+        Number(right.lastAccessedAt || right.updatedAt || 0) -
+        Number(left.lastAccessedAt || left.updatedAt || 0)
+      );
+      const ownedPlans = plans.filter((plan) => plan.accessLevel === 'owner');
+      const sharedPlans = plans.filter((plan) => plan.accessLevel !== 'owner');
+      setCategorizedPlans({ ownedPlans, sharedPlans, totalPlans: plans.length });
     } catch (err) {
       console.error('Error loading categorized plans:', err);
-      setError(getDashboardPlanLoadErrorMessage(err));
+      setError(getErrorMessage(err));
       setCategorizedPlans({ ownedPlans: [], sharedPlans: [], totalPlans: 0 });
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadUserTimelines = async () => {
-    if (!user) {
-      setTimelines([]);
-      return;
-    }
-
-    setTimelinesLoading(true);
-
-    try {
-      const userTimelines = await getUserTimelines(user.uid);
-      setTimelines(userTimelines);
-    } catch (err) {
-      console.error('Error loading timelines:', err);
-      setTimelines([]);
-    } finally {
-      setTimelinesLoading(false);
-    }
-  };
+  }, [userId]);
 
   const handleOpenPlan = (plan) => {
     if (plan?.shareMode === 'view' && plan?.viewToken) {
@@ -116,6 +83,18 @@ const Dashboard = () => {
 
     navigate(`/plan/edit/${plan.id}`);
   };
+
+  useEffect(() => {
+    if (userId) {
+      void loadCategorizedPlans();
+    }
+  }, [loadCategorizedPlans, userId]);
+
+  useEffect(() => {
+    if (user?.uid && hasPendingMigration) {
+      setShowMigrationModal(true);
+    }
+  }, [user?.uid, hasPendingMigration]);
 
   const handleLogout = async () => {
     try {
@@ -156,42 +135,9 @@ const Dashboard = () => {
     setSelectedBossForPlan(null);
   };
 
-  const handleTimelineSelected = async (timeline) => {
-    // Close the custom timeline modal
+  const handleTimelineSelected = (timeline) => {
     setShowCustomTimelineModal(false);
-
-    // Create a new empty plan with the selected timeline
-    try {
-      const planData = {
-        name: `${timeline.name} - Plan`,
-        description: timeline.description || '',
-        bossId: timeline.bossId || null,
-        bossTags: timeline.bossTags || [],
-        assignments: {},
-        selectedJobs: {},
-        tankPositions: {
-          mainTank: null,
-          offTank: null
-        },
-        timelineLayout: createPlanTimelineLayoutFromTimeline(timeline),
-        sourceTimelineId: timeline.id,
-        sourceTimelineName: timeline.name,
-        bossMetadata: timeline.bossMetadata || null
-      };
-
-      // Use the unified plan service to create the plan
-      const newPlan = await unifiedPlanService.createPlan(planData);
-      console.log('[Dashboard] Plan created from timeline:', newPlan);
-
-      toast.success('Plan created!', { description: `Plan created from timeline "${timeline.name}"` });
-
-      // Refresh plans and navigate to the new plan
-      loadCategorizedPlans();
-      handleOpenPlan(newPlan);
-    } catch (error) {
-      console.error('Error creating plan from timeline:', error);
-      toast.error('Failed to create plan', { description: error.message || 'Please try again.' });
-    }
+    navigate(`/plan/create-from-timeline/${timeline.id}`);
   };
 
   const handleImportPlan = () => {
@@ -222,19 +168,6 @@ const Dashboard = () => {
     setShowMigrationModal(false);
   };
 
-  const handleTimelineChanged = () => {
-    loadUserTimelines(); // Refresh timelines when one is changed/deleted
-  };
-
-  const handleTimelineDeleted = (timelineId) => {
-    // Optimistic update: Remove timeline from UI immediately
-    setTimelines(prev => prev.filter(timeline => timeline.id !== timelineId));
-  };
-
-  const handleCreateTimeline = () => {
-    navigate('/timeline/create');
-  };
-
   const handlePlanChanged = () => {
     loadUserPlans(); // Keep for real-time updates
     loadCategorizedPlans(); // Refresh categorized view
@@ -253,7 +186,7 @@ const Dashboard = () => {
     return (
       <>
         <div className="max-w-[1200px] mx-auto p-8">
-          <div className="flex items-center justify-center p-16 text-[1.1rem] text-[var(--color-textSecondary)]">Loading your plans...</div>
+          <div className="flex items-center justify-center p-16 text-[1.1rem] text-muted-foreground">Loading your plans...</div>
         </div>
         <Footer />
       </>
@@ -262,45 +195,51 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="max-w-[1200px] mx-auto p-4 sm:p-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="m-0 text-xl sm:text-2xl font-semibold text-[var(--color-text)]">Mitigation Plans</h1>
-        
-        {/* Desktop: All buttons visible */}
-        <div className="hidden md:flex items-center gap-2">
-          <UserProfile />
-          <KofiButton />
-          <DiscordButton />
-          <ThemeToggle />
-          <Button variant="destructive" size="sm" onClick={handleLogout}>
-            Sign Out
-          </Button>
-        </div>
-
-        {/* Mobile: Theme toggle + Menu */}
-        <div className="flex md:hidden items-center gap-2">
-          <ThemeToggle />
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="h-9 w-9">
-                <Menu className="h-4 w-4" />
+      <div className="mx-auto max-w-[1200px] p-4 sm:p-8">
+      <PageHeader
+        title="Mitigation Plans"
+        actions={
+          <>
+            <div className="hidden items-center gap-2 md:flex">
+              <UserProfile />
+              <KofiButton />
+              <DiscordButton />
+              <ThemeToggle />
+              <Button variant="destructive" size="sm" onClick={handleLogout}>
+                Sign Out
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[280px]">
-              <div className="flex flex-col gap-4 mt-8">
-                <UserProfile />
-                <div className="border-t border-border" />
-                <KofiButton />
-                <DiscordButton />
-                <div className="border-t border-border" />
-                <Button variant="destructive" onClick={handleLogout} className="w-full">
-                  Sign Out
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
+            </div>
+
+            <div className="flex items-center gap-2 md:hidden">
+              <ThemeToggle />
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Open account menu">
+                    <Menu className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only">Open account menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px]">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Account menu</SheetTitle>
+                    <SheetDescription>Open account settings, community links, or sign out.</SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-8 flex flex-col gap-4">
+                    <UserProfile />
+                    <div className="border-t border-border" />
+                    <KofiButton />
+                    <DiscordButton />
+                    <div className="border-t border-border" />
+                    <Button variant="destructive" onClick={handleLogout} className="w-full">
+                      Sign Out
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </>
+        }
+      />
 
       {error && (
         <div className="mb-8 rounded-lg border border-destructive/25 bg-destructive/10 p-4 text-sm text-destructive">
@@ -310,10 +249,13 @@ const Dashboard = () => {
 
       <div className="mb-8 flex flex-wrap gap-3">
         <Button onClick={handleCreatePlanByBoss}>
-          Create New Plan
+          New plan
         </Button>
         <Button variant="outline" onClick={handleImportPlan}>
           Import Plan
+        </Button>
+        <Button variant="outline" onClick={() => navigate('/timeline/create')}>
+          Timelines
         </Button>
       </div>
 
@@ -324,36 +266,24 @@ const Dashboard = () => {
             {error}
           </p>
         </div>
-      ) : categorizedPlans.totalPlans === 0 ? (
-        <div className="text-center px-8 py-16 text-[var(--color-textSecondary)]">
-          <h3 className="mb-4 text-2xl text-[var(--color-text)]">No Plans Yet</h3>
-          <p className="mb-8 text-base">
-            Create your first mitigation plan to get started with optimizing your raid strategies.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button onClick={handleCreatePlanByBoss}>
-              Create Your First Plan
-            </Button>
-          </div>
-        </div>
       ) : (
         <>
           {/* My Plans Section */}
           <section className="mb-12 last:mb-0">
             <div className="mb-6 flex items-center gap-3">
-              <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">My Plans</h2>
-              <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{categorizedPlans.ownedPlans.length}</span>
+              <h2 className="m-0 text-xl font-semibold text-foreground">Plans</h2>
+              <span className="rounded-[12px] bg-muted px-3 py-1 text-sm font-semibold text-primary">{categorizedPlans.ownedPlans.length}</span>
             </div>
 
             {categorizedPlans.ownedPlans.length === 0 ? (
-              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
+              <div className="text-center rounded-lg border border-dashed border-border bg-card p-8 text-muted-foreground">
                 <p className="m-0 text-sm italic">
-                  You haven't created any plans yet. Click "Create New Plan" to get started!
+                  No plans yet. Create one to start mapping party mitigations to an encounter.
                 </p>
               </div>
             ) : (
               <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
-                {categorizedPlans.ownedPlans.map((plan) => (
+                {categorizedPlans.ownedPlans.map((plan, index) => (
                   <PlanCard
                     key={plan.id}
                     plan={plan}
@@ -361,6 +291,7 @@ const Dashboard = () => {
                     onPlanChanged={handlePlanChanged}
                     onPlanDeleted={handlePlanDeleted}
                     isSharedPlan={false}
+                    isMostRecent={index === 0}
                   />
                 ))}
               </div>
@@ -371,14 +302,14 @@ const Dashboard = () => {
           {user && (
             <section className="mb-12 last:mb-0">
               <div className="mb-6 flex items-center gap-3">
-                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Shared Plans</h2>
-                <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{categorizedPlans.sharedPlans.length}</span>
+                <h2 className="m-0 text-xl font-semibold text-foreground">Shared</h2>
+                <span className="rounded-[12px] bg-muted px-3 py-1 text-sm font-semibold text-primary">{categorizedPlans.sharedPlans.length}</span>
               </div>
 
               {categorizedPlans.sharedPlans.length === 0 ? (
-                <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
+                <div className="text-center rounded-lg border border-dashed border-border bg-card p-8 text-muted-foreground">
                   <p className="m-0 text-sm italic">
-                    No shared plans yet. Editable plans appear here after you open a public edit link, and read-only plans appear after you open a snapshot link.
+                    Plans shared with you will appear here after you open an editable or snapshot link.
                   </p>
                 </div>
               ) : (
@@ -398,46 +329,6 @@ const Dashboard = () => {
             </section>
           )}
 
-          {/* Community Timelines Section */}
-          <section className="mb-12 last:mb-0">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <h2 className="m-0 text-xl font-semibold text-[var(--color-text)]">Community Timelines</h2>
-                <span className="rounded-[12px] bg-[var(--select-bg)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">{timelines.length}</span>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={handleCreateTimeline}>
-                  Open Timeline Hub
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/timeline/browse')}>
-                  Browse Community Timelines
-                </Button>
-              </div>
-            </div>
-
-            {timelinesLoading ? (
-              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
-                <p className="m-0 text-sm">Loading timelines...</p>
-              </div>
-            ) : timelines.length === 0 ? (
-              <div className="text-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-cardBackground)] p-8 text-[var(--color-textSecondary)]">
-                <p className="m-0 text-sm italic">
-                  You haven't created any community timelines yet. Open the timeline hub to start blank, branch from a plan, or build from official and public routes.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
-                {timelines.map((timeline) => (
-                  <TimelineCard
-                    key={timeline.id}
-                    timeline={timeline}
-                    onTimelineChanged={handleTimelineChanged}
-                    onTimelineDeleted={handleTimelineDeleted}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
         </>
       )}
 

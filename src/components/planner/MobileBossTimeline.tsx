@@ -9,6 +9,7 @@ import { useRealtimePlan } from '../../contexts/RealtimePlanContext';
 import { getPlanTimelineLayout } from '../../utils/timeline/planTimelineLayoutUtils';
 import type { BossAction, PhaseOverride, ResolvedTimelinePhaseSummary } from '../../types';
 import PhaseOverrideTimeStrip from './PhaseOverridesPanel';
+import { formatTimelineTime } from '../../utils/timeline/timeFormat';
 
 interface MobileBossTimelineProps {
   sortedBossActions: BossAction[];
@@ -184,12 +185,15 @@ const MobileBossTimeline = memo(({
         const otHealAmt = offTankProjection.healingAmount;
 
         return (
-          <div
+          <button
+            type="button"
             key={`${action.id}-${index}`}
             data-testid={`mobile-action-${action.id}-${index}`}
             onClick={() => handleSelect(action)}
+            aria-pressed={isSelected}
+            aria-label={`${action.name} at ${formatTimelineTime(action.time)}. ${mitigationCount} mitigation${mitigationCount === 1 ? '' : 's'} assigned.`}
             className={cn(
-              "relative w-full rounded-lg border transition-colors cursor-pointer bg-card overflow-hidden",
+              "relative w-full overflow-hidden rounded-lg border bg-card text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               isSelected
                 ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/25"
                 : "border-border hover:border-primary/45"
@@ -227,7 +231,7 @@ const MobileBossTimeline = memo(({
                   </span>
                   {action.unmitigatedDamage && (
                     <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
-                      Est. {action.unmitigatedDamage}
+                      Est. {unmitigatedDamage(action).toLocaleString()}
                     </span>
                   )}
                 </div>
@@ -327,7 +331,7 @@ const MobileBossTimeline = memo(({
               </p>
             </div>
             </div>
-          </div>
+          </button>
         );
       })}
 
